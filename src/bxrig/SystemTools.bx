@@ -75,7 +75,7 @@ class SystemTools {
 			if ( !variables.proc.has( "speedtest-cli" ) ) return out.precondition( "speedtest-cli is not installed: bxrig install speedtest-cli", arguments.asJson );
 			if ( !arguments.asJson ) println( "Testing your internet speed (about 30 seconds)..." );
 			var r = variables.proc.exec( [ "speedtest-cli", "--simple" ], 180 );
-			if ( r.exitCode != 0 ) return out.failed( "speedtest-cli: " & trim( r.output ), arguments.asJson );
+			if ( r.exitCode != 0 ) return out.failed( "speedtest-cli: " & trim( variables.proc.why( r ) ), arguments.asJson );
 			var data = { ping: "", download: "", upload: "" };
 			for ( var l in listToArray( r.output, chr( 10 ) ) ) {
 				var k = lCase( trim( listFirst( l, ":" ) ) );
