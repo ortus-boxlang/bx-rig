@@ -18,6 +18,38 @@ class Webcam {
 		return [ "mpv", "--wayland-app-id=" & windowClass(), "--title=" & windowClass(), "--profile=low-latency", "--untimed", "--no-audio", "--no-osc", "av://v4l2:" & variables.device ];
 	}
 
+	// ---- the bubble in a screen recording ----
+	function corners() { return [ "bottom-right", "bottom-left", "top-right", "top-left" ]; }
+	function sizes() { return [ "small", "medium", "large" ]; }
+	function overlayTitle() { return "bxrig-webcam-overlay"; }
+	function overlayClass( corner, size ) { return "bxrig-webcam-" & arguments.corner & "-" & arguments.size; }
+
+	// Width and height (4:3) as Hyprland expressions, a share of the monitor height so it looks the same on any screen.
+	function overlaySize( size ) {
+		if ( arguments.size == "small" ) return { w: "(monitor_h*4/15)", h: "(monitor_h/5)" };
+		if ( arguments.size == "large" ) return { w: "(monitor_h*4/9)", h: "(monitor_h/3)" };
+		return { w: "(monitor_h*16/45)", h: "(monitor_h*4/15)" };
+	}
+
+	// One Hyprland window rule per corner and size (written into the BxRig Hyprland module), 40 px from the edges.
+	function overlayRules() {
+		var out = [];
+		for ( var c in corners() ) for ( var z in sizes() ) {
+			var sz = overlaySize( z );
+			var x = find( "right", c ) ? '"(monitor_w-' & mid( sz.w, 2, len( sz.w ) - 2 ) & '-40)"' : "40";
+			var y = find( "bottom", c ) ? '"(monitor_h-' & mid( sz.h, 2, len( sz.h ) - 2 ) & '-40)"' : "40";
+			out.append( 'hl.window_rule({ name = "' & overlayClass( c, z ) & '", match = { class = "^' & overlayClass( c, z ) & '$" }, float = true, pin = true, no_initial_focus = true, no_dim = true, size = { "' & sz.w & '", "' & sz.h & '" }, move = { ' & x & ', ' & y & ' } })' );
+		}
+		return out;
+	}
+
+	// The bubble: mpv without a border, its app id choosing the corner and size rule.
+	function overlayArgv( corner, size ) {
+		return [ "mpv", "--wayland-app-id=" & overlayClass( arguments.corner, arguments.size ), "--title=" & overlayTitle(), "--profile=low-latency", "--untimed", "--no-audio", "--no-osc", "--no-border", "--osd-level=0", "av://v4l2:" & variables.device ];
+	}
+
+	function overlayPattern() { return "mpv .*--title=" & overlayTitle(); }
+
 	// The pattern pgrep and pkill match against the command line.
 	function pattern() { return "mpv .*--title=" & windowClass(); }
 

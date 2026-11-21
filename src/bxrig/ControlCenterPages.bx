@@ -12,6 +12,7 @@ class ControlCenterPages {
 			{ id: "gradle", title: "Gradle", icon: "gear" },
 			{ id: "versions", title: "Versions", icon: "tags" },
 			{ id: "ports", title: "Ports", icon: "plug" },
+			{ id: "network", title: "Network", icon: "wifi" },
 			{ id: "packages", title: "Packages", icon: "download" },
 			{ id: "shortcuts", title: "Shortcuts", icon: "keyboard" },
 			{ id: "machines", title: "Machines", icon: "desktop" },

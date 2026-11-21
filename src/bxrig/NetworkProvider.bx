@@ -1,0 +1,59 @@
+// Network: the Wi-Fi you are on, your VPNs, the DNS providers (the one in use and their last benchmark) and the last internet speed.
+// Reads `wifi status`, `vpn list`, `dns` and `system speedtest last`. Keys: t speed test, b DNS benchmark, u use the DNS on the row,
+// c connect or disconnect the VPN on the row, q the Wi-Fi QR code, w bring Wi-Fi back (`system restart wifi`).
+class NetworkProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "network"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "network" ); }
+	function title() { return "Network"; }
+	function hint() { return "Wi-Fi, VPN, DNS and speed"; }
+	function emptyText() { return "No network information (is NetworkManager running?)"; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "name", w: 22 }, { key: "kind", label: "kind", w: 8 }, { key: "value", label: "now", w: 28 }, { key: "more", label: "", w: 0 } ]; }
+	function style( r ) { return r.active ? "ok" : ( r.kind == "dns" || r.kind == "vpn" ? "dim" : "" ); }
+
+	function detail( r ) {
+		if ( r.kind == "wifi" ) return [ r.name & " " & r.value, "q shows a QR code a phone scans to join. w brings Wi-Fi back when it is stuck." ];
+		if ( r.kind == "vpn" ) return [ r.name & ": " & r.value, "c " & ( r.active ? "disconnects" : "connects" ) & " it." ];
+		if ( r.kind == "dns" ) return [ r.name & ( r.active ? " is in use." : "." ) & ( len( r.value ) ? " Lookup time " & r.value & "." : "" ), r.active ? "b times every provider again." : "u switches to it. b times every provider." ];
+		return [ "Internet speed " & r.value, "t tests it again (about 30 seconds)." ];
+	}
+
+	function actions() {
+		return [
+			{ key: "t", label: "speed test", run: function( r ) { return { action: "show", title: "Speed test (about 30 seconds)", args: [ "system", "speedtest", "network" ] }; } },
+			{ key: "b", label: "DNS benchmark", run: function( r ) { return { action: "show", title: "DNS benchmark", args: [ "dns", "bench" ] }; } },
+			{ key: "u", label: "use DNS", run: function( r ) { return r.kind == "dns" && !r.active ? { action: "cli", title: "Use " & r.name, args: [ "dns", r.ref ] } : {}; } },
+			{ key: "c", label: "VPN on/off", run: function( r ) { return r.kind == "vpn" ? { action: "cli", title: ( r.active ? "Disconnect " : "Connect " ) & r.name, args: [ "vpn", r.active ? "disconnect" : "connect", r.ref ] } : {}; } },
+			{ key: "q", label: "Wi-Fi QR", run: function( r ) { return { action: "show", title: "Join this Wi-Fi", args: [ "wifi", "qr" ] }; } },
+			{ key: "w", label: "restart Wi-Fi", run: function( r ) { return { action: "cli", title: "Bring Wi-Fi back", args: [ "system", "restart", "wifi" ] }; } }
+		];
+	}
+
+	function hhmm( at ) { var t = arguments.at & ""; return len( t ) >= 16 ? mid( t, 12, 5 ) : t; }
+
+	// The rows from the four commands' data (pure, for tests).
+	function rowsFrom( wifi, vpn, dns, last ) {
+		var rows = [];
+		var ssid = arguments.wifi.ssid ?: "";
+		rows.append( { mark: len( ssid ) ? "●" : "○", name: len( ssid ) ? ssid : "not connected", kind: "wifi", value: ( arguments.wifi.signal ?: -1 ) >= 0 ? "signal " & arguments.wifi.signal & "%" : "", more: "radio " & ( arguments.wifi.radio ?: "?" ), active: len( ssid ) > 0, ref: "" } );
+		for ( var v in ( arguments.vpn.providers ?: [] ) ) rows.append( { mark: ( v.connected ?: false ) ? "●" : "○", name: v.name ?: v.id, kind: "vpn", value: ( v.connected ?: false ) ? "connected" & ( len( v.location ?: "" ) ? " · " & v.location : "" ) : "off", more: "", active: v.connected ?: false, ref: v.id } );
+		var times = {};
+		var lastDns = arguments.last.dns ?: {};
+		for ( var p in ( lastDns.providers ?: [] ) ) times[ p.id ] = p;
+		var current = arguments.dns.provider ?: "";
+		for ( var d in [ { id: "cloudflare", name: "Cloudflare" }, { id: "quad9", name: "Quad9" }, { id: "google", name: "Google" }, { id: "dhcp", name: "Your router" } ] ) {
+			var t = times[ d.id ] ?: {};
+			var ms = t.ms ?: "";
+			rows.append( { mark: current == d.id ? "●" : "○", name: d.name, kind: "dns", value: isNumeric( ms ) ? ( ms >= 0 ? numberFormat( ms, "0" ) & " ms" : "no answer" ) : "", more: ( t.fastest ?: false ) ? "fastest" : "", active: current == d.id, ref: d.id } );
+		}
+		var sp = arguments.last.network ?: {};
+		rows.append( { mark: "◆", name: "Internet speed", kind: "speed", value: structKeyExists( sp, "download" ) ? "↓ " & sp.download & "  ↑ " & ( sp.upload ?: "" ) : "not tested yet (t)", more: structKeyExists( sp, "ping" ) ? "ping " & sp.ping & " · " & hhmm( sp.at ?: "" ) : "", active: false, ref: "" } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( { ssid: "Home-5G", signal: 78, radio: "enabled" }, { providers: [ { id: "tailscale", name: "Tailscale", connected: true, location: "" }, { id: "nordvpn", name: "NordVPN", connected: false } ] }, { provider: "cloudflare" },
+			{ dns: { providers: [ { id: "cloudflare", ms: 11, fastest: true }, { id: "quad9", ms: 18 }, { id: "google", ms: 21 }, { id: "dhcp", ms: 34 } ] }, network: { download: "412.67 Mbit/s", upload: "98.10 Mbit/s", ping: "12 ms", at: "2026-11-21T12:38:00" } } );
+		return rowsFrom( variables.proc.selfData( [ "wifi", "status" ] ), variables.proc.selfData( [ "vpn", "list" ] ), variables.proc.selfData( [ "dns" ] ), variables.proc.selfData( [ "system", "speedtest", "last" ] ) );
+	}
+}

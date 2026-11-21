@@ -83,3 +83,13 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Shift+Grave` / `Super+Ctrl+Grave` | Quake console: show or hide / send the focused window there |
 | `Super+Alt+Shift+B` (Mac: `Super+Shift+N`) | Private window of your default browser |
 | `Super+Alt+Shift+F` | File manager in the folder of the focused window |
+| `Super+Ctrl+F` (Mac: `Super+Ctrl+Shift+F`) | Tiled full screen: the app goes full screen inside its tile |
+| `Super+Alt+Minus` / `Equal` (with `Shift`: height) | Floating window narrower / wider (shorter / taller) |
+| `Super+G` / `Super+Alt+G` | Group windows into tabs / take the window out of its group |
+| `Super+Alt+Tab` / `Super+Alt+Shift+Tab` | Next / previous window in the group |
+| `Super+Ctrl+S` / `Super+Ctrl+Alt+S` | Scratchpad: show or hide / send the window there |
+| `Super+Ctrl+Z` / `Super+Ctrl+Alt+Z` | Zoom in on the screen / back out |
+| `Ctrl+Alt+Delete` | Close every window |
+| `Super+Ctrl+Shift+Comma` | Dismiss all notifications |
+| Play, Pause, Next, Previous keys | Media control (playerctl) |
+| Keyboard backlight keys | Keyboard backlight up / down |

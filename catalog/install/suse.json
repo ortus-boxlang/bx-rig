@@ -6,6 +6,7 @@
 	"defaults": null,
 	"names": {
 		"adw-gtk-theme": "",
+		"bind": "bind-utils",
 		"bluez-utils": "",
 		"borg": "borgbackup",
 		"composer": "php-composer2",
@@ -450,6 +451,12 @@
 			"source": "zypper",
 			"targets": [
 				"gwenview"
+			]
+		},
+		"handbrake": {
+			"source": "flatpak",
+			"targets": [
+				"fr.handbrake.ghb"
 			]
 		},
 		"haruna": {
@@ -1029,6 +1036,12 @@
 			"source": "flatpak",
 			"targets": [
 				"xyz.ketok.Speedtest"
+			]
+		},
+		"speedtest-cli": {
+			"source": "zypper",
+			"targets": [
+				"speedtest-cli"
 			]
 		},
 		"spotify": {

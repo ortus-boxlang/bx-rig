@@ -60,14 +60,24 @@ class Tweaks {
 		return r.exitCode == 0 ? trim( replace( r.output, chr( 10 ), " " ) ) : "";
 	}
 
+	// Which provider a connection's DNS servers are: a preset id, "dhcp" (none set) or "custom".
+	function providerOf( servers ) {
+		var s = trim( arguments.servers );
+		if ( !len( s ) ) return "dhcp";
+		var first = listFirst( s, " ," );
+		var p = presets();
+		for ( var id in p ) if ( listFirst( p[ id ].v4, " " ) == first || listFirst( p[ id ].v6, " " ) == first ) return id;
+		return "custom";
+	}
+
 	function validIp( ip ) { return reFind( "^[0-9]{1,3}(\.[0-9]{1,3}){3}$", arguments.ip ) > 0 || reFind( "^[0-9a-fA-F:]+$", arguments.ip ) > 0 && find( ":", arguments.ip ) > 0; }
 
 	function dns( words, yes, dry, asJson ) {
 		if ( !variables.proc.has( "nmcli" ) ) return variables.cli.fail( "dns", "precondition", "NetworkManager (nmcli) was not found", arguments.asJson );
 		var conns = activeConnections();
 		if ( !arguments.words.len() ) {
-			var rows = conns.map( function( c ) { return { connection: c, dns: currentDns( c ) }; } );
-			return variables.cli.say( "dns", "ok", { connections: rows }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.connection & ": " & ( len( r.dns ) ? r.dns : "from DHCP" ); } ) : [ "No active connection." ] );
+			var rows = conns.map( function( c ) { var d = currentDns( c ); return { connection: c, dns: d, provider: providerOf( d ) }; } );
+			return variables.cli.say( "dns", "ok", { connections: rows, provider: rows.len() ? rows[ 1 ].provider : "" }, arguments.asJson, rows.len() ? rows.map( function( r ) { return r.connection & ": " & ( len( r.dns ) ? r.dns & " (" & r.provider & ")" : "from DHCP (your router)" ); } ) : [ "No active connection." ] );
 		}
 		var what = arguments.words[ 1 ];
 		var p = presets();

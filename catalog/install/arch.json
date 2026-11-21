@@ -6,6 +6,904 @@
 	"names": {},
 	"repos": [],
 	"apps": {
+		"1password": {
+			"source": "aur",
+			"targets": [
+				"1password"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"7zip": {
+			"source": "pacman",
+			"targets": [
+				"7zip"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"aether": {
+			"source": "aur",
+			"targets": [
+				"aether"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"alacritty": {
+			"source": "pacman",
+			"targets": [
+				"alacritty"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"antigravity": {
+			"source": "aur",
+			"targets": [
+				"antigravity"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"ark": {
+			"source": "pacman",
+			"targets": [
+				"ark"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"bambustudio": {
+			"source": "aur",
+			"targets": [
+				"bambustudio-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"bat": {
+			"source": "pacman",
+			"targets": [
+				"bat"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"beekeeper-studio": {
+			"source": "aur",
+			"targets": [
+				"beekeeper-studio"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"bitwarden": {
+			"source": "pacman",
+			"targets": [
+				"bitwarden"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"bitwarden-cli": {
+			"source": "pacman",
+			"targets": [
+				"bitwarden-cli"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"bluetui": {
+			"source": "pacman",
+			"targets": [
+				"bluetui"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"bluez": {
+			"source": "pacman",
+			"targets": [
+				"bluez",
+				"bluez-utils"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"borg": {
+			"source": "pacman",
+			"targets": [
+				"borg"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"brave": {
+			"source": "pacman",
+			"targets": [
+				"brave-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"brightnessctl": {
+			"source": "pacman",
+			"targets": [
+				"brightnessctl"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"btop": {
+			"source": "pacman",
+			"targets": [
+				"btop"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"btrfs-assistant": {
+			"source": "pacman",
+			"targets": [
+				"btrfs-assistant"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"bun": {
+			"source": "pacman",
+			"targets": [
+				"bun"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"buzz": {
+			"source": "pkgbuild",
+			"targets": [
+				"buzz"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/buzz",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"cachyos-gaming": {
+			"source": "pacman",
+			"targets": [
+				"cachyos-gaming-meta",
+				"cachyos-gaming-applications"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"chatgpt-desktop": {
+			"source": "pacman",
+			"targets": [
+				"chatgpt-desktop-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-19"
+		},
+		"chezmoi": {
+			"source": "pacman",
+			"targets": [
+				"chezmoi"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-11"
+		},
+		"chromium": {
+			"source": "pacman",
+			"targets": [
+				"chromium"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"cifs-utils": {
+			"source": "pacman",
+			"targets": [
+				"cifs-utils"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"claude-code": {
+			"source": "pacman",
+			"targets": [
+				"claude-code"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"claude-desktop": {
+			"source": "aur",
+			"targets": [
+				"claude-desktop"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"cliamp": {
+			"source": "aur",
+			"targets": [
+				"cliamp"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"cliphist": {
+			"source": "pacman",
+			"targets": [
+				"cliphist"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"cmake": {
+			"source": "pacman",
+			"targets": [
+				"cmake"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"codex-cli": {
+			"source": "pacman",
+			"targets": [
+				"openai-codex"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"codex-desktop": {
+			"source": "pkgbuild",
+			"targets": [
+				"openai-codex-desktop"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/openai-codex-desktop",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"collie": {
+			"source": "pkgbuild",
+			"targets": [
+				"collie-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/collie-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"composer": {
+			"source": "pacman",
+			"targets": [
+				"composer"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"cups": {
+			"source": "pacman",
+			"targets": [
+				"cups"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"cups-pdf": {
+			"source": "pacman",
+			"targets": [
+				"cups-pdf"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"curl": {
+			"source": "pacman",
+			"targets": [
+				"curl"
+			],
+			"repo": "core",
+			"verified_on": "2026-11-09"
+		},
+		"cursor": {
+			"source": "pacman",
+			"targets": [
+				"cursor-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"darkly": {
+			"source": "aur",
+			"targets": [
+				"darkly-bin"
+			],
+			"verified_on": "2026-11-19"
+		},
+		"datagrip": {
+			"source": "aur",
+			"targets": [
+				"datagrip"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"dbeaver": {
+			"source": "pacman",
+			"targets": [
+				"dbeaver"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"deno": {
+			"source": "pacman",
+			"targets": [
+				"deno"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"direnv": {
+			"source": "pacman",
+			"targets": [
+				"direnv"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"discord": {
+			"source": "pacman",
+			"targets": [
+				"discord"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"disktree": {
+			"source": "aur",
+			"targets": [
+				"disktree-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"docker": {
+			"source": "pacman",
+			"targets": [
+				"docker",
+				"docker-compose",
+				"docker-buildx"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"dolphin": {
+			"source": "pacman",
+			"targets": [
+				"dolphin"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"dolphin-plugins": {
+			"source": "pacman",
+			"targets": [
+				"dolphin-plugins"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"dropbox": {
+			"source": "aur",
+			"targets": [
+				"dropbox"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"dropbox-kde-icons": {
+			"source": "aur",
+			"targets": [
+				"dropbox-kde-systray-icons"
+			],
+			"verified_on": "2026-11-19"
+		},
+		"duf": {
+			"source": "pacman",
+			"targets": [
+				"duf"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"edge": {
+			"source": "aur",
+			"targets": [
+				"microsoft-edge-stable-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"elisa": {
+			"source": "pacman",
+			"targets": [
+				"elisa"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"enpass": {
+			"source": "aur",
+			"targets": [
+				"enpass-bin"
+			],
+			"verified_on": "2026-11-15"
+		},
+		"event-calendar": {
+			"source": "aur",
+			"targets": [
+				"plasma6-applets-eventcalendar"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"evolution": {
+			"source": "pacman",
+			"targets": [
+				"evolution"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"eza": {
+			"source": "pacman",
+			"targets": [
+				"eza"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"fastfetch": {
+			"source": "pacman",
+			"targets": [
+				"fastfetch"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"fd": {
+			"source": "pacman",
+			"targets": [
+				"fd"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"ffmpeg": {
+			"source": "pacman",
+			"targets": [
+				"ffmpeg"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"ffmpegthumbs": {
+			"source": "pacman",
+			"targets": [
+				"ffmpegthumbs"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"filelight": {
+			"source": "pacman",
+			"targets": [
+				"filelight"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"filezilla": {
+			"source": "pacman",
+			"targets": [
+				"filezilla"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"firefox": {
+			"source": "pacman",
+			"targets": [
+				"firefox"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"fish": {
+			"source": "pacman",
+			"targets": [
+				"fish"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"flameshot": {
+			"source": "pacman",
+			"targets": [
+				"flameshot"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"flatseal": {
+			"source": "pacman",
+			"targets": [
+				"flatseal"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"foot": {
+			"source": "pacman",
+			"targets": [
+				"foot"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"freerdp": {
+			"source": "pacman",
+			"targets": [
+				"freerdp"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"fuse3": {
+			"source": "pacman",
+			"targets": [
+				"fuse3"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"fuzzel": {
+			"source": "pacman",
+			"targets": [
+				"fuzzel"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"fzf": {
+			"source": "pacman",
+			"targets": [
+				"fzf"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"geforce-now": {
+			"source": "aur",
+			"targets": [
+				"geforcenow-electron"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"gemini-cli": {
+			"source": "pacman",
+			"targets": [
+				"gemini-cli"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"gh": {
+			"source": "pacman",
+			"targets": [
+				"github-cli"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"ghostty": {
+			"source": "pacman",
+			"targets": [
+				"ghostty"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"git": {
+			"source": "pacman",
+			"targets": [
+				"git"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"gliff": {
+			"source": "pkgbuild",
+			"targets": [
+				"gliff"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/gliff",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"gnome-disk-utility": {
+			"source": "pacman",
+			"targets": [
+				"gnome-disk-utility"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"go": {
+			"source": "pacman",
+			"targets": [
+				"go"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"google-chrome": {
+			"source": "aur",
+			"targets": [
+				"google-chrome"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"gopass": {
+			"source": "pacman",
+			"targets": [
+				"gopass"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"gpt4all": {
+			"source": "aur",
+			"targets": [
+				"gpt4all-chat"
+			],
+			"verified_on": "2026-11-11"
+		},
+		"gpu-screen-recorder": {
+			"source": "pacman",
+			"targets": [
+				"gpu-screen-recorder"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"gradle": {
+			"source": "pacman",
+			"targets": [
+				"gradle"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"greenlight": {
+			"source": "aur",
+			"targets": [
+				"greenlight-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"gridcraft": {
+			"source": "aur",
+			"targets": [
+				"gridcraft-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"grim": {
+			"source": "pacman",
+			"targets": [
+				"grim"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"grokbot": {
+			"source": "aur",
+			"targets": [
+				"grokbot-linux-port-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"gwenview": {
+			"source": "pacman",
+			"targets": [
+				"gwenview"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"handbrake": {
+			"source": "pacman",
+			"targets": [
+				"handbrake"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-21"
+		},
+		"haruna": {
+			"source": "pacman",
+			"targets": [
+				"haruna"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"heidisql": {
+			"source": "aur",
+			"targets": [
+				"heidisql-qt6-bin"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"helium": {
+			"source": "pacman",
+			"targets": [
+				"helium-browser-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"helix": {
+			"source": "pacman",
+			"targets": [
+				"helix"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"herdr": {
+			"source": "aur",
+			"targets": [
+				"herdr"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"hermes-agent": {
+			"source": "aur",
+			"targets": [
+				"hermes-agent"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"hermes-desktop": {
+			"source": "pkgbuild",
+			"targets": [
+				"hermes-desktop"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/hermes-desktop",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"heroic": {
+			"source": "pacman",
+			"targets": [
+				"heroic-games-launcher-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"hex": {
+			"source": "aur",
+			"targets": [
+				"hex-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"hplip": {
+			"source": "pacman",
+			"targets": [
+				"hplip"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"hype": {
+			"source": "pkgbuild",
+			"targets": [
+				"hype"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/hype",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"hyprlauncher": {
+			"source": "pacman",
+			"targets": [
+				"hyprlauncher"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"hyprpaper": {
+			"source": "pacman",
+			"targets": [
+				"hyprpaper"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"hyprpicker": {
+			"source": "pacman",
+			"targets": [
+				"hyprpicker"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"hyprsunset": {
+			"source": "pacman",
+			"targets": [
+				"hyprsunset"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"imagemagick": {
+			"source": "pacman",
+			"targets": [
+				"imagemagick"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"impala": {
+			"source": "pacman",
+			"targets": [
+				"impala"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"imv": {
+			"source": "pacman",
+			"targets": [
+				"imv"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"intellij": {
+			"source": "pacman",
+			"targets": [
+				"intellij-idea-oss"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"jan": {
+			"source": "aur",
+			"targets": [
+				"jan-bin"
+			],
+			"verified_on": "2026-11-11"
+		},
+		"jdk21": {
+			"source": "pacman",
+			"targets": [
+				"jdk21-openjdk"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
 		"jq": {
 			"source": "pacman",
 			"targets": [
@@ -14,10 +912,355 @@
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
+		"kcalc": {
+			"source": "pacman",
+			"targets": [
+				"kcalc"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"kdeconnect": {
+			"source": "pacman",
+			"targets": [
+				"kdeconnect",
+				"sshfs",
+				"qt6-tools",
+				"python-gobject"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"kdegraphics-thumbnailers": {
+			"source": "pacman",
+			"targets": [
+				"kdegraphics-thumbnailers"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"kdenlive": {
+			"source": "pacman",
+			"targets": [
+				"kdenlive"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"kdeplasma-addons": {
+			"source": "pacman",
+			"targets": [
+				"kdeplasma-addons"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"keepassxc": {
+			"source": "pacman",
+			"targets": [
+				"keepassxc"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"keeper": {
+			"source": "aur",
+			"targets": [
+				"keeper-password-manager"
+			],
+			"verified_on": "2026-11-15"
+		},
+		"kimageformats": {
+			"source": "pacman",
+			"targets": [
+				"kimageformats"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"kinfocenter": {
+			"source": "pacman",
+			"targets": [
+				"kinfocenter"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"kio-admin": {
+			"source": "pacman",
+			"targets": [
+				"kio-admin"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"kio-extras": {
+			"source": "pacman",
+			"targets": [
+				"kio-extras"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"kio-gdrive": {
+			"source": "pacman",
+			"targets": [
+				"kio-gdrive"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"kitty": {
+			"source": "pacman",
+			"targets": [
+				"kitty"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"kiview": {
+			"source": "aur",
+			"targets": [
+				"kiview"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"koboldcpp": {
+			"source": "aur",
+			"targets": [
+				"koboldcpp"
+			],
+			"verified_on": "2026-11-11"
+		},
+		"kompare": {
+			"source": "pacman",
+			"targets": [
+				"kompare"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"konsole": {
+			"source": "pacman",
+			"targets": [
+				"konsole"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"kooha": {
+			"source": "pacman",
+			"targets": [
+				"kooha"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"kvantum": {
+			"source": "pacman",
+			"targets": [
+				"kvantum"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"kvitals": {
+			"source": "aur",
+			"targets": [
+				"plasma6-applets-kvitals-git"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"lazydocker": {
+			"source": "pacman",
+			"targets": [
+				"lazydocker"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"lazygit": {
+			"source": "pacman",
+			"targets": [
+				"lazygit"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"libinput-gestures": {
+			"source": "aur",
+			"targets": [
+				"libinput-gestures"
+			],
+			"verified_on": "2026-11-13"
+		},
+		"libratbag": {
+			"source": "pacman",
+			"targets": [
+				"libratbag"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-17"
+		},
+		"libreoffice": {
+			"source": "pacman",
+			"targets": [
+				"libreoffice-fresh"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"link-studio": {
+			"source": "pkgbuild",
+			"targets": [
+				"link-studio"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/link-studio",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"lm-studio": {
+			"source": "aur",
+			"targets": [
+				"lmstudio-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"localsend": {
+			"source": "pacman",
+			"targets": [
+				"localsend"
+			],
+			"repo": "cachyos",
+			"aur_targets": [
+				"localsend-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"lutris": {
+			"source": "pacman",
+			"targets": [
+				"lutris"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"mailspring": {
+			"source": "aur",
+			"targets": [
+				"mailspring"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"makima": {
+			"source": "aur",
+			"targets": [
+				"makima-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"maven": {
+			"source": "pacman",
+			"targets": [
+				"maven"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"meeting-recorder": {
+			"source": "pkgbuild",
+			"targets": [
+				"omarchy-meeting-recorder-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omarchy-meeting-recorder-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"meld": {
+			"source": "pacman",
+			"targets": [
+				"meld"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-13"
+		},
 		"micro": {
 			"source": "pacman",
 			"targets": [
 				"micro"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"minecraft-launcher": {
+			"source": "aur",
+			"targets": [
+				"minecraft-launcher"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"mise": {
+			"source": "pacman",
+			"targets": [
+				"mise"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"monologue": {
+			"source": "pkgbuild",
+			"targets": [
+				"monologue"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/monologue",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"moonlight": {
+			"source": "pacman",
+			"targets": [
+				"moonlight-qt"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"mpv": {
+			"source": "pacman",
+			"targets": [
+				"mpv"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"mullvad": {
+			"source": "pacman",
+			"targets": [
+				"mullvad-vpn"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"mysql-workbench": {
+			"source": "pacman",
+			"targets": [
+				"mysql-workbench"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"nautilus": {
+			"source": "pacman",
+			"targets": [
+				"nautilus"
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
@@ -30,42 +1273,243 @@
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
-		"vscode": {
-			"source": "aur",
-			"targets": [
-				"visual-studio-code-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"cursor": {
+		"networkmanager-openvpn": {
 			"source": "pacman",
 			"targets": [
-				"cursor-bin"
+				"networkmanager-openvpn"
 			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
+			"repo": "extra",
+			"verified_on": "2026-11-19"
 		},
-		"datagrip": {
-			"source": "aur",
-			"targets": [
-				"datagrip"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"helix": {
+		"nfs-utils": {
 			"source": "pacman",
 			"targets": [
-				"helix"
+				"nfs-utils"
+			],
+			"repo": "core",
+			"verified_on": "2026-11-09"
+		},
+		"nordlayer": {
+			"source": "aur",
+			"targets": [
+				"nordlayer"
+			],
+			"verified_on": "2026-11-17"
+		},
+		"nordpass": {
+			"source": "aur",
+			"targets": [
+				"nordpass-bin"
+			],
+			"verified_on": "2026-11-15"
+		},
+		"nordvpn": {
+			"source": "aur",
+			"targets": [
+				"nordvpn-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"notion-desktop": {
+			"source": "aur",
+			"targets": [
+				"notion-app-electron"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"nwg-displays": {
+			"source": "pacman",
+			"targets": [
+				"nwg-displays"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"obs": {
+			"source": "pacman",
+			"targets": [
+				"obs-studio"
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
-		"intellij": {
+		"obsidian": {
 			"source": "pacman",
 			"targets": [
-				"intellij-idea-oss"
+				"obsidian"
 			],
 			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"okular": {
+			"source": "pacman",
+			"targets": [
+				"okular"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"ollama": {
+			"source": "pacman",
+			"targets": [
+				"ollama"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"ollama-cuda": {
+			"source": "pacman",
+			"targets": [
+				"ollama-cuda"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-11"
+		},
+		"ollama-rocm": {
+			"source": "pacman",
+			"targets": [
+				"ollama-rocm"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-11"
+		},
+		"omacalc": {
+			"source": "pkgbuild",
+			"targets": [
+				"omacalc"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omacalc",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omacharts": {
+			"source": "pkgbuild",
+			"targets": [
+				"omacharts"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omacharts",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omacut": {
+			"source": "pkgbuild",
+			"targets": [
+				"omacut"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omacut",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omadesign": {
+			"source": "pkgbuild",
+			"targets": [
+				"omadesign-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omadesign-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omairc": {
+			"source": "pkgbuild",
+			"targets": [
+				"omairc"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omairc",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omakade": {
+			"source": "pkgbuild",
+			"targets": [
+				"omakade"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omakade",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omakeyboard": {
+			"source": "pkgbuild",
+			"targets": [
+				"omakeyboard"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omakeyboard",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omareel": {
+			"source": "pkgbuild",
+			"targets": [
+				"omareel"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omareel",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omasnap": {
+			"source": "pkgbuild",
+			"targets": [
+				"omasnap"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omasnap",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omaspeak": {
+			"source": "pkgbuild",
+			"targets": [
+				"omaspeak-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omaspeak-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omawake": {
+			"source": "pkgbuild",
+			"targets": [
+				"omawake-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omawake-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"omawrite": {
+			"source": "aur",
+			"targets": [
+				"omawrite"
+			],
 			"verified_on": "2026-11-09"
 		},
 		"omazed": {
@@ -80,83 +1524,137 @@
 			},
 			"verified_on": "2026-11-09"
 		},
-		"sublime-text": {
+		"onlyoffice": {
+			"source": "pacman",
+			"targets": [
+				"onlyoffice-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"openclaw": {
 			"source": "aur",
 			"targets": [
-				"sublime-text-4"
+				"openclaw"
 			],
 			"verified_on": "2026-11-09"
 		},
-		"zed": {
+		"opencode-cli": {
 			"source": "pacman",
 			"targets": [
-				"zed"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"maven": {
-			"source": "pacman",
-			"targets": [
-				"maven"
+				"opencode"
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
-		"jdk21": {
-			"source": "pacman",
+		"opencode-desktop": {
+			"source": "aur",
 			"targets": [
-				"jdk21-openjdk"
+				"opencode-desktop-bin"
 			],
-			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
-		"bun": {
+		"openvpn": {
 			"source": "pacman",
 			"targets": [
-				"bun"
+				"openvpn"
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-10"
 		},
-		"composer": {
-			"source": "pacman",
+		"orca": {
+			"source": "aur",
 			"targets": [
-				"composer"
+				"stably-orca-bin"
 			],
-			"repo": "extra",
 			"verified_on": "2026-11-10"
 		},
-		"deno": {
-			"source": "pacman",
+		"owe": {
+			"source": "aur",
 			"targets": [
-				"deno"
+				"owe"
 			],
-			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"pacseek": {
+			"source": "aur",
+			"targets": [
+				"pacseek"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"pane": {
+			"source": "aur",
+			"targets": [
+				"pane-bin"
+			],
 			"verified_on": "2026-11-10"
 		},
-		"go": {
-			"source": "pacman",
+		"panel-colorizer": {
+			"source": "aur",
 			"targets": [
-				"go"
+				"plasma6-applets-panel-colorizer"
 			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
+			"verified_on": "2026-11-12"
 		},
-		"gradle": {
+		"panel-colorizer-islands": {
+			"source": "aur",
+			"targets": [
+				"plasma6-applets-panel-colorizer-islands-separator-git"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"papers": {
 			"source": "pacman",
 			"targets": [
-				"gradle"
+				"papers"
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
-		"mise": {
+		"papirus-folders": {
+			"source": "aur",
+			"targets": [
+				"papirus-folders"
+			],
+			"verified_on": "2026-11-19"
+		},
+		"papirus-icon-theme": {
 			"source": "pacman",
 			"targets": [
-				"mise"
+				"papirus-icon-theme"
+			],
+			"repo": "extra"
+		},
+		"partitionmanager": {
+			"source": "pacman",
+			"targets": [
+				"partitionmanager"
 			],
 			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"pass": {
+			"source": "pacman",
+			"targets": [
+				"pass"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"pavucontrol": {
+			"source": "pacman",
+			"targets": [
+				"pavucontrol"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"perplexity": {
+			"source": "aur",
+			"targets": [
+				"perplexity"
+			],
 			"verified_on": "2026-11-09"
 		},
 		"php": {
@@ -175,6 +1673,113 @@
 			"repo": "extra",
 			"verified_on": "2026-11-10"
 		},
+		"pi-agent": {
+			"source": "aur",
+			"targets": [
+				"pi-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"pika-backup": {
+			"source": "pacman",
+			"targets": [
+				"pika-backup"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"pinta": {
+			"source": "pacman",
+			"targets": [
+				"pinta"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"piper": {
+			"source": "pacman",
+			"targets": [
+				"piper"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-17"
+		},
+		"pipewire": {
+			"source": "pacman",
+			"targets": [
+				"pipewire",
+				"pipewire-pulse",
+				"wireplumber",
+				"libpulse"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"playerctl": {
+			"source": "pacman",
+			"targets": [
+				"playerctl"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"podman": {
+			"source": "pacman",
+			"targets": [
+				"podman",
+				"podman-compose",
+				"buildah",
+				"skopeo"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"podman-desktop": {
+			"source": "pacman",
+			"targets": [
+				"podman-desktop"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"podman-tui": {
+			"source": "aur",
+			"targets": [
+				"podman-tui"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"prismlauncher": {
+			"source": "pacman",
+			"targets": [
+				"prismlauncher"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"proton-pass": {
+			"source": "aur",
+			"targets": [
+				"proton-pass-bin"
+			],
+			"verified_on": "2026-11-15"
+		},
+		"proton-vpn": {
+			"source": "pacman",
+			"targets": [
+				"proton-vpn-gtk-app"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"protonup-qt": {
+			"source": "pacman",
+			"targets": [
+				"protonup-qt"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
 		"python-pip": {
 			"source": "pacman",
 			"targets": [
@@ -182,6 +1787,493 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-10"
+		},
+		"qrencode": {
+			"source": "pacman",
+			"targets": [
+				"qrencode"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"qtengine": {
+			"source": "aur",
+			"targets": [
+				"qtengine"
+			],
+			"verified_on": "2026-11-19"
+		},
+		"rawmakase": {
+			"source": "pkgbuild",
+			"targets": [
+				"rawmakase-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/rawmakase-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"rclone": {
+			"source": "pacman",
+			"targets": [
+				"rclone"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"rclone-browser": {
+			"source": "aur",
+			"targets": [
+				"rclone-browser"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"remmina": {
+			"source": "pacman",
+			"targets": [
+				"remmina"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"restic": {
+			"source": "pacman",
+			"targets": [
+				"restic"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"retroarch": {
+			"source": "pacman",
+			"targets": [
+				"retroarch"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"ripgrep": {
+			"source": "pacman",
+			"targets": [
+				"ripgrep"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"rofi": {
+			"source": "pacman",
+			"targets": [
+				"rofi"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"rofimoji": {
+			"source": "pacman",
+			"targets": [
+				"rofimoji"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-13"
+		},
+		"rumb": {
+			"source": "pkgbuild",
+			"targets": [
+				"rumb"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/rumb",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"rustdesk": {
+			"source": "aur",
+			"targets": [
+				"rustdesk"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"satty": {
+			"source": "pacman",
+			"targets": [
+				"satty"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"schist": {
+			"source": "aur",
+			"targets": [
+				"schist-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"seahorse": {
+			"source": "pacman",
+			"targets": [
+				"seahorse"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"signal": {
+			"source": "pacman",
+			"targets": [
+				"signal-desktop"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"signed": {
+			"source": "aur",
+			"targets": [
+				"signed"
+			],
+			"verified_on": "2026-11-15"
+		},
+		"slack": {
+			"source": "aur",
+			"targets": [
+				"slack-desktop"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"slap-notes": {
+			"source": "pkgbuild",
+			"targets": [
+				"slap-notes-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/slap-notes-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"slurp": {
+			"source": "pacman",
+			"targets": [
+				"slurp"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"smartmontools": {
+			"source": "pacman",
+			"targets": [
+				"smartmontools"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"snap-pac": {
+			"source": "pacman",
+			"targets": [
+				"snap-pac"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"snapd": {
+			"source": "aur",
+			"targets": [
+				"snapd"
+			],
+			"verified_on": "2026-11-19"
+		},
+		"snapper": {
+			"source": "pacman",
+			"targets": [
+				"snapper"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"solaar": {
+			"source": "pacman",
+			"targets": [
+				"solaar"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-17"
+		},
+		"spectacle": {
+			"source": "pacman",
+			"targets": [
+				"spectacle"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"speedtest": {
+			"source": "pkgbuild",
+			"targets": [
+				"omarchy-speedtest"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/omarchy-speedtest",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"speedtest-cli": {
+			"source": "pacman",
+			"targets": [
+				"speedtest-cli"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-21"
+		},
+		"spotify": {
+			"source": "aur",
+			"targets": [
+				"spotify"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"sshfs": {
+			"source": "pacman",
+			"targets": [
+				"sshfs"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"starship": {
+			"source": "pacman",
+			"targets": [
+				"starship"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"steam": {
+			"source": "pacman",
+			"targets": [
+				"steam"
+			],
+			"repo": "multilib",
+			"verified_on": "2026-11-09"
+		},
+		"stow": {
+			"source": "pacman",
+			"targets": [
+				"stow"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-11"
+		},
+		"strata": {
+			"source": "script",
+			"script": {
+				"url": "https://raw.githubusercontent.com/lgse/strata/5f17c9fdc8967e1b4ba8aaf8de113b46d824b0dd/install.sh",
+				"args": [
+					"--non-interactive"
+				]
+			},
+			"verified_on": "2026-11-12"
+		},
+		"sublime-merge": {
+			"source": "aur",
+			"targets": [
+				"sublime-merge"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"sublime-text": {
+			"source": "aur",
+			"targets": [
+				"sublime-text-4"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"sunshine": {
+			"source": "pacman",
+			"targets": [
+				"sunshine"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"superwhisper": {
+			"source": "pkgbuild",
+			"targets": [
+				"superwhisper-bin"
+			],
+			"pkgbuild": {
+				"repo": "omacom/omarchy-pkgs",
+				"path": "pkgbuilds/superwhisper-bin",
+				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
+			},
+			"verified_on": "2026-11-09"
+		},
+		"system-config-printer": {
+			"source": "pacman",
+			"targets": [
+				"system-config-printer"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"t3-code": {
+			"source": "aur",
+			"targets": [
+				"t3code-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"tabby": {
+			"source": "aur",
+			"targets": [
+				"tabby"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"tailscale": {
+			"source": "pacman",
+			"targets": [
+				"tailscale"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"telegram": {
+			"source": "pacman",
+			"targets": [
+				"telegram-desktop"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"tensaku": {
+			"source": "aur",
+			"targets": [
+				"tensaku"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"tesseract": {
+			"source": "pacman",
+			"targets": [
+				"tesseract",
+				"tesseract-data-eng"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"thunar": {
+			"source": "pacman",
+			"targets": [
+				"thunar"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"ticktick": {
+			"source": "aur",
+			"targets": [
+				"ticktick"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"timeshift": {
+			"source": "pacman",
+			"targets": [
+				"timeshift"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"tldr": {
+			"source": "pacman",
+			"targets": [
+				"tldr"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"tmog": {
+			"source": "aur",
+			"targets": [
+				"tmog-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"tmux": {
+			"source": "pacman",
+			"targets": [
+				"tmux"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"tor-browser": {
+			"source": "pacman",
+			"targets": [
+				"torbrowser-launcher"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"tree-sitter-cli": {
+			"source": "pacman",
+			"targets": [
+				"tree-sitter-cli"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"typora": {
+			"source": "aur",
+			"targets": [
+				"typora"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"ufw": {
+			"source": "pacman",
+			"targets": [
+				"ufw"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"ufw-extras": {
+			"source": "pacman",
+			"targets": [
+				"ufw-extras"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"unrar": {
+			"source": "pacman",
+			"targets": [
+				"unrar"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"unzip": {
+			"source": "pacman",
+			"targets": [
+				"unzip"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"upower": {
+			"source": "pacman",
+			"targets": [
+				"upower"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-17"
 		},
 		"uv": {
 			"source": "pacman",
@@ -191,10 +2283,218 @@
 			"repo": "extra",
 			"verified_on": "2026-11-10"
 		},
-		"starship": {
+		"uxplay": {
+			"source": "aur",
+			"targets": [
+				"uxplay"
+			],
+			"verified_on": "2026-11-13"
+		},
+		"vicinae": {
+			"source": "aur",
+			"targets": [
+				"vicinae-bin"
+			],
+			"verified_on": "2026-11-10"
+		},
+		"vim": {
 			"source": "pacman",
 			"targets": [
-				"starship"
+				"vim"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"virt-manager": {
+			"source": "pacman",
+			"targets": [
+				"virt-manager"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"vlc": {
+			"source": "pacman",
+			"targets": [
+				"vlc",
+				"vlc-plugins-all"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"voxtype": {
+			"source": "aur",
+			"targets": [
+				"voxtype-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"vscode": {
+			"source": "aur",
+			"targets": [
+				"visual-studio-code-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"walker": {
+			"source": "pacman",
+			"targets": [
+				"walker"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"waybar": {
+			"source": "pacman",
+			"targets": [
+				"waybar"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"wayfreeze": {
+			"source": "aur",
+			"targets": [
+				"wayfreeze"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"wf-recorder": {
+			"source": "pacman",
+			"targets": [
+				"wf-recorder"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"wget": {
+			"source": "pacman",
+			"targets": [
+				"wget"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-19"
+		},
+		"window-title": {
+			"source": "aur",
+			"targets": [
+				"plasma6-applets-window-title"
+			],
+			"verified_on": "2026-11-12"
+		},
+		"wireguard": {
+			"source": "pacman",
+			"targets": [
+				"wireguard-tools"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"wiremix": {
+			"source": "pacman",
+			"targets": [
+				"wiremix"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-15"
+		},
+		"wlsunset": {
+			"source": "pacman",
+			"targets": [
+				"wlsunset"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-13"
+		},
+		"wofi": {
+			"source": "pacman",
+			"targets": [
+				"wofi"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-10"
+		},
+		"wordcraft": {
+			"source": "aur",
+			"targets": [
+				"wordcraft-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"wtype": {
+			"source": "pacman",
+			"targets": [
+				"wtype"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"yadm": {
+			"source": "pacman",
+			"targets": [
+				"yadm"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-11"
+		},
+		"yazi": {
+			"source": "pacman",
+			"targets": [
+				"yazi"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"yt-dlp": {
+			"source": "pacman",
+			"targets": [
+				"yt-dlp"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"zap-whatsapp": {
+			"source": "aur",
+			"targets": [
+				"zapfast-bin"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"zbar": {
+			"source": "pacman",
+			"targets": [
+				"zbar"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-12"
+		},
+		"zed": {
+			"source": "pacman",
+			"targets": [
+				"zed"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-09"
+		},
+		"zen": {
+			"source": "pacman",
+			"targets": [
+				"zen-browser-bin"
+			],
+			"repo": "cachyos",
+			"verified_on": "2026-11-09"
+		},
+		"zoom": {
+			"source": "aur",
+			"targets": [
+				"zoom"
+			],
+			"verified_on": "2026-11-09"
+		},
+		"zoxide": {
+			"source": "pacman",
+			"targets": [
+				"zoxide"
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
@@ -230,2290 +2530,6 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-10"
-		},
-		"bat": {
-			"source": "pacman",
-			"targets": [
-				"bat"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"eza": {
-			"source": "pacman",
-			"targets": [
-				"eza"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"fd": {
-			"source": "pacman",
-			"targets": [
-				"fd"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"fish": {
-			"source": "pacman",
-			"targets": [
-				"fish"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"ripgrep": {
-			"source": "pacman",
-			"targets": [
-				"ripgrep"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"tldr": {
-			"source": "pacman",
-			"targets": [
-				"tldr"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"git": {
-			"source": "pacman",
-			"targets": [
-				"git"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"lazygit": {
-			"source": "pacman",
-			"targets": [
-				"lazygit"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"meld": {
-			"source": "pacman",
-			"targets": [
-				"meld"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-13"
-		},
-		"chezmoi": {
-			"source": "pacman",
-			"targets": [
-				"chezmoi"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-11"
-		},
-		"stow": {
-			"source": "pacman",
-			"targets": [
-				"stow"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-11"
-		},
-		"sublime-merge": {
-			"source": "aur",
-			"targets": [
-				"sublime-merge"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"yadm": {
-			"source": "pacman",
-			"targets": [
-				"yadm"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-11"
-		},
-		"virt-manager": {
-			"source": "pacman",
-			"targets": [
-				"virt-manager"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"tmux": {
-			"source": "pacman",
-			"targets": [
-				"tmux"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"yazi": {
-			"source": "pacman",
-			"targets": [
-				"yazi"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"zoxide": {
-			"source": "pacman",
-			"targets": [
-				"zoxide"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"fzf": {
-			"source": "pacman",
-			"targets": [
-				"fzf"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"ghostty": {
-			"source": "pacman",
-			"targets": [
-				"ghostty"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"alacritty": {
-			"source": "pacman",
-			"targets": [
-				"alacritty"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"foot": {
-			"source": "pacman",
-			"targets": [
-				"foot"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"kitty": {
-			"source": "pacman",
-			"targets": [
-				"kitty"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"konsole": {
-			"source": "pacman",
-			"targets": [
-				"konsole"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"tabby": {
-			"source": "aur",
-			"targets": [
-				"tabby"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"buzz": {
-			"source": "pkgbuild",
-			"targets": [
-				"buzz"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/buzz",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"collie": {
-			"source": "pkgbuild",
-			"targets": [
-				"collie-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/collie-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"hermes-agent": {
-			"source": "aur",
-			"targets": [
-				"hermes-agent"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"hermes-desktop": {
-			"source": "pkgbuild",
-			"targets": [
-				"hermes-desktop"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/hermes-desktop",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"chatgpt-desktop": {
-			"source": "pacman",
-			"targets": [
-				"chatgpt-desktop-bin"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-19"
-		},
-		"claude-desktop": {
-			"source": "aur",
-			"targets": [
-				"claude-desktop"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"grokbot": {
-			"source": "aur",
-			"targets": [
-				"grokbot-linux-port-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"openclaw": {
-			"source": "aur",
-			"targets": [
-				"openclaw"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"perplexity": {
-			"source": "aur",
-			"targets": [
-				"perplexity"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"claude-code": {
-			"source": "pacman",
-			"targets": [
-				"claude-code"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"codex-cli": {
-			"source": "pacman",
-			"targets": [
-				"openai-codex"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"codex-desktop": {
-			"source": "pkgbuild",
-			"targets": [
-				"openai-codex-desktop"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/openai-codex-desktop",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"gemini-cli": {
-			"source": "pacman",
-			"targets": [
-				"gemini-cli"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"antigravity": {
-			"source": "aur",
-			"targets": [
-				"antigravity"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"opencode-cli": {
-			"source": "pacman",
-			"targets": [
-				"opencode"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"opencode-desktop": {
-			"source": "aur",
-			"targets": [
-				"opencode-desktop-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"pi-agent": {
-			"source": "aur",
-			"targets": [
-				"pi-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"t3-code": {
-			"source": "aur",
-			"targets": [
-				"t3code-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"pane": {
-			"source": "aur",
-			"targets": [
-				"pane-bin"
-			],
-			"verified_on": "2026-11-10"
-		},
-		"herdr": {
-			"source": "aur",
-			"targets": [
-				"herdr"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"orca": {
-			"source": "aur",
-			"targets": [
-				"stably-orca-bin"
-			],
-			"verified_on": "2026-11-10"
-		},
-		"lm-studio": {
-			"source": "aur",
-			"targets": [
-				"lmstudio-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"ollama": {
-			"source": "pacman",
-			"targets": [
-				"ollama"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"dropbox": {
-			"source": "aur",
-			"targets": [
-				"dropbox"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"fuse3": {
-			"source": "pacman",
-			"targets": [
-				"fuse3"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"rclone": {
-			"source": "pacman",
-			"targets": [
-				"rclone"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"lazydocker": {
-			"source": "pacman",
-			"targets": [
-				"lazydocker"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"podman": {
-			"source": "pacman",
-			"targets": [
-				"podman",
-				"podman-compose",
-				"buildah",
-				"skopeo"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"podman-desktop": {
-			"source": "pacman",
-			"targets": [
-				"podman-desktop"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"podman-tui": {
-			"source": "aur",
-			"targets": [
-				"podman-tui"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"docker": {
-			"source": "pacman",
-			"targets": [
-				"docker",
-				"docker-compose",
-				"docker-buildx"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"beekeeper-studio": {
-			"source": "aur",
-			"targets": [
-				"beekeeper-studio"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"filezilla": {
-			"source": "pacman",
-			"targets": [
-				"filezilla"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"nfs-utils": {
-			"source": "pacman",
-			"targets": [
-				"nfs-utils"
-			],
-			"repo": "core",
-			"verified_on": "2026-11-09"
-		},
-		"cifs-utils": {
-			"source": "pacman",
-			"targets": [
-				"cifs-utils"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"sshfs": {
-			"source": "pacman",
-			"targets": [
-				"sshfs"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"tailscale": {
-			"source": "pacman",
-			"targets": [
-				"tailscale"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"mullvad": {
-			"source": "pacman",
-			"targets": [
-				"mullvad-vpn"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"nordvpn": {
-			"source": "aur",
-			"targets": [
-				"nordvpn-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"nordlayer": {
-			"source": "aur",
-			"targets": [
-				"nordlayer"
-			],
-			"verified_on": "2026-11-17"
-		},
-		"openvpn": {
-			"source": "pacman",
-			"targets": [
-				"openvpn"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"proton-vpn": {
-			"source": "pacman",
-			"targets": [
-				"proton-vpn-gtk-app"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"speedtest": {
-			"source": "pkgbuild",
-			"targets": [
-				"omarchy-speedtest"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omarchy-speedtest",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"wireguard": {
-			"source": "pacman",
-			"targets": [
-				"wireguard-tools"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"remmina": {
-			"source": "pacman",
-			"targets": [
-				"remmina"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"freerdp": {
-			"source": "pacman",
-			"targets": [
-				"freerdp"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"gliff": {
-			"source": "pkgbuild",
-			"targets": [
-				"gliff"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/gliff",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"moonlight": {
-			"source": "pacman",
-			"targets": [
-				"moonlight-qt"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"rustdesk": {
-			"source": "aur",
-			"targets": [
-				"rustdesk"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"sunshine": {
-			"source": "pacman",
-			"targets": [
-				"sunshine"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"hex": {
-			"source": "aur",
-			"targets": [
-				"hex-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"superwhisper": {
-			"source": "pkgbuild",
-			"targets": [
-				"superwhisper-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/superwhisper-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"voxtype": {
-			"source": "aur",
-			"targets": [
-				"voxtype-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"borg": {
-			"source": "pacman",
-			"targets": [
-				"borg"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"gnome-disk-utility": {
-			"source": "pacman",
-			"targets": [
-				"gnome-disk-utility"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"restic": {
-			"source": "pacman",
-			"targets": [
-				"restic"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"snap-pac": {
-			"source": "pacman",
-			"targets": [
-				"snap-pac"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"snapper": {
-			"source": "pacman",
-			"targets": [
-				"snapper"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"btop": {
-			"source": "pacman",
-			"targets": [
-				"btop"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"disktree": {
-			"source": "aur",
-			"targets": [
-				"disktree-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"pacseek": {
-			"source": "aur",
-			"targets": [
-				"pacseek"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"tmog": {
-			"source": "aur",
-			"targets": [
-				"tmog-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"fastfetch": {
-			"source": "pacman",
-			"targets": [
-				"fastfetch"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"rumb": {
-			"source": "pkgbuild",
-			"targets": [
-				"rumb"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/rumb",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"curl": {
-			"source": "pacman",
-			"targets": [
-				"curl"
-			],
-			"repo": "core",
-			"verified_on": "2026-11-09"
-		},
-		"unzip": {
-			"source": "pacman",
-			"targets": [
-				"unzip"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"makima": {
-			"source": "aur",
-			"targets": [
-				"makima-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"omacalc": {
-			"source": "pkgbuild",
-			"targets": [
-				"omacalc"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omacalc",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"omakeyboard": {
-			"source": "pkgbuild",
-			"targets": [
-				"omakeyboard"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omakeyboard",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"omawake": {
-			"source": "pkgbuild",
-			"targets": [
-				"omawake-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omawake-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"system-config-printer": {
-			"source": "pacman",
-			"targets": [
-				"system-config-printer"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"hyprpicker": {
-			"source": "pacman",
-			"targets": [
-				"hyprpicker"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"hyprsunset": {
-			"source": "pacman",
-			"targets": [
-				"hyprsunset"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"owe": {
-			"source": "aur",
-			"targets": [
-				"owe"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"wayfreeze": {
-			"source": "aur",
-			"targets": [
-				"wayfreeze"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"ark": {
-			"source": "pacman",
-			"targets": [
-				"ark"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"kdegraphics-thumbnailers": {
-			"source": "pacman",
-			"targets": [
-				"kdegraphics-thumbnailers"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"dolphin": {
-			"source": "pacman",
-			"targets": [
-				"dolphin"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"dolphin-plugins": {
-			"source": "pacman",
-			"targets": [
-				"dolphin-plugins"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"filelight": {
-			"source": "pacman",
-			"targets": [
-				"filelight"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"kimageformats": {
-			"source": "pacman",
-			"targets": [
-				"kimageformats"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"kio-extras": {
-			"source": "pacman",
-			"targets": [
-				"kio-extras"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"kompare": {
-			"source": "pacman",
-			"targets": [
-				"kompare"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"ffmpegthumbs": {
-			"source": "pacman",
-			"targets": [
-				"ffmpegthumbs"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"nautilus": {
-			"source": "pacman",
-			"targets": [
-				"nautilus"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"strata": {
-			"source": "script",
-			"script": {
-				"url": "https://raw.githubusercontent.com/lgse/strata/5f17c9fdc8967e1b4ba8aaf8de113b46d824b0dd/install.sh",
-				"args": [
-					"--non-interactive"
-				]
-			},
-			"verified_on": "2026-11-12"
-		},
-		"fuzzel": {
-			"source": "pacman",
-			"targets": [
-				"fuzzel"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"rofi": {
-			"source": "pacman",
-			"targets": [
-				"rofi"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"vicinae": {
-			"source": "aur",
-			"targets": [
-				"vicinae-bin"
-			],
-			"verified_on": "2026-11-10"
-		},
-		"walker": {
-			"source": "pacman",
-			"targets": [
-				"walker"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"wofi": {
-			"source": "pacman",
-			"targets": [
-				"wofi"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"papirus-icon-theme": {
-			"source": "pacman",
-			"targets": [
-				"papirus-icon-theme"
-			],
-			"repo": "extra"
-		},
-		"aether": {
-			"source": "aur",
-			"targets": [
-				"aether"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"brave": {
-			"source": "pacman",
-			"targets": [
-				"brave-bin"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"chromium": {
-			"source": "pacman",
-			"targets": [
-				"chromium"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"firefox": {
-			"source": "pacman",
-			"targets": [
-				"firefox"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"google-chrome": {
-			"source": "aur",
-			"targets": [
-				"google-chrome"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"helium": {
-			"source": "pacman",
-			"targets": [
-				"helium-browser-bin"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"edge": {
-			"source": "aur",
-			"targets": [
-				"microsoft-edge-stable-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"tor-browser": {
-			"source": "pacman",
-			"targets": [
-				"torbrowser-launcher"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"zen": {
-			"source": "pacman",
-			"targets": [
-				"zen-browser-bin"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"localsend": {
-			"source": "pacman",
-			"targets": [
-				"localsend"
-			],
-			"repo": "cachyos",
-			"aur_targets": [
-				"localsend-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"slack": {
-			"source": "aur",
-			"targets": [
-				"slack-desktop"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"zoom": {
-			"source": "aur",
-			"targets": [
-				"zoom"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"omairc": {
-			"source": "pkgbuild",
-			"targets": [
-				"omairc"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omairc",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"signal": {
-			"source": "pacman",
-			"targets": [
-				"signal-desktop"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"telegram": {
-			"source": "pacman",
-			"targets": [
-				"telegram-desktop"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"zap-whatsapp": {
-			"source": "aur",
-			"targets": [
-				"zapfast-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"gwenview": {
-			"source": "pacman",
-			"targets": [
-				"gwenview"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"okular": {
-			"source": "pacman",
-			"targets": [
-				"okular"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"satty": {
-			"source": "pacman",
-			"targets": [
-				"satty"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"signed": {
-			"source": "aur",
-			"targets": [
-				"signed"
-			],
-			"verified_on": "2026-11-15"
-		},
-		"mailspring": {
-			"source": "aur",
-			"targets": [
-				"mailspring"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"omawrite": {
-			"source": "aur",
-			"targets": [
-				"omawrite"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"slap-notes": {
-			"source": "pkgbuild",
-			"targets": [
-				"slap-notes-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/slap-notes-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"typora": {
-			"source": "aur",
-			"targets": [
-				"typora"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"hype": {
-			"source": "pkgbuild",
-			"targets": [
-				"hype"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/hype",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"onlyoffice": {
-			"source": "pacman",
-			"targets": [
-				"onlyoffice-bin"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"gridcraft": {
-			"source": "aur",
-			"targets": [
-				"gridcraft-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"libreoffice": {
-			"source": "pacman",
-			"targets": [
-				"libreoffice-fresh"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"meeting-recorder": {
-			"source": "pkgbuild",
-			"targets": [
-				"omarchy-meeting-recorder-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omarchy-meeting-recorder-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"notion-desktop": {
-			"source": "aur",
-			"targets": [
-				"notion-app-electron"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"obsidian": {
-			"source": "pacman",
-			"targets": [
-				"obsidian"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"ticktick": {
-			"source": "aur",
-			"targets": [
-				"ticktick"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"wordcraft": {
-			"source": "aur",
-			"targets": [
-				"wordcraft-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"papers": {
-			"source": "pacman",
-			"targets": [
-				"papers"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"1password": {
-			"source": "aur",
-			"targets": [
-				"1password"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"bitwarden": {
-			"source": "pacman",
-			"targets": [
-				"bitwarden"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"bitwarden-cli": {
-			"source": "pacman",
-			"targets": [
-				"bitwarden-cli"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"enpass": {
-			"source": "aur",
-			"targets": [
-				"enpass-bin"
-			],
-			"verified_on": "2026-11-15"
-		},
-		"gopass": {
-			"source": "pacman",
-			"targets": [
-				"gopass"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"keepassxc": {
-			"source": "pacman",
-			"targets": [
-				"keepassxc"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-10"
-		},
-		"keeper": {
-			"source": "aur",
-			"targets": [
-				"keeper-password-manager"
-			],
-			"verified_on": "2026-11-15"
-		},
-		"nordpass": {
-			"source": "aur",
-			"targets": [
-				"nordpass-bin"
-			],
-			"verified_on": "2026-11-15"
-		},
-		"pass": {
-			"source": "pacman",
-			"targets": [
-				"pass"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"proton-pass": {
-			"source": "aur",
-			"targets": [
-				"proton-pass-bin"
-			],
-			"verified_on": "2026-11-15"
-		},
-		"pipewire": {
-			"source": "pacman",
-			"targets": [
-				"pipewire",
-				"pipewire-pulse",
-				"wireplumber",
-				"libpulse"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"playerctl": {
-			"source": "pacman",
-			"targets": [
-				"playerctl"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"wiremix": {
-			"source": "pacman",
-			"targets": [
-				"wiremix"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"cliamp": {
-			"source": "aur",
-			"targets": [
-				"cliamp"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"omaspeak": {
-			"source": "pkgbuild",
-			"targets": [
-				"omaspeak-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omaspeak-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"bambustudio": {
-			"source": "aur",
-			"targets": [
-				"bambustudio-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"omacharts": {
-			"source": "pkgbuild",
-			"targets": [
-				"omacharts"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omacharts",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"omadesign": {
-			"source": "pkgbuild",
-			"targets": [
-				"omadesign-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omadesign-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"pinta": {
-			"source": "pacman",
-			"targets": [
-				"pinta"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"schist": {
-			"source": "aur",
-			"targets": [
-				"schist-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"mpv": {
-			"source": "pacman",
-			"targets": [
-				"mpv"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"ffmpeg": {
-			"source": "pacman",
-			"targets": [
-				"ffmpeg"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"imv": {
-			"source": "pacman",
-			"targets": [
-				"imv"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"kdenlive": {
-			"source": "pacman",
-			"targets": [
-				"kdenlive"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"link-studio": {
-			"source": "pkgbuild",
-			"targets": [
-				"link-studio"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/link-studio",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"monologue": {
-			"source": "pkgbuild",
-			"targets": [
-				"monologue"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/monologue",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"obs": {
-			"source": "pacman",
-			"targets": [
-				"obs-studio"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"omacut": {
-			"source": "pkgbuild",
-			"targets": [
-				"omacut"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omacut",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"omareel": {
-			"source": "pkgbuild",
-			"targets": [
-				"omareel"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omareel",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"spotify": {
-			"source": "aur",
-			"targets": [
-				"spotify"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"yt-dlp": {
-			"source": "pacman",
-			"targets": [
-				"yt-dlp"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"rawmakase": {
-			"source": "pkgbuild",
-			"targets": [
-				"rawmakase-bin"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/rawmakase-bin",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"flameshot": {
-			"source": "pacman",
-			"targets": [
-				"flameshot"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"gpu-screen-recorder": {
-			"source": "pacman",
-			"targets": [
-				"gpu-screen-recorder"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"omasnap": {
-			"source": "pkgbuild",
-			"targets": [
-				"omasnap"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omasnap",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"tensaku": {
-			"source": "aur",
-			"targets": [
-				"tensaku"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"discord": {
-			"source": "pacman",
-			"targets": [
-				"discord"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"cachyos-gaming": {
-			"source": "pacman",
-			"targets": [
-				"cachyos-gaming-meta",
-				"cachyos-gaming-applications"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"heroic": {
-			"source": "pacman",
-			"targets": [
-				"heroic-games-launcher-bin"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"lutris": {
-			"source": "pacman",
-			"targets": [
-				"lutris"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"minecraft-launcher": {
-			"source": "aur",
-			"targets": [
-				"minecraft-launcher"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"omakade": {
-			"source": "pkgbuild",
-			"targets": [
-				"omakade"
-			],
-			"pkgbuild": {
-				"repo": "omacom/omarchy-pkgs",
-				"path": "pkgbuilds/omakade",
-				"ref": "65a4b0f646f7afe480fdebc7c0cf8cf2b56bf27f"
-			},
-			"verified_on": "2026-11-09"
-		},
-		"prismlauncher": {
-			"source": "pacman",
-			"targets": [
-				"prismlauncher"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"retroarch": {
-			"source": "pacman",
-			"targets": [
-				"retroarch"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-09"
-		},
-		"steam": {
-			"source": "pacman",
-			"targets": [
-				"steam"
-			],
-			"repo": "multilib",
-			"verified_on": "2026-11-09"
-		},
-		"greenlight": {
-			"source": "aur",
-			"targets": [
-				"greenlight-bin"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"geforce-now": {
-			"source": "aur",
-			"targets": [
-				"geforcenow-electron"
-			],
-			"verified_on": "2026-11-09"
-		},
-		"protonup-qt": {
-			"source": "pacman",
-			"targets": [
-				"protonup-qt"
-			],
-			"repo": "cachyos",
-			"verified_on": "2026-11-09"
-		},
-		"ollama-cuda": {
-			"source": "pacman",
-			"targets": [
-				"ollama-cuda"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-11"
-		},
-		"ollama-rocm": {
-			"source": "pacman",
-			"targets": [
-				"ollama-rocm"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-11"
-		},
-		"jan": {
-			"source": "aur",
-			"targets": [
-				"jan-bin"
-			],
-			"verified_on": "2026-11-11"
-		},
-		"koboldcpp": {
-			"source": "aur",
-			"targets": [
-				"koboldcpp"
-			],
-			"verified_on": "2026-11-11"
-		},
-		"gpt4all": {
-			"source": "aur",
-			"targets": [
-				"gpt4all-chat"
-			],
-			"verified_on": "2026-11-11"
-		},
-		"cliphist": {
-			"source": "pacman",
-			"targets": [
-				"cliphist"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"wf-recorder": {
-			"source": "pacman",
-			"targets": [
-				"wf-recorder"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"pavucontrol": {
-			"source": "pacman",
-			"targets": [
-				"pavucontrol"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"nwg-displays": {
-			"source": "pacman",
-			"targets": [
-				"nwg-displays"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"solaar": {
-			"source": "pacman",
-			"targets": [
-				"solaar"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-17"
-		},
-		"piper": {
-			"source": "pacman",
-			"targets": [
-				"piper"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-17"
-		},
-		"libratbag": {
-			"source": "pacman",
-			"targets": [
-				"libratbag"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-17"
-		},
-		"upower": {
-			"source": "pacman",
-			"targets": [
-				"upower"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-17"
-		},
-		"btrfs-assistant": {
-			"source": "pacman",
-			"targets": [
-				"btrfs-assistant"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"timeshift": {
-			"source": "pacman",
-			"targets": [
-				"timeshift"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"kiview": {
-			"source": "aur",
-			"targets": [
-				"kiview"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"kdeconnect": {
-			"source": "pacman",
-			"targets": [
-				"kdeconnect",
-				"sshfs",
-				"qt6-tools",
-				"python-gobject"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"wtype": {
-			"source": "pacman",
-			"targets": [
-				"wtype"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"vlc": {
-			"source": "pacman",
-			"targets": [
-				"vlc",
-				"vlc-plugins-all"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"spectacle": {
-			"source": "pacman",
-			"targets": [
-				"spectacle"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"grim": {
-			"source": "pacman",
-			"targets": [
-				"grim"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"slurp": {
-			"source": "pacman",
-			"targets": [
-				"slurp"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"tesseract": {
-			"source": "pacman",
-			"targets": [
-				"tesseract",
-				"tesseract-data-eng"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"zbar": {
-			"source": "pacman",
-			"targets": [
-				"zbar"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"qrencode": {
-			"source": "pacman",
-			"targets": [
-				"qrencode"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"panel-colorizer": {
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-panel-colorizer"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"panel-colorizer-islands": {
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-panel-colorizer-islands-separator-git"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"window-title": {
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-window-title"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"kvitals": {
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-kvitals-git"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"event-calendar": {
-			"source": "aur",
-			"targets": [
-				"plasma6-applets-eventcalendar"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"kdeplasma-addons": {
-			"source": "pacman",
-			"targets": [
-				"kdeplasma-addons"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"dbeaver": {
-			"source": "pacman",
-			"targets": [
-				"dbeaver"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-12"
-		},
-		"heidisql": {
-			"source": "aur",
-			"targets": [
-				"heidisql-qt6-bin"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"rclone-browser": {
-			"source": "aur",
-			"targets": [
-				"rclone-browser"
-			],
-			"verified_on": "2026-11-12"
-		},
-		"rofimoji": {
-			"source": "pacman",
-			"targets": [
-				"rofimoji"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-13"
-		},
-		"wlsunset": {
-			"source": "pacman",
-			"targets": [
-				"wlsunset"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-13"
-		},
-		"libinput-gestures": {
-			"source": "aur",
-			"targets": [
-				"libinput-gestures"
-			],
-			"verified_on": "2026-11-13"
-		},
-		"bluetui": {
-			"source": "pacman",
-			"targets": [
-				"bluetui"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"bluez": {
-			"source": "pacman",
-			"targets": [
-				"bluez",
-				"bluez-utils"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"brightnessctl": {
-			"source": "pacman",
-			"targets": [
-				"brightnessctl"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"impala": {
-			"source": "pacman",
-			"targets": [
-				"impala"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-15"
-		},
-		"uxplay": {
-			"source": "aur",
-			"targets": [
-				"uxplay"
-			],
-			"verified_on": "2026-11-13"
-		},
-		"gh": {
-			"source": "pacman",
-			"targets": [
-				"github-cli"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"cmake": {
-			"source": "pacman",
-			"targets": [
-				"cmake"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"direnv": {
-			"source": "pacman",
-			"targets": [
-				"direnv"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"tree-sitter-cli": {
-			"source": "pacman",
-			"targets": [
-				"tree-sitter-cli"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"vim": {
-			"source": "pacman",
-			"targets": [
-				"vim"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"mysql-workbench": {
-			"source": "pacman",
-			"targets": [
-				"mysql-workbench"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"duf": {
-			"source": "pacman",
-			"targets": [
-				"duf"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"smartmontools": {
-			"source": "pacman",
-			"targets": [
-				"smartmontools"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"partitionmanager": {
-			"source": "pacman",
-			"targets": [
-				"partitionmanager"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"7zip": {
-			"source": "pacman",
-			"targets": [
-				"7zip"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"unrar": {
-			"source": "pacman",
-			"targets": [
-				"unrar"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"pika-backup": {
-			"source": "pacman",
-			"targets": [
-				"pika-backup"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"flatseal": {
-			"source": "pacman",
-			"targets": [
-				"flatseal"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"kinfocenter": {
-			"source": "pacman",
-			"targets": [
-				"kinfocenter"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"snapd": {
-			"source": "aur",
-			"targets": [
-				"snapd"
-			],
-			"verified_on": "2026-11-19"
-		},
-		"cups": {
-			"source": "pacman",
-			"targets": [
-				"cups"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"cups-pdf": {
-			"source": "pacman",
-			"targets": [
-				"cups-pdf"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"hplip": {
-			"source": "pacman",
-			"targets": [
-				"hplip"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"wget": {
-			"source": "pacman",
-			"targets": [
-				"wget"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"ufw": {
-			"source": "pacman",
-			"targets": [
-				"ufw"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"ufw-extras": {
-			"source": "pacman",
-			"targets": [
-				"ufw-extras"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"networkmanager-openvpn": {
-			"source": "pacman",
-			"targets": [
-				"networkmanager-openvpn"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"imagemagick": {
-			"source": "pacman",
-			"targets": [
-				"imagemagick"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"haruna": {
-			"source": "pacman",
-			"targets": [
-				"haruna"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"elisa": {
-			"source": "pacman",
-			"targets": [
-				"elisa"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"kooha": {
-			"source": "pacman",
-			"targets": [
-				"kooha"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"kcalc": {
-			"source": "pacman",
-			"targets": [
-				"kcalc"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"evolution": {
-			"source": "pacman",
-			"targets": [
-				"evolution"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"seahorse": {
-			"source": "pacman",
-			"targets": [
-				"seahorse"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"thunar": {
-			"source": "pacman",
-			"targets": [
-				"thunar"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"kio-admin": {
-			"source": "pacman",
-			"targets": [
-				"kio-admin"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"kio-gdrive": {
-			"source": "pacman",
-			"targets": [
-				"kio-gdrive"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"dropbox-kde-icons": {
-			"source": "aur",
-			"targets": [
-				"dropbox-kde-systray-icons"
-			],
-			"verified_on": "2026-11-19"
-		},
-		"kvantum": {
-			"source": "pacman",
-			"targets": [
-				"kvantum"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"darkly": {
-			"source": "aur",
-			"targets": [
-				"darkly-bin"
-			],
-			"verified_on": "2026-11-19"
-		},
-		"papirus-folders": {
-			"source": "aur",
-			"targets": [
-				"papirus-folders"
-			],
-			"verified_on": "2026-11-19"
-		},
-		"qtengine": {
-			"source": "aur",
-			"targets": [
-				"qtengine"
-			],
-			"verified_on": "2026-11-19"
-		},
-		"waybar": {
-			"source": "pacman",
-			"targets": [
-				"waybar"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"hyprpaper": {
-			"source": "pacman",
-			"targets": [
-				"hyprpaper"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
-		},
-		"hyprlauncher": {
-			"source": "pacman",
-			"targets": [
-				"hyprlauncher"
-			],
-			"repo": "extra",
-			"verified_on": "2026-11-19"
 		}
 	}
 }

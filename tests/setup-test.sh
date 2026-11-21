@@ -133,7 +133,7 @@ reset; rm -rf "$tmp/home/.local"
 unset MOCK_BT_ENABLED
 
 # ---- hyprland: packages only
-ALL="hyprland noctalia uwsm hyprlock xdg-desktop-portal-hyprland hyprpolkitagent qt6ct nwg-look hyprpicker grim slurp wl-clipboard brightnessctl ghostty adw-gtk-theme papirus-icon-theme noto-fonts noto-fonts-emoji bluez bluez-utils"
+ALL="hyprland noctalia uwsm hyprlock xdg-desktop-portal-hyprland hyprpolkitagent qt6ct nwg-look hyprpicker grim slurp wl-clipboard brightnessctl playerctl ghostty adw-gtk-theme papirus-icon-theme noto-fonts noto-fonts-emoji bluez bluez-utils"
 reset; [[ "$(code "$binary" setup hyprland)" == 2 ]] || fail 'hyprland without --yes exits 2'
 [[ "$(code "$binary" setup hyprland --dry-run)" == 0 ]] || fail 'hyprland --dry-run exits 0'
 run "$binary" setup hyprland --dry-run | grep -F 'sudo pacman -S --needed --noconfirm' >/dev/null || fail 'the plan shows the exact pacman command'

@@ -225,8 +225,11 @@ class {
 				rc = new bxrig.Record( cli );
 				rcRegion = structKeyExists( args.options, "region" );
 				rcAudio = args.options.audio ?: "";
-				if ( rcSub == "toggle" && p.len() <= 2 ) CLIExit( rc.toggle( rcRegion, structKeyExists( args.options, "dry-run" ), asJson, rcAudio ) );
-				if ( rcSub == "start" && p.len() == 2 ) CLIExit( rc.start( rcRegion, structKeyExists( args.options, "dry-run" ), asJson, rcAudio ) );
+				// --webcam alone is the bottom-right corner
+				rcCam = structKeyExists( args.options, "webcam" ) ? ( isBoolean( args.options.webcam ) || !len( args.options.webcam ) ? "bottom-right" : args.options.webcam ) : "";
+				rcCamSize = args.options[ "webcam-size" ] ?: "medium";
+				if ( rcSub == "toggle" && p.len() <= 2 ) CLIExit( rc.toggle( rcRegion, structKeyExists( args.options, "dry-run" ), asJson, rcAudio, rcCam, rcCamSize ) );
+				if ( rcSub == "start" && p.len() == 2 ) CLIExit( rc.start( rcRegion, structKeyExists( args.options, "dry-run" ), asJson, rcAudio, rcCam, rcCamSize ) );
 				if ( rcSub == "stop" && p.len() == 2 ) CLIExit( rc.stop( asJson ) );
 				if ( rcSub == "status" && p.len() == 2 ) CLIExit( rc.status( asJson ) );
 				println( new bxrig.CommandSpec().usage( "record" ) );
@@ -308,6 +311,12 @@ class {
 				if ( p.len() == 2 && p[2] == "updates" ) CLIExit( new bxrig.SystemUpdates( cli ).run( asJson ) );
 				if ( p.len() == 2 && p[2] == "update" ) CLIExit( new bxrig.Update( cli ).systemUpdateCmd( args.options, asJson ) );
 				if ( p.len() == 2 && arrayFind( [ "lock", "suspend", "logout", "reboot", "shutdown" ], p[2] ) ) CLIExit( new bxrig.SystemActions( cli ).run( p[2], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				// Fixes for a stuck desktop, the login password and firmware updates (SystemTools).
+				if ( p.len() == 3 && p[2] == "restart" ) CLIExit( new bxrig.SystemTools( cli ).restart( p[3], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				if ( p.len() == 2 && p[2] == "password" ) CLIExit( new bxrig.SystemTools( cli ).password( asJson ) );
+				if ( p.len() == 3 && p[2] == "speedtest" ) CLIExit( new bxrig.SystemTools( cli ).speedtest( p[3], asJson ) );
+				if ( p.len() >= 2 && p[2] == "firmware" && ( p.len() == 2 || p.len() == 3 && p[3] == "check" ) ) CLIExit( new bxrig.SystemTools( cli ).firmwareCheck( asJson ) );
+				if ( p.len() == 3 && p[2] == "firmware" && p[3] == "update" ) CLIExit( new bxrig.SystemTools( cli ).firmwareUpdate( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				println( new bxrig.CommandSpec().usage( "system" ) ); CLIExit( xit.usage() ); break;
 				case "emoji": CLIExit( new bxrig.MacExtras( cli ).emoji( asJson ) ); break;
 				case "forcequit": CLIExit( new bxrig.MacExtras( cli ).forcequit( asJson ) ); break;
@@ -322,7 +331,10 @@ class {
 				println( new bxrig.CommandSpec().usage( "nightshift" ) ); CLIExit( xit.usage() ); break;
 			case "gpu":
 				if ( p.len() == 2 && p[2] == "doctor" ) CLIExit( new bxrig.MacExtras( cli ).gpu( asJson ) );
-				println( new bxrig.CommandSpec().usage( "gpu doctor" ) ); CLIExit( xit.usage() ); break;
+				// The mode of a hybrid laptop (integrated plus dedicated GPU), through supergfxctl.
+				if ( p.len() == 2 && p[2] == "mode" || p.len() == 3 && p[2] == "mode" && p[3] == "status" ) CLIExit( new bxrig.GpuMode( "", cli ).status( asJson ) );
+				if ( p.len() == 3 && p[2] == "mode" ) CLIExit( new bxrig.GpuMode( "", cli ).set( p[3], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				println( new bxrig.CommandSpec().usage( "gpu" ) ); CLIExit( xit.usage() ); break;
 			case "input":
 				// Apple Magic and Logitech devices: status, offer, apple, logitech, undo, doctor, gestures. See COMMAND-CONTRACT.md 13.65.
 				inWords = [];
@@ -338,6 +350,7 @@ class {
 				// Read-only status of the sound server, Bluetooth and Wi-Fi. See COMMAND-CONTRACT.md 13.55.
 				hwWords = [];
 				for ( hwi = 2; hwi <= p.len(); hwi++ ) hwWords.append( p[ hwi ] );
+				if ( p[ 1 ] == "wifi" && hwWords.len() == 1 && hwWords[ 1 ] == "qr" ) CLIExit( new bxrig.Wifi( cli ).run( hwWords, asJson, args.options.out ?: "" ) );
 				if ( hwWords.len() > 1 || ( hwWords.len() == 1 && hwWords[ 1 ] != "status" ) ) { println( new bxrig.CommandSpec().usage( p[ 1 ] ) ); CLIExit( xit.usage() ); }
 				if ( p[ 1 ] == "audio" ) CLIExit( new bxrig.Audio( cli ).run( hwWords, asJson ) );
 				if ( p[ 1 ] == "bluetooth" ) CLIExit( new bxrig.Bluetooth( cli ).run( hwWords, asJson ) );
@@ -389,6 +402,12 @@ class {
 				if ( p.len() <= 2 && ssMode == "menu" ) CLIExit( ss.menu( ssDry, asJson ) );
 				println( new bxrig.CommandSpec().usage( "screenshot" ) );
 				CLIExit( xit.usage() );
+				break;
+			case "share":
+				// Send files, a folder or the clipboard with LocalSend, or open it to receive. See Share.bx.
+				shWords = [];
+				for ( shi = 2; shi <= p.len(); shi++ ) shWords.append( p[ shi ] );
+				CLIExit( new bxrig.Share( cli ).run( shWords, args.options.to ?: "", structKeyExists( args.options, "dry-run" ), asJson ) );
 				break;
 			case "qr":
 				if ( p.len() == 2 ) CLIExit( new bxrig.Screenshot( cli ).qrMake( p[2], args.options.out ?: "", asJson ) );
@@ -464,6 +483,7 @@ class {
 				for ( twi = 2; twi <= p.len(); twi++ ) twWords.append( p[ twi ] );
 				twx = new bxrig.Tweaks( cli );
 				if ( cmd == "toggle" ) CLIExit( twx.toggle( twWords, structKeyExists( args.options, "dry-run" ), asJson ) );
+				if ( cmd == "dns" && twWords.len() == 1 && twWords[ 1 ] == "bench" ) CLIExit( new bxrig.DnsBench( cli ).run( asJson ) );
 				if ( cmd == "dns" ) CLIExit( twx.dns( twWords, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				CLIExit( twx.kernel( twWords, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				break;
@@ -642,6 +662,8 @@ class {
 				// The BxRig control center on the runner's menu provider. See COMMAND-CONTRACT.md 13.16.
 				if ( p.len() == 1 ) CLIExit( new bxrig.Menu( cli ).run() );
 				if ( p.len() == 2 && p[2] == "items" ) CLIExit( new bxrig.Menu( cli ).show( asJson ) );
+				if ( p.len() == 2 && p[2] == "ids" ) CLIExit( new bxrig.Menu( cli ).ids( asJson ) );
+				if ( p.len() == 2 && p[2] == "file" ) CLIExit( new bxrig.Menu( cli ).file( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				if ( p.len() >= 2 && p[2] == "open" ) { mnRoute = []; for ( mnj = 3; mnj <= p.len(); mnj++ ) mnRoute.append( p[ mnj ] ); CLIExit( new bxrig.Menu( cli ).open( mnRoute.toList( " " ), asJson ) ); }
 				if ( p.len() >= 3 && p[2] == "search" ) { mnWords = []; for ( mni = 3; mni <= p.len(); mni++ ) mnWords.append( p[ mni ] ); CLIExit( new bxrig.Menu( cli ).search( mnWords.toList( " " ), asJson ) ); }
 				println( new bxrig.CommandSpec().usage( "menu" ) );
@@ -663,6 +685,7 @@ class {
 				if ( dfltSub == "browser" && p.len() == 3 ) CLIExit( dflt.browser( p[3], dfltYes, dfltDry, asJson ) );
 				if ( dfltSub == "terminal" && p.len() == 3 ) CLIExit( dflt.terminal( p[3], dfltYes, dfltDry, asJson ) );
 				if ( dfltSub == "filemanager" && p.len() == 3 ) CLIExit( dflt.filemanager( p[3], dfltYes, dfltDry, asJson ) );
+				if ( dfltSub == "editor" && p.len() == 3 ) CLIExit( dflt.editor( p[3], dfltYes, dfltDry, asJson ) );
 				println( new bxrig.CommandSpec().usage( "default" ) );
 				CLIExit( xit.usage() );
 				break;

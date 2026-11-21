@@ -341,15 +341,18 @@
 					"name": "menu",
 					"summary": "The control center: every command as a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae).",
 					"usage": [
-						"menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]"
+						"menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]",
+						"menu ids [--json] | menu file [--yes] [--dry-run] [--json]"
 					],
 					"examples": [
 						"bxrig menu",
 						"bxrig menu search 'time zone'",
-						"bxrig menu open capture"
+						"bxrig menu open capture",
+						"bxrig menu ids",
+						"bxrig menu file --yes"
 					],
 					"mutates": false,
-					"note": "Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes.",
+					"note": "Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: `menu ids` lists the ids, `menu file --yes` writes an example, `menu file` checks yours.",
 					"flags": []
 				},
 				{
@@ -1188,14 +1191,16 @@
 					"name": "default",
 					"summary": "Default apps: browser, terminal, file manager.",
 					"usage": [
-						"default show | browser ID | terminal ID | filemanager ID [--yes] [--dry-run] [--json]"
+						"default show | browser ID | terminal ID | filemanager ID | editor neovim|vscode|zed|kate [--yes] [--dry-run] [--json]"
 					],
 					"examples": [
 						"bxrig default show",
-						"bxrig default browser brave --yes"
+						"bxrig default browser brave --yes",
+						"bxrig default editor neovim --yes"
 					],
 					"mutates": true,
-					"flags": []
+					"flags": [],
+					"note": "editor sets the app for text files (xdg-mime) and EDITOR and VISUAL in ~/.config/environment.d/50-bxrig-editor.conf (from the next login)."
 				},
 				{
 					"name": "layout",
@@ -1561,17 +1566,24 @@
 					"usage": [
 						"system updates [--json]",
 						"system update [--repo | --aur | --all] [--yes] [--dry-run] [--json]",
-						"system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]"
+						"system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]",
+						"system restart shell|audio|wifi|bluetooth [--yes] [--dry-run] [--json]",
+						"system password",
+						"system firmware [check] [--json] | system firmware update [--yes] [--dry-run] [--json]",
+						"system speedtest network|disk|dns|last [--json]"
 					],
 					"examples": [
 						"bxrig system updates --json",
 						"bxrig system update --yes",
 						"bxrig system update --repo --dry-run",
 						"bxrig system update --aur --yes",
-						"bxrig system reboot --yes"
+						"bxrig system reboot --yes",
+						"bxrig system restart audio --yes",
+						"bxrig system firmware",
+						"bxrig system speedtest disk"
 					],
 					"mutates": true,
-					"note": "updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).",
+					"note": "updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first). restart shell stops and starts Noctalia (or restarts Plasma's plasmashell service); audio restarts PipeWire and WirePlumber; wifi and bluetooth unblock the radio and turn it on. password runs passwd on your terminal. firmware asks fwupd (LVFS: BIOS/UEFI, SSDs, docks) for updates; update installs them on your terminal. speedtest network runs speedtest-cli; disk writes and reads 1 GiB in ~/.cache with direct I/O; dns is dns bench; last shows the last result of each test (only the latest is kept, in ~/.local/state/bxrig/speedtest-last.json).",
 					"flags": [
 						{
 							"name": "repo",
@@ -1608,12 +1620,14 @@
 				},
 				{
 					"name": "dns",
-					"summary": "DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP.",
+					"summary": "DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP. bench times each one to pick the fastest.",
 					"usage": [
-						"dns [cloudflare|google|quad9|dhcp|custom IP[,IP...]] [--yes] [--dry-run]"
+						"dns [cloudflare|google|quad9|dhcp|custom IP[,IP...]] [--yes] [--dry-run]",
+						"dns bench [--json]"
 					],
 					"examples": [
 						"bxrig dns",
+						"bxrig dns bench",
 						"bxrig dns cloudflare --yes",
 						"bxrig dns custom 9.9.9.10 --yes"
 					],
@@ -2511,15 +2525,39 @@
 					]
 				},
 				{
+					"name": "share",
+					"summary": "Send files, a folder or the clipboard to a phone or computer nearby with LocalSend, or open it to receive.",
+					"usage": [
+						"share file [PATH...] | folder [PATH] | clipboard [--to=DEVICE] [--dry-run] [--json]",
+						"share receive [--dry-run] [--json]"
+					],
+					"examples": [
+						"bxrig share file report.pdf",
+						"bxrig share folder ~/Photos/trip --to=\"Pixel 9\"",
+						"bxrig share clipboard",
+						"bxrig share receive"
+					],
+					"mutates": false,
+					"flags": [
+						{
+							"name": "to",
+							"type": "value"
+						}
+					],
+					"note": "Sending uses LocalSend's command line, localsend-cli (LocalSend 1.18 and later): without --to it lists the devices it finds and you pick one, on your terminal (the menu opens one). Without a path a file chooser asks (kdialog on Plasma, else zenity). clipboard sends what you copied as a text file. receive opens the LocalSend app. Exit 4 when localsend-cli or LocalSend is missing."
+				},
+				{
 					"name": "record",
 					"summary": "Screen recording: start, stop, toggle, with desktop or microphone audio if you like.",
 					"usage": [
-						"record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--dry-run] [--json]"
+						"record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--webcam[=bottom-right|bottom-left|top-right|top-left]] [--webcam-size=small|medium|large] [--dry-run] [--json]"
 					],
 					"examples": [
 						"bxrig record toggle",
 						"bxrig record start --region",
-						"bxrig record toggle --audio=desktop"
+						"bxrig record toggle --audio=desktop",
+						"bxrig record toggle --webcam",
+						"bxrig record start --webcam=top-left --webcam-size=small --audio=mic"
 					],
 					"mutates": false,
 					"flags": [
@@ -2530,9 +2568,17 @@
 						{
 							"name": "audio",
 							"type": "value"
+						},
+						{
+							"name": "webcam",
+							"type": "any"
+						},
+						{
+							"name": "webcam-size",
+							"type": "value"
 						}
 					],
-					"note": "--audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value."
+					"note": "--audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value. --webcam puts your webcam in a corner while it records (bottom-right unless you name another), so it is in the video; it ends with the recording. Hyprland pins it (the BxRig module's rules); on Plasma it is a small window you can drag."
 				},
 				{
 					"name": "browser",
@@ -2619,18 +2665,20 @@
 					"usage": [
 						"window minimize|restore|quake [--json]",
 						"window quake send [--json]",
-						"window snap left|right|top|bottom [--json]"
+						"window snap left|right|top|bottom [--json]",
+						"window close-all | tiled-fullscreen [--json]"
 					],
 					"examples": [
 						"bxrig window minimize",
 						"bxrig window restore",
 						"bxrig window quake",
 						"bxrig window quake send",
-						"bxrig window snap left"
+						"bxrig window snap left",
+						"bxrig window tiled-fullscreen"
 					],
 					"mutates": false,
 					"flags": [],
-					"note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right|top|bottom floats the focused window onto that half of its monitor. Hyprland only."
+					"note": "quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right|top|bottom floats the focused window onto that half of its monitor. Hyprland only. close-all asks every window to close (apps with unsaved work still ask), then goes to workspace 1; tiled-fullscreen makes the app full screen inside its tile (again to undo)."
 				},
 				{
 					"name": "overview",
@@ -2702,15 +2750,20 @@
 				},
 				{
 					"name": "gpu",
-					"summary": "GPU check: driver, rendering, NVIDIA specifics.",
+					"summary": "GPU check: driver, rendering, NVIDIA specifics; the mode of a laptop with two GPUs.",
 					"usage": [
-						"gpu doctor [--json]"
+						"gpu doctor [--json]",
+						"gpu mode [status] [--json]",
+						"gpu mode hybrid|integrated [--yes] [--dry-run] [--json]"
 					],
 					"examples": [
-						"bxrig gpu doctor"
+						"bxrig gpu doctor",
+						"bxrig gpu mode",
+						"bxrig gpu mode integrated --yes"
 					],
 					"mutates": false,
-					"flags": []
+					"flags": [],
+					"note": "mode needs two GPUs (counted in /sys/bus/pci/devices) and supergfxctl (supergfxd); a switch is `supergfxctl -m Hybrid|Integrated`, then log out or reboot."
 				},
 				{
 					"name": "input",
@@ -2721,13 +2774,15 @@
 						"input apple [--scroll-speed=0..63] [--yes] [--dry-run] [--json]",
 						"input logitech [--json]",
 						"input undo [--yes] [--dry-run] [--json]",
-						"input doctor | gestures [--yes] [--dry-run] [--json]"
+						"input doctor | gestures [--yes] [--dry-run] [--json]",
+						"input touchpad|touchscreen [on|off|toggle|status] [--json]"
 					],
 					"examples": [
 						"bxrig input status",
 						"bxrig input offer --dry-run",
 						"bxrig input apple --scroll-speed=48 --yes",
-						"bxrig input logitech"
+						"bxrig input logitech",
+						"bxrig input touchpad off"
 					],
 					"mutates": true,
 					"flags": [
@@ -2739,7 +2794,8 @@
 							"name": "scroll-speed",
 							"type": "value"
 						}
-					]
+					],
+					"note": "touchpad and touchscreen switch the device off and on in a Hyprland session (hyprctl eval hl.device); a login turns it back on."
 				},
 				{
 					"name": "audio",
@@ -2771,17 +2827,25 @@
 				},
 				{
 					"name": "wifi",
-					"summary": "Wi-Fi status: the radio, the Wi-Fi devices and the network you are on.",
+					"summary": "Wi-Fi status: the radio, the Wi-Fi devices and the network you are on; a QR code to join it.",
 					"usage": [
-						"wifi status [--json]"
+						"wifi status [--json]",
+						"wifi qr [--out=FILE.png] [--json]"
 					],
 					"examples": [
 						"bxrig wifi status",
-						"bxrig wifi status --json"
+						"bxrig wifi status --json",
+						"bxrig wifi qr",
+						"bxrig wifi qr --out=wifi.png"
 					],
 					"mutates": false,
-					"flags": [],
-					"note": "Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing."
+					"flags": [
+						{
+							"name": "out",
+							"type": "value"
+						}
+					],
+					"note": "Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing. qr draws the network you are on as a QR code a phone camera reads to join (qrencode); the password is in the code only, never printed."
 				},
 				{
 					"name": "airplay",

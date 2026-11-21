@@ -2,7 +2,8 @@
 testkit = new lib.Check( "shortcuts-runner" );
 cli = new bxrig.util.Cli( "0.0.0" );
 menu = new bxrig.Menu( cli );
-tree = menu.tree();
+// every entry, whatever this machine has (no laptop, webcam or touchpad conditions applied)
+tree = menu.tree( true );
 routes = menu.routes( tree );
 paths = routes.map( function( r ) { return lCase( r.path ); } );
 testkit.check( "the Shortcuts section is in the runner", arrayFind( tree.map( function( e ) { return e.label; } ), "Shortcuts" ) > 0 );

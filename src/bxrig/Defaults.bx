@@ -1,4 +1,5 @@
-// `bxrig default browser|terminal|show`: make an installed app your default web browser or terminal.
+// `bxrig default browser|terminal|filemanager|editor|show`: make an installed app your default web browser, terminal, file manager or editor.
+//   editor    `xdg-mime default <app>.desktop` for text files, and EDITOR/VISUAL in ~/.config/environment.d/50-bxrig-editor.conf (next login)
 //   browser   `xdg-settings set default-web-browser <app>.desktop` (works for Hyprland sessions and KDE alike)
 //   filemanager  `xdg-mime default <app>.desktop inode/directory` (Strata or Dolphin)
 //   terminal  ~/.config/xdg-terminals.list (the xdg-terminal-exec list, written through the config service, kept if you edited it)
@@ -90,6 +91,48 @@ class Defaults {
 		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ arguments.id & " is now your default file manager." ] );
 	}
 
+	// The editors `default editor` knows: the command, its desktop entry, and what EDITOR and VISUAL get (a GUI editor waits for its window).
+	function editors() {
+		return {
+			neovim: { cmd: "nvim", desktop: "nvim.desktop", env: "nvim", install: "bxrig install neovim" },
+			vscode: { cmd: "code", desktop: "code.desktop", env: "code --wait", install: "bxrig install vscode" },
+			zed: { cmd: "zeditor", desktop: "dev.zed.Zed.desktop", env: "zeditor --wait", install: "bxrig install zed" },
+			kate: { cmd: "kate", desktop: "org.kde.kate.desktop", env: "kate --block", install: "bxrig pkg install kate" }
+		};
+	}
+
+	// The text files the editor opens from a file manager or a browser download.
+	function knownEditors() { var ks = structKeyArray( editors() ); arraySort( ks, "textnocase" ); return ks.toList( ", " ); }
+
+	function editorTypes() { return [ "text/plain", "text/markdown", "application/json", "application/x-shellscript", "text/x-python", "application/xml", "text/x-csrc" ]; }
+
+	function editorEnvFile() { return new bxrig.util.Env().xdgConfig( "environment.d/50-bxrig-editor.conf" ); }
+
+	// `default editor ID`: the app that opens text files (xdg-mime) and EDITOR/VISUAL for every new login (~/.config/environment.d).
+	function editor( id, yes, dryRun, asJson ) {
+		var cmd = "default editor";
+		var all = editors();
+		if ( !structKeyExists( all, arguments.id ) ) return variables.cli.say( cmd, "precondition", { error: "Unknown editor " & arguments.id }, arguments.asJson, [ "error: unknown editor " & arguments.id & ". Known: " & knownEditors() & "." ] );
+		var e = all[ arguments.id ];
+		if ( !variables.proc.has( e.cmd ) ) return variables.cli.say( cmd, "precondition", { error: arguments.id & " is not installed" }, arguments.asJson, [ "error: " & arguments.id & " is not installed (" & e.cmd & " not found). Install it first: " & e.install ] );
+		if ( !variables.proc.has( "xdg-mime" ) ) return variables.cli.say( cmd, "precondition", { error: "xdg-mime was not found" }, arguments.asJson, [ "error: xdg-mime was not found (install xdg-utils)" ] );
+		var envFile = editorEnvFile();
+		var content = "## Written by `bxrig default editor`" & chr( 10 ) & "EDITOR=" & e.env & chr( 10 ) & "VISUAL=" & e.env & chr( 10 );
+		var data = { editor: arguments.id, desktop: e.desktop, env: e.env, file: envFile, types: editorTypes(), opensFiles: desktopInstalled( e.desktop ) };
+		if ( !arguments.yes || arguments.dryRun ) return variables.cli.scoped( cmd ).plan( "make " & arguments.id & " your editor: EDITOR and VISUAL in " & envFile & ( data.opensFiles ? ", and the app for text files (" & e.desktop & ")" : "" ), data, arguments.asJson, arguments.dryRun );
+		if ( data.opensFiles ) {
+			var argv = [ "xdg-mime", "default", e.desktop ];
+			for ( var t in editorTypes() ) argv.append( t );
+			var r = variables.inst.proc().exec( argv, 30 );
+			if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
+		}
+		directoryCreate( getDirectoryFromPath( envFile ), true, true );
+		fileWrite( envFile, content );
+		var lines = [ arguments.id & " is now your editor (EDITOR and VISUAL from your next login" & ( data.opensFiles ? "; text files open in it now" : "" ) & ")." ];
+		if ( !data.opensFiles ) lines.append( "note: " & e.desktop & " was not found, so text files keep their current app" );
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, lines );
+	}
+
 	// `default show`
 	function show( asJson ) {
 		var b = "";
@@ -98,6 +141,8 @@ class Defaults {
 		var t = fileExists( listFile ) ? trim( fileRead( listFile ) ) : "";
 		var fm = "";
 		if ( variables.proc.has( "xdg-mime" ) ) fm = trim( variables.inst.proc().exec( [ "xdg-mime", "query", "default", "inode/directory" ], 20 ).output );
-		return variables.cli.say( "default show", "ok", { browser: b, terminal: t, filemanager: fm }, arguments.asJson, [ "Default browser:  " & ( len( b ) ? b : "not set" ), "Default terminal: " & ( len( t ) ? t : "not set (" & listFile & ")" ), "Default file manager: " & ( len( fm ) ? fm : "not set" ) ] );
+		var ed = "";
+		if ( fileExists( editorEnvFile() ) ) for ( var l in listToArray( fileRead( editorEnvFile() ), chr( 10 ) ) ) if ( left( l, 7 ) == "EDITOR=" ) ed = mid( l, 8, len( l ) );
+		return variables.cli.say( "default show", "ok", { browser: b, terminal: t, filemanager: fm, editor: ed }, arguments.asJson, [ "Default browser:  " & ( len( b ) ? b : "not set" ), "Default terminal: " & ( len( t ) ? t : "not set (" & listFile & ")" ), "Default file manager: " & ( len( fm ) ? fm : "not set" ), "Default editor:   " & ( len( ed ) ? ed : "not set (bxrig default editor neovim)" ) ] );
 	}
 }

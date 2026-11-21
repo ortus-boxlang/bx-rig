@@ -1,0 +1,104 @@
+// `bxrig dns bench [--json]` (also `bxrig system speedtest dns`): how fast each DNS provider answers from here, to pick the fastest.
+// The providers: Cloudflare, Quad9 and Google (the first IPv4 server of each preset in Tweaks), your router (the DNS server DHCP gave the
+// first active connection, from `nmcli -g DHCP4.OPTION device show`) and your own servers when the connection uses some.
+// Each one is asked the same names with `dig @SERVER +tries=1 +time=2 +noall +stats NAME`: a first round warms the provider's cache and is
+// not counted, the second is timed, and a provider's time is the median of the second round (dig's "Query time: N msec"). A provider that
+// does not answer has ms -1. The result is also kept as the last DNS result (SpeedResults) for the panels.
+// Without NetworkManager (nmcli) the router and the provider in use are left out. Exit: 0 done, 4 precondition (dig missing).
+class DnsBench {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.tweaks = new bxrig.Tweaks( arguments.cli, arguments.runner );
+		return this;
+	}
+
+	function names() { return [ "github.com", "google.com", "cloudflare.com", "wikipedia.org", "amazon.com" ]; }
+
+	function labels() { return { cloudflare: "Cloudflare", quad9: "Quad9", google: "Google", dhcp: "Your router", custom: "Your own servers" }; }
+
+	// dig's query time in ms from its output, or -1 when it did not answer.
+	function queryTime( output ) {
+		var m = reFindNoCase( "Query time:\s*([0-9]+)\s*msec", arguments.output, 1, true );
+		if ( !m.pos[ 1 ] ) return -1;
+		return val( mid( arguments.output, m.pos[ 2 ], m.len[ 2 ] ) );
+	}
+
+	// The median of the numbers that are not -1 (-1 when none are left).
+	function median( values ) {
+		var v = arguments.values.filter( function( x ) { return x >= 0; } );
+		if ( !v.len() ) return -1;
+		arraySort( v, "numeric" );
+		var n = v.len();
+		return n % 2 ? v[ ( n + 1 ) / 2 ] : ( v[ n / 2 ] + v[ n / 2 + 1 ] ) / 2;
+	}
+
+	// The DNS servers DHCP gave a device ("domain_name_servers = 192.168.1.1 192.168.1.2" in DHCP4.OPTION), [] when none.
+	function routerServers() {
+		var r = variables.proc.exec( [ "nmcli", "-t", "-f", "DEVICE,STATE", "device", "status" ], 15 );
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) {
+			if ( listLast( l, ":" ) != "connected" ) continue;
+			var d = variables.proc.exec( [ "nmcli", "-g", "DHCP4.OPTION", "device", "show", listFirst( l, ":" ) ], 15 );
+			var m = reFindNoCase( "domain_name_servers\s*=\s*([0-9. ]+)", d.output, 1, true );
+			if ( m.pos[ 1 ] ) return listToArray( trim( mid( d.output, m.pos[ 2 ], m.len[ 2 ] ) ), " " );
+		}
+		return [];
+	}
+
+	// [ { id, name, server } ] to test, and the id in use.
+	function providers() {
+		var out = [];
+		var p = variables.tweaks.presets();
+		for ( var id in [ "cloudflare", "quad9", "google" ] ) out.append( { id: id, name: labels()[ id ], server: listFirst( p[ id ].v4, " " ) } );
+		var router = routerServers();
+		if ( router.len() ) out.append( { id: "dhcp", name: labels().dhcp, server: router[ 1 ] } );
+		var conns = variables.tweaks.activeConnections();
+		var current = conns.len() ? variables.tweaks.providerOf( variables.tweaks.currentDns( conns[ 1 ] ) ) : "";
+		if ( current == "custom" ) out.append( { id: "custom", name: labels().custom, server: listFirst( variables.tweaks.currentDns( conns[ 1 ] ), " ," ) } );
+		return { list: out, current: current };
+	}
+
+	function dig( server, name ) {
+		return variables.proc.exec( [ "dig", "@" & arguments.server, "+tries=1", "+time=2", "+noall", "+stats", arguments.name ], 10 );
+	}
+
+	// Times one provider: the warm-up round, then the timed round's median.
+	function timeServer( server ) {
+		var warm = 0;
+		for ( var n in names() ) if ( queryTime( dig( arguments.server, n ).output ) >= 0 ) warm++;
+		if ( !warm ) return -1;
+		var times = [];
+		for ( var n2 in names() ) times.append( queryTime( dig( arguments.server, n2 ).output ) );
+		return median( times );
+	}
+
+	// Ranks a list of { id, ms } in place: answered ones fastest first, then the ones that did not answer. Returns the fastest id ("" if none).
+	function rank( rows ) {
+		arraySort( arguments.rows, function( a, b ) {
+				if ( a.ms < 0 && b.ms < 0 ) return 0;
+				if ( a.ms < 0 ) return 1;
+				if ( b.ms < 0 ) return -1;
+				return a.ms < b.ms ? -1 : ( a.ms > b.ms ? 1 : 0 );
+			} );
+		var fastest = arguments.rows.len() && arguments.rows[ 1 ].ms >= 0 ? arguments.rows[ 1 ].id : "";
+		for ( var r in arguments.rows ) r.fastest = r.id == fastest;
+		return fastest;
+	}
+
+	function run( asJson, command = "dns bench" ) {
+		var out = variables.cli.scoped( arguments.command );
+		if ( !variables.proc.has( "dig" ) ) return out.precondition( "dig is not installed: " & new bxrig.util.Packages().native( variables.proc ).installLine( [ "bind" ] ), arguments.asJson );
+		if ( !arguments.asJson ) println( "Timing each DNS provider (a few seconds)..." );
+		var pv = providers();
+		var rows = [];
+		for ( var p in pv.list ) rows.append( { id: p.id, name: p.name, server: p.server, ms: timeServer( p.server ), current: p.id == pv.current } );
+		var fastest = rank( rows );
+		var data = { providers: rows, current: pv.current, fastest: fastest };
+		new bxrig.SpeedResults().save( "dns", data );
+		var lines = rows.map( function( r ) {
+				return ( r.current ? "* " : "  " ) & left( r.name & repeatString( " ", 18 ), 18 ) & ( r.ms >= 0 ? numberFormat( r.ms, "0" ) & " ms" : "no answer" ) & ( r.fastest ? "   fastest" : "" );
+			} );
+		lines.append( "* = in use. " & ( len( fastest ) && fastest != pv.current && fastest != "custom" ? "Switch: bxrig dns " & fastest & " --yes" : "You are on the fastest." ) );
+		return out.say( "ok", data, arguments.asJson, lines );
+	}
+}

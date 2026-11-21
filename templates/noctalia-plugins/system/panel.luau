@@ -1,5 +1,5 @@
 --!nonstrict
--- BxRig System panel: two tabs, Updates and Backups.
+-- BxRig System panel: three tabs, Updates, Backups and Network.
 --
 -- Updates (`bxrig system updates --json`, every 60 s while open): the number waiting and the repo / AUR split, a banner when a restart is
 --   needed (a pending kernel, systemd or glibc update, or a kernel that was already replaced), a filter (All, Repo, AUR), the package list
@@ -8,6 +8,10 @@
 -- Backups (`bxrig backup status --json`, every 60 s while open): a row per kind (config snapshots, system snapshots, files) with its last run,
 --   next run, size and health; a play button on a row and "Back up now" (all rows that can) run the rows' own commands in a terminal;
 --   "Open Time Machine" runs `bxrig timemachine` there.
+-- Network: the Wi-Fi you are on (`bxrig wifi status --json`) with Share Wi-Fi (`bxrig wifi qr --out FILE`, shown here as an image), the last
+--   speed, disk and DNS results (`bxrig system speedtest last --json`) with a Test button each (`system speedtest network|disk --json`,
+--   `dns bench --json`), the DNS providers as a pick-one list (`bxrig dns --json` for the one in use; picking runs `bxrig dns NAME --yes`)
+--   and "Open in Control Center" (`bxrig tui network` in a terminal). A running test shows a spinner label; it cannot be cancelled here.
 -- The Updates count and the restart flag are published with noctalia.state for the bar widget.
 -- Colors are palette roles only, so the panel follows the active theme.
 
@@ -31,6 +35,10 @@ local bk = nil -- data of `backup status --json`
 local bkErr = nil
 local bkLoading = false
 local bkFetchedMs = -REFRESH_MS
+
+local net = { wifi = nil, last = nil, dnsCurrent = "", busy = {}, err = nil, qr = nil, qrStamp = 0 }
+local netFetchedMs = -REFRESH_MS
+local DNS_ORDER = { { id = "cloudflare", name = "Cloudflare" }, { id = "quad9", name = "Quad9" }, { id = "google", name = "Google" }, { id = "dhcp", name = "Your router" } }
 
 local TYPE_GLYPH = { config = "adjustments", system = "device-desktop", data = "folders" }
 
@@ -116,12 +124,43 @@ local function fetchBackups()
 	end, BACKUPS_TIMEOUT_MS)
 end
 
+local function fetchNetwork()
+	netFetchedMs = noctalia.nowMs()
+	bxrig.json({ "wifi", "status", "--json" }, function(data, err)
+		net.wifi = err == nil and data or nil
+		render()
+	end, 20000)
+	bxrig.json({ "system", "speedtest", "last", "--json" }, function(data, err)
+		if err == nil then
+			net.last = data
+		end
+		render()
+	end, 15000)
+	bxrig.json({ "dns", "--json" }, function(data, err)
+		if err == nil then
+			net.dnsCurrent = str(data.provider)
+		end
+		render()
+	end, 20000)
+end
+
 local function fetchCurrent()
 	if tab == "updates" then
 		fetchUpdates()
-	else
+	elseif tab == "backups" then
 		fetchBackups()
+	else
+		fetchNetwork()
 	end
+end
+
+local function fetchedFor(name)
+	if name == "updates" then
+		return updFetchedMs
+	elseif name == "backups" then
+		return bkFetchedMs
+	end
+	return netFetchedMs
 end
 
 local function selectTab(name)
@@ -129,8 +168,7 @@ local function selectTab(name)
 		return
 	end
 	tab = name
-	local fetchedMs = name == "updates" and updFetchedMs or bkFetchedMs
-	if noctalia.nowMs() - fetchedMs >= REFRESH_MS then
+	if noctalia.nowMs() - fetchedFor(name) >= REFRESH_MS then
 		fetchCurrent()
 	end
 	render()
@@ -409,6 +447,195 @@ local function backupsFooter(items)
 	}))
 end
 
+-- ---- network ----
+
+-- "12:38" from an ISO time ("2026-11-21T12:38:04").
+local function hhmm(at)
+	local t = str(at)
+	if #t >= 16 then
+		return t:sub(12, 16)
+	end
+	return t
+end
+
+-- Runs one test (kind: network, disk or dns) in the background, then reads the last results again.
+local function runTest(kind)
+	if net.busy[kind] then
+		return
+	end
+	net.busy[kind] = true
+	net.err = nil
+	local args = kind == "dns" and { "dns", "bench", "--json" } or { "system", "speedtest", kind, "--json" }
+	bxrig.json(args, function(_data, err)
+		net.busy[kind] = false
+		if err ~= nil then
+			net.err = err
+		end
+		fetchNetwork()
+	end, kind == "network" and 180000 or 300000)
+	render()
+end
+
+local function useDns(id)
+	net.busy.switch = true
+	bxrig.run({ "dns", id, "--yes" }, function(ok, msg)
+		net.busy.switch = false
+		if not ok then
+			net.err = msg
+		end
+		fetchNetwork()
+	end, 60000)
+	render()
+end
+
+-- Share Wi-Fi: bxrig writes the QR code of the network you are on to a file in the cache, and the panel shows it.
+local function shareWifi()
+	if net.qr ~= nil then
+		net.qr = nil
+		render()
+		return
+	end
+	local path = noctalia.expandPath("~/.cache/bxrig/wifi-qr.png")
+	net.busy.qr = true
+	bxrig.run({ "wifi", "qr", "--out=" .. path }, function(ok, msg)
+		net.busy.qr = false
+		if ok then
+			net.qr = path
+			net.qrStamp = noctalia.nowMs()
+		else
+			net.err = msg
+		end
+		render()
+	end, 30000)
+	render()
+end
+
+local function card(key, children)
+	return ui.column({ key = key, gap = 8, paddingH = 12, paddingV = 10, radius = 12, fill = "on_surface/0.05" }, children)
+end
+
+local function cardHeader(title, sub, kind)
+	local busy = net.busy[kind] == true
+	return ui.row({ align = "center", gap = 8 }, {
+		ui.label({ text = title, fontSize = 13, fontWeight = "semibold" }),
+		ui.label({ text = busy and "Testing…" or sub, fontSize = 11, color = busy and "primary" or "on_surface_variant", flexGrow = 1, maxLines = 1 }),
+		ui.button({ text = "Test", glyph = busy and "loader" or "player-play", variant = "outline", controlSize = "sm", enabled = not busy,
+			onClick = function()
+				runTest(kind)
+			end }),
+	})
+end
+
+local function bigNumber(label, value, unit, color)
+	return ui.column({ flexGrow = 1, gap = 1, paddingH = 10, paddingV = 8, radius = 10, fill = "surface_container" }, {
+		ui.label({ text = label, fontSize = 10, color = "on_surface_variant" }),
+		ui.label({ text = value ~= "" and value or "–", fontSize = 18, fontWeight = "bold", color = color }),
+		ui.label({ text = unit, fontSize = 10, color = "on_surface_variant" }),
+	})
+end
+
+-- "412.67 Mbit/s" -> "412.67", "Mbit/s"
+local function splitUnit(v)
+	local n, u = string.match(str(v), "^(%S+)%s+(.+)$")
+	if n == nil then
+		return str(v), ""
+	end
+	return n, u
+end
+
+local function networkBody(items)
+	local w = net.wifi
+	local ssid = w ~= nil and str(w.ssid) or ""
+	table.insert(items, card("wifi", {
+		ui.row({ align = "center", gap = 10 }, {
+			ui.glyph({ name = ssid ~= "" and "wifi" or "wifi-off", size = 22, color = "secondary" }),
+			ui.column({ flexGrow = 1, gap = 1 }, {
+				ui.label({ text = ssid ~= "" and ssid or "Not on Wi-Fi", fontSize = 13, fontWeight = "semibold", maxLines = 1 }),
+				ui.label({ text = (w ~= nil and num(w.signal) >= 0) and ("Signal " .. num(w.signal) .. "%") or "", fontSize = 11, color = "on_surface_variant" }),
+			}),
+			ui.button({ text = net.qr ~= nil and "Hide" or "Share Wi-Fi", glyph = "qrcode", variant = "primary", controlSize = "sm",
+				enabled = ssid ~= "" and net.busy.qr ~= true, onClick = shareWifi }),
+		}),
+	}))
+	if net.qr ~= nil then
+		table.insert(items, ui.column({ key = "qr", align = "center", gap = 6, paddingV = 8 }, {
+			ui.image({ key = "qr-" .. net.qrStamp, path = net.qr, fit = "contain", radius = 10, height = 240 }),
+			ui.label({ text = "Point a phone camera at the code to join " .. ssid, fontSize = 11, color = "on_surface_variant" }),
+		}))
+	end
+
+	local last = net.last or {}
+	local sp = last.network or {}
+	local d1, u1 = splitUnit(sp.download)
+	local d2, u2 = splitUnit(sp.upload)
+	local d3, u3 = splitUnit(sp.ping)
+	table.insert(items, card("speed", {
+		cardHeader("Speed", sp.at and ("last run " .. hhmm(sp.at)) or "not tested yet", "network"),
+		ui.row({ gap = 6 }, {
+			bigNumber("Download", d1, u1 ~= "" and u1 or "Mbit/s", "primary"),
+			bigNumber("Upload", d2, u2 ~= "" and u2 or "Mbit/s", "secondary"),
+			bigNumber("Ping", d3, u3 ~= "" and u3 or "ms", "tertiary"),
+		}),
+	}))
+
+	local dk = last.disk or {}
+	table.insert(items, card("disk", {
+		cardHeader("Disk", dk.at and ("last run " .. hhmm(dk.at)) or "not tested yet", "disk"),
+		ui.row({ gap = 6 }, {
+			bigNumber("Write", splitUnit(dk.write), select(2, splitUnit(dk.write)), "primary"),
+			bigNumber("Read", splitUnit(dk.read), select(2, splitUnit(dk.read)), "primary"),
+		}),
+	}))
+
+	local bench = last.dns or {}
+	local times = {}
+	local worst = 1
+	for _, p in ipairs(list(bench.providers)) do
+		times[str(p.id)] = { ms = tonumber(p.ms) or -1, fastest = p.fastest == true }
+		if (tonumber(p.ms) or 0) > worst then
+			worst = tonumber(p.ms)
+		end
+	end
+	local rows = { cardHeader("DNS", bench.at and ("lookup time, tested " .. hhmm(bench.at)) or "pick one; Test times them", "dns") }
+	for _, p in ipairs(DNS_ORDER) do
+		local t = times[p.id]
+		local using = net.dnsCurrent == p.id
+		local timeText = ""
+		if t ~= nil then
+			timeText = t.ms >= 0 and (string.format("%d", math.floor(t.ms + 0.5)) .. " ms") or "no answer"
+		end
+		-- the radio: a small button, so picking a row switches to it (the one in use is not clickable)
+		local rowChildren = {
+			ui.button({ glyph = using and "circle-dot" or "circle", variant = "ghost", controlSize = "sm", selected = using,
+				enabled = not using and net.busy.switch ~= true, tooltip = using and "In use" or ("Use " .. p.name),
+				onClick = function()
+					useDns(p.id)
+				end }),
+			ui.label({ text = p.name, fontSize = 12, fontWeight = using and "semibold" or nil, width = 96, maxLines = 1 }),
+		}
+		if t ~= nil and t.ms >= 0 then
+			table.insert(rowChildren, ui.progress({ progress = math.min(1, t.ms / worst), flexGrow = 1, height = 6, radius = 3, fill = t.fastest and "primary" or "secondary", track = "on_surface/0.12" }))
+		else
+			table.insert(rowChildren, ui.spacer({ flexGrow = 1 }))
+		end
+		table.insert(rowChildren, ui.label({ text = timeText, fontSize = 11, color = (t ~= nil and t.fastest) and "primary" or "on_surface_variant", width = 64, textAlign = "end", maxLines = 1 }))
+		if t ~= nil and t.fastest then
+			table.insert(rowChildren, ui.label({ text = "Fastest", fontSize = 10, fontWeight = "bold", color = "primary" }))
+		end
+		table.insert(rows, ui.row({ key = "dns-" .. p.id, align = "center", gap = 8, paddingH = 4, radius = 8, fill = using and "primary/0.10" or nil }, rowChildren))
+	end
+	table.insert(items, card("dns", rows))
+
+	if net.err ~= nil then
+		table.insert(items, ui.label({ key = "net-err", text = net.err, fontSize = 11, color = "error", maxLines = 3 }))
+	end
+	table.insert(items, ui.button({ key = "open-cc", text = "Open in Control Center", glyph = "terminal-2", variant = "ghost",
+		onClick = function()
+			noctalia.runInTerminal(shq(bxrig.command()) .. " tui network")
+			panel.close()
+		end }))
+end
+
 -- ---- the panel ----
 
 render = function()
@@ -456,15 +683,29 @@ render = function()
 					selectTab("backups")
 				end,
 			}),
+			ui.button({
+				key = "tab-network",
+				text = "Network",
+				glyph = "wifi",
+				variant = tab == "network" and "primary" or "outline",
+				selected = tab == "network",
+				controlSize = "sm",
+				flexGrow = 1,
+				onClick = function()
+					selectTab("network")
+				end,
+			}),
 		}),
 		ui.separator({}),
 	}
 	if tab == "updates" then
 		updatesBody(sections)
 		updatesFooter(sections)
-	else
+	elseif tab == "backups" then
 		backupsBody(sections)
 		backupsFooter(sections)
+	else
+		networkBody(sections)
 	end
 	panel.render(ui.column({ flexGrow = 1, gap = 10, padding = 12 }, sections))
 end
@@ -477,8 +718,12 @@ function onCloseClicked()
 	panel.close()
 end
 
-function onOpen(_context)
+function onOpen(context)
 	closeButton = noctalia.getSetting("shell.show_close_buttons") ~= false
+	-- `noctalia msg panel-toggle bxrig/system:panel network` opens straight on a tab
+	if type(context) == "string" and (context == "updates" or context == "backups" or context == "network") then
+		tab = context
+	end
 	panel.setWantsSecondTicks(true)
 	render()
 	fetchCurrent()
@@ -489,8 +734,7 @@ function onClose()
 end
 
 function update()
-	local fetchedMs = tab == "updates" and updFetchedMs or bkFetchedMs
-	if noctalia.nowMs() - fetchedMs >= REFRESH_MS then
+	if noctalia.nowMs() - fetchedFor(tab) >= REFRESH_MS then
 		fetchCurrent()
 	end
 end

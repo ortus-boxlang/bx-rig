@@ -8,6 +8,7 @@
 	},
 	"names": {
 		"adw-gtk-theme": "",
+		"bind": "bind9-dnsutils",
 		"bluez-utils": "",
 		"borg": "borgbackup",
 		"docker": "docker.io",
@@ -476,6 +477,12 @@
 			"source": "apt",
 			"targets": [
 				"gwenview"
+			]
+		},
+		"handbrake": {
+			"source": "apt",
+			"targets": [
+				"handbrake"
 			]
 		},
 		"haruna": {
@@ -1019,6 +1026,12 @@
 			"source": "flatpak",
 			"targets": [
 				"xyz.ketok.Speedtest"
+			]
+		},
+		"speedtest-cli": {
+			"source": "apt",
+			"targets": [
+				"speedtest-cli"
 			]
 		},
 		"spotify": {

@@ -1,0 +1,54 @@
+// `bxrig input touchpad|touchscreen [on|off|toggle|status]`: turn the touchpad or the touchscreen off and on again (Hyprland).
+// The device is found in `hyprctl devices -j` (a mouse whose name has "touchpad"; the first entry of `touch` for the touchscreen) and switched
+// with `hyprctl eval 'hl.device({ name = "...", enabled = false })'`. The name of a device that is off is kept in
+// ~/.local/state/bxrig/toggles/KIND-disabled, so `on` and `toggle` find it again and `status` can tell. A login turns it back on.
+// On Plasma use the touchpad key or System Settings > Touchpad (KWin has no command for it here). Exit: 0 done, 2 usage, 4 precondition, 6 failed.
+class TouchToggle {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	function kinds() { return [ "touchpad", "touchscreen" ]; }
+	function stateFile( kind ) { return new bxrig.util.Env().state( "toggles/" & arguments.kind & "-disabled" ); }
+
+	// The device name, "" when there is none.
+	function device( kind ) {
+		var r = variables.proc.exec( [ "hyprctl", "devices", "-j" ], 10 );
+		if ( r.exitCode != 0 ) return "";
+		try {
+			var d = jsonDeserialize( r.output );
+			if ( arguments.kind == "touchpad" ) {
+				for ( var m in ( d.mice ?: [] ) ) if ( findNoCase( "touchpad", m.name ?: "" ) ) return m.name;
+			} else {
+				for ( var t in ( d.touch ?: [] ) ) if ( len( t.name ?: "" ) ) return t.name;
+			}
+		} catch ( any e ) {}
+		return "";
+	}
+
+	// The Lua call that switches one device (the name is quoted for a Lua string).
+	function evalArgv( name, enabled ) {
+		var q = replace( replace( arguments.name, "\", "\\", "all" ), '"', '\"', "all" );
+		return [ "hyprctl", "eval", 'hl.device({ name = "' & q & '", enabled = ' & ( arguments.enabled ? "true" : "false" ) & ' })' ];
+	}
+
+	function run( kind, action, asJson ) {
+		var out = variables.cli.scoped( "input " & arguments.kind );
+		var a = len( arguments.action ) ? arguments.action : "toggle";
+		if ( !arrayFind( kinds(), arguments.kind ) || !arrayFind( [ "on", "off", "toggle", "status" ], a ) ) return out.usage( new bxrig.CommandSpec().usage( "input" ), arguments.asJson );
+		var sf = stateFile( arguments.kind );
+		var off = fileExists( sf );
+		if ( a == "status" ) return out.say( "ok", { kind: arguments.kind, enabled: !off }, arguments.asJson, [ "The " & arguments.kind & " is " & ( off ? "off" : "on" ) & "." ] );
+		if ( !variables.proc.has( "hyprctl" ) || variables.proc.exec( [ "hyprctl", "version" ], 10 ).exitCode != 0 ) return out.precondition( "this works in a Hyprland session (on Plasma use the touchpad key or System Settings > Touchpad)", arguments.asJson );
+		var turnOn = a == "on" || ( a == "toggle" && off );
+		var name = turnOn && off ? trim( fileRead( sf ) ) : device( arguments.kind );
+		if ( !len( name ) ) return out.precondition( "no " & arguments.kind & " was found", arguments.asJson );
+		var r = variables.proc.exec( evalArgv( name, turnOn ), 10 );
+		if ( r.exitCode != 0 ) return out.failed( "hyprctl could not switch " & name & ": " & trim( r.output ), arguments.asJson );
+		if ( turnOn ) { if ( off ) fileDelete( sf ); }
+		else { directoryCreate( getDirectoryFromPath( sf ), true, true ); fileWrite( sf, name ); }
+		return out.say( "ok", { kind: arguments.kind, enabled: turnOn, device: name }, arguments.asJson, [ "The " & arguments.kind & " is " & ( turnOn ? "on" : "off" ) & " (" & name & ")." ] );
+	}
+}

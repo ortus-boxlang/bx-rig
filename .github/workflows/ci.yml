@@ -189,6 +189,8 @@ jobs:
           (cd src && matchbox ../tests/about_test.bxs)
           (cd src && matchbox ../tests/screensaver_test.bxs)
           (cd src && matchbox ../tests/distros_test.bxs)
+          (cd src && matchbox ../tests/gaps_test.bxs)
+          (cd src && matchbox ../tests/network_test.bxs)
           (cd src && matchbox ../tests/text_test.bxs)
           (cd src && matchbox ../tests/fmt_test.bxs)
           (cd src && matchbox ../tests/command_spec_test.bxs)

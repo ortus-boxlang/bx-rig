@@ -116,7 +116,7 @@ class SetupPlan {
 		if ( !len( arguments.terminal ) ) arguments.terminal = new bxrig.TerminalConfig().defaultTerminal();
 		var t = new bxrig.TerminalConfig().find( arguments.terminal );
 		return [ "hyprland", "noctalia", "uwsm", "hyprlock", "xdg-desktop-portal-hyprland", "hyprpolkitagent",
-			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
+			"qt6ct", "nwg-look", "hyprpicker", "grim", "slurp", "wl-clipboard", "brightnessctl", "playerctl", structKeyExists( t, "pkg" ) ? t.pkg : "ghostty",
 			"adw-gtk-theme", "papirus-icon-theme", "noto-fonts", "noto-fonts-emoji", "bluez", "bluez-utils" ];
 	}
 

@@ -1,4 +1,7 @@
-// `bxrig record [toggle|start|stop|status] [--region] [--audio=desktop|mic]`: screen recording on Wayland with wf-recorder.
+// `bxrig record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--webcam[=CORNER]] [--webcam-size=small|medium|large]`: screen
+// recording on Wayland with wf-recorder. --webcam puts your webcam in a corner (bottom-right unless you name one: bottom-left, top-right,
+// top-left) while it records, so it is part of the video; the bubble ends with the recording. Hyprland pins it in the corner (the BxRig module's
+// rules); on Plasma it opens as a normal small window you can drag.
 //   start    records the screen (or with --region the area you drag with slurp) to ~/Videos/bxrig-YYYYMMDD-HHMMSS.mp4
 //            --audio=desktop adds what the speakers play (the monitor of the default sink), --audio=mic the default microphone;
 //            both come from `pactl`. wf-recorder takes one audio source, so desktop and microphone together are not offered
@@ -27,8 +30,32 @@ class Record {
 		return len( name ) && arguments.audio == "desktop" ? name & ".monitor" : name;
 	}
 
-	function start( region, dryRun, asJson, audio = "" ) {
+	// The webcam bubble: started before the recording when --webcam is given, ended with it (only when the recording started it).
+	function webcamMark() { return new bxrig.util.Env().state( "record-webcam" ); }
+
+	function startWebcam( corner, size ) {
+		var wc = new bxrig.Webcam( variables.cli );
+		variables.proc.detach( wc.overlayArgv( arguments.corner, arguments.size ) );
+		var f = webcamMark();
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		fileWrite( f, arguments.corner & " " & arguments.size );
+		// give the camera a moment to open its window, so the recording starts with it
+		variables.proc.exec( [ "sleep", "1" ], 5 );
+	}
+
+	function stopWebcam() {
+		if ( !fileExists( webcamMark() ) ) return;
+		variables.proc.exec( [ "pkill", "-f", "--", new bxrig.Webcam( variables.cli ).overlayPattern() ], 10 );
+		fileDelete( webcamMark() );
+	}
+
+	function start( region, dryRun, asJson, audio = "", webcam = "", webcamSize = "medium" ) {
 		var cmd = "record start";
+		var wc = new bxrig.Webcam( variables.cli );
+		if ( len( arguments.webcam ) && !arrayFind( wc.corners(), arguments.webcam ) ) return variables.cli.say( cmd, "usage", { error: "unknown corner " & arguments.webcam }, arguments.asJson, [ "error: --webcam is " & wc.corners().toList( ", " ) & ", not " & arguments.webcam ] );
+		if ( len( arguments.webcam ) && !arrayFind( wc.sizes(), arguments.webcamSize ) ) return variables.cli.say( cmd, "usage", { error: "unknown size " & arguments.webcamSize }, arguments.asJson, [ "error: --webcam-size is small, medium or large, not " & arguments.webcamSize ] );
+		if ( len( arguments.webcam ) && !variables.proc.has( "mpv" ) ) return variables.cli.say( cmd, "precondition", { error: "mpv is not installed" }, arguments.asJson, [ "error: mpv is not installed (it shows the webcam). Install: bxrig install mpv" ] );
+		if ( len( arguments.webcam ) && !fileExists( "/dev/video0" ) ) return variables.cli.say( cmd, "precondition", { error: "no webcam" }, arguments.asJson, [ "error: no webcam found at /dev/video0" ] );
 		if ( len( arguments.audio ) && !arrayFind( audioKinds(), arguments.audio ) ) return variables.cli.say( cmd, "usage", { error: "unknown audio " & arguments.audio }, arguments.asJson, [ "error: --audio is desktop or mic, not " & arguments.audio ] );
 		if ( len( arguments.audio ) && !variables.proc.has( "pactl" ) ) return variables.cli.say( cmd, "precondition", { error: "pactl is not installed" }, arguments.asJson, [ "error: pactl is not installed (it comes with PipeWire's pulse support: bxrig install pipewire-pulse)" ] );
 		if ( !variables.proc.has( "wf-recorder" ) ) return variables.cli.say( cmd, "precondition", { error: "wf-recorder is not installed" }, arguments.asJson, [ "error: wf-recorder is not installed. Install: bxrig install wf-recorder" ] );
@@ -40,22 +67,29 @@ class Record {
 		var script = 'mkdir -p "$1" && ' & wf & ( arguments.region ? ' -g "$(slurp)"' : "" ) & ' -f "$2"';
 		var argv = [ "sh", "-c", script, "_", folder(), file ];
 		if ( len( arguments.audio ) ) argv.append( audioSource( arguments.audio ) );
-		var data = { file: file, region: arguments.region, audio: arguments.audio, command: argv };
-		if ( arguments.dryRun ) return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ) ] );
+		var data = { file: file, region: arguments.region, audio: arguments.audio, webcam: arguments.webcam, webcamSize: len( arguments.webcam ) ? arguments.webcamSize : "", command: argv };
+		if ( len( arguments.webcam ) ) data.webcamCommand = wc.overlayArgv( arguments.webcam, arguments.webcamSize );
+		if ( arguments.dryRun ) {
+			var dl = [ "Dry run: " & argv.toList( " " ) ];
+			if ( len( arguments.webcam ) ) dl.prepend( "Dry run: " & data.webcamCommand.toList( " " ) );
+			return variables.cli.say( cmd, "ok", data, arguments.asJson, dl );
+		}
+		if ( len( arguments.webcam ) ) startWebcam( arguments.webcam, arguments.webcamSize );
 		variables.proc.detach( argv );
-		return variables.cli.say( cmd, "ok", variables.text.merge( data, { started: true } ), arguments.asJson, [ "Recording to " & file & ( len( arguments.audio ) ? " with " & arguments.audio & " audio" : "" ) & ". Stop: bxrig record stop" ] );
+		return variables.cli.say( cmd, "ok", variables.text.merge( data, { started: true } ), arguments.asJson, [ "Recording to " & file & ( len( arguments.audio ) ? " with " & arguments.audio & " audio" : "" ) & ( len( arguments.webcam ) ? ", the webcam " & arguments.webcam : "" ) & ". Stop: bxrig record stop" ] );
 	}
 
 	function stop( asJson ) {
 		var cmd = "record stop";
 		if ( !recording() ) return variables.cli.say( cmd, "ok", { recording: false }, arguments.asJson, [ "Nothing is recording." ] );
 		var r = variables.proc.exec( [ "pkill", "-INT", "-x", "wf-recorder" ], 10 );
+		stopWebcam();
 		if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not stop the recording" }, arguments.asJson, [ "error: could not stop the recording" ] );
 		return variables.cli.say( cmd, "ok", { recording: false, stopped: true }, arguments.asJson, [ "The recording was stopped and saved in " & folder() & "." ] );
 	}
 
-	function toggle( region, dryRun, asJson, audio = "" ) {
-		return recording() ? stop( arguments.asJson ) : start( arguments.region, arguments.dryRun, arguments.asJson, arguments.audio );
+	function toggle( region, dryRun, asJson, audio = "", webcam = "", webcamSize = "medium" ) {
+		return recording() ? stop( arguments.asJson ) : start( arguments.region, arguments.dryRun, arguments.asJson, arguments.audio, arguments.webcam, arguments.webcamSize );
 	}
 
 	function status( asJson ) {

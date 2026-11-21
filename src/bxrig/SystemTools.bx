@@ -1,0 +1,140 @@
+// More of `bxrig system`: the fixes for a stuck desktop and two account and firmware chores.
+//   system restart shell       the desktop shell: Noctalia (stopped and started again) or Plasma's plasmashell (its user service)
+//   system restart audio       PipeWire, its PulseAudio server and WirePlumber (user services)
+//   system restart wifi        unblocks the radio (rfkill), turns NetworkManager's networking and Wi-Fi on, rescans
+//   system restart bluetooth   unblocks the radio (rfkill) and powers the adapter on (bluetoothctl)
+//   system password            your login password (passwd, on this terminal)
+//   system speedtest network   internet download and upload speed (speedtest-cli); `disk` writes and reads 1 GiB in ~/.cache (dd);
+//                              `dns` times each DNS provider (DnsBench, the same as `dns bench`); `last` shows the last result of each
+//   system firmware [check]    firmware updates offered by your hardware's vendors (fwupd, from LVFS: BIOS/UEFI, SSDs, docks, some
+//                              keyboards and mice); `system firmware update --yes` installs them (fwupdmgr asks before each one)
+// restart and firmware update follow the plan/--yes rule. Exit: 0 done, 2 usage or a plan, 4 precondition, 6 failed.
+class SystemTools {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.runnerArg = arguments.runner;
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	function targets() { return [ "shell", "audio", "wifi", "bluetooth" ]; }
+
+	// The commands that restart one target, and what to say about it. { cmds, title, error }
+	function restartPlan( target ) {
+		var t = arguments.target;
+		if ( t == "shell" ) {
+			if ( variables.proc.exec( [ "pgrep", "-x", "noctalia" ], 10 ).exitCode == 0 || ( variables.proc.has( "noctalia" ) && !variables.proc.has( "plasmashell" ) ) )
+			return { title: "restart the Noctalia shell", cmds: [ [ "pkill", "-x", "noctalia" ], [ "sh", "-c", 'setsid noctalia >/dev/null 2>&1 &' ] ], error: "" };
+			if ( variables.proc.has( "plasmashell" ) ) return { title: "restart Plasma's shell", cmds: [ new bxrig.util.Systemd( variables.proc ).argv( "restart", [ "plasma-plasmashell.service" ], true ) ], error: "" };
+			return { title: "", cmds: [], error: "neither Noctalia nor Plasma is installed here" };
+		}
+		if ( t == "audio" ) {
+			if ( !variables.proc.has( "systemctl" ) ) return { title: "", cmds: [], error: "systemctl was not found" };
+			return { title: "restart the sound server (PipeWire and WirePlumber)", cmds: [ new bxrig.util.Systemd( variables.proc ).argv( "restart", [ "wireplumber.service", "pipewire.service", "pipewire-pulse.service" ], true ) ], error: "" };
+		}
+		if ( t == "wifi" ) {
+			if ( !variables.proc.has( "nmcli" ) ) return { title: "", cmds: [], error: "nmcli (NetworkManager) was not found" };
+			var w = [];
+			if ( variables.proc.has( "rfkill" ) ) w.append( [ "rfkill", "unblock", "wifi" ] );
+			w.append( [ "nmcli", "networking", "on" ] );
+			w.append( [ "nmcli", "radio", "wifi", "on" ] );
+			w.append( [ "sh", "-c", "nmcli device wifi rescan >/dev/null 2>&1 || true" ] );
+			return { title: "bring Wi-Fi back (unblock the radio, turn networking and Wi-Fi on, rescan)", cmds: w, error: "" };
+		}
+		if ( t == "bluetooth" ) {
+			if ( !variables.proc.has( "bluetoothctl" ) ) return { title: "", cmds: [], error: "bluetoothctl (bluez) was not found" };
+			var b = [];
+			if ( variables.proc.has( "rfkill" ) ) b.append( [ "rfkill", "unblock", "bluetooth" ] );
+			b.append( [ "bluetoothctl", "power", "on" ] );
+			return { title: "bring Bluetooth back (unblock the radio, power the adapter on)", cmds: b, error: "" };
+		}
+		return { title: "", cmds: [], error: "usage" };
+	}
+
+	function restart( target, yes, dry, asJson ) {
+		var out = variables.cli.scoped( "system restart" );
+		if ( !arrayFind( targets(), arguments.target ) ) return out.usage( new bxrig.CommandSpec().usage( "system" ), arguments.asJson );
+		var p = restartPlan( arguments.target );
+		if ( len( p.error ) ) return out.precondition( p.error, arguments.asJson );
+		return new bxrig.util.Mutation( out, variables.proc ).run( p.title, p.cmds, arguments.yes, arguments.dry, arguments.asJson, { target: arguments.target }, [], 60 );
+	}
+
+	// `system password`: passwd on this terminal (it asks for the current password, then the new one twice).
+	function password( asJson ) {
+		var out = variables.cli.scoped( "system password" );
+		if ( !variables.proc.has( "passwd" ) ) return out.precondition( "passwd was not found", arguments.asJson );
+		if ( variables.proc.exec( [ "sh", "-c", ": < /dev/tty" ], 10 ).exitCode != 0 ) return out.precondition( "this needs a terminal: run `bxrig system password` in one (the menu opens one for you)", arguments.asJson );
+		var r = variables.proc.exec( [ "sh", "-c", "exec passwd < /dev/tty > /dev/tty 2>&1" ], 600 );
+		if ( r.exitCode != 0 ) return out.say( "failed", { changed: false }, arguments.asJson, [ "The password was not changed." ] );
+		return out.say( "ok", { changed: true }, arguments.asJson, [ "Your password is changed." ] );
+	}
+
+	// `system speedtest network`: speedtest-cli --simple (ping, download, upload from speedtest.net).
+	// `system speedtest disk`: writes 1 GiB to ~/.cache and reads it back, both past the cache (dd, direct I/O), then deletes it.
+	function speedtest( kind, asJson ) {
+		var out = variables.cli.scoped( "system speedtest" );
+		if ( arguments.kind == "network" ) {
+			if ( !variables.proc.has( "speedtest-cli" ) ) return out.precondition( "speedtest-cli is not installed: bxrig install speedtest-cli", arguments.asJson );
+			if ( !arguments.asJson ) println( "Testing your internet speed (about 30 seconds)..." );
+			var r = variables.proc.exec( [ "speedtest-cli", "--simple" ], 180 );
+			if ( r.exitCode != 0 ) return out.failed( "speedtest-cli: " & trim( variables.proc.why( r ) ), arguments.asJson );
+			var data = { ping: "", download: "", upload: "" };
+			for ( var l in listToArray( r.output, chr( 10 ) ) ) {
+				var k = lCase( trim( listFirst( l, ":" ) ) );
+				if ( structKeyExists( data, k ) ) data[ k ] = trim( listRest( l, ":" ) );
+			}
+			new bxrig.SpeedResults().save( "network", data );
+			return out.say( "ok", data, arguments.asJson, listToArray( trim( r.output ), chr( 10 ) ) );
+		}
+		if ( arguments.kind == "disk" ) {
+			var dir = new bxrig.util.Env().xdgCache( "" );
+			var f = dir & "/bxrig-disk-speedtest";
+			if ( !arguments.asJson ) println( "Writing and reading 1 GiB in " & dir & " (up to a minute)..." );
+			directoryCreate( dir, true, true );
+			var w = variables.proc.exec( [ "sh", "-c", 'dd if=/dev/zero of="$1" bs=1M count=1024 oflag=direct conv=fdatasync 2>&1 | tail -n 1', "_", f ], 300 );
+			var rd = variables.proc.exec( [ "sh", "-c", 'dd if="$1" of=/dev/null bs=1M iflag=direct 2>&1 | tail -n 1', "_", f ], 300 );
+			if ( fileExists( f ) ) fileDelete( f );
+			var rate = function( line ) { var parts = listToArray( trim( arguments.line ), "," ); return parts.len() ? trim( parts[ parts.len() ] ) : ""; };
+			var data2 = { folder: dir, write: rate( w.output ), read: rate( rd.output ) };
+			if ( !len( data2.write ) || !len( data2.read ) ) return out.failed( "dd did not report a speed: " & trim( w.output & " " & rd.output ), arguments.asJson );
+			new bxrig.SpeedResults().save( "disk", data2 );
+			return out.say( "ok", data2, arguments.asJson, [ "Write: " & data2.write, "Read:  " & data2.read, "(" & dir & ", 1 GiB, direct I/O)" ] );
+		}
+		// the DNS benchmark, the same as `bxrig dns bench`
+		if ( arguments.kind == "dns" ) return new bxrig.DnsBench( variables.cli, variables.runnerArg ).run( arguments.asJson, "system speedtest" );
+		if ( arguments.kind == "last" ) return new bxrig.SpeedResults().show( variables.cli, arguments.asJson );
+		return out.usage( new bxrig.CommandSpec().usage( "system" ), arguments.asJson );
+	}
+
+	function fwupdHint() {
+		return "fwupd is not installed: " & new bxrig.util.Packages().native( variables.proc ).installLine( [ "fwupd" ] );
+	}
+
+	// `system firmware [check]`: refreshes the vendors' list (LVFS) and shows what can be updated.
+	function firmwareCheck( asJson ) {
+		var out = variables.cli.scoped( "system firmware" );
+		if ( !variables.proc.has( "fwupdmgr" ) ) return out.precondition( fwupdHint(), arguments.asJson );
+		variables.proc.exec( [ "fwupdmgr", "refresh" ], 120 );
+		var r = variables.proc.exec( [ "fwupdmgr", "get-updates" ], 120 );
+		var text = trim( r.output );
+		// fwupdmgr exits 2 when there is nothing to do
+		var none = r.exitCode == 2 || findNoCase( "no updat", text ) > 0 || findNoCase( "no upgrades", text ) > 0;
+		if ( r.exitCode != 0 && !none ) return out.say( "failed", { error: text }, arguments.asJson, [ "error: fwupdmgr get-updates: " & text ] );
+		var lines = none ? [ "No firmware updates are offered for this machine." ] : listToArray( text, chr( 10 ) );
+		if ( !none ) lines.append( "Install them: bxrig system firmware update --yes" );
+		return out.say( "ok", { updates: !none, output: text }, arguments.asJson, lines );
+	}
+
+	// `system firmware update --yes`: fwupdmgr update on this terminal (it asks before each update and before a reboot).
+	function firmwareUpdate( yes, dry, asJson ) {
+		var out = variables.cli.scoped( "system firmware" );
+		if ( !variables.proc.has( "fwupdmgr" ) ) return out.precondition( fwupdHint(), arguments.asJson );
+		if ( !arguments.yes || arguments.dry ) return out.plan( "install the firmware updates fwupd offers (fwupdmgr update; it asks before each one and before a reboot)", { command: "fwupdmgr update" }, arguments.asJson, arguments.dry );
+		if ( variables.proc.exec( [ "sh", "-c", ": < /dev/tty" ], 10 ).exitCode != 0 ) return out.precondition( "this needs a terminal: run it in one (the menu opens one for you)", arguments.asJson );
+		variables.proc.exec( [ "fwupdmgr", "refresh" ], 120 );
+		var r = variables.proc.exec( [ "sh", "-c", "exec fwupdmgr update < /dev/tty > /dev/tty 2>&1" ], 3600 );
+		// 2: nothing to do
+		if ( r.exitCode != 0 && r.exitCode != 2 ) return out.say( "failed", { exit: r.exitCode }, arguments.asJson, [ "error: fwupdmgr update exited " & r.exitCode ] );
+		return out.say( "ok", { exit: r.exitCode }, arguments.asJson, [ r.exitCode == 2 ? "No firmware updates to install." : "Firmware update done (reboot if fwupdmgr asked for it)." ] );
+	}
+}

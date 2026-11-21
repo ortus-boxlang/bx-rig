@@ -1,0 +1,224 @@
+// What the menu knows about this machine and about you, applied to the MenuTree before it is shown:
+//   ids       every entry gets a stable id: its labels as slugs joined by dots ("appearance.bar.position.top"); `bxrig menu ids` lists them
+//   when      an entry shows only when its condition holds: facts (laptop, touchpad, touchscreen, webcam, hyprland, plasma, hybrid-gpu),
+//             installed:ID (a catalog app is installed) and the negation of either with "!" ("!installed:handbrake"); "a,b" means both
+//   checked   an entry whose command sets one value of a setting ("appearance bar position top") is ticked when that is the saved value
+//   your file ~/.config/bxrig/menu.json adds entries, hides entries and renames entries (`bxrig menu file` writes a commented example):
+//             { "add": [ { "under": "trigger", "label": "My script", "command": [ "~/bin/x" ], "terminal": false } ],
+//               "hide": [ "trigger.capture.webcam-preview-on-or-off" ], "rename": { "system.lock": "Lock now" } }
+//             An added entry runs a program (`command`, detached, or in a terminal with "terminal": true) or BxRig (`bxrig`: [ "theme", "next" ]).
+// BXRIG_MENU_FACTS="laptop,touchpad" replaces the hardware and desktop detection (tests; a fact not listed is false).
+class MenuState {
+	function init( proc = "", cli = "", env = "" ) {
+		variables.cli = arguments.cli;
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+		return this;
+	}
+
+	function factNames() { return [ "laptop", "touchpad", "touchscreen", "webcam", "hyprland", "plasma", "hybrid-gpu" ]; }
+
+	// ---- ids ----
+	function slug( label ) {
+		var s = lCase( reReplace( arguments.label, "[^A-Za-z0-9]+", "-", "all" ) );
+		s = reReplace( s, "^-+|-+$", "", "all" );
+		return len( s ) ? s : "entry";
+	}
+
+	// Sets `id` on every entry (an id already there is kept as the entry's own last segment).
+	function withIds( entries, prefix = "" ) {
+		for ( var e in arguments.entries ) {
+			var own = structKeyExists( e, "id" ) && len( e.id ) && !find( ".", e.id ) ? e.id : slug( e.label );
+			e.id = ( len( arguments.prefix ) ? arguments.prefix & "." : "" ) & own;
+			if ( e.kind == "sub" ) withIds( e.children, e.id );
+		}
+		return arguments.entries;
+	}
+
+	// ---- facts ----
+	function facts() {
+		if ( structKeyExists( variables, "factCache" ) ) return variables.factCache;
+		var out = {};
+		var forced = variables.env.named( "menuFacts", "" );
+		if ( len( forced ) ) {
+			for ( var f in factNames() ) out[ f ] = false;
+			for ( var g in listToArray( forced, ", " ) ) out[ lCase( g ) ] = true;
+		} else {
+			out.laptop = new bxrig.DashboardData().batteryInfo().present;
+			var udev = "";
+			try { udev = variables.proc.exec( [ "udevadm", "info", "--export-db" ], 20 ).output; } catch ( any e ) {}
+			out.touchpad = find( "ID_INPUT_TOUCHPAD=1", udev ) > 0;
+			out.touchscreen = find( "ID_INPUT_TOUCHSCREEN=1", udev ) > 0;
+			out.webcam = fileExists( "/dev/video0" );
+			out.hyprland = variables.proc.has( "Hyprland" ) || variables.proc.has( "hyprland" );
+			out.plasma = variables.proc.has( "plasmashell" );
+			out[ "hybrid-gpu" ] = new bxrig.GpuMode( variables.proc ).gpus().len() > 1;
+		}
+		variables.factCache = out;
+		return out;
+	}
+
+	function installed( id ) {
+		if ( !structKeyExists( variables, "pk" ) ) {
+			variables.cat = new bxrig.Catalog().load();
+			variables.pk = new bxrig.Packages( variables.cli, variables.cat );
+			variables.names = variables.pk.installedNames();
+		}
+		for ( var a in variables.cat.apps ) if ( a.id == arguments.id ) return variables.pk.isInstalled( a, variables.names );
+		return false;
+	}
+
+	// True when every part of a `when` holds ("laptop", "!plasma", "installed:handbrake", "hyprland,touchpad").
+	function holds( when ) {
+		var f = facts();
+		for ( var part in listToArray( arguments.when, "," ) ) {
+			var p = trim( part );
+			var neg = left( p, 1 ) == "!";
+			if ( neg ) p = mid( p, 2, len( p ) );
+			var ok = left( p, 10 ) == "installed:" ? installed( mid( p, 11, len( p ) ) ) : ( f[ p ] ?: false );
+			if ( neg ? ok : !ok ) return false;
+		}
+		return true;
+	}
+
+	// The entries whose `when` holds; a submenu left empty goes too.
+	function prune( entries ) {
+		var out = [];
+		for ( var e in arguments.entries ) {
+			if ( len( e.when ?: "" ) && !holds( e.when ) ) continue;
+			if ( e.kind == "sub" ) {
+				e.children = prune( e.children );
+				if ( !e.children.len() ) continue;
+			}
+			out.append( e );
+		}
+		return out;
+	}
+
+	// ---- current values ----
+	// { "command words without the value": current value }, from the saved settings (nothing is asked of a running desktop).
+	function current() {
+		var out = {};
+		try {
+			var ts = new bxrig.Theme( variables.cli ).readState();
+			out[ "theme mode" ] = ts.mode;
+		} catch ( any e ) {}
+		try {
+			var s = new bxrig.Appearance( variables.cli ).readState();
+			var put = function( key, v ) { if ( len( v ?: "" ) ) out[ key ] = v; };
+			put( "appearance bar position", s.bar.position ?: "" );
+			put( "appearance bar style", s.bar.style ?: "" );
+			put( "appearance bar clock", s.bar.clock ?: "" );
+			put( "appearance bar battery", s.bar.battery_percent ?: "" );
+			put( "appearance dock mode", s.dock.mode ?: "" );
+			put( "appearance dock position", s.dock.position ?: "" );
+			put( "appearance windows gaps", s.windows.gaps ?: "" );
+			put( "appearance windows corners", s.windows.corners ?: "" );
+			put( "appearance windows opacity", s.windows.opacity ?: "" );
+			put( "appearance windows one-window-ratio", s.windows.one_window_ratio ?: "" );
+			put( "appearance windows snap", s.windows.snap ?: "" );
+			put( "appearance animations", s.animations ?: "" );
+			put( "appearance layout", s.layout ?: "" );
+		} catch ( any e ) {}
+		if ( variables.proc.has( "powerprofilesctl" ) ) {
+			var r = variables.proc.exec( [ "powerprofilesctl", "get" ], 10 );
+			if ( r.exitCode == 0 && len( trim( r.output ) ) ) out[ "power profile" ] = trim( r.output );
+		}
+		return out;
+	}
+
+	// True when the entry sets the value that is saved now.
+	function isCurrent( e, cur ) {
+		if ( !arrayFind( [ "spawn", "run" ], arguments.e.kind ) || ( arguments.e.argv ?: [] ).len() < 2 ) return false;
+		var argv = arguments.e.argv;
+		var key = [];
+		for ( var i = 1; i < argv.len(); i++ ) key.append( argv[ i ] );
+		var k = key.toList( " " );
+		return structKeyExists( arguments.cur, k ) && arguments.cur[ k ] == argv[ argv.len() ];
+	}
+
+	function mark( entries, cur ) {
+		for ( var e in arguments.entries ) {
+			if ( e.kind == "sub" ) mark( e.children, arguments.cur );
+			else if ( isCurrent( e, arguments.cur ) ) e.checked = true;
+		}
+		return arguments.entries;
+	}
+
+	// ---- your file ----
+	function userFile() { return variables.env.config( "menu.json" ); }
+
+	function example() {
+		return '{' & chr( 10 )
+		& '	"_comment": "Your additions to `bxrig menu`. `bxrig menu ids` lists the ids. Delete the examples you do not want.",' & chr( 10 )
+		& '	"add": [' & chr( 10 )
+		& '		{ "under": "trigger", "label": "Open my notes", "command": [ "xdg-open", "~/Notes" ] },' & chr( 10 )
+		& '		{ "under": "system", "label": "Disk usage", "command": [ "ncdu", "~" ], "terminal": true },' & chr( 10 )
+		& '		{ "under": "appearance", "label": "Next theme", "bxrig": [ "theme", "next" ] }' & chr( 10 )
+		& '	],' & chr( 10 )
+		& '	"hide": [],' & chr( 10 )
+		& '	"rename": {}' & chr( 10 )
+		& '}' & chr( 10 );
+	}
+
+	// Finds the entry with this id (a struct reference inside entries), or {}.
+	function findEntry( entries, id ) {
+		for ( var e in arguments.entries ) {
+			if ( e.id == arguments.id ) return e;
+			if ( e.kind == "sub" ) { var hit = findEntry( e.children, arguments.id ); if ( !structIsEmpty( hit ) ) return hit; }
+		}
+		return {};
+	}
+
+	function without( entries, id ) {
+		var out = [];
+		for ( var e in arguments.entries ) {
+			if ( e.id == arguments.id ) continue;
+			if ( e.kind == "sub" ) e.children = without( e.children, arguments.id );
+			out.append( e );
+		}
+		return out;
+	}
+
+	// Applies your file to entries that already have ids: { entries, errors }. A bad file or line is reported, never fatal.
+	function applyUser( entries, path = "" ) {
+		var file = len( arguments.path ) ? arguments.path : userFile();
+		var res = { entries: arguments.entries, errors: [] };
+		if ( !fileExists( file ) ) return res;
+		var cfg = new bxrig.util.JsonStore().load( file, "not json" );
+		if ( isSimpleValue( cfg ) && cfg == "not json" ) { res.errors.append( file & " is not valid JSON" ); return res; }
+		if ( !isStruct( cfg ) ) { res.errors.append( file & " must hold one JSON object" ); return res; }
+		var top = { kind: "sub", id: "", children: res.entries };
+		for ( var a in ( cfg.add ?: [] ) ) {
+			if ( !isStruct( a ) || !len( a.label ?: "" ) ) { res.errors.append( "add: every entry needs a label" ); continue; }
+			var parent = len( a.under ?: "" ) ? findEntry( res.entries, a.under ) : top;
+			if ( structIsEmpty( parent ) || parent.kind != "sub" ) { res.errors.append( "add " & a.label & ": no submenu with the id " & ( a.under ?: "" ) ); continue; }
+			var item = {};
+			if ( isArray( a.bxrig ?: "" ) && a.bxrig.len() ) item = { label: a.label, kind: ( a.terminal ?: false ) ? "run" : "spawn", argv: a.bxrig };
+			else if ( isArray( a.command ?: "" ) && a.command.len() ) item = { label: a.label, kind: ( a.terminal ?: false ) ? "tool" : "exec", argv: a.command.map( function( w ) { return w == "~" ? variables.env.home() : ( left( w, 2 ) == "~/" ? variables.env.home() & mid( w, 2, len( w ) ) : w ); } ) };
+			else { res.errors.append( "add " & a.label & ": give `command` (a program and its arguments) or `bxrig` (BxRig's arguments)" ); continue; }
+			item.id = ( len( parent.id ) ? parent.id & "." : "" ) & slug( a.label );
+			item.user = true;
+			parent.children.append( item );
+		}
+		res.entries = top.children;
+		for ( var h in ( cfg.hide ?: [] ) ) {
+			if ( structIsEmpty( findEntry( res.entries, h ) ) ) { res.errors.append( "hide: no entry with the id " & h ); continue; }
+			res.entries = without( res.entries, h );
+		}
+		var ren = cfg.rename ?: {};
+		if ( isStruct( ren ) ) for ( var k in ren ) {
+			var t = findEntry( res.entries, k );
+			if ( structIsEmpty( t ) ) { res.errors.append( "rename: no entry with the id " & k ); continue; }
+			t.label = ren[ k ];
+		}
+		return res;
+	}
+
+	// The whole pipeline: ids, your file, conditions, ticks. { entries, errors }
+	function apply( entries, path = "" ) {
+		var res = applyUser( withIds( arguments.entries ), arguments.path );
+		res.entries = mark( prune( res.entries ), current() );
+		return res;
+	}
+}

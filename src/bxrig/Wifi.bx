@@ -1,3 +1,4 @@
+// `bxrig wifi qr [--out=FILE.png]`: the network you are on as a QR code a phone can scan to join (qrencode; the password goes in the code only).
 // `bxrig wifi status [--json]`: the Wi-Fi radio, the Wi-Fi devices and the network you are on (read only; joining networks lives in the Noctalia
 // bar panel, `Super+Ctrl+N`). It asks NetworkManager through `nmcli -t` (terse output, `\:` is a colon inside a value).
 // Data: { radio, devices: [ { device, state, connection } ], ssid, signal } (radio is enabled or disabled; ssid is "" and signal -1 when not connected).
@@ -53,9 +54,55 @@ class Wifi {
 		return variables.out.say( "ok", data, arguments.asJson, lines );
 	}
 
-	function run( words, asJson = false ) {
+	// A value for the Wi-Fi QR format: \ ; , : and " get a backslash.
+	function qrEscape( text ) {
+		var out = "";
+		for ( var i = 1; i <= len( arguments.text ); i++ ) {
+			var ch = mid( arguments.text, i, 1 );
+			out = out & ( find( ch, '\;,:"' ) ? chr( 92 ) & ch : ch );
+		}
+		return out;
+	}
+
+	// The text a phone camera reads to join: WIFI:T:WPA;S:name;P:password;; (T:nopass for an open network).
+	function qrText( ssid, password, keyMgmt ) {
+		var open = !len( arguments.password ) || arguments.keyMgmt == "none" && !len( arguments.password );
+		var t = open ? "nopass" : ( arguments.keyMgmt == "none" ? "WEP" : "WPA" );
+		return "WIFI:T:" & t & ";S:" & qrEscape( arguments.ssid ) & ";" & ( open ? "" : "P:" & qrEscape( arguments.password ) & ";" ) & ";";
+	}
+
+	// `wifi qr [--out=FILE.png]`: the network you are on as a QR code (in the terminal, or saved). The password is never printed as text.
+	function qrCmd( outFile, asJson ) {
+		var cmd = variables.cli.scoped( "wifi qr" );
+		if ( !variables.proc.has( "nmcli" ) ) return cmd.precondition( "nmcli is not installed (NetworkManager)", arguments.asJson );
+		if ( !variables.proc.has( "qrencode" ) ) return cmd.precondition( "qrencode is not installed: bxrig install qrencode", arguments.asJson );
+		var conn = "";
+		for ( var l in listToArray( nm( [ "-f", "NAME,TYPE", "connection", "show", "--active" ] ), chr( 10 ) ) ) {
+			var f = fields( l );
+			if ( f.len() >= 2 && f[ 2 ] == "802-11-wireless" ) { conn = f[ 1 ]; break; }
+		}
+		if ( !len( conn ) ) return cmd.precondition( "you are not on a Wi-Fi network", arguments.asJson );
+		var ssid = trim( nm( [ "-g", "802-11-wireless.ssid", "connection", "show", conn ] ) );
+		if ( !len( ssid ) ) ssid = conn;
+		var mgmt = trim( nm( [ "-g", "802-11-wireless-security.key-mgmt", "connection", "show", conn ] ) );
+		var pw = "";
+		if ( len( mgmt ) && mgmt != "none" ) pw = trim( nm( [ "-s", "-g", "802-11-wireless-security.psk", "connection", "show", conn ] ) );
+		if ( len( mgmt ) && mgmt != "none" && !len( pw ) ) return cmd.precondition( "NetworkManager did not give the password of " & ssid & " (it may be stored for another user or in a keyring that is locked)", arguments.asJson );
+		var text = qrText( ssid, pw, mgmt );
+		// the panels ask for a file in ~/.cache/bxrig, which may not exist yet
+		if ( len( arguments.outFile ) && len( getDirectoryFromPath( arguments.outFile ) ) ) directoryCreate( getDirectoryFromPath( arguments.outFile ), true, true );
+		var argv = len( arguments.outFile ) ? [ "qrencode", "-s", "8", "-m", "2", "-o", arguments.outFile, text ] : [ "qrencode", "-t", "ANSIUTF8", text ];
+		var r = variables.proc.exec( argv, 30 );
+		if ( r.exitCode != 0 ) return cmd.failed( "qrencode: " & trim( r.output ), arguments.asJson );
+		var data = { ssid: ssid, file: arguments.outFile };
+		if ( len( arguments.outFile ) ) return cmd.say( "ok", data, arguments.asJson, [ "Wrote " & arguments.outFile & " (scan it to join " & ssid & ")" ] );
+		return cmd.say( "ok", data, arguments.asJson, [ r.output, "Scan it with a phone camera to join " & ssid & "." ] );
+	}
+
+	function run( words, asJson = false, outFile = "" ) {
 		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
 		if ( ( verb == "" || verb == "status" ) && arguments.words.len() <= 1 ) return statusCmd( arguments.asJson );
-		return variables.out.usage( "unknown wifi command. Usage: wifi status [--json]", arguments.asJson );
+		if ( verb == "qr" && arguments.words.len() == 1 ) return qrCmd( arguments.outFile, arguments.asJson );
+		return variables.out.usage( "unknown wifi command. Usage: wifi status|qr [--out=FILE.png] [--json]", arguments.asJson );
 	}
 }

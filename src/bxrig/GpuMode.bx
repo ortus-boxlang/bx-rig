@@ -1,0 +1,71 @@
+// `bxrig gpu mode [status]` and `bxrig gpu mode hybrid|integrated [--yes] [--dry-run] [--json]`: the GPU mode of a laptop with two GPUs
+// (integrated plus dedicated), through supergfxctl (supergfxd, from the asus-linux project; it works on most hybrid laptops, not only ASUS).
+//   hybrid       both GPUs: the integrated one draws the desktop, the dedicated one wakes for games and CUDA
+//   integrated   the dedicated GPU is powered off: longest battery life
+// The GPUs are counted from /sys/bus/pci/devices (display controllers, PCI class 0x03), which does not wake a sleeping dedicated GPU the
+// way lspci does. A switch is `supergfxctl -m MODE`; supergfxd then asks you to log out (or reboot) to finish.
+// BXRIG_PCI_DEVICES replaces /sys/bus/pci/devices (tests). Exit: 0 done, 2 usage or a plan, 4 not a hybrid laptop or no supergfxctl, 6 failed.
+class GpuMode {
+	function init( proc = "", cli = "" ) {
+		variables.cli = arguments.cli;
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc( arguments.proc ) : arguments.proc;
+		return this;
+	}
+
+	function modes() { return { hybrid: "Hybrid", integrated: "Integrated" }; }
+
+	// [ { slot, vendor } ] for every display controller.
+	function gpus( dir = "" ) {
+		var base = len( arguments.dir ) ? arguments.dir : new bxrig.util.Env().named( "pciDevices", "/sys/bus/pci/devices" );
+		var out = [];
+		if ( !directoryExists( base ) ) return out;
+		for ( var d in directoryList( base, false, "name" ) ) {
+			var cls = base & "/" & d & "/class";
+			if ( !fileExists( cls ) ) continue;
+			try {
+				if ( left( trim( fileRead( cls ) ), 4 ) != "0x03" ) continue;
+				var v = fileExists( base & "/" & d & "/vendor" ) ? lCase( trim( fileRead( base & "/" & d & "/vendor" ) ) ) : "";
+				out.append( { slot: d, vendor: v == "0x10de" ? "nvidia" : ( v == "0x1002" ? "amd" : ( v == "0x8086" ? "intel" : v ) ) } );
+			} catch ( any e ) {}
+		}
+		return out;
+	}
+
+	// supergfxctl's answer to one flag ("" when it does not answer within a few seconds).
+	function ask( flag ) {
+		if ( !variables.proc.has( "supergfxctl" ) ) return "";
+		var r = variables.proc.exec( [ "supergfxctl", arguments.flag ], 5 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+
+	function status( asJson ) {
+		var out = new bxrig.util.Out( variables.cli, "gpu mode" );
+		var g = gpus();
+		var has = variables.proc.has( "supergfxctl" );
+		var cur = has ? ask( "-g" ) : "";
+		var data = { gpus: g, hybrid: g.len() > 1, supergfxctl: has, mode: cur, supported: has ? listToArray( ask( "-s" ), "[], " ) : [] };
+		var lines = [ "GPUs: " & ( g.len() ? g.map( function( x ) { return x.vendor & " (" & x.slot & ")"; } ).toList( ", " ) : "none found" ) ];
+		if ( g.len() < 2 ) lines.append( "One GPU: there is no mode to switch." );
+		else if ( !has ) lines.append( "supergfxctl is not installed: " & installHint() );
+		else lines.append( "Mode: " & ( len( cur ) ? cur : "unknown (is supergfxd running? systemctl status supergfxd)" ) );
+		return out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	function installHint() {
+		return new bxrig.util.Distro().family() == "arch" ? "bxrig pkg install supergfxctl, then sudo systemctl enable --now supergfxd" : "it is not packaged for " & new bxrig.util.Distro().prettyName() & "; see asus-linux.org";
+	}
+
+	function set( mode, yes, dry, asJson ) {
+		var out = new bxrig.util.Out( variables.cli, "gpu mode" );
+		var m = lCase( arguments.mode );
+		if ( !structKeyExists( modes(), m ) ) return out.usage( new bxrig.CommandSpec().usage( "gpu" ), arguments.asJson );
+		if ( gpus().len() < 2 ) return out.precondition( "this machine has one GPU: there is no mode to switch", arguments.asJson );
+		if ( !variables.proc.has( "supergfxctl" ) ) return out.precondition( "supergfxctl is not installed: " & installHint(), arguments.asJson );
+		var cur = ask( "-g" );
+		if ( !arguments.dry && !len( cur ) ) return out.precondition( "supergfxd does not answer: sudo systemctl enable --now supergfxd", arguments.asJson );
+		if ( cur == modes()[ m ] ) return out.say( "ok", { mode: cur, changed: false }, arguments.asJson, [ "The GPU mode is already " & cur & "." ] );
+		var r = new bxrig.util.Mutation( out, variables.proc ).run( "switch the GPU mode to " & modes()[ m ] & " (log out or reboot to finish)", [ [ "supergfxctl", "-m", modes()[ m ] ] ], arguments.yes, arguments.dry, arguments.asJson, { from: cur, to: modes()[ m ] }, [], 60 );
+		if ( r == 0 && arguments.yes && !arguments.dry && !arguments.asJson ) println( "Log out (or reboot) to finish the switch." );
+		return r;
+	}
+}

@@ -66,7 +66,34 @@ class MacExtras {
 		if ( arguments.action == "snap-right" ) return snap( "right", arguments.asJson );
 		if ( arguments.action == "snap-top" ) return snap( "top", arguments.asJson );
 		if ( arguments.action == "snap-bottom" ) return snap( "bottom", arguments.asJson );
+		if ( arguments.action == "close-all" ) return closeAll( arguments.asJson );
+		if ( arguments.action == "tiled-fullscreen" ) return tiledFullscreen( arguments.asJson );
 		return variables.cli.say( "window", "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "window" ) ] );
+	}
+
+	// `window close-all`: asks every window to close (apps with unsaved work still ask you), then goes to workspace 1.
+	function closeAll( asJson ) {
+		var r = variables.proc.exec( [ "hyprctl", "clients", "-j" ], 10 );
+		if ( r.exitCode != 0 ) return variables.cli.say( "window", "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: hyprctl clients failed" ] );
+		var n = 0;
+		try {
+			for ( var c in jsonDeserialize( r.output ) ) {
+				if ( !len( c.address ?: "" ) ) continue;
+				variables.proc.exec( [ "hyprctl", "dispatch", 'hl.dsp.window.close({ window = "address:' & c.address & '" })' ], 10 );
+				n++;
+			}
+		} catch ( any e ) {}
+		variables.proc.exec( [ "hyprctl", "dispatch", "hl.dsp.focus({ workspace = 1 })" ], 10 );
+		return variables.cli.say( "window", "ok", { closed: n }, arguments.asJson, [] );
+	}
+
+	// `window tiled-fullscreen`: the app believes it is full screen (no tabs, no toolbars) while it keeps its tile; again to undo.
+	function tiledFullscreen( asJson ) {
+		var r = variables.proc.exec( [ "hyprctl", "activewindow", "-j" ], 10 );
+		var client = 0;
+		try { client = jsonDeserialize( r.output ).fullscreenClient ?: 0; } catch ( any e ) {}
+		var next = client == 2 ? 0 : 2;
+		return dispatch( "window", [ "fullscreenstate", "0", "" & next ], "hl.dsp.window.fullscreen_state({ internal = 0, client = " & next & " })", arguments.asJson );
 	}
 
 	// `hyprctl dispatch` with the legacy dispatcher words, then, when that fails, the Lua form (a Hyprland 0.55+ Lua session reads

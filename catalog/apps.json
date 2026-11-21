@@ -6234,6 +6234,42 @@
 			],
 			"decided_by_owner": true,
 			"note": "An alternative launcher; Noctalia's launcher is BxRig's default"
+		},
+		{
+			"id": "handbrake",
+			"name": "HandBrake",
+			"description": "Converts video to a smaller or more compatible file (MP4, MKV, WebM) with ready-made presets",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "media",
+			"category": "Media",
+			"tier": "optional",
+			"homepage": "https://handbrake.fr",
+			"macos": "HandBrake (same)",
+			"origin": [
+				"owner-request"
+			],
+			"profiles": {
+				"media": "optional"
+			}
+		},
+		{
+			"id": "speedtest-cli",
+			"name": "speedtest-cli",
+			"description": "Measures your internet download and upload speed (speedtest.net) from the terminal",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "network",
+			"category": "Networking",
+			"tier": "optional",
+			"homepage": "https://github.com/sivel/speedtest-cli",
+			"macos": "speedtest via Homebrew",
+			"origin": [
+				"owner-request"
+			],
+			"profiles": {
+				"networking": "optional"
+			}
 		}
 	]
 }

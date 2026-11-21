@@ -18,8 +18,8 @@ class Menu {
 		return this;
 	}
 
-	// The tree, with the catalog groups filled in.
-	function tree() {
+	// The tree, with the catalog groups filled in. full = true keeps every entry (no conditions, no ticks, no menu.json): for tests and docs.
+	function tree( full = false ) {
 		var groups = [];
 		try {
 			var cat = new bxrig.Catalog().load();
@@ -27,14 +27,20 @@ class Menu {
 			arraySort( g, function( a, b ) { return a.order < b.order ? -1 : ( a.order > b.order ? 1 : 0 ); } );
 			for ( var x in g ) groups.append( { id: x.id, title: x.title } );
 		} catch ( any e ) {}
-		return new bxrig.MenuTree().sections( groups );
+		if ( arguments.full ) { variables.userErrors = []; return new bxrig.MenuState( variables.proc, variables.cli ).withIds( new bxrig.MenuTree().sections( groups ) ); }
+		var res = new bxrig.MenuState( variables.proc, variables.cli ).apply( new bxrig.MenuTree().sections( groups ) );
+		variables.userErrors = res.errors;
+		return res.entries;
 	}
+
+	// The label as shown: a tick on the current value.
+	function shown( e ) { return ( arguments.e.checked ?: false ) ? "✓ " & arguments.e.label : arguments.e.label; }
 
 	// Every entry that does something, with its path ("Appearance > Theme").
 	function flatten( entries, prefix = "" ) {
 		var out = [];
 		for ( var e in arguments.entries ) {
-			var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & e.label;
+			var path = ( len( arguments.prefix ) ? arguments.prefix & " > " : "" ) & shown( e );
 			if ( e.kind == "sub" ) { for ( var c in flatten( e.children, path ) ) out.append( c ); }
 			else out.append( { path: path, entry: e } );
 		}
@@ -70,14 +76,50 @@ class Menu {
 		var pad = repeatString( "  ", arguments.depth );
 		for ( var r in arguments.entries ) {
 			if ( r.kind == "sub" ) { out.append( pad & r.label ); for ( var l in lineList( r.children, arguments.depth + 1 ) ) out.append( l ); }
-			else out.append( pad & r.label & ( len( describe( r ) ) ? "   (" & describe( r ) & ")" : "" ) );
+			else out.append( pad & shown( r ) & ( len( describe( r ) ) ? "   (" & describe( r ) & ")" : "" ) );
 		}
 		return out;
 	}
 
 	function show( asJson ) {
 		var rows = tree();
-		return variables.cli.say( "menu items", "ok", { menu: rows, entries: flatten( rows ).len() }, arguments.asJson, lineList( rows, 0 ) );
+		var lines = lineList( rows, 0 );
+		for ( var er in variables.userErrors ) lines.append( "warning: menu.json: " & er );
+		return variables.cli.say( "menu items", "ok", { menu: rows, entries: flatten( rows ).len(), warnings: variables.userErrors }, arguments.asJson, lines );
+	}
+
+	// `menu ids`: every entry's id, for menu.json (add under a submenu, hide, rename).
+	function ids( asJson ) {
+		var rows = [];
+		var walk = function( entries, path ) {
+			for ( var e in entries ) {
+				var p = ( len( path ) ? path & " > " : "" ) & e.label;
+				rows.append( { id: e.id, path: p, submenu: e.kind == "sub", user: e.user ?: false } );
+				if ( e.kind == "sub" ) walk( e.children, p );
+			}
+		};
+		walk( tree(), "" );
+		var lines = rows.map( function( r ) { return r.id & repeatString( " ", max( 1, 48 - len( r.id ) ) ) & r.path & ( r.submenu ? "  >" : "" ); } );
+		for ( var er in variables.userErrors ) lines.append( "warning: menu.json: " & er );
+		return variables.cli.say( "menu ids", "ok", { ids: rows, file: new bxrig.MenuState().userFile(), warnings: variables.userErrors }, arguments.asJson, lines );
+	}
+
+	// `menu file [--yes]`: writes the example ~/.config/bxrig/menu.json when there is none, and says where it is.
+	function file( yes, dry, asJson ) {
+		var ms = new bxrig.MenuState();
+		var f = ms.userFile();
+		var out = variables.cli.scoped( "menu file" );
+		if ( fileExists( f ) ) {
+			var errs = ms.applyUser( ms.withIds( new bxrig.MenuTree().sections( [] ) ), f ).errors;
+			var lines = [ "Your menu file: " & f ];
+			for ( var e in errs ) lines.append( "warning: " & e );
+			if ( !errs.len() ) lines.append( "It reads fine. `bxrig menu ids` lists the ids to use in it." );
+			return out.say( "ok", { file: f, exists: true, warnings: errs }, arguments.asJson, lines );
+		}
+		if ( !arguments.yes || arguments.dry ) return out.plan( "write an example menu file to " & f, { file: f, exists: false }, arguments.asJson, arguments.dry );
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		fileWrite( f, ms.example() );
+		return out.say( "ok", { file: f, exists: true, written: true }, arguments.asJson, [ "Wrote " & f & ". Edit it; `bxrig menu ids` lists the ids." ] );
 	}
 
 	// `menu search TEXT`: the entries whose path contains TEXT.
@@ -321,10 +363,11 @@ class Menu {
 		var cat = new bxrig.Catalog().load();
 		var pk = new bxrig.Packages( variables.cli, cat );
 		var names = pk.installedNames();
-		var apps = cat.apps.filter( function( a ) { return a.group == e.group; } );
+		// what is installed already is not offered again (Remove lists it)
+		var apps = cat.apps.filter( function( a ) { return a.group == e.group && !pk.isInstalled( a, names ); } );
 		arraySort( apps, function( a, b ) { return compareNoCase( a.name, b.name ); } );
-		if ( !apps.len() ) { note( arguments.runner, "No apps in this group" ); return new bxrig.util.Exit().ok(); }
-		var labels = apps.map( function( a ) { return ( pk.isInstalled( a, names ) ? "✓ " : "  " ) & a.name & "  " & left( a.description ?: "", 70 ); } );
+		if ( !apps.len() ) { note( arguments.runner, "Every app in this group is installed" ); return new bxrig.util.Exit().ok(); }
+		var labels = apps.map( function( a ) { return a.name & "  " & left( a.description ?: "", 70 ); } );
 		var pick = arguments.runner.select( e.label, labels );
 		if ( pick == 0 ) return new bxrig.util.Exit().ok();
 		var chosen = apps[ pick ];
@@ -400,7 +443,7 @@ class Menu {
 		var icons = variables.iconMap;
 		var iconOf = function( n ) { return structKeyExists( icons, n ) ? icons[ n ] : ""; };
 		while ( true ) {
-			var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) && len( iconOf( e.themeIcon ) ) ? { label: e.label, icon: iconOf( e.themeIcon ) } : e.label; } );
+			var labels = arguments.entries.map( function( e ) { return structKeyExists( e, "themeIcon" ) && len( iconOf( e.themeIcon ) ) ? { label: shown( e ), icon: iconOf( e.themeIcon ) } : shown( e ); } );
 			var off = 0;
 			if ( arguments.top ) { labels.prepend( len( iconOf( "system-search" ) ) ? { label: "Search…", icon: iconOf( "system-search" ) } : "Search…" ); off = 1; }
 			var tail = arguments.top ? { label: "Exit", icon: iconOf( "application-exit" ) } : { label: "Back", icon: iconOf( "go-previous" ) };

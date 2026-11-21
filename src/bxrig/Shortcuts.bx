@@ -28,14 +28,15 @@ class Shortcuts {
 	// Valid key names besides single letters and digits.
 	function namedKeys() {
 		var out = [ "Space", "Tab", "Return", "Escape", "grave", "comma", "period", "slash", "minus", "equal", "Left", "Right", "Up", "Down",
-			"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
+			"Delete", "Home", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
 		for ( var b in bareKeys() ) out.append( b );
 		return out;
 	}
 
 	// Keys that need no modifier (media and hardware keys, Print).
 	function bareKeys() {
-		return [ "Print", "XF86AudioRaiseVolume", "XF86AudioLowerVolume", "XF86AudioMute", "XF86AudioMicMute", "XF86MonBrightnessUp", "XF86MonBrightnessDown", "XF86PowerOff" ];
+		return [ "Print", "XF86AudioRaiseVolume", "XF86AudioLowerVolume", "XF86AudioMute", "XF86AudioMicMute", "XF86MonBrightnessUp", "XF86MonBrightnessDown", "XF86PowerOff",
+			"XF86AudioPlay", "XF86AudioPause", "XF86AudioNext", "XF86AudioPrev", "XF86KbdBrightnessUp", "XF86KbdBrightnessDown" ];
 	}
 
 	// Parses "Super+Shift+V" into { ok, mods (SUPER, SHIFT, ALT, CTRL; sorted), key, error }. "`" and "Enter" are accepted spellings.
@@ -190,10 +191,25 @@ class Shortcuts {
 			row( "panel-display", G.note, "Display panel (the control center panel)", "Super+Ctrl+D", "Super+Ctrl+D", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center")' ),
 			bx( "fullscreen-desktop", G.win, "Full screen desktop (hide or show the bar)", "Super+Ctrl+Alt+F", "Super+Ctrl+Alt+F", "appearance bar toggle" ),
 			bx( "bar-toggle", G.win, "Toggle top bar (show or hide)", "Super+Shift+Space", "Super+Shift+Space", "appearance bar toggle" ),
+			bx( "fullscreen-tiled", G.win, "Tiled full screen (the app goes full screen inside its tile)", "Super+Ctrl+F", "Super+Ctrl+Shift+F", "window tiled-fullscreen" ),
+			bx( "close-all", G.win, "Close every window", "Ctrl+Alt+Delete", "Ctrl+Alt+Delete", "window close-all" ),
+			row( "resize-narrower", G.win, "Floating window: narrower", "Super+Alt+Minus", "Super+Alt+Minus", "hypr-bind", 'hl.dsp.window.resize({ x = -100, y = 0, relative = true })', "", "{ repeating = true }" ),
+			row( "resize-wider", G.win, "Floating window: wider", "Super+Alt+Equal", "Super+Alt+Equal", "hypr-bind", 'hl.dsp.window.resize({ x = 100, y = 0, relative = true })', "", "{ repeating = true }" ),
+			row( "resize-shorter", G.win, "Floating window: shorter", "Super+Alt+Shift+Minus", "Super+Alt+Shift+Minus", "hypr-bind", 'hl.dsp.window.resize({ x = 0, y = -100, relative = true })', "", "{ repeating = true }" ),
+			row( "resize-taller", G.win, "Floating window: taller", "Super+Alt+Shift+Equal", "Super+Alt+Shift+Equal", "hypr-bind", 'hl.dsp.window.resize({ x = 0, y = 100, relative = true })', "", "{ repeating = true }" ),
+			row( "group-toggle", G.win, "Group windows into tabs (or ungroup)", "Super+G", "Super+G", "hypr-bind", "hl.dsp.group.toggle()" ),
+			row( "group-leave", G.win, "Take the window out of its group", "Super+Alt+G", "Super+Alt+G", "hypr-bind", "hl.dsp.window.move({ out_of_group = true })" ),
+			row( "group-next", G.win, "Next window in the group", "Super+Alt+Tab", "Super+Alt+Tab", "hypr-bind", "hl.dsp.group.next()" ),
+			row( "group-prev", G.win, "Previous window in the group", "Super+Alt+Shift+Tab", "Super+Alt+Shift+Tab", "hypr-bind", "hl.dsp.group.prev()" ),
+			row( "scratchpad", G.ws, "Scratchpad: show or hide", "Super+Ctrl+S", "Super+Ctrl+S", "hypr-bind", 'hl.dsp.workspace.toggle_special("scratchpad")' ),
+			row( "scratchpad-send", G.ws, "Send the window to the scratchpad", "Super+Ctrl+Alt+S", "Super+Ctrl+Alt+S", "hypr-bind", 'hl.dsp.window.move({ workspace = "special:scratchpad" })' ),
+			row( "zoom-in", G.win, "Zoom in on the screen (again for more)", "Super+Ctrl+Z", "Super+Ctrl+Z", "hypr-bind", 'function() local z = hl.get_config("cursor.zoom_factor") or 1; hl.config({ cursor = { zoom_factor = z + 1 } }) end' ),
+			row( "zoom-reset", G.win, "Zoom back out", "Super+Ctrl+Alt+Z", "Super+Ctrl+Alt+Z", "hypr-bind", 'function() hl.config({ cursor = { zoom_factor = 1 } }) end' ),
 			bx( "dock-toggle", G.win, "Toggle the dock (show or hide)", "Super+Alt+D", "Super+Alt+D", "appearance dock toggle" ),
 			row( "noctalia-settings", G.note, "Noctalia settings window", "Super+Ctrl+Comma", "Super+Ctrl+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "settings-toggle")' ),
 			row( "notify-latest", G.note, "Notifications: act on the newest (open it or press its button)", "Super+Alt+Comma", "Super+Alt+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "notification-invoke-latest")' ),
 			row( "notify-all", G.note, "Notifications: all of them, to read and act on", "Super+Shift+Comma", "Super+Shift+Comma", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle control-center notifications")' ),
+			bx( "notify-clear", G.note, "Notifications: dismiss them all", "Super+Ctrl+Shift+Comma", "Super+Ctrl+Shift+Comma", "notify clear" ),
 			row( "world-clock", G.note, "World clock", "Super+Alt+W", "Super+Alt+W", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/clock:panel")' ),
 			row( "agents-panel", G.note, "Coding agents: launch one, see its limits", "Super+Alt+A", "Super+Alt+A", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/agents:panel")' ),
 			row( "theme-switcher", G.note, "Theme switcher (search, preview, Enter applies)", "Super+Ctrl+Shift+Space", "Super+Ctrl+Shift+Space", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/quick:themes")' ),
@@ -233,7 +249,13 @@ class Shortcuts {
 			row( "volume-mute", G.hw, "Mute", "XF86AudioMute", "XF86AudioMute", "hypr-bind", 'hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")', "", "{ locked = true, repeating = true }" ),
 			row( "mic-mute", G.hw, "Mute the microphone", "XF86AudioMicMute", "XF86AudioMicMute", "hypr-bind", 'hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle")', "", "{ locked = true, repeating = true }" ),
 			row( "brightness-up", G.hw, "Brightness up", "XF86MonBrightnessUp", "XF86MonBrightnessUp", "hypr-bind", 'hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+")', "", "{ locked = true, repeating = true }" ),
-			row( "brightness-down", G.hw, "Brightness down", "XF86MonBrightnessDown", "XF86MonBrightnessDown", "hypr-bind", 'hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-")', "", "{ locked = true, repeating = true }" )
+			row( "brightness-down", G.hw, "Brightness down", "XF86MonBrightnessDown", "XF86MonBrightnessDown", "hypr-bind", 'hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-")', "", "{ locked = true, repeating = true }" ),
+			row( "kbd-backlight-up", G.hw, "Keyboard backlight up", "XF86KbdBrightnessUp", "XF86KbdBrightnessUp", "hypr-bind", 'hl.dsp.exec_cmd("brightnessctl -d *::kbd_backlight set 33%+")', "", "{ locked = true, repeating = true }" ),
+			row( "kbd-backlight-down", G.hw, "Keyboard backlight down", "XF86KbdBrightnessDown", "XF86KbdBrightnessDown", "hypr-bind", 'hl.dsp.exec_cmd("brightnessctl -d *::kbd_backlight set 33%-")', "", "{ locked = true, repeating = true }" ),
+			row( "media-play", G.hw, "Play or pause", "XF86AudioPlay", "XF86AudioPlay", "hypr-bind", 'hl.dsp.exec_cmd("playerctl play-pause")', "", "{ locked = true }" ),
+			row( "media-pause", G.hw, "Pause", "XF86AudioPause", "XF86AudioPause", "hypr-bind", 'hl.dsp.exec_cmd("playerctl pause")', "", "{ locked = true }" ),
+			row( "media-next", G.hw, "Next track", "XF86AudioNext", "XF86AudioNext", "hypr-bind", 'hl.dsp.exec_cmd("playerctl next")', "", "{ locked = true }" ),
+			row( "media-prev", G.hw, "Previous track", "XF86AudioPrev", "XF86AudioPrev", "hypr-bind", 'hl.dsp.exec_cmd("playerctl previous")', "", "{ locked = true }" )
 		];
 		// focus and move with the arrow keys
 		for ( var d in [ "Left", "Right", "Up", "Down" ] ) {
@@ -460,6 +482,9 @@ class Shortcuts {
 		out.append( '' );
 		out.append( '-- The webcam preview (bxrig webcam toggle) floats at a small size' );
 		out.append( 'hl.window_rule({ name = "bxrig-webcam", match = { class = "^bxrig-webcam$" }, float = true, size = { 360, 270 } })' );
+		out.append( '' );
+		out.append( '-- The webcam bubble of a screen recording (bxrig record start --webcam): pinned in a corner, sized from the monitor height, never focused' );
+		for ( var wr in new bxrig.Webcam( "" ).overlayRules() ) out.append( wr );
 		out.append( '' );
 		out.append( '-- The screensaver (bxrig screensaver start) is a full-screen terminal per monitor, without animation, border or corners' );
 		out.append( 'hl.window_rule({ name = "bxrig-screensaver", match = { class = "^bxrig-screensaver$" }, fullscreen = true, no_anim = true, border_size = 0, rounding = 0, no_shadow = true, no_blur = true })' );

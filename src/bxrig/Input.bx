@@ -352,6 +352,7 @@ class Input {
 		var n = arguments.words.len();
 		if ( verb == "doctor" && n == 1 ) return new bxrig.MacExtras( variables.cli, variables.runnerArg ).inputDoctor( arguments.asJson );
 		if ( verb == "gestures" && n == 1 ) return new bxrig.MacExtras( variables.cli, variables.runnerArg ).gestures( arguments.yes, arguments.dry, arguments.asJson );
+		if ( arrayFind( [ "touchpad", "touchscreen" ], verb ) && n <= 2 ) return new bxrig.TouchToggle( variables.cli, variables.runnerArg ).run( verb, n == 2 ? arguments.words[ 2 ] : "toggle", arguments.asJson );
 		if ( verb == "status" && n == 1 ) return statusCmd( arguments.asJson );
 		if ( verb == "offer" && n == 1 ) return offerCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );
 		if ( verb == "apple" && n == 1 ) return appleCmd( arguments.opts, arguments.yes, arguments.dry, arguments.asJson );

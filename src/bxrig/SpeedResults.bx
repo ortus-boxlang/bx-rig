@@ -1,0 +1,38 @@
+// The last result of each speed test (network, disk, dns), so the System panel and the Control Center can show "last run 12:38" when
+// they open. Only the latest of each is kept: ~/.local/state/bxrig/speedtest-last.json = { network: {..., at}, disk: {..., at}, dns: {..., at} }.
+// `bxrig system speedtest last [--json]` prints it.
+class SpeedResults {
+	function init( env = "" ) {
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		return this;
+	}
+
+	function file() { return variables.env.state( "speedtest-last.json" ); }
+
+	function kinds() { return [ "network", "disk", "dns" ]; }
+
+	function read() { return new bxrig.util.JsonStore().read( file(), {} ); }
+
+	// Keeps data as the last result of kind, stamped with the local time (ISO 8601).
+	function save( kind, data ) {
+		var all = read();
+		var d = duplicate( arguments.data );
+		d.at = dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" );
+		all[ arguments.kind ] = d;
+		try {
+			directoryCreate( getDirectoryFromPath( file() ), true, true );
+			new bxrig.util.JsonStore().write( "speedtest-last", file(), all );
+		} catch ( any e ) {}
+		return d;
+	}
+
+	function show( cli, asJson ) {
+		var all = read();
+		var lines = [];
+		if ( structKeyExists( all, "network" ) ) lines.append( "Network  " & ( all.network.download ?: "" ) & " down, " & ( all.network.upload ?: "" ) & " up, ping " & ( all.network.ping ?: "" ) & "  (" & all.network.at & ")" );
+		if ( structKeyExists( all, "disk" ) ) lines.append( "Disk     write " & ( all.disk.write ?: "" ) & ", read " & ( all.disk.read ?: "" ) & "  (" & all.disk.at & ")" );
+		if ( structKeyExists( all, "dns" ) ) lines.append( "DNS      fastest " & ( all.dns.fastest ?: "" ) & ", in use " & ( all.dns.current ?: "" ) & "  (" & all.dns.at & ")" );
+		if ( !lines.len() ) lines.append( "No speed test has run yet: bxrig system speedtest network|disk|dns" );
+		return arguments.cli.say( "system speedtest last", "ok", all, arguments.asJson, lines );
+	}
+}

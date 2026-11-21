@@ -88,6 +88,14 @@
 			"use": "the Ports page"
 		},
 		{
+			"name": "bxrig-network",
+			"glyph": "wifi-high",
+			"category": "system",
+			"context": "apps",
+			"title": "Network",
+			"use": "the Network page"
+		},
+		{
 			"name": "bxrig-backups",
 			"glyph": "cloud-arrow-up",
 			"category": "system",

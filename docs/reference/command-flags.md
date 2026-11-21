@@ -279,8 +279,12 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `skills` | `--tag` | value |  |
 | `screenshot` | `--edit` | bool |  |
 | `qr` | `--out` | value | `wifi.png` |
+| `share` | `--to` | value |  |
 | `record` | `--region` | bool |  |
 | `record` | `--audio` | value | `desktop` |
+| `record` | `--webcam` | any | `top-left` |
+| `record` | `--webcam-size` | value | `small` |
 | `dolphin` | `--fix` | bool |  |
 | `input` | `--for` | value |  |
 | `input` | `--scroll-speed` | value | `0..63` |
+| `wifi` | `--out` | value | `wifi.png` |

@@ -46,6 +46,7 @@ ICONS = [
 	('bxrig-apps', 'squares-four', 'control', 'apps', 'Apps', 'the Apps page'),
 	('bxrig-dashboard', 'gauge', 'system', 'apps', 'Dashboard', 'the Dashboard page'),
 	('bxrig-ports', 'plugs-connected', 'develop', 'apps', 'Ports', 'the Ports page'),
+	('bxrig-network', 'wifi-high', 'system', 'apps', 'Network', 'the Network page'),
 	('bxrig-backups', 'cloud-arrow-up', 'system', 'apps', 'Backups', 'backups'),
 	('bxrig-updates', 'arrow-circle-up', 'develop', 'apps', 'Updates', 'updates'),
 	('bxrig-agents', 'robot', 'look', 'apps', 'AI agents', 'the AI agents'),

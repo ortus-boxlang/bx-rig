@@ -1,0 +1,79 @@
+// `bxrig share file [PATH...]|folder [PATH]|clipboard [--to=DEVICE]` and `bxrig share receive`: send to a phone or a computer nearby with
+// LocalSend. Sending uses LocalSend's own command line, `localsend-cli send [--to DEVICE] PATH...` (LocalSend 1.18 and later): without --to it
+// lists the devices it finds and you pick one, so it runs in a terminal (the menu opens one). Without a path, a file chooser asks (kdialog on
+// Plasma, else zenity). `clipboard` sends what you copied as a text file. `receive` opens the LocalSend app, which receives.
+// Exit: 0 done (or nothing chosen), 2 usage, 4 precondition (no LocalSend, no file chooser, no clipboard tool), 6 failed.
+class Share {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = variables.cli.scoped( "share" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	function cliMissing() {
+		return "localsend-cli (LocalSend's command line, 1.18 and later) is not installed. Get it from the LocalSend releases page "
+		& "(github.com/localsend/localsend/releases, the CLI tarball) or with Homebrew (brew install localsend-cli). Meanwhile: bxrig share receive opens the app";
+	}
+
+	// The paths a file chooser returns ([] when you cancel). folder picks one directory.
+	function choose( folder ) {
+		var argv = [];
+		if ( variables.proc.has( "kdialog" ) ) argv = arguments.folder ? [ "kdialog", "--getexistingdirectory", "." ] : [ "kdialog", "--getopenfilename", ".", "--multiple", "--separate-output" ];
+		else if ( variables.proc.has( "zenity" ) ) argv = arguments.folder ? [ "zenity", "--file-selection", "--directory" ] : [ "zenity", "--file-selection", "--multiple", "--separator=" & chr( 10 ) ];
+		else return { error: "no file chooser: give the path (bxrig share file PATH), or install zenity", paths: [] };
+		var r = variables.proc.exec( argv, 600 );
+		if ( r.exitCode != 0 ) return { error: "", paths: [] };
+		return { error: "", paths: listToArray( trim( r.output ), chr( 10 ) ).map( function( p ) { return trim( p ); } ).filter( function( p ) { return len( p ); } ) };
+	}
+
+	// The argv that sends the paths.
+	function sendArgv( paths, to ) {
+		var argv = [ "localsend-cli", "send" ];
+		if ( len( arguments.to ) ) { argv.append( "--to" ); argv.append( arguments.to ); }
+		for ( var p in arguments.paths ) argv.append( p );
+		return argv;
+	}
+
+	function run( words, to, dry, asJson ) {
+		var verb = arguments.words.len() ? arguments.words[ 1 ] : "";
+		var rest = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) rest.append( arguments.words[ i ] );
+		if ( verb == "receive" && !rest.len() ) return receive( arguments.dry, arguments.asJson );
+		if ( !arrayFind( [ "file", "folder", "clipboard" ], verb ) || ( verb == "clipboard" && rest.len() ) || ( verb == "folder" && rest.len() > 1 ) ) return variables.out.usage( new bxrig.CommandSpec().usage( "share" ), arguments.asJson );
+		if ( !variables.proc.has( "localsend-cli" ) ) return variables.out.precondition( cliMissing(), arguments.asJson );
+		var paths = rest;
+		if ( verb == "clipboard" ) {
+			if ( !variables.proc.has( "wl-paste" ) ) return variables.out.precondition( "wl-paste is not installed (wl-clipboard)", arguments.asJson );
+			var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-clipboard-" & dateTimeFormat( now(), "yyyyMMdd-HHmmss" ) & ".txt";
+			if ( !arguments.dry ) {
+				var c = variables.proc.exec( [ "wl-paste", "--no-newline" ], 10 );
+				if ( c.exitCode != 0 ) return variables.out.precondition( "the clipboard is empty", arguments.asJson );
+				fileWrite( tmp, c.output );
+			}
+			paths = [ tmp ];
+		} else if ( !paths.len() ) {
+			var ch = choose( verb == "folder" );
+			if ( len( ch.error ) ) return variables.out.precondition( ch.error, arguments.asJson );
+			if ( !ch.paths.len() ) return variables.out.say( "ok", { sent: false }, arguments.asJson, [ "Nothing chosen." ] );
+			paths = ch.paths;
+		}
+		for ( var p in paths ) if ( !arguments.dry && verb != "clipboard" && !fileExists( p ) && !directoryExists( p ) ) return variables.out.precondition( p & " was not found", arguments.asJson );
+		var argv = sendArgv( paths, arguments.to );
+		var data = { what: verb, paths: paths, to: arguments.to, command: argv.toList( " " ) };
+		if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Dry run: " & argv.toList( " " ), "Nothing was changed." ], true );
+		// interactive: the device list and the progress are LocalSend's own, on this terminal
+		var run = [ "sh", "-c", 'exec "$@" < /dev/tty > /dev/tty 2>&1', "_" ];
+		for ( var a in argv ) run.append( a );
+		var r = variables.proc.exec( run, 3600 );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", data, arguments.asJson, [ "error: localsend-cli exited " & r.exitCode ] );
+		return variables.out.say( "ok", data, arguments.asJson, [ "Sent." ] );
+	}
+
+	function receive( dry, asJson ) {
+		if ( !variables.proc.has( "localsend" ) ) return variables.out.precondition( "LocalSend is not installed: bxrig install localsend", arguments.asJson );
+		if ( arguments.dry ) return variables.out.say( "ok", {}, arguments.asJson, [ "Dry run: would open LocalSend to receive", "Nothing was changed." ], true );
+		variables.proc.exec( [ "sh", "-c", 'setsid localsend >/dev/null 2>&1 &' ], 10 );
+		return variables.out.say( "ok", { opened: true }, arguments.asJson, [ "LocalSend is open: send from the other device to this one." ] );
+	}
+}

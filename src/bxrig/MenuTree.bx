@@ -37,6 +37,8 @@ class MenuTree {
 	function exec( label, argv ) { return { label: arguments.label, kind: "exec", argv: arguments.argv }; }
 	function link( label, url ) { return { label: arguments.label, kind: "open", url: arguments.url }; }
 	function sub( label, children ) { return { label: arguments.label, kind: "sub", children: arguments.children }; }
+	// Shows the entry only when the condition holds (MenuState: laptop, touchpad, touchscreen, webcam, hyprland, plasma, hybrid-gpu, installed:ID, !...).
+	function when( cond, e ) { arguments.e.when = arguments.cond; return arguments.e; }
 
 	// One entry per Hyprland layout (HyprLayout), each running `appearance layout NAME`.
 	function layoutItems() {
@@ -156,12 +158,20 @@ class MenuTree {
 							spawn( "Record a region of the screen", [ "record", "toggle", "--region" ] ),
 							spawn( "Screen recording with desktop audio", [ "record", "toggle", "--audio=desktop" ] ),
 							spawn( "Screen recording with microphone audio", [ "record", "toggle", "--audio=mic" ] ),
+							when( "webcam", spawn( "Screen recording with the webcam (bottom right)", [ "record", "toggle", "--webcam" ] ) ),
+							when( "webcam", spawn( "Screen recording with the webcam and microphone", [ "record", "toggle", "--webcam", "--audio=mic" ] ) ),
 							spawn( "Color picker", [ "screenshot", "color" ] )
 						] ),
 					sub( "Notices", [
 							spawn( "Time", [ "notify", "time" ] ),
 							spawn( "Battery", [ "notify", "battery" ] ),
 							spawn( "Weather", [ "notify", "weather" ] )
+						] ),
+					sub( "Share (LocalSend)", [
+							term( "A file", [ "share", "file" ] ),
+							term( "A folder", [ "share", "folder" ] ),
+							term( "The clipboard", [ "share", "clipboard" ] ),
+							spawn( "Receive (open LocalSend)", [ "share", "receive" ] )
 						] ),
 					sub( "Toggle", [
 							spawn( "Do Not Disturb", [ "notify", "dnd", "toggle" ] ),
@@ -204,11 +214,23 @@ class MenuTree {
 				] ),
 			sub( "Hardware", [
 					run( "Monitors", [ "display", "list" ] ),
-					sub( "Laptop panel", [ spawn( "On", [ "display", "laptop", "on" ] ), spawn( "Off", [ "display", "laptop", "off" ] ) ] ),
-					sub( "Mirror the laptop panel", [ spawn( "On", [ "display", "mirror", "on" ] ), spawn( "Off", [ "display", "mirror", "off" ] ) ] ),
+					when( "laptop", sub( "Laptop panel", [ spawn( "On", [ "display", "laptop", "on" ] ), spawn( "Off", [ "display", "laptop", "off" ] ) ] ) ),
+					when( "laptop", sub( "Mirror the laptop panel", [ spawn( "On", [ "display", "mirror", "on" ] ), spawn( "Off", [ "display", "mirror", "off" ] ) ] ) ),
 					sub( "Brightness", [ spawn( "Up", [ "display", "brightness", "up" ] ), spawn( "Down", [ "display", "brightness", "down" ] ), spawn( "50%", [ "display", "brightness", "set", "50" ] ), spawn( "100%", [ "display", "brightness", "set", "100" ] ) ] ),
-					spawn( "Webcam preview on or off", [ "webcam", "toggle" ] ),
+					when( "webcam", spawn( "Webcam preview on or off", [ "webcam", "toggle" ] ) ),
 					run( "GPU check", [ "gpu", "doctor" ] ),
+					when( "hybrid-gpu", sub( "GPU mode", [
+								run( "Show the mode", [ "gpu", "mode" ] ),
+								run( "Hybrid (both GPUs)", [ "gpu", "mode", "hybrid", "--yes" ] ),
+								run( "Integrated only (longest battery life)", [ "gpu", "mode", "integrated", "--yes" ] )
+							] ) ),
+					when( "touchpad,hyprland", sub( "Touchpad", [ spawn( "On", [ "input", "touchpad", "on" ] ), spawn( "Off", [ "input", "touchpad", "off" ] ), spawn( "On or off", [ "input", "touchpad", "toggle" ] ) ] ) ),
+					when( "touchscreen,hyprland", sub( "Touchscreen", [ spawn( "On", [ "input", "touchscreen", "on" ] ), spawn( "Off", [ "input", "touchscreen", "off" ] ), spawn( "On or off", [ "input", "touchscreen", "toggle" ] ) ] ) ),
+					run( "Wi-Fi QR code (join from a phone)", [ "wifi", "qr" ] ),
+					when( "hyprland", exec( "Network and speed (panel)", [ "noctalia", "msg", "panel-toggle", "bxrig/system:panel", "network" ] ) ),
+					when( "!hyprland", tui( "Network and speed", [ "network" ], "wifi" ) ),
+					run( "Network speed test", [ "system", "speedtest", "network" ] ),
+					run( "Disk speed test", [ "system", "speedtest", "disk" ] ),
 					run( "Input devices and gestures", [ "input", "doctor" ] ),
 					exec( "Audio", panel ),
 					exec( "Bluetooth", panel ),
@@ -225,15 +247,15 @@ class MenuTree {
 					sub( "Power", [
 							run( "Status", [ "power", "status" ] ),
 							sub( "Profile", [ spawn( "Performance", [ "power", "profile", "performance" ] ), spawn( "Balanced", [ "power", "profile", "balanced" ] ), spawn( "Power saver", [ "power", "profile", "saver" ] ) ] ),
-							sub( "Closing the lid", [ run( "Suspend", [ "power", "lid", "suspend", "--yes" ] ), run( "Lock only", [ "power", "lid", "lock", "--yes" ] ), run( "Do nothing", [ "power", "lid", "ignore", "--yes" ] ) ] ),
-							run( "Set up laptop power tools", [ "power", "setup", "--yes" ] ),
+							when( "laptop", sub( "Closing the lid", [ run( "Suspend", [ "power", "lid", "suspend", "--yes" ] ), run( "Lock only", [ "power", "lid", "lock", "--yes" ] ), run( "Do nothing", [ "power", "lid", "ignore", "--yes" ] ) ] ) ),
+							when( "laptop", run( "Set up laptop power tools", [ "power", "setup", "--yes" ] ) ),
 							run( "Power doctor", [ "power", "doctor" ] )
 						] ),
 					sub( "Display", [
 							run( "Monitors", [ "display", "list" ] ),
 							pick( "Scale", "monitors", [ "display", "scale", "{}", "1.5" ] ),
-							sub( "Laptop panel", [ spawn( "On", [ "display", "laptop", "on" ] ), spawn( "Off", [ "display", "laptop", "off" ] ) ] ),
-							sub( "Mirror the laptop panel", [ spawn( "On", [ "display", "mirror", "on" ] ), spawn( "Off", [ "display", "mirror", "off" ] ) ] ),
+							when( "laptop", sub( "Laptop panel", [ spawn( "On", [ "display", "laptop", "on" ] ), spawn( "Off", [ "display", "laptop", "off" ] ) ] ) ),
+							when( "laptop", sub( "Mirror the laptop panel", [ spawn( "On", [ "display", "mirror", "on" ] ), spawn( "Off", [ "display", "mirror", "off" ] ) ] ) ),
 							sub( "Brightness", [ spawn( "Up", [ "display", "brightness", "up" ] ), spawn( "Down", [ "display", "brightness", "down" ] ), spawn( "50%", [ "display", "brightness", "set", "50" ] ), spawn( "100%", [ "display", "brightness", "set", "100" ] ) ] ),
 							spawn( "Re-apply saved display settings", [ "display", "apply" ] ),
 							spawn( "Forget saved display settings", [ "display", "reset" ] )
@@ -242,6 +264,12 @@ class MenuTree {
 							pick( "Browser", "browsers", [ "default", "browser", "{}", "--yes" ] ),
 							pick( "Terminal", "terminals", [ "default", "terminal", "{}", "--yes" ] ),
 							pick( "File manager", "filemanagers", [ "default", "filemanager", "{}", "--yes" ] ),
+							sub( "Editor", [
+									run( "Neovim", [ "default", "editor", "neovim", "--yes" ] ),
+									when( "installed:vscode", run( "VS Code", [ "default", "editor", "vscode", "--yes" ] ) ),
+									when( "installed:zed", run( "Zed", [ "default", "editor", "zed", "--yes" ] ) ),
+									when( "plasma", run( "Kate", [ "default", "editor", "kate", "--yes" ] ) )
+								] ),
 							run( "Show the defaults", [ "default", "show" ] )
 						] ),
 					sub( "Keyboard", [
@@ -271,6 +299,7 @@ class MenuTree {
 						] ),
 					sub( "DNS", [
 							run( "Show", [ "dns" ] ),
+							run( "Test and pick the fastest", [ "dns", "bench" ] ),
 							run( "Cloudflare", [ "dns", "cloudflare", "--yes" ] ),
 							run( "Google", [ "dns", "google", "--yes" ] ),
 							run( "Quad9", [ "dns", "quad9", "--yes" ] ),
@@ -328,6 +357,15 @@ class MenuTree {
 					run( "Check for a BxRig update", [ "update", "check" ] ),
 					run( "Install the BxRig update", [ "update", "apply", "--yes" ] ),
 					run( "System update (snapshot first)", [ "system", "update", "--yes" ] ),
+					run( "Firmware: check", [ "system", "firmware" ] ),
+					run( "Firmware: install updates", [ "system", "firmware", "update", "--yes" ] ),
+					sub( "Restart", [
+							spawn( "Shell (Noctalia or Plasma)", [ "system", "restart", "shell", "--yes" ] ),
+							run( "Audio", [ "system", "restart", "audio", "--yes" ] ),
+							run( "Wi-Fi", [ "system", "restart", "wifi", "--yes" ] ),
+							run( "Bluetooth", [ "system", "restart", "bluetooth", "--yes" ] )
+						] ),
+					term( "Change my password", [ "system", "password" ] ),
 					run( "Agent skills: update", [ "skills", "update", "--yes" ] ),
 					spawn( "Re-apply appearance", [ "appearance", "apply" ] ),
 					spawn( "Re-apply display settings", [ "display", "apply" ] ),

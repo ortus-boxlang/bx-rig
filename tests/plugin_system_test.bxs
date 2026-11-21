@@ -100,6 +100,19 @@ testkit.check( "the terminal command quotes the executable and every word, and w
 testkit.check( "a missing checkupdates offers to install pacman-contrib", find( "pacman-contrib", pn ) > 0 && find( "sudo pacman -S pacman-contrib", pn ) > 0 );
 testkit.check( "the panel has the Updates and Backups tabs, the restart banner and the three health glyphs", find( "tab-updates", pn ) > 0 && find( "tab-backups", pn ) > 0 && find( "refresh-alert", pn ) > 0 && find( "circle-check", pn ) > 0 && find( "alert-triangle", pn ) > 0 && find( "circle-dashed", pn ) > 0 );
 testkit.check( "the panel shows the snapshot-first note", find( "snapshot is taken first", pn ) > 0 );
+// ---- the Network tab ----
+for ( c in [ [ '"wifi", "status", "--json"', "wifi status" ], [ '"system", "speedtest", "last", "--json"', "system speedtest" ], [ '"dns", "--json"', "dns" ], [ '"dns", "bench", "--json"', "dns bench" ], [ '"wifi", "qr", "--out="', "wifi qr" ] ] ) {
+	testkit.check( "the Network tab runs " & c[ 1 ] & " and the CLI has `" & c[ 2 ] & "`", find( c[ 1 ], pn ) > 0 && find( c[ 2 ], usage.usage( listFirst( c[ 2 ], " " ) ) ) > 0 );
+}
+testkit.check( "the Network tab: its tab button, the speed, disk and DNS cards, a DNS click runs dns ID --yes", find( "tab-network", pn ) > 0 && find( 'card("dns"', pn ) > 0 && find( '{ "dns", id, "--yes" }', pn ) > 0 && find( '"system", "speedtest", kind, "--json"', pn ) > 0 );
+testkit.check( "the Network tab: the QR code is shown with ui.image, and Open in Control Center runs tui network", find( "ui.image", pn ) > 0 && find( '" tui network"', pn ) > 0 );
+testkit.check( "the panel opens on the tab its context names (updates, backups, network)", find( 'context == "network"', pn ) > 0 );
+testkit.check( "the DNS in use comes from dns --json (provider, which Tweaks provides)", find( "data.provider", pn ) > 0 && find( "provider: providerOf", fileRead( expandPath( "../src/bxrig/Tweaks.bx" ) ) ) > 0 );
+qp = textOf( "quick/panel.luau" );
+testkit.check( "Quick panel: Share Wi-Fi and Control Center at the top", find( '"wifi", "qr", "--out="', qp ) > 0 && find( "Share Wi-Fi", qp ) > 0 && find( "Control Center", qp ) > 0 && balance( qp ) == 0 );
+for ( fld in [ "providers", "fastest", "ms" ] ) {
+	testkit.check( "dns bench provides " & fld & ", which the panel reads", find( fld, fileRead( expandPath( "../src/bxrig/DnsBench.bx" ) ) ) > 0 && find( fld, pn ) > 0 );
+}
 // the fields it reads exist in what the CLI answers: read them from the sources
 su = fileRead( expandPath( "../src/bxrig/SystemUpdates.bx" ) );
 bs = fileRead( expandPath( "../src/bxrig/BackupStatus.bx" ) );

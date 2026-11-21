@@ -1,0 +1,113 @@
+// The menu's ids, conditions, ticks and your menu file (MenuState), and the pure parts of the commands added beside it: the GPU mode's GPU
+// count, the Wi-Fi QR text, the webcam bubble rules, LocalSend's argv, the touch toggle's Hyprland call, the restart plans and the editors.
+// Run from src/: (cd src && matchbox ../tests/gaps_test.bxs)
+testkit = new lib.Check( "gaps" );
+cli = new bxrig.util.Cli( "0.0.0" );
+home = getTempDirectory() & "/bxrig-gaps-" & createUUID();
+directoryCreate( home, true, true );
+
+// ---- menu: ids ----
+ms = new bxrig.MenuState( "", "", new bxrig.util.Env( { HOME: home, BXRIG_CONFIG_HOME: home & "/.config", BXRIG_MENU_FACTS: "laptop,hyprland" } ) );
+testkit.check( "slug: words, lower case, dashes", ms.slug( "Screen recording: start or stop" ) == "screen-recording-start-or-stop" && ms.slug( "Wi-Fi QR code (join from a phone)" ) == "wi-fi-qr-code-join-from-a-phone" && ms.slug( "✓" ) == "entry" );
+tree = [
+	{ label: "Trigger", kind: "sub", children: [
+			{ label: "Capture", kind: "sub", children: [ { label: "Webcam bubble", kind: "spawn", argv: [ "record", "toggle", "--webcam" ], when: "webcam" } ] },
+			{ label: "Laptop panel", kind: "spawn", argv: [ "display", "laptop", "on" ], when: "laptop" },
+			{ label: "Not on Plasma", kind: "spawn", argv: [ "x" ], when: "!plasma" },
+			{ label: "Both", kind: "spawn", argv: [ "x" ], when: "laptop,hyprland" }
+		] },
+	{ label: "Appearance", kind: "sub", children: [
+			{ label: "Top", kind: "spawn", argv: [ "appearance", "bar", "position", "top" ] },
+			{ label: "Left", kind: "spawn", argv: [ "appearance", "bar", "position", "left" ] },
+			{ label: "Next theme", kind: "spawn", argv: [ "theme", "next" ] }
+		] },
+	{ label: "System", kind: "sub", children: [ { label: "Lock", kind: "spawn", argv: [ "system", "lock" ] } ] }
+];
+ms.withIds( tree );
+testkit.check( "ids: the path of slugs", tree[ 1 ].id == "trigger" && tree[ 1 ].children[ 1 ].children[ 1 ].id == "trigger.capture.webcam-bubble" && tree[ 3 ].children[ 1 ].id == "system.lock" );
+
+// ---- menu: conditions ----
+testkit.check( "facts come from BXRIG_MENU_FACTS (a fact not listed is false)", ms.facts().laptop && ms.facts().hyprland && !ms.facts().webcam && !ms.facts().plasma );
+testkit.check( "holds: one fact, a negation, two facts", ms.holds( "laptop" ) && ms.holds( "!plasma" ) && ms.holds( "laptop,hyprland" ) && !ms.holds( "webcam" ) && !ms.holds( "laptop,webcam" ) );
+pruned = ms.prune( duplicate( tree ) );
+trig = pruned[ 1 ];
+testkit.check( "prune: entries that do not apply go, and a submenu left empty goes too", trig.children.len() == 3 && trig.children.filter( function( c ) { return c.label == "Capture"; } ).len() == 0 );
+
+// ---- menu: ticks ----
+marked = ms.mark( duplicate( tree ), { "appearance bar position": "left" } );
+testkit.check( "mark: the saved value is ticked, the others and other commands are not", ( marked[ 2 ].children[ 2 ].checked ?: false ) && !( marked[ 2 ].children[ 1 ].checked ?: false ) && !( marked[ 2 ].children[ 3 ].checked ?: false ) );
+
+// ---- menu: your file ----
+mf = home & "/menu.json";
+fileWrite( mf, '{ "add": [ { "under": "system", "label": "Disk usage", "command": [ "ncdu", "~" ], "terminal": true }, { "label": "Top level", "bxrig": [ "theme", "next" ] }, { "under": "nope", "label": "Lost", "command": [ "x" ] }, { "under": "system", "label": "Broken" } ], "hide": [ "trigger.laptop-panel", "no.such.id" ], "rename": { "system.lock": "Lock now" } }' );
+res = ms.applyUser( ms.withIds( duplicate( tree ) ), mf );
+sys = res.entries.filter( function( e ) { return e.id == "system"; } )[ 1 ];
+added = sys.children.filter( function( e ) { return e.label == "Disk usage"; } );
+testkit.check( "file: a program added under a submenu, in a terminal, ~ expanded", added.len() == 1 && added[ 1 ].kind == "tool" && added[ 1 ].argv[ 2 ] == home && added[ 1 ].id == "system.disk-usage" );
+testkit.check( "file: a bxrig command at the top level", res.entries.filter( function( e ) { return e.label == "Top level" && e.kind == "spawn" && e.argv.toList( " " ) == "theme next"; } ).len() == 1 );
+testkit.check( "file: hide and rename by id", structIsEmpty( ms.findEntry( res.entries, "trigger.laptop-panel" ) ) && ms.findEntry( res.entries, "system.lock" ).label == "Lock now" );
+testkit.check( "file: mistakes are reported, not fatal (unknown submenu, no command, unknown id)", res.errors.len() == 3 && findNoCase( "nope", res.errors.toList( "|" ) ) && findNoCase( "no.such.id", res.errors.toList( "|" ) ) );
+fileWrite( mf, "{ not json" );
+testkit.check( "file: bad JSON is one warning", ms.applyUser( ms.withIds( duplicate( tree ) ), mf ).errors.len() == 1 );
+testkit.check( "file: the example reads with no warnings", ( function() { fileWrite( mf, ms.example() ); return ms.applyUser( ms.withIds( new bxrig.MenuTree().sections( [] ) ), mf ).errors.len() == 0; } )() );
+
+// ---- the real menu tree ----
+real = ms.withIds( new bxrig.MenuTree().sections( [] ) );
+ids = [];
+walk = function( es ) { for ( var e in es ) { ids.append( e.id ); if ( e.kind == "sub" ) walk( e.children ); } };
+walk( real );
+dupes = ids.filter( function( i ) { return ids.filter( function( j ) { return j == i; } ).len() > 1; } );
+testkit.check( "the real tree: no two entries share an id", !dupes.len() );
+testkit.check( "the real tree: the new entries are there", arrayFind( ids, "update.restart.audio" ) && arrayFind( ids, "trigger.share-localsend.a-file" ) && arrayFind( ids, "hardware.gpu-mode" ) && arrayFind( ids, "setup.defaults.editor.neovim" ) );
+
+// ---- gpu mode ----
+pci = home & "/pci";
+for ( dev in [ { s: "0000:00:02.0", c: "0x030000", v: "0x8086" }, { s: "0000:01:00.0", c: "0x030200", v: "0x10de" }, { s: "0000:00:1f.3", c: "0x040380", v: "0x8086" } ] ) {
+	directoryCreate( pci & "/" & dev.s, true, true );
+	fileWrite( pci & "/" & dev.s & "/class", dev.c & chr( 10 ) );
+	fileWrite( pci & "/" & dev.s & "/vendor", dev.v & chr( 10 ) );
+}
+g = new bxrig.GpuMode().gpus( pci );
+testkit.check( "gpu: display controllers only (class 0x03), with their vendor", g.len() == 2 && g.map( function( x ) { return x.vendor; } ).sort( "text" ).toList() == "intel,nvidia" );
+
+// ---- wifi qr ----
+w = new bxrig.Wifi( cli );
+testkit.check( "wifi qr: WPA with escaped name and password", w.qrText( "Home;Net", 'p:a\ss"', "wpa-psk" ) == 'WIFI:T:WPA;S:Home\;Net;P:p\:a\\ss\";;' );
+testkit.check( "wifi qr: an open network", w.qrText( "Cafe", "", "" ) == "WIFI:T:nopass;S:Cafe;;" );
+
+// ---- webcam bubble ----
+wc = new bxrig.Webcam( "" );
+rules = wc.overlayRules();
+testkit.check( "webcam: one rule per corner and size, pinned, never focused", rules.len() == 12 && rules.every( function( r ) { return find( "pin = true", r ) && find( "no_initial_focus = true", r ); } ) );
+br = rules.filter( function( r ) { return find( '"bxrig-webcam-bottom-right-medium"', r ); } )[ 1 ];
+testkit.check( "webcam: bottom right sits 40 px from the right and bottom edges", find( '"(monitor_w-monitor_h*16/45-40)"', br ) && find( '"(monitor_h-monitor_h*4/15-40)"', br ) );
+testkit.check( "webcam: top left is at 40, 40", find( "move = { 40, 40 }", rules.filter( function( r ) { return find( "top-left-small", r ); } )[ 1 ] ) > 0 );
+testkit.check( "webcam: the bubble's app id picks its rule", wc.overlayArgv( "top-left", "large" ).toList( " " ) contains "--wayland-app-id=bxrig-webcam-top-left-large" );
+
+// ---- share ----
+sh = new bxrig.Share( cli );
+testkit.check( "share: localsend-cli send, --to when given", sh.sendArgv( [ "a.pdf", "b.jpg" ], "" ).toList( " " ) == "localsend-cli send a.pdf b.jpg" && sh.sendArgv( [ "a.pdf" ], "Pixel 9" ).toList( "|" ) == "localsend-cli|send|--to|Pixel 9|a.pdf" );
+
+// ---- touch toggle ----
+tt = new bxrig.TouchToggle( cli );
+testkit.check( "touch: the Lua call, the name quoted", tt.evalArgv( 'ELAN "pad"', false )[ 3 ] == 'hl.device({ name = "ELAN \"pad\"", enabled = false })' && tt.evalArgv( "x", true )[ 3 ] contains "enabled = true" );
+
+// ---- restart plans (stubbed programs) ----
+present = [ "systemctl", "nmcli", "rfkill", "bluetoothctl", "noctalia" ];
+stub = function( argv, timeout ) {
+	if ( argv[ 1 ] == "sh" && argv.len() >= 5 && argv[ 3 ] contains "command -v" ) return { exitCode: arrayFind( present, argv[ 5 ] ) ? 0 : 1, output: "", timeout: false };
+	if ( argv[ 1 ] == "pgrep" ) return { exitCode: 0, output: "123", timeout: false };
+	return { exitCode: 0, output: "", timeout: false };
+};
+st = new bxrig.SystemTools( cli, stub );
+testkit.check( "restart audio: the three user services", st.restartPlan( "audio" ).cmds[ 1 ].toList( " " ) == "systemctl --user restart wireplumber.service pipewire.service pipewire-pulse.service" );
+testkit.check( "restart wifi: unblock, networking on, radio on, rescan", st.restartPlan( "wifi" ).cmds.map( function( c ) { return c[ 1 ] & " " & c[ 2 ]; } ).toList( "|" ) == "rfkill unblock|nmcli networking|nmcli radio|sh -c" );
+testkit.check( "restart bluetooth: unblock and power on", st.restartPlan( "bluetooth" ).cmds.map( function( c ) { return c.toList( " " ); } ).toList( "|" ) == "rfkill unblock bluetooth|bluetoothctl power on" );
+testkit.check( "restart shell: Noctalia is stopped and started again", st.restartPlan( "shell" ).cmds[ 1 ].toList( " " ) == "pkill -x noctalia" );
+
+// ---- editors ----
+df = new bxrig.Defaults( cli );
+testkit.check( "editors: a GUI editor waits for its window in EDITOR", df.editors().vscode.env == "code --wait" && df.editors().neovim.env == "nvim" && df.knownEditors() == "kate, neovim, vscode, zed" );
+
+directoryDelete( home, true );
+testkit.done( "gaps tests passed" );
