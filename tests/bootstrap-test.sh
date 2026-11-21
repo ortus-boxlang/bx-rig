@@ -256,12 +256,12 @@ out=bxrig; while [[ $# -gt 0 ]]; do [[ "$1" == --output ]] && { out="$2"; break;
 cp "$FAKE" "$out"; chmod 755 "$out"'
   : > "$tmp/build.log"; fake_bin "$SRCVER" > "$tmp/fake_built"
 }
-brun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BLOG="$tmp/build.log" FAKE="$tmp/fake_built" MOCK_UID="${MOCK_UID:-1000}" MOCK_MB="${MOCK_MB:-0.12.0}" MOCK_TUI="${MOCK_TUI:-1}" MOCK_SHARE="${MOCK_SHARE:-1}" MOCK_BUILD_FAIL="${MOCK_BUILD_FAIL:-0}" "$@"; }
+brun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="$tmp/os-arch" BLOG="$tmp/build.log" FAKE="$tmp/fake_built" MOCK_UID="${MOCK_UID:-1000}" MOCK_MB="${MOCK_MB:-0.12.0}" MOCK_TUI="${MOCK_TUI:-1}" MOCK_SHARE="${MOCK_SHARE:-1}" MOCK_BUILD_FAIL="${MOCK_BUILD_FAIL:-0}" "$@"; }
 dest="$home/.local/bin/bxrig"
 
 # 1. Build from source and install.
 b_mocks
-out="$(brun bash "$repo/bootstrap/install.sh" binary --yes 2>&1)"
+out="$(brun bash "$repo/bootstrap/install.sh" binary --yes 2>&1)" || { echo "FAIL: binary --yes: $out" >&2; exit 1; }
 need "$out" 'Building bxrig with MatchBox 0.12.0'; need "$out" "Installed $dest ($SRCVER)"
 [[ -x "$dest" ]] && [[ "$("$dest" version)" == "$SRCVER" ]] || { echo 'FAIL: binary not installed or not working' >&2; exit 1; }
 need "$(cat "$tmp/build.log")" '--target native --output'; need "$(cat "$tmp/build.log")" 'src/Main.bx'
