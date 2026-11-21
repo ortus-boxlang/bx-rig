@@ -60,7 +60,7 @@ The shared helpers are in `src/bxrig/util/`: `Cli`, `Out`, `Exit`, `Mutation`, `
 
 ## Local setup
 
-BxRig is always built with the MatchBox you choose, and only a MatchBox with the terminal UI (the `bif-tui` feature) can compile it. The stable and snapshot builds do not have it yet, because the MatchBox `bxrig` branch is ahead of `develop`; for now use the branch build. One script sets it up:
+BxRig is always built with the MatchBox you choose. It needs both the terminal UI (the `bif-tui` feature) and the class-file sharing fix (MatchBox commit `e7812e6`); the snapshot has the first but not the second, because the MatchBox `bxrig` branch is ahead of `develop`. For now use the branch build. One script sets it up:
 
 ```bash
 scripts/setup-local.sh                      # asks which MatchBox to use
@@ -84,7 +84,7 @@ Choice 3 asks for the repository (default `ortus-boxlang/matchbox`) and the bran
 | `snapshot` | `mvm install snapshot`, `mvm use snapshot`. | `mvm` |
 | `branch` | Shallow clone of the repo and ref into `.cache/matchbox-src/<repo>-<ref>` (for example `ortus-boxlang-matchbox-bxrig`), refreshed with a shallow fetch when it exists, built with `cargo build --features bif-tui` (debug; `--release` for an optimized build). | `git`, Rust |
 
-After the choice the script probes the MatchBox. If it cannot compile BxRig (stable and snapshot today) it stops with `This MatchBox (...) cannot compile BxRig ... Use the branch build: bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig`, records nothing and never switches to another MatchBox by itself. Otherwise it saves the choice in `.cache/dev.env` (gitignored), builds `dist/bxrig` with `scripts/dev-build.sh` and runs a smoke test. `--no-build` only probes and saves the choice. Run it again to switch. `scripts/dev-build.sh` and `tests/run-all.sh` read `.cache/dev.env`; a `MATCHBOX=/path/to/matchbox` variable overrides it (use it for your own `../matchbox` checkout: build it with `cargo build --features bif-tui`, then `MATCHBOX=../matchbox/target/debug/matchbox scripts/dev-build.sh`).
+After the choice the script probes the MatchBox twice: it creates the terminal UI canvas (`createObject( "rust", "tui.TUI" )`) and compiles two cross-referencing class files to check that class files are compiled once (MatchBox commit `e7812e6`, on the `bxrig` branch). The snapshot has bif-tui now but not the class-sharing fix: with ~200 classes it takes minutes and >50 GB and produces a 1.2 GB binary instead of ~20 MB. If either probe fails it stops with the reason, records nothing and never switches to another MatchBox by itself. Otherwise it saves the choice in `.cache/dev.env` (gitignored), builds `dist/bxrig` with `scripts/dev-build.sh` and runs a smoke test. `--no-build` only probes and saves the choice. Run it again to switch. `scripts/dev-build.sh` and `tests/run-all.sh` read `.cache/dev.env`; a `MATCHBOX=/path/to/matchbox` variable overrides it (use it for your own `../matchbox` checkout: build it with `cargo build --features bif-tui`, then `MATCHBOX=../matchbox/target/debug/matchbox scripts/dev-build.sh`).
 
 `--matchbox edge` and `--matchbox source` were removed: use `--matchbox branch` (it builds the `bxrig` branch from source instead of downloading the published build).
 
@@ -102,7 +102,7 @@ BXRIG_MATCHBOX_BRANCH=develop scripts/setup-local.sh                      # the 
 
 - `--matchbox-branch REF` (or `--matchbox-repo REPO`) alone means `--matchbox branch`. REF is anything `git clone --branch` accepts (branch or tag); a full commit id is fetched by itself. `--matchbox-repo REPO` is `owner/name` on GitHub or a full `https://` URL and defaults to `toolchain.matchbox.repo` in `box.json`. `BXRIG_MATCHBOX_BRANCH` and `BXRIG_MATCHBOX_REPO` do the same; the flags win. Values may contain only letters, digits and `. _ / @ + -` (a repo URL also `:` after `https`), may not start with a dash and are passed to git as arguments, never through a shell. Combined with `--matchbox stable` or `snapshot` they stop with exit 2.
 - `.cache/dev.env` records `MATCHBOX` (the path), `MATCHBOX_REPO`, `MATCHBOX_REF` and `MATCHBOX_COMMIT` (for stable and snapshot the repo is `mvm (stable)` or `mvm (snapshot)` and the ref `latest` or `snapshot`), which `scripts/dev-build.sh` and `tests/run-all.sh` use.
-- The MatchBox version does not matter: what counts is the probe (it runs a three line script that creates the terminal UI canvas, `createObject( "rust", "tui.TUI" )`).
+- The MatchBox version does not matter: what counts are the two probes (terminal UI canvas and class-file sharing), not a version number.
 - `scripts/get-matchbox.sh DEST --ref REF --repo REPO` does the same for scripts and CI: it builds that ref from source (release, no `--locked`) and writes `DEST` and `DEST.info` (with a `repo=` line). CI still uses it (and `.github/workflows/matchbox.yml`) to publish and consume the `bxrig` builds.
 - At the end the script prints one summary: the MatchBox in use (repo, ref, commit, path), how to switch (`scripts/setup-local.sh --matchbox stable|snapshot|branch`) and the command that tests the end-user installer with it:
 
