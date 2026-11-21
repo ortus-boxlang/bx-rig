@@ -67,12 +67,43 @@ mb_builds_bxrig() {
 	rm -rf "$dir"
 	(( rc == 0 )) && [[ "$out" == *bxrig-tui-ok* ]]
 }
+# mb_shares_class_files BINARY: does this MatchBox compile each class file once instead of once per reference?
+# The bxrig branch's "Compile and store each class once" fix (MatchBox commit e7812e6) is not on develop, so mvm's snapshot lacks it.
+# Without it, BxRig's ~200 classes are recompiled at every `new`, taking minutes and >50 GB and embedding one class ~15000 times
+# (a 1.2 GB binary instead of ~20 MB). The probe compiles two class files that refer to each other: a fixed compiler reports
+# "Circular class reference" and exits 1; the unfixed one recurses until it overflows the stack. It is a bytecode compile, so it is
+# fast either way. (bootstrap/install.sh has the same probe: it ships alone in the install bundle and cannot source this file.)
+mb_shares_class_files() {
+	local mb="$1" dir out rc=0
+	[[ "$mb" == /* ]] || mb="$(cd "$(dirname "$mb")" && pwd)/$(basename "$mb")"
+	dir="$(mktemp -d)" || return 1
+	mkdir -p "$dir/probe" || { rm -rf "$dir"; return 1; }
+	printf '%s\n' 'class A {' '  function makeB() { return new probe.B(); }' '}' > "$dir/probe/A.bx"
+	printf '%s\n' 'class B {' '  function makeA() { return new probe.A(); }' '}' > "$dir/probe/B.bx"
+	printf '%s\n' 'a = new probe.A();' 'println( "ok" );' > "$dir/main.bxs"
+	# cap memory and core dumps: an unfixed compiler recurses instead of reporting the cycle
+	if command -v timeout >/dev/null 2>&1; then
+		out="$(cd "$dir" && ulimit -c 0 && ulimit -v 2097152 && timeout 20 "$mb" --build --output probe.bxb main.bxs </dev/null 2>&1)" || rc=1
+	else
+		out="$(cd "$dir" && ulimit -c 0 && ulimit -v 2097152 && "$mb" --build --output probe.bxb main.bxs </dev/null 2>&1)" || rc=1
+	fi
+	rm -rf "$dir"
+	(( rc != 0 )) && [[ "$out" == *"Circular class reference"* ]]
+}
 # mb_require_bxrig_capable BINARY: returns 0, or prints why this MatchBox cannot compile BxRig and returns 1. Never switches to another MatchBox.
 mb_require_bxrig_capable() {
-	mb_builds_bxrig "$1" && return 0
-	{
-		printf 'This MatchBox (%s) cannot compile BxRig: it has no terminal UI support (the bif-tui feature), which the stable and snapshot builds lack until the BxRig changes ship.\n' "$("$1" --version 2>&1 | head -n 1)"
-		echo "  Use the branch build: bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig"
-	} >&2
-	return 1
+	local mb="$1" ver
+	ver="$("$mb" --version 2>&1 | head -n 1)"
+	if ! mb_builds_bxrig "$mb"; then
+		echo "This MatchBox ($ver) cannot compile BxRig: it has no terminal UI support (the bif-tui feature), which the stable and snapshot builds lack until the BxRig changes ship." >&2
+		echo "  Use the branch build: bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig" >&2
+		return 1
+	fi
+	if ! mb_shares_class_files "$mb"; then
+		echo "This MatchBox ($ver) cannot compile BxRig efficiently: it recompiles every class file at every reference." >&2
+		echo "  BxRig has about 200 classes: that takes minutes and >50 GB and produces a 1.2 GB binary instead of ~20 MB." >&2
+		echo "  The fix (MatchBox commit e7812e6, 'Compile and store each class once') is on the bxrig branch but not on develop/snapshots." >&2
+		echo "  Use the branch build: bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig" >&2
+		return 1
+	fi
 }

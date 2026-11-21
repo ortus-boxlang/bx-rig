@@ -11,11 +11,20 @@ mb="${MATCHBOX:-}"
 . "$root/scripts/lib/matchbox-ref.sh"
 mb_require_bxrig_capable "$mb" || exit 1
 mkdir -p "$root/dist"
+echo "  generating assets and version ..."
 "$root/bootstrap/gen-assets.sh" >/dev/null
 "$root/bootstrap/gen-version.sh" >/dev/null
 # the BoxLang modules bxrig embeds (box.json toolchain.modules), passed to MatchBox with --module
+echo "  resolving BoxLang modules ..."
 modlist="$(MATCHBOX="$mb" "$root/scripts/get-modules.sh" "$root/.cache/modules")"
 mods=()
 while IFS= read -r m; do [[ -n "$m" ]] && mods+=( --module "$m" ); done <<<"$modlist"
-(cd "$root" && "$mb" "${mods[@]}" --target native --output "$root/dist/bxrig" src/Main.bx)
+echo "  compiling src/Main.bx -> dist/bxrig (native) ..."
+# build beside the target and move it in: writing over a binary that is running fails with
+# "Text file busy", and renaming over it does not
+new="$root/dist/.bxrig.new"
+rm -f "$new"
+(cd "$root" && "$mb" "${mods[@]}" --target native --output "$new" src/Main.bx)
+chmod 755 "$new"
+mv -f "$new" "$root/dist/bxrig"
 echo "built $root/dist/bxrig with $("$mb" --version 2>&1 | head -1)"

@@ -5,7 +5,8 @@ set -euo pipefail
 # BoxLang follows the latest stable release (owner decision 2026-11-09); BXRIG_BOXLANG_VERSION=x.y.z pins it.
 # MatchBox comes from mvm: the stable release by default (`mvm install latest`), the snapshot build with --snapshot
 # (BXRIG_MATCHBOX_CHANNEL=snapshot), or a branch built here with cargo (--matchbox-branch REF, see "MatchBox" below). Neither stable nor
-# snapshot contains the BxRig changes yet, so they cannot compile bxrig: the binary stage probes the MatchBox it would use (mb_builds_bxrig).
+# snapshot contains all the BxRig changes (the snapshot has bif-tui now, but not the class-file sharing fix), so they cannot compile bxrig
+# well enough: the binary stage probes the MatchBox it would use (mb_can_compile_bxrig: bif-tui + class sharing).
 # BXRIG_MVM_VERSION=x.y.z asks the MVM installer for a specific release.
 # Free disk space in $HOME. A single stage needs MIN_FREE_GB; the whole install needs FULL_FREE_GB, checked up front so a machine that
 # passes stage 1 cannot run out of space in stage 2. Derived from a real Arch run (2026-11-16): the image had 6 GB free and Rust alone
@@ -253,8 +254,30 @@ mb_builds_bxrig() {
 	rm -rf "$dir"
 	(( rc == 0 )) && [[ "$out" == *bxrig-tui-ok* ]]
 }
+# The other half of the capability check: does MatchBox compile each class file once? The bxrig branch's "Compile and store each class
+# once" fix (commit e7812e6) is not on develop, so mvm's snapshot has bif-tui but still explodes on BxRig's ~200 classes:
+# minutes, >50 GB and a 1.2 GB binary instead of ~20 MB. Two cross-referencing class files make a fixed compiler report
+# "Circular class reference" quickly; the unfixed one recurses until it overflows the stack. Copy of scripts/lib/matchbox-ref.sh:
+# this script ships alone in the install bundle and cannot source that file.
+mb_shares_class_files() {
+	local mb="$1" dir out rc=0
+	[[ "$mb" == /* ]] || mb="$(cd "$(dirname "$mb")" && pwd)/$(basename "$mb")"
+	dir="$(mktemp -d)" || return 1
+	mkdir -p "$dir/probe" || { rm -rf "$dir"; return 1; }
+	printf '%s\n' 'class A {' '  function makeB() { return new probe.B(); }' '}' > "$dir/probe/A.bx"
+	printf '%s\n' 'class B {' '  function makeA() { return new probe.A(); }' '}' > "$dir/probe/B.bx"
+	printf '%s\n' 'a = new probe.A();' 'println( "ok" );' > "$dir/main.bxs"
+	if command -v timeout >/dev/null 2>&1; then
+		out="$(cd "$dir" && ulimit -c 0 && ulimit -v 2097152 && timeout 20 "$mb" --build --output probe.bxb main.bxs </dev/null 2>&1)" || rc=1
+	else
+		out="$(cd "$dir" && ulimit -c 0 && ulimit -v 2097152 && "$mb" --build --output probe.bxb main.bxs </dev/null 2>&1)" || rc=1
+	fi
+	rm -rf "$dir"
+	(( rc != 0 )) && [[ "$out" == *"Circular class reference"* ]]
+}
+mb_can_compile_bxrig() { mb_builds_bxrig "$1" && mb_shares_class_files "$1"; }
 mb_cannot_compile_message() {  # the active MatchBox version
-	echo "This MatchBox (${1:-unknown version}) cannot compile BxRig: it has no terminal UI support (the bif-tui feature), which the stable and snapshot builds lack until the BxRig changes ship." >&2
+	echo "This MatchBox (${1:-unknown version}) cannot compile BxRig: it needs bif-tui and the class-file sharing fix (MatchBox commit e7812e6, on the bxrig branch)." >&2
 	echo "  Use the branch build: install.sh toolchains --yes --matchbox-branch $MATCHBOX_REF, then run this again (or pass --binary PATH with a bxrig you built)." >&2
 }
 # The commit REF points at in REPO, 40 characters, empty when it cannot be read (no network, a commit id instead of a branch or tag).
@@ -357,7 +380,7 @@ inspect() {
   have_yay=0; tool_path yay >/dev/null && have_yay=1; [[ "$os_fam" == arch ]] || have_yay=1
   mvm_ver="$(tool_version mvm)"; have_mvm=0; tool_path mvm >/dev/null && have_mvm=1
   mb_ver="$(tool_version matchbox)"; mb_cc=no
-  if mb_path="$(tool_path matchbox)" && mb_builds_bxrig "$mb_path"; then mb_cc=yes; fi
+  if mb_path="$(tool_path matchbox)" && mb_can_compile_bxrig "$mb_path"; then mb_cc=yes; fi
   have_bvm=0; tool_path bvm >/dev/null && have_bvm=1; bvm_ver="$(tool_version bvm)"
   bl_ver="$(bl_version)"; bl_want="$(boxlang_want)"
   rust_ver="$(tool_version rustc)"; have_rustup=0; tool_path rustup >/dev/null && have_rustup=1
@@ -383,8 +406,8 @@ build_steps() {
       steps+=("matchbox|copy BXRIG_MATCHBOX_FILE=$BXRIG_MATCHBOX_FILE to $MATCHBOX_HOME/bin/matchbox|a MatchBox you built yourself")
     else
       case "$MB_CHANNEL" in
-        stable) steps+=("matchbox|mvm install latest && mvm use latest|the stable MatchBox from mvm (it cannot compile BxRig itself; the prebuilt bxrig does not need it)") ;;
-        snapshot) steps+=("matchbox|mvm install snapshot && mvm use snapshot|the snapshot MatchBox from mvm (mvm skips a build that has not changed; it cannot compile BxRig itself)") ;;
+        stable) steps+=("matchbox|mvm install latest && mvm use latest|the stable MatchBox from mvm (not enough to compile BxRig; the prebuilt bxrig does not need it)") ;;
+        snapshot) steps+=("matchbox|mvm install snapshot && mvm use snapshot|the snapshot MatchBox from mvm (mvm skips a build that has not changed; not enough to compile BxRig)") ;;
         branch) steps+=("matchbox|git clone --depth 1 --branch $MB_BRANCH $MB_REPO_URL, then cargo build --release --features bif-tui|MatchBox built from the $MB_BRANCH branch, installed under $MATCHBOX_HOME (it can compile BxRig)") ;;
       esac
     fi
@@ -441,8 +464,8 @@ report_check() {
 # One line about the MatchBox the plan would install.
 report_matchbox() {
   case "$MB_CHANNEL" in
-    stable) echo "MatchBox: stable, installed with mvm (it cannot compile BxRig; pass --matchbox-branch $MATCHBOX_REF to compile it here)" ;;
-    snapshot) echo "MatchBox: snapshot, installed with mvm (it cannot compile BxRig; pass --matchbox-branch $MATCHBOX_REF to compile it here)" ;;
+    stable) echo "MatchBox: stable, installed with mvm (not enough to compile BxRig; pass --matchbox-branch $MATCHBOX_REF to compile it here)" ;;
+    snapshot) echo "MatchBox: snapshot, installed with mvm (has bif-tui but not the class-sharing fix; pass --matchbox-branch $MATCHBOX_REF to compile it here)" ;;
     branch) printf 'MatchBox: branch %s of %s, built here with cargo (cargo build --release --features bif-tui)\n' "$MB_BRANCH" "$MB_REPO_URL" ;;
   esac
 }
@@ -567,8 +590,8 @@ if [[ "$mode" == --install-toolchains ]]; then
 				echo "Note: BxRig's installer finds it by absolute path; add $MATCHBOX_HOME/bin to your PATH if you want it to be your matchbox." ;;
 			*) echo "MatchBox $mb_now ($MB_CHANNEL) installed and verified." ;;
 		esac
-		if mb_path="$(tool_path matchbox)" && mb_builds_bxrig "$mb_path"; then echo "This MatchBox can compile BxRig."
-		else echo "Note: this MatchBox cannot compile BxRig (no terminal UI support yet). That is fine for the prebuilt bxrig; to compile it here use --matchbox-branch $MATCHBOX_REF."; fi
+		if mb_path="$(tool_path matchbox)" && mb_can_compile_bxrig "$mb_path"; then echo "This MatchBox can compile BxRig."
+		else echo "Note: this MatchBox cannot compile BxRig well enough (it needs bif-tui and the class-file sharing fix). That is fine for the prebuilt bxrig; to compile it here use --matchbox-branch $MATCHBOX_REF."; fi
 	fi
 	if (( ! have_bvm )); then
 		run_external bvm "$BVM_URL"; done_any=1
@@ -626,9 +649,9 @@ if [[ "$mode" == --install-binary ]]; then
     fi
     mb_have="$(tool_version matchbox)"
     [[ -n "$mb_have" ]] || { echo "MatchBox is required to compile BxRig (found: none). Run install.sh toolchains --yes --matchbox-branch $MATCHBOX_REF first." >&2; exit 1; }
-    mb_builds_bxrig "$(tool_path matchbox)" || { mb_cannot_compile_message "$mb_have"; exit 1; }
+    mb_can_compile_bxrig "$(tool_path matchbox)" || { mb_cannot_compile_message "$mb_have"; exit 1; }
     cp -rL "$root/src" "$work/src"; chmod -R u+rwX,go+rX "$work/src"   # -L: src/resources links to the data folders
-    echo "Building bxrig with MatchBox $mb_have"
+    echo "Building bxrig with MatchBox $mb_have (native compile; a few seconds with a capable MatchBox)"
     # the BoxLang modules bxrig embeds (box.json toolchain.modules); --module must come before the program
     mods=()
     if [[ -x "$root/scripts/get-modules.sh" && "${BXRIG_SKIP_NETWORK:-0}" != 1 ]]; then   # offline: built without them

@@ -249,13 +249,14 @@ b_mocks() {
   mock java 'echo "openjdk version \"21.0.13\" 2026-04-21" >&2'
   mock matchbox 'if [[ "$1" == --version ]]; then echo "MatchBox ${MOCK_MB:-0.12.0}"; exit 0; fi
 if [[ "$1" == *probe.bxs ]]; then [[ "${MOCK_TUI:-1}" == 1 ]] && echo bxrig-tui-ok || { echo "Native class tui.TUI not found" >&2; exit 1; }; exit 0; fi
+if [[ "$1" == --build ]]; then [[ "${MOCK_SHARE:-1}" == 1 ]] && { echo "Error: Compiler Error: Circular class reference: A -> B -> A" >&2; exit 1; } || { echo "thread 'main' has overflowed its stack" >&2; exit 134; }; fi
 [[ "${MOCK_BUILD_FAIL:-0}" == 1 ]] && { echo "boom: compile error" >&2; exit 1; }
 echo "$*" >> "$BLOG"
 out=bxrig; while [[ $# -gt 0 ]]; do [[ "$1" == --output ]] && { out="$2"; break; }; shift; done
 cp "$FAKE" "$out"; chmod 755 "$out"'
   : > "$tmp/build.log"; fake_bin "$SRCVER" > "$tmp/fake_built"
 }
-brun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BXRIG_OS_RELEASE="$tmp/os-arch" BLOG="$tmp/build.log" FAKE="$tmp/fake_built" MOCK_UID="${MOCK_UID:-1000}" MOCK_MB="${MOCK_MB:-0.12.0}" MOCK_TUI="${MOCK_TUI:-1}" MOCK_BUILD_FAIL="${MOCK_BUILD_FAIL:-0}" "$@"; }
+brun() { env -i HOME="$home" PATH="$bin:$sys" BXRIG_SKIP_NETWORK=1 BLOG="$tmp/build.log" FAKE="$tmp/fake_built" MOCK_UID="${MOCK_UID:-1000}" MOCK_MB="${MOCK_MB:-0.12.0}" MOCK_TUI="${MOCK_TUI:-1}" MOCK_SHARE="${MOCK_SHARE:-1}" MOCK_BUILD_FAIL="${MOCK_BUILD_FAIL:-0}" "$@"; }
 dest="$home/.local/bin/bxrig"
 
 # 1. Build from source and install.
@@ -281,6 +282,9 @@ fake_bin "$SRCVER" > "$tmp/fake_built"
 out="$(MOCK_MB=0.11.0 brun bash "$repo/bootstrap/install.sh" binary --yes --force 2>&1)" || { echo "FAIL: any MatchBox version that can compile bxrig must do: $out" >&2; exit 1; }
 if out="$(MOCK_TUI=0 brun bash "$repo/bootstrap/install.sh" binary --yes --force 2>&1)"; then echo 'FAIL: a MatchBox without the terminal UI compiled bxrig' >&2; exit 1; fi
 need "$out" 'This MatchBox (0.12.0) cannot compile BxRig'; need "$out" '--matchbox-branch bxrig'
+# bif-tui is not enough: without class sharing the compiler eats tens of GB on BxRig's classes, so refuse it before building
+if out="$(MOCK_SHARE=0 brun bash "$repo/bootstrap/install.sh" binary --yes --force 2>&1)"; then echo 'FAIL: a MatchBox without class sharing compiled bxrig' >&2; exit 1; fi
+need "$out" 'class-file sharing fix'; need "$out" '--matchbox-branch bxrig'
 [[ "$(cat "$dest")" != "" ]] || { echo 'FAIL: the installed copy is gone' >&2; exit 1; }
 mv "$bin/matchbox" "$bin/matchbox.off"; if out="$(brun bash "$repo/bootstrap/install.sh" binary --yes --force 2>&1)"; then echo 'FAIL: no MatchBox accepted' >&2; exit 1; fi; need "$out" 'MatchBox is required to compile BxRig'; mv "$bin/matchbox.off" "$bin/matchbox"
 if out="$(MOCK_UID=0 brun bash "$repo/bootstrap/install.sh" binary --yes 2>&1)"; then echo 'FAIL: root accepted' >&2; exit 1; fi; need "$out" 'regular user'
@@ -290,7 +294,7 @@ out="$(brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$good" 2>&1
 need "$(brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$good" 2>&1)" 'identical'
 ln -sf "$good" "$tmp/link"; printf 'x' > "$tmp/plain"; fake_bin "BxRig" | sed 's/BxRig/Other/' > "$tmp/imp"; chmod 755 "$tmp/imp"
 for bad in "$tmp/link" "$tmp/plain" "$tmp/imp" "$tmp/missing"; do
-  if brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$bad" >/dev/null 2>&1; then echo "FAIL: --binary accepted $bad" >&2; exit 1; fi
+	if brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$bad" >/dev/null 2>&1; then echo "FAIL: --binary accepted $bad" >&2; exit 1; fi
 done
 [[ "$("$dest" version)" == "BxRig 9.9.9" ]] || { echo 'FAIL: rejected --binary changed the install' >&2; exit 1; }
 # 6. Arguments.
@@ -514,6 +518,7 @@ for t in stable:0.13.2:0 snapshot:0.14.1:0 branch:0.15.0:1; do
 case "\${1:-}" in
 	--version) echo "matchbox version $tv" ;;
 	*probe.bxs) if [[ $tt == 1 ]]; then echo bxrig-tui-ok; else echo "Native class 'tui.TUI' not found" >&2; exit 1; fi ;;
+	*--build*) if [[ "\${MOCK_SHARE:-$tt}" == 1 ]]; then echo "Error: Compiler Error: Circular class reference: A -> B -> A" >&2; exit 1; else echo "thread 'main' has overflowed its stack" >&2; exit 134; fi ;;
 	*) out=bxrig; while [[ \$# -gt 0 ]]; do [[ "\$1" == --output ]] && { out="\$2"; break; }; shift; done; [[ -n "\${FAKE:-}" ]] && cp "\$FAKE" "\$out" && chmod 755 "\$out" ;;
 esac
 TPL
@@ -554,7 +559,7 @@ out="$(mbinst toolchains --yes 2>&1)" || { echo "FAIL: stable: $out" >&2; exit 1
 need "$out" 'MatchBox 0.13.2 (stable) installed and verified.'; log="$(cat "$tmp/mb.log")"
 need "$log" 'mvm install latest'; need "$log" 'mvm use latest'; refuse "$log" 'git '; refuse "$log" 'cargo'; refuse "$log" 'snapshot'
 # stable cannot compile bxrig: said (not an error: the prebuilt bxrig only needs the toolchain)
-need "$out" 'cannot compile BxRig (no terminal UI support yet)'; need "$out" '--matchbox-branch bxrig'
+need "$out" 'cannot compile BxRig well enough'; need "$out" '--matchbox-branch bxrig'
 need "$(mbinst check)" 'matchbox: 0.13.2 (compiles BxRig: no)'
 # a second run leaves an installed MatchBox alone
 : > "$tmp/mb.log"; out="$(mbinst toolchains --yes 2>&1)"; need "$out" 'Nothing to do'; refuse "$(cat "$tmp/mb.log")" 'mvm install'

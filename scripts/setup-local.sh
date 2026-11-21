@@ -11,8 +11,9 @@
 #   --release               build the branch MatchBox in release mode
 #   BXRIG_MATCHBOX_BRANCH and BXRIG_MATCHBOX_REPO set the two options (the flags win).
 # Without --matchbox it asks (1 stable, 2 snapshot, 3 branch); with no terminal it builds the branch bxrig and says so.
-# BxRig is always built with the MatchBox chosen. Only a MatchBox with the terminal UI (bif-tui) can compile it: stable and snapshot
-# cannot until the bxrig changes ship, and then the script stops with that message (it never switches to another MatchBox).
+# BxRig is always built with the MatchBox chosen. It needs both the terminal UI (bif-tui) and the class-file sharing fix (MatchBox
+# commit e7812e6, on the bxrig branch but not on develop/snapshots). The script probes both and stops with the reason before saving
+# anything or building; it never switches to another MatchBox by itself.
 # .cache/dev.env records the MatchBox path, repo, ref and commit. Switch: scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -68,8 +69,8 @@ if [[ -z "$choice" ]] && (( branch_set || repo_set )); then choice=branch; fi
 if [[ -z "$choice" ]]; then
 	if [[ -t 0 ]]; then
 		echo "Which MatchBox should BxRig use?"
-		echo "  1) stable    the released MatchBox from mvm (cannot compile BxRig until the bxrig changes ship)"
-		echo "  2) snapshot  the snapshot MatchBox from mvm (cannot compile BxRig until the bxrig changes ship)"
+		echo "  1) stable    the released MatchBox from mvm (no bif-tui: cannot compile BxRig)"
+		echo "  2) snapshot  the snapshot MatchBox from mvm (no class-sharing fix: compiles BxRig in minutes with >50 GB)"
 		echo "  3) branch    build a branch of a MatchBox repository (default $manifest_ref of ortus-boxlang/matchbox; needs git and Rust)"
 		while [[ -z "$choice" ]]; do
 			read -rp "Choose 1, 2 or 3: " a || die "No answer; nothing was changed"
@@ -157,7 +158,10 @@ summary() {
 	printf 'Test the end-user installer with it:\n  BXRIG_MATCHBOX_FILE=%q bash bootstrap/install.sh toolchains --yes\n' "$mb"
 }
 (( build )) || { summary; exit 0; }
+echo
+echo "Building dist/bxrig with $mb (usually about a second) ..."
 MATCHBOX="$mb" "$root/scripts/dev-build.sh"
+echo "Running smoke test ..."
 "$root/dist/bxrig" version
 (cd "$root/src" && "$mb" ../tests/init_plan_test.bxs >/dev/null) && echo "smoke test passed"
 echo

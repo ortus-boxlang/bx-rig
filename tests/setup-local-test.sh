@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Tests scripts/setup-local.sh, scripts/get-matchbox.sh and scripts/dev-build.sh (and scripts/lib/matchbox-ref.sh) with fake git, cargo, curl and mvm
 # binaries first on PATH: no network, no real clone, no real build, no real mvm. The fake MatchBox they produce answers --version and the
-# capability probe (a script that creates the terminal UI canvas): FAKE_TUI=1 (default) plays a build with bif-tui, FAKE_TUI=0 one without it.
+# capability probes (the terminal UI canvas and a bytecode compile of cross-referencing classes): FAKE_TUI=1 (default) plays a build
+# with bif-tui, FAKE_TUI=0 one without it; FAKE_SHARE=1 (default) plays a build with the class-file sharing fix, FAKE_SHARE=0 one without.
 # Each case runs a copy of the scripts in its own scratch tree.
 # Usage: bash tests/setup-local-test.sh   (needs no binary)
 set -euo pipefail
 src="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"; trap 'rm -rf "${tmp:?}"' EXIT
+# system tools only: the host's ~/.local/bin, ~/.mvm/bin, etc. must not leak into the fakes
+base_path=/usr/local/bin:/usr/bin:/bin
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 has() { grep -qF -- "$2" "$1" 2>/dev/null || fail "$3: '$2' not found in $1: $(cat "$1" 2>/dev/null | head -n 20)"; }
 lacks() { if grep -qF -- "$2" "$1" 2>/dev/null; then fail "$3: '$2' must not be in $1"; fi; }
@@ -22,6 +25,7 @@ cat > "$tmp/mb-template" <<'FAKE'
 #!/usr/bin/env bash
 case "${1:-}" in
 	--version|-v) echo "matchbox version ${FAKE_MB_VERSION:-${MB_VERSION:-0.14.0}}"; echo "commit: feedbee" ;;
+	*--build*) if [[ "${FAKE_SHARE:-1}" == 1 ]]; then echo "Error: Compiler Error: Circular class reference: A -> B -> A" >&2; exit 1; else echo "thread 'main' has overflowed its stack" >&2; exit 134; fi ;;
 	*probe.bxs) if [[ "${FAKE_TUI:-1}" == 1 ]]; then echo bxrig-tui-ok; else echo "Error: Native class 'tui.TUI' not found. Ensure it is registered." >&2; exit 1; fi ;;
 esac
 FAKE
@@ -81,7 +85,7 @@ run() {
 	local s="$1" p="$tmp/bin"; shift
 	(( ! with_mvm )) || p="$p:$tmp/mvmbin"
 	set +e
-	env -u BXRIG_MATCHBOX_BRANCH -u BXRIG_MATCHBOX_REPO -u MVM_HOME "${extra_env[@]}" PATH="$p:$PATH" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" \
+	env -u BXRIG_MATCHBOX_BRANCH -u BXRIG_MATCHBOX_REPO -u MVM_HOME "${extra_env[@]}" PATH="$p:$base_path" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" \
 		bash "$r/scripts/$s" "$@" </dev/null > "$w/out" 2>&1
 	rc=$?
 	set -e
@@ -106,6 +110,11 @@ for kind in stable snapshot; do
 	has "$w/out" "cannot compile BxRig" "$kind: the capability message"; has "$w/out" "--matchbox branch --matchbox-branch bxrig" "$kind: names the way out"
 	[[ ! -e "$r/.cache/dev.env" ]] || fail "$kind: a MatchBox that cannot compile bxrig was recorded"
 	lacks "$log" "cargo" "$kind: never switches to a branch build by itself"
+	# a snapshot-like MatchBox with bif-tui but without class sharing must be refused too (the real trap: it starts compiling and eats 50 GB)
+	fresh; with_mvm=1; extra_env=(HOME="$tmp/home" FAKE_SHARE=0); run setup-local.sh --matchbox "$kind" --no-build; extra_env=(HOME="$tmp/home")
+	[[ $rc == 1 ]] || fail "$kind without class sharing: exit $rc: $(cat "$w/out")"
+	has "$w/out" "cannot compile BxRig efficiently" "$kind: the class-sharing message"; has "$w/out" "e7812e6" "$kind: names the fix"
+	[[ ! -e "$r/.cache/dev.env" ]] || fail "$kind: a MatchBox that cannot compile bxrig was recorded"
 done
 fresh; with_mvm=0; run setup-local.sh --matchbox stable --no-build
 [[ $rc == 4 ]] || fail "no mvm: exit $rc"; has "$w/out" "mvm is not installed" "no mvm: the install hint"
@@ -129,6 +138,8 @@ has "$r/.cache/dev.env" "MATCHBOX=$(mbdir ortus-boxlang-matchbox-bxrig)/target/r
 # a branch that cannot compile bxrig (a build without bif-tui) is refused the same way
 fresh; extra_env=(HOME="$tmp/home" FAKE_TUI=0); run setup-local.sh --matchbox branch --no-build; extra_env=(HOME="$tmp/home")
 [[ $rc == 1 ]] || fail "branch without the terminal UI: exit $rc"; has "$w/out" "cannot compile BxRig" "branch: the capability message"; [[ ! -e "$r/.cache/dev.env" ]] || fail "branch: recorded"
+fresh; extra_env=(HOME="$tmp/home" FAKE_SHARE=0); run setup-local.sh --matchbox branch --no-build; extra_env=(HOME="$tmp/home")
+[[ $rc == 1 ]] || fail "branch without class sharing: exit $rc"; has "$w/out" "cannot compile BxRig efficiently" "branch: the class-sharing message"; [[ ! -e "$r/.cache/dev.env" ]] || fail "branch: recorded"
 
 # no terminal and no option: the branch build, said out loud
 fresh; run setup-local.sh --no-build
@@ -169,13 +180,13 @@ fresh; run setup-local.sh --matchbox-repo=https://github.com/someone/matchbox-fo
 has "$log" "--branch topic https://github.com/someone/matchbox-fork.git $(mbdir someone-matchbox-fork-topic)" "a full URL is kept, .git is not in the dir name"
 fresh; run setup-local.sh --matchbox-repo https://git.example.org/team/mb --no-build
 has "$log" "--branch bxrig https://git.example.org/team/mb $(mbdir git.example.org-team-mb-bxrig)" "repo alone: another host, manifest ref"
-env_run() { set +e; env PATH="$tmp/bin:$PATH" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" HOME="$tmp/home" "$@" bash "$r/scripts/setup-local.sh" --no-build </dev/null > "$w/out" 2>&1; rc=$?; set -e; }
+env_run() { set +e; env PATH="$tmp/bin:$base_path" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" HOME="$tmp/home" "$@" bash "$r/scripts/setup-local.sh" --no-build </dev/null > "$w/out" 2>&1; rc=$?; set -e; }
 fresh; env_run BXRIG_MATCHBOX_BRANCH=develop BXRIG_MATCHBOX_REPO=someone/fork
 has "$log" "--branch develop https://github.com/someone/fork $(mbdir someone-fork-develop)" "env vars"
 fresh; env_run BXRIG_MATCHBOX_BRANCH=develop
 has "$log" "--branch develop $manifest_repo $(mbdir ortus-boxlang-matchbox-develop)" "env branch alone"
 fresh
-set +e; env PATH="$tmp/bin:$PATH" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" HOME="$tmp/home" BXRIG_MATCHBOX_BRANCH=develop bash "$r/scripts/setup-local.sh" --matchbox-branch other --no-build </dev/null > "$w/out" 2>&1; rc=$?; set -e
+set +e; env PATH="$tmp/bin:$base_path" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" HOME="$tmp/home" BXRIG_MATCHBOX_BRANCH=develop bash "$r/scripts/setup-local.sh" --matchbox-branch other --no-build </dev/null > "$w/out" 2>&1; rc=$?; set -e
 has "$log" "--branch other " "flag wins over the env var"; lacks "$log" "--branch develop" "env var overridden"
 # a second run refreshes the dedicated clone with a fetch, no second clone
 fresh; run setup-local.sh --matchbox-branch develop --no-build; : > "$log"; run setup-local.sh --matchbox-branch develop --no-build
@@ -204,7 +215,7 @@ bad() { # FLAG VALUE
 }
 for v in "a b" "a;b" 'a$(id)' '$(id)' "a\`id\`" "-x" "--upload-pack=x" "" "a|b" "a&b" "a>b" "a'b" 'a"b' "a*" "a..b" "a/" "$(printf 'a\nb')" "a:b" "a\\b"; do bad --matchbox-branch "$v"; done
 for v in "a b" "x;y/z" 'o/$(id)' "-owner/name" "" "name" "http://github.com/a/b" "https://host/a b" "https://host/a;b" "../x/y" "a/b/c" "git@github.com:a/b" "file:///etc"; do bad --matchbox-repo "$v"; done
-fresh; set +e; env PATH="$tmp/bin:$PATH" FAKE_LOG="$log" BXRIG_MATCHBOX_BRANCH='x;y' bash "$r/scripts/setup-local.sh" --no-build </dev/null > "$w/out" 2>&1; rc=$?; set -e
+fresh; set +e; env PATH="$tmp/bin:$base_path" FAKE_LOG="$log" BXRIG_MATCHBOX_BRANCH='x;y' bash "$r/scripts/setup-local.sh" --no-build </dev/null > "$w/out" 2>&1; rc=$?; set -e
 [[ $rc == 2 ]] || fail "bad env branch: exit $rc"; has "$w/out" "BXRIG_MATCHBOX_BRANCH" "the message names the env var"; [[ ! -s "$log" ]] || fail "bad env branch ran something"
 fresh; run setup-local.sh --matchbox-branch; [[ $rc == 2 ]] || fail "--matchbox-branch without a value: $rc"
 [[ ! -e "$tmp/pwned" ]] || fail "injection"
@@ -212,7 +223,7 @@ fresh; run setup-local.sh --matchbox-branch; [[ $rc == 2 ]] || fail "--matchbox-
 # ---- the interactive menu (a real terminal through a pty) ----
 if command -v python3 >/dev/null; then
 	pty() { # ANSWERS... ; runs setup-local.sh --no-build on a pty and feeds the answers
-		env HOME="$tmp/home" PATH="$tmp/bin:$tmp/mvmbin:$PATH" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" python3 -I - "$r/scripts/setup-local.sh" "$@" > "$w/out" 2>&1 <<'PY' || true
+		env HOME="$tmp/home" PATH="$tmp/bin:$tmp/mvmbin:$base_path" FAKE_LOG="$log" MB_VERSION="$manifest_version" FAKE_MB_TEMPLATE="$tmp/mb-template" python3 -I - "$r/scripts/setup-local.sh" "$@" > "$w/out" 2>&1 <<'PY' || true
 import os, pty, sys, time
 script, answers = sys.argv[1], sys.argv[2:]
 pid, fd = pty.fork()
@@ -311,6 +322,7 @@ cat > "$w/mb" <<'MB'
 #!/usr/bin/env bash
 case "${1:-}" in
 	--version) echo "matchbox version 0.99.0"; exit 0 ;;
+	*--build*) [[ "${FAKE_SHARE:-1}" == 1 ]] && { echo "Error: Compiler Error: Circular class reference: A -> B -> A" >&2; exit 1; }; echo "thread 'main' has overflowed its stack" >&2; exit 134 ;;
 	*probe.bxs) [[ "${FAKE_TUI:-1}" == 1 ]] && { echo bxrig-tui-ok; exit 0; }; echo "Native class 'tui.TUI' not found" >&2; exit 1 ;;
 esac
 while (( $# )); do [[ "$1" == --output ]] && { echo built > "$2"; }; shift; done
@@ -322,6 +334,10 @@ rm -f "$r/dist/bxrig"
 extra_env=(HOME="$tmp/home" MATCHBOX="$w/mb" FAKE_TUI=0); run dev-build.sh; extra_env=(HOME="$tmp/home")
 [[ $rc == 1 ]] || fail "dev-build with a MatchBox without the terminal UI: exit $rc"
 has "$w/out" "cannot compile BxRig" "dev-build: the capability message"; has "$w/out" "0.99.0" "dev-build names the MatchBox version"; [[ ! -e "$r/dist/bxrig" ]] || fail "dev-build built with a MatchBox that cannot compile bxrig"
+rm -f "$r/dist/bxrig"
+extra_env=(HOME="$tmp/home" MATCHBOX="$w/mb" FAKE_SHARE=0); run dev-build.sh; extra_env=(HOME="$tmp/home")
+[[ $rc == 1 ]] || fail "dev-build with a MatchBox without class sharing: exit $rc"
+has "$w/out" "cannot compile BxRig efficiently" "dev-build: the class-sharing message"; [[ ! -e "$r/dist/bxrig" ]] || fail "dev-build built with a MatchBox that cannot compile bxrig"
 
 # ---- the summary at the end: which MatchBox, how to switch, how to test the installer with it ----
 fresh; run setup-local.sh --matchbox-branch develop --no-build
