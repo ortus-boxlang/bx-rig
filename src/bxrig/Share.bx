@@ -45,7 +45,7 @@ class Share {
 		var paths = rest;
 		if ( verb == "clipboard" ) {
 			if ( !variables.proc.has( "wl-paste" ) ) return variables.out.precondition( "wl-paste is not installed (wl-clipboard)", arguments.asJson );
-			var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-clipboard-" & dateTimeFormat( now(), "yyyymmdd-HHnnss" ) & ".txt";
+			var tmp = reReplace( getTempDirectory(), "/+$", "" ) & "/bxrig-clipboard-" & dateTimeFormat( now(), "yyyyMMdd-HHmmss" ) & ".txt";
 			if ( !arguments.dry ) {
 				var c = variables.proc.exec( [ "wl-paste", "--no-newline" ], 10 );
 				if ( c.exitCode != 0 ) return variables.out.precondition( "the clipboard is empty", arguments.asJson );

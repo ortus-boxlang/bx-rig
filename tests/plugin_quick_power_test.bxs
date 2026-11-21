@@ -98,7 +98,7 @@ for ( c in [ '"toggle", "stay-awake"', '"notify", "dnd"', '"theme", "mode"', '"a
 }
 testkit.check( "quick panel: every command is run with --yes", find( 'table.insert(argv, "--yes")', qp ) > 0 );
 testkit.check( "quick panel: the clock presets are Nov 5 - 04:00, 04:00, 04:00 AM and ISO", find( "%b %-d - %H:%M", qp ) > 0 && find( '"%H:%M"', qp ) > 0 && find( "%I:%M %p", qp ) > 0 && find( "%Y-%m-%d %H:%M", qp ) > 0 );
-testkit.check( "quick panel: the Themes row opens the themes page, the Control Center button runs `tui look` in a terminal", find( 'togglePanel("bxrig/quick:themes")', qp ) > 0 && find( "runInTerminal", qp ) > 0 && find( "tui look", qp ) > 0 );
+testkit.check( "quick panel: the Themes row opens the themes page, the Control Center button runs `tui` in a terminal", find( 'togglePanel("bxrig/quick:themes")', qp ) > 0 && find( "runInTerminal", qp ) > 0 && find( "' tui" & '")', qp ) > 0 );
 testkit.check( "quick panel: the night light button opens the control center Home tab", find( '"panel-toggle", "control-center", "home"', qp ) > 0 );
 tp = textOf( "quick/themes.luau" );
 testkit.check( "quick themes page: Enter runs `theme set NAME --yes`, the list comes from `theme list --json`", find( '"theme", "set", name, "--yes"', tp ) > 0 && find( '"theme", "list", "--json"', tp ) > 0 );

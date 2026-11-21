@@ -60,12 +60,13 @@ bxrig time ntp on --yes
 ```bash
 bxrig dns                              # the servers in use
 bxrig dns cloudflare --yes             # google, quad9, custom 9.9.9.10, dhcp
+bxrig dns bench                        # time each provider and see the fastest
 bxrig kernel list
 bxrig kernel install linux-cachyos-lts --yes
 bxrig toggle stay-awake                # keep the screen from idling (Noctalia)
 ```
 
-`dns` changes the active NetworkManager connections. `kernel` installs or removes kernel packages with their headers; it never edits the bootloader, never removes the running or the last kernel, and you pick the kernel in the boot menu. Stay awake needs Noctalia (Hyprland); on Plasma use System Settings.
+`dns` changes the active NetworkManager connections. `dns bench` asks Cloudflare, Quad9, Google, your router and your own servers (when you use some) the same five names twice with `dig` and shows the median of the second round, the one in use marked; it needs `dig` (`bind` on Arch, `bind9-dnsutils` on Debian and Ubuntu, `bind-utils` on openSUSE). `kernel` installs or removes kernel packages with their headers; it never edits the bootloader, never removes the running or the last kernel, and you pick the kernel in the boot menu. Stay awake needs Noctalia (Hyprland); on Plasma use System Settings.
 
 ## When something is stuck
 
@@ -86,7 +87,11 @@ bxrig system firmware             # firmware updates your vendors offer (fwupd, 
 bxrig system firmware update --yes
 bxrig system speedtest network    # speedtest-cli: ping, download, upload
 bxrig system speedtest disk       # write and read 1 GiB in ~/.cache
+bxrig system speedtest dns        # the same as dns bench
+bxrig system speedtest last       # the last result of each
 ```
+
+Only the last result of each test is kept (`~/.local/state/bxrig/speedtest-last.json`), so the panels can show it when they open. On the bar, the System panel's Network tab has the Wi-Fi (with Share Wi-Fi, a QR code a phone scans), the speed and disk tests and a DNS list to pick from; the Quick panel has Share Wi-Fi and Control Center buttons at the top. The Control Center has the same on its Network page.
 
 Firmware updates cover BIOS/UEFI, SSDs, docks and some keyboards and mice, from vendors that publish to LVFS (Dell, Lenovo, HP, Framework, Logitech and others). Many consumer laptops are not covered.
 

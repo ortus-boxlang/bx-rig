@@ -227,6 +227,8 @@ class MenuTree {
 					when( "touchpad,hyprland", sub( "Touchpad", [ spawn( "On", [ "input", "touchpad", "on" ] ), spawn( "Off", [ "input", "touchpad", "off" ] ), spawn( "On or off", [ "input", "touchpad", "toggle" ] ) ] ) ),
 					when( "touchscreen,hyprland", sub( "Touchscreen", [ spawn( "On", [ "input", "touchscreen", "on" ] ), spawn( "Off", [ "input", "touchscreen", "off" ] ), spawn( "On or off", [ "input", "touchscreen", "toggle" ] ) ] ) ),
 					run( "Wi-Fi QR code (join from a phone)", [ "wifi", "qr" ] ),
+					when( "hyprland", exec( "Network and speed (panel)", [ "noctalia", "msg", "panel-toggle", "bxrig/system:panel", "network" ] ) ),
+					when( "!hyprland", tui( "Network and speed", [ "network" ], "wifi" ) ),
 					run( "Network speed test", [ "system", "speedtest", "network" ] ),
 					run( "Disk speed test", [ "system", "speedtest", "disk" ] ),
 					run( "Input devices and gestures", [ "input", "doctor" ] ),
@@ -297,6 +299,7 @@ class MenuTree {
 						] ),
 					sub( "DNS", [
 							run( "Show", [ "dns" ] ),
+							run( "Test and pick the fastest", [ "dns", "bench" ] ),
 							run( "Cloudflare", [ "dns", "cloudflare", "--yes" ] ),
 							run( "Google", [ "dns", "google", "--yes" ] ),
 							run( "Quad9", [ "dns", "quad9", "--yes" ] ),

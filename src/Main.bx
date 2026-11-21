@@ -483,6 +483,7 @@ class {
 				for ( twi = 2; twi <= p.len(); twi++ ) twWords.append( p[ twi ] );
 				twx = new bxrig.Tweaks( cli );
 				if ( cmd == "toggle" ) CLIExit( twx.toggle( twWords, structKeyExists( args.options, "dry-run" ), asJson ) );
+				if ( cmd == "dns" && twWords.len() == 1 && twWords[ 1 ] == "bench" ) CLIExit( new bxrig.DnsBench( cli ).run( asJson ) );
 				if ( cmd == "dns" ) CLIExit( twx.dns( twWords, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				CLIExit( twx.kernel( twWords, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				break;

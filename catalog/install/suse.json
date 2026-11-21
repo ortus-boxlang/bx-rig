@@ -6,6 +6,7 @@
 	"defaults": null,
 	"names": {
 		"adw-gtk-theme": "",
+		"bind": "bind-utils",
 		"bluez-utils": "",
 		"borg": "borgbackup",
 		"composer": "php-composer2",

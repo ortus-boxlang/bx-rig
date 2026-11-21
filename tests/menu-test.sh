@@ -102,12 +102,12 @@ rm -f "$FAKE/n" "$FAKE/spawn.log"; printf '4\n2\n0\n1\n6\n15\n' > "$FAKE/answers
 grep -q '^bxrig web rm Notion --yes$' "$FAKE/spawn.log" || fail "remove a web app from the menu: $(cat "$FAKE/spawn.log" 2>/dev/null)"
 rm -f "$FAKE/n" "$FAKE/spawn.log"; printf '4\n2\n0\n0\n6\n15\n' > "$FAKE/answers"; run env XDG_DATA_HOME="$tmp/data" "$binary" menu >/dev/null; [[ ! -s "$FAKE/spawn.log" ]] || fail 'Cancel at the confirmation removed the web app'
 
-# ---- Control Center (13): entry 0 opens the whole thing, entry 11 is Databases solo; both open in a terminal, detached ----
+# ---- Control Center (13): entry 0 opens the whole thing, entry 12 is Databases solo; both open in a terminal, detached ----
 play "$CC" 0 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'the Control Center entry did not open a terminal'
 grep -q "terminal -e $tmp/self tui$" "$FAKE/terminal.log" || fail "control center: $(cat "$FAKE/terminal.log")"
-play "$CC" 12 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'a page entry did not open a terminal'
+play "$CC" 13 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'a page entry did not open a terminal'
 grep -q "terminal -e $tmp/self tui databases$" "$FAKE/terminal.log" || fail "databases solo: $(cat "$FAKE/terminal.log")"
-run "$binary" menu items --json | jq -e '[.data.menu[] | select(.label == "Control Center") | .children[] | .argv[1]] | length == 19' >/dev/null || fail 'Control Center lists the top entry and the 18 pages'
+run "$binary" menu items --json | jq -e '[.data.menu[] | select(.label == "Control Center") | .children[] | .argv[1]] | length == 20' >/dev/null || fail 'Control Center lists the top entry and the 19 pages'
 
 # ---- a provider that cannot take typed text (Wofi) opens a terminal that asks the same questions ----
 printf '#!/usr/bin/env bash\ncat > /dev/null\nn=$(( $(cat "$FAKE/n" 2>/dev/null || echo 0) + 1 )); echo $n > "$FAKE/n"\nsed -n "${n}p" "$FAKE/answers"\n' > "$tmp/bin/wofi"; chmod +x "$tmp/bin/wofi"

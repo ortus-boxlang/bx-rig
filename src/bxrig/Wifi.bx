@@ -89,7 +89,9 @@ class Wifi {
 		if ( len( mgmt ) && mgmt != "none" ) pw = trim( nm( [ "-s", "-g", "802-11-wireless-security.psk", "connection", "show", conn ] ) );
 		if ( len( mgmt ) && mgmt != "none" && !len( pw ) ) return cmd.precondition( "NetworkManager did not give the password of " & ssid & " (it may be stored for another user or in a keyring that is locked)", arguments.asJson );
 		var text = qrText( ssid, pw, mgmt );
-		var argv = len( arguments.outFile ) ? [ "qrencode", "-o", arguments.outFile, text ] : [ "qrencode", "-t", "ANSIUTF8", text ];
+		// the panels ask for a file in ~/.cache/bxrig, which may not exist yet
+		if ( len( arguments.outFile ) && len( getDirectoryFromPath( arguments.outFile ) ) ) directoryCreate( getDirectoryFromPath( arguments.outFile ), true, true );
+		var argv = len( arguments.outFile ) ? [ "qrencode", "-s", "8", "-m", "2", "-o", arguments.outFile, text ] : [ "qrencode", "-t", "ANSIUTF8", text ];
 		var r = variables.proc.exec( argv, 30 );
 		if ( r.exitCode != 0 ) return cmd.failed( "qrencode: " & trim( r.output ), arguments.asJson );
 		var data = { ssid: ssid, file: arguments.outFile };

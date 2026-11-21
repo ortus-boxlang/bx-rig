@@ -977,7 +977,7 @@ bxrig system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json
 bxrig system restart shell|audio|wifi|bluetooth [--yes] [--dry-run] [--json]
 bxrig system password
 bxrig system firmware [check] [--json] | system firmware update [--yes] [--dry-run] [--json]
-bxrig system speedtest network|disk [--json]
+bxrig system speedtest network|disk|dns|last [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -993,7 +993,7 @@ bxrig system firmware
 bxrig system speedtest disk
 ```
 
-> updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first). restart shell stops and starts Noctalia (or restarts Plasma's plasmashell service); audio restarts PipeWire and WirePlumber; wifi and bluetooth unblock the radio and turn it on. password runs passwd on your terminal. firmware asks fwupd (LVFS: BIOS/UEFI, SSDs, docks) for updates; update installs them on your terminal. speedtest network runs speedtest-cli; disk writes and reads 1 GiB in ~/.cache with direct I/O.
+> updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first). restart shell stops and starts Noctalia (or restarts Plasma's plasmashell service); audio restarts PipeWire and WirePlumber; wifi and bluetooth unblock the radio and turn it on. password runs passwd on your terminal. firmware asks fwupd (LVFS: BIOS/UEFI, SSDs, docks) for updates; update installs them on your terminal. speedtest network runs speedtest-cli; disk writes and reads 1 GiB in ~/.cache with direct I/O; dns is dns bench; last shows the last result of each test (only the latest is kept, in ~/.local/state/bxrig/speedtest-last.json).
 
 ### `bxrig security` {#bxrig-security}
 
@@ -1019,16 +1019,18 @@ bxrig security passwordless-sudo on --yes
 
 ### `bxrig dns` {#bxrig-dns}
 
-DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP.
+DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP. bench times each one to pick the fastest.
 
 ```text
 bxrig dns [cloudflare|google|quad9|dhcp|custom IP[,IP...]] [--yes] [--dry-run]
+bxrig dns bench [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig dns
+bxrig dns bench
 bxrig dns cloudflare --yes
 bxrig dns custom 9.9.9.10 --yes
 ```

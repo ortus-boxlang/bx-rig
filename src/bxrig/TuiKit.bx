@@ -21,7 +21,7 @@ class TuiKit {
 		// Nerd Font (Font Awesome range) code points; each is one cell wide in a Nerd Font and is checked against the Symbols Nerd Font.
 		variables.glyphs = {
 			home: "f015", gear: "f013", coffee: "f0f4", terminal: "f120", server: "f233", database: "f1c0", cloud: "f0c2", key: "f084", brush: "f1fc", file: "f0f6", keyboard: "f11c",
-			cube: "f1b2", download: "f019", plug: "f1e6", desktop: "f108", hdd: "f0a0", history: "f1da", java: "e738", tags: "f02c", archive: "f187", wrench: "f0ad", envelope: "f0e0", check: "f00c", eye: "f06e"
+			cube: "f1b2", download: "f019", plug: "f1e6", desktop: "f108", hdd: "f0a0", history: "f1da", java: "e738", tags: "f02c", archive: "f187", wrench: "f0ad", envelope: "f0e0", check: "f00c", eye: "f06e", wifi: "f1eb"
 		};
 		return this;
 	}

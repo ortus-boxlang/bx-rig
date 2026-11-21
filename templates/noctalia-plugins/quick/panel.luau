@@ -206,8 +206,57 @@ local function linkRow(key, glyph, title, sub, onClick)
 	})
 end
 
+-- ---- Share Wi-Fi ----
+local wifiQr = nil
+local wifiQrStamp = 0
+local wifiQrBusy = false
+local wifiQrError = nil
+
+-- bxrig writes the QR code of the Wi-Fi you are on to a file in the cache (`bxrig wifi qr --out=FILE`); the panel shows it. Again hides it.
+local function shareWifi()
+	if wifiQr ~= nil then
+		wifiQr = nil
+		render()
+		return
+	end
+	local path = noctalia.expandPath("~/.cache/bxrig/wifi-qr.png")
+	wifiQrBusy = true
+	wifiQrError = nil
+	bxrig.run({ "wifi", "qr", "--out=" .. path }, function(ok, msg)
+		wifiQrBusy = false
+		if ok then
+			wifiQr = path
+			wifiQrStamp = noctalia.nowMs()
+		else
+			wifiQrError = msg ~= "" and msg or "Could not make the code"
+		end
+		render()
+	end, 30000)
+	render()
+end
+
 render = function()
 	local items = {}
+	-- on top: Share Wi-Fi (the QR code of the network you are on, shown here) and the BxRig Control Center (`bxrig tui` in a terminal)
+	table.insert(items, ui.row({ key = "top-actions", gap = 6 }, {
+		ui.button({ glyph = "qrcode", text = wifiQr ~= nil and "Hide code" or "Share Wi-Fi", variant = "primary", flexGrow = 1,
+			enabled = not wifiQrBusy, onClick = shareWifi }),
+		ui.button({ glyph = "layout-dashboard", text = "Control Center", variant = "outline", flexGrow = 1,
+			onClick = function()
+				-- a shell string: the executable may be a path, so it is quoted
+				noctalia.runInTerminal("'" .. bxrig.command() .. "' tui")
+				panel.close()
+			end }),
+	}))
+	if wifiQr ~= nil then
+		table.insert(items, ui.column({ key = "wifi-qr", align = "center", gap = 6, paddingV = 6 }, {
+			ui.image({ key = "qr-" .. wifiQrStamp, path = wifiQr, fit = "contain", radius = 10, height = 220 }),
+			ui.label({ text = "Point a phone camera at the code to join", fontSize = 11, color = "on_surface_variant" }),
+		}))
+	end
+	if wifiQrError ~= nil then
+		table.insert(items, ui.label({ key = "wifi-qr-error", text = wifiQrError, fontSize = 11, color = "error", maxLines = 3 }))
+	end
 
 	-- Switches.
 	table.insert(items, switchRow("caffeine", "coffee", "Caffeine", "Keeps the screen awake. Noctalia cannot report it, so this shows what you last set here.", caffeineOn(), function(v)
@@ -292,16 +341,6 @@ render = function()
 		-- opening a panel replaces the open one, so there is no close first
 		noctalia.togglePanel("bxrig/quick:themes")
 	end))
-	table.insert(items, ui.button({
-		glyph = "layout-dashboard",
-		text = "Open BxRig Control Center",
-		variant = "outline",
-		onClick = function()
-			-- a shell string: the executable may be a path, so it is quoted
-			noctalia.runInTerminal("'" .. bxrig.command() .. "' tui look")
-			panel.close()
-		end,
-	}))
 
 	-- Result line.
 	local line = ui.label({ text = "", fontSize = 11, maxLines = 1 })

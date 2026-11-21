@@ -8,6 +8,7 @@
 	},
 	"names": {
 		"adw-gtk-theme": "",
+		"bind": "bind9-dnsutils",
 		"bluez-utils": "",
 		"borg": "borgbackup",
 		"docker": "docker.io",

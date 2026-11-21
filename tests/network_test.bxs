@@ -1,0 +1,62 @@
+// The network tools: dns bench (dig's query time, the median, the ranking, the provider in use), the last speed-test results
+// (SpeedResults), the Control Center Network page rows and the This computer row of Storage.
+// Run from src/: (cd src && matchbox ../tests/network_test.bxs)
+testkit = new lib.Check( "network" );
+cli = new bxrig.util.Cli( "0.0.0" );
+home = getTempDirectory() & "/bxrig-network-" & createUUID();
+directoryCreate( home, true, true );
+
+// ---- dns bench: the pure parts ----
+db = new bxrig.DnsBench( cli );
+digOut = ";; Query time: 12 msec" & chr( 10 ) & ";; SERVER: 1.1.1.1##53(1.1.1.1) (UDP)" & chr( 10 );
+testkit.check( "queryTime: dig's Query time line", db.queryTime( digOut ) == 12 );
+testkit.check( "queryTime: -1 when dig did not answer", db.queryTime( ";; communications error to 9.9.9.9##53: timed out" ) == -1 );
+testkit.check( "median: odd, even, and the no-answers left out", db.median( [ 30, 10, 20 ] ) == 20 && db.median( [ 10, 20, 30, 40 ] ) == 25 && db.median( [ -1, 8, -1 ] ) == 8 && db.median( [ -1, -1 ] ) == -1 );
+rows = [ { id: "google", ms: 21 }, { id: "dhcp", ms: -1 }, { id: "cloudflare", ms: 11 }, { id: "quad9", ms: 18 } ];
+fastest = db.rank( rows );
+testkit.check( "rank: fastest first, no answer last, one fastest", fastest == "cloudflare" && rows[ 1 ].id == "cloudflare" && rows[ 3 ].id == "google" && rows[ 4 ].id == "dhcp" && rows[ 1 ].fastest && !rows[ 2 ].fastest );
+none = [ { id: "a", ms: -1 } ];
+testkit.check( "rank: no fastest when nothing answered", db.rank( none ) == "" && !none[ 1 ].fastest );
+testkit.check( "the names asked are five", db.names().len() == 5 );
+tw = new bxrig.Tweaks( cli );
+testkit.check( "providerOf: a preset by its first server (IPv4 or IPv6), dhcp when empty, else custom", tw.providerOf( "1.1.1.1 1.0.0.1" ) == "cloudflare" && tw.providerOf( "9.9.9.9" ) == "quad9" && tw.providerOf( "2001:4860:4860::8888" ) == "google" && tw.providerOf( "" ) == "dhcp" && tw.providerOf( "10.0.0.53" ) == "custom" );
+
+// ---- the last results ----
+env = new bxrig.util.Env( { HOME: home, XDG_STATE_HOME: home & "/.local/state" } );
+sr = new bxrig.SpeedResults( env );
+testkit.check( "SpeedResults: empty before any test", structIsEmpty( sr.read() ) );
+sr.save( "network", { download: "412.67 Mbit/s", upload: "98.10 Mbit/s", ping: "12 ms" } );
+sr.save( "disk", { write: "712 MB/s", read: "4.3 GB/s" } );
+sr.save( "network", { download: "300.00 Mbit/s", upload: "90.00 Mbit/s", ping: "14 ms" } );
+all = sr.read();
+testkit.check( "SpeedResults: the file is in the state folder", find( "/.local/state/bxrig/speedtest-last.json", sr.file() ) > 0 && fileExists( sr.file() ) );
+testkit.check( "SpeedResults: only the last of each kind is kept", all.network.download == "300.00 Mbit/s" && all.disk.write == "712 MB/s" && !structKeyExists( all, "dns" ) );
+testkit.check( "SpeedResults: stamped with the local time (yyyy-MM-ddTHH:mm:ss)", reFind( "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$", all.network.at ) > 0 );
+
+// ---- the Control Center Network page ----
+np = new bxrig.NetworkProvider( true );
+nr = np.rowsFrom( { ssid: "Home-5G", signal: 78, radio: "enabled" }, { providers: [ { id: "tailscale", name: "Tailscale", connected: true } ] }, { provider: "quad9" },
+	{ dns: { providers: [ { id: "cloudflare", ms: 11, fastest: true }, { id: "quad9", ms: 18 }, { id: "dhcp", ms: -1 } ] }, network: { download: "412 Mbit/s", upload: "98 Mbit/s", ping: "12 ms", at: "2026-11-21T12:38:00" } } );
+testkit.check( "network rows: Wi-Fi, the VPN, four DNS and the speed", nr.len() == 7 && nr[ 1 ].kind == "wifi" && nr[ 2 ].kind == "vpn" && nr[ 7 ].kind == "speed" );
+dnsRows = nr.filter( function( r ) { return r.kind == "dns"; } );
+testkit.check( "network rows: the DNS in use is active, the fastest marked, times and no answer", dnsRows[ 2 ].active && !dnsRows[ 1 ].active && dnsRows[ 1 ].more == "fastest" && dnsRows[ 1 ].value == "11 ms" && dnsRows[ 4 ].value == "no answer" && dnsRows[ 3 ].value == "" );
+testkit.check( "network rows: the speed with the time it ran", find( "412 Mbit/s", nr[ 7 ].value ) > 0 && find( "12:38", nr[ 7 ].more ) > 0 );
+empty = np.rowsFrom( {}, {}, {}, {} );
+testkit.check( "network rows: nothing known yet", empty[ 1 ].name == "not connected" && empty[ empty.len() ].value == "not tested yet (t)" );
+acts = {};
+for ( a in np.actions() ) acts[ a.key ] = a;
+testkit.check( "network keys: u uses the DNS on the row, not the one in use", acts.u.run( dnsRows[ 1 ] ).args.toList( " " ) == "dns cloudflare" && structIsEmpty( acts.u.run( dnsRows[ 2 ] ) ) && structIsEmpty( acts.u.run( nr[ 1 ] ) ) );
+testkit.check( "network keys: c disconnects a connected VPN, t, b and q show the tests and the QR code", acts.c.run( nr[ 2 ] ).args.toList( " " ) == "vpn disconnect tailscale" && acts.t.run( nr[ 1 ] ).args.toList( " " ) == "system speedtest network" && acts.b.run( nr[ 1 ] ).args.toList( " " ) == "dns bench" && acts.q.run( nr[ 1 ] ).args.toList( " " ) == "wifi qr" );
+
+// ---- Storage: the This computer row ----
+sp = new bxrig.StorageProvider( true );
+dr = sp.diskRow( 512000000000, 312000000000, { write: "712 MB/s", read: "4.3 GB/s" } );
+testkit.check( "storage: This computer shows the space and the last disk test", dr.kind == "disk" && dr.state == "312 of 512 GB" && find( "712 MB/s", dr.where ) > 0 );
+testkit.check( "storage: no disk test yet says so", find( "not tested", sp.diskRow( 0, 0, {} ).where ) > 0 );
+sacts = {};
+for ( a in sp.actions() ) sacts[ a.key ] = a;
+testkit.check( "storage keys: t on This computer is the disk speed test, m and u do nothing there", sacts.t.run( dr ).args.toList( " " ) == "system speedtest disk" && structIsEmpty( sacts.m.run( dr ) ) && structIsEmpty( sacts.u.run( dr ) ) );
+testkit.check( "storage: the demo starts with This computer", sp.load()[ 1 ].kind == "disk" );
+
+directoryDelete( home, true );
+testkit.done( "all passed" );
