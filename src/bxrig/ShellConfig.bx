@@ -25,8 +25,8 @@ class ShellConfig {
 	// The login shell program for chsh.
 	function shellPath( shell ) { return "/usr/bin/" & arguments.shell; }
 
-	function markStart() { return "# >>> bxrig shell >>>"; }
-	function markEnd() { return "# <<< bxrig shell <<<"; }
+	function markStart() { return "## >>> bxrig shell >>>"; }
+	function markEnd() { return "## <<< bxrig shell <<<"; }
 
 	// The block that loads the managed init from an rc file (zsh, bash).
 	function rcBlock( shell, cfgHome ) {
