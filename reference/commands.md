@@ -57,7 +57,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`ai`](#bxrig-ai), [`skills`](#bxrig-skills)
 
-**Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`audio`](#bxrig-audio), [`bluetooth`](#bxrig-bluetooth), [`wifi`](#bxrig-wifi), [`airplay`](#bxrig-airplay)
+**Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`share`](#bxrig-share), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`audio`](#bxrig-audio), [`bluetooth`](#bxrig-bluetooth), [`wifi`](#bxrig-wifi), [`airplay`](#bxrig-airplay)
 
 ## Start here
 
@@ -245,15 +245,18 @@ The control center: every command as a menu on your launcher (Rofi, Walker, Wofi
 
 ```text
 bxrig menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]
+bxrig menu ids [--json] | menu file [--yes] [--dry-run] [--json]
 ```
 
 ```bash
 bxrig menu
 bxrig menu search 'time zone'
 bxrig menu open capture
+bxrig menu ids
+bxrig menu file --yes
 ```
 
-> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes.
+> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: `menu ids` lists the ids, `menu file --yes` writes an example, `menu file` checks yours.
 
 ### `bxrig apps` {#bxrig-apps}
 
@@ -649,7 +652,7 @@ bxrig runner doctor
 Default apps: browser, terminal, file manager.
 
 ```text
-bxrig default show | browser ID | terminal ID | filemanager ID [--yes] [--dry-run] [--json]
+bxrig default show | browser ID | terminal ID | filemanager ID | editor neovim|vscode|zed|kate [--yes] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -657,7 +660,10 @@ Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-
 ```bash
 bxrig default show
 bxrig default browser brave --yes
+bxrig default editor neovim --yes
 ```
+
+> editor sets the app for text files (xdg-mime) and EDITOR and VISUAL in ~/.config/environment.d/50-bxrig-editor.conf (from the next login).
 
 ### `bxrig layout` {#bxrig-layout}
 
@@ -968,6 +974,10 @@ See what is waiting to be updated, update the system (a snapshot first), lock, s
 bxrig system updates [--json]
 bxrig system update [--repo | --aur | --all] [--yes] [--dry-run] [--json]
 bxrig system lock | suspend | logout|reboot|shutdown [--yes] [--dry-run] [--json]
+bxrig system restart shell|audio|wifi|bluetooth [--yes] [--dry-run] [--json]
+bxrig system password
+bxrig system firmware [check] [--json] | system firmware update [--yes] [--dry-run] [--json]
+bxrig system speedtest network|disk|dns|last [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -978,9 +988,12 @@ bxrig system update --yes
 bxrig system update --repo --dry-run
 bxrig system update --aur --yes
 bxrig system reboot --yes
+bxrig system restart audio --yes
+bxrig system firmware
+bxrig system speedtest disk
 ```
 
-> updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first).
+> updates only reads: repository and AUR counts and the package list, and whether a restart is needed (exit 4 without checkupdates from pacman-contrib). update takes a snapshot first, then updates the repository (--repo), the AUR (--aur, exit 4 without yay or paru) or both (--all, the default). lock and suspend act at once; logout, reboot and shutdown need --yes (the menu asks first). restart shell stops and starts Noctalia (or restarts Plasma's plasmashell service); audio restarts PipeWire and WirePlumber; wifi and bluetooth unblock the radio and turn it on. password runs passwd on your terminal. firmware asks fwupd (LVFS: BIOS/UEFI, SSDs, docks) for updates; update installs them on your terminal. speedtest network runs speedtest-cli; disk writes and reads 1 GiB in ~/.cache with direct I/O; dns is dns bench; last shows the last result of each test (only the latest is kept, in ~/.local/state/bxrig/speedtest-last.json).
 
 ### `bxrig security` {#bxrig-security}
 
@@ -1006,16 +1019,18 @@ bxrig security passwordless-sudo on --yes
 
 ### `bxrig dns` {#bxrig-dns}
 
-DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP.
+DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP. bench times each one to pick the fastest.
 
 ```text
 bxrig dns [cloudflare|google|quad9|dhcp|custom IP[,IP...]] [--yes] [--dry-run]
+bxrig dns bench [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig dns
+bxrig dns bench
 bxrig dns cloudflare --yes
 bxrig dns custom 9.9.9.10 --yes
 ```
@@ -1504,21 +1519,41 @@ bxrig qr https://boxlang.io
 bxrig qr 'wifi text' --out=wifi.png
 ```
 
+### `bxrig share` {#bxrig-share}
+
+Send files, a folder or the clipboard to a phone or computer nearby with LocalSend, or open it to receive.
+
+```text
+bxrig share file [PATH...] | folder [PATH] | clipboard [--to=DEVICE] [--dry-run] [--json]
+bxrig share receive [--dry-run] [--json]
+```
+
+```bash
+bxrig share file report.pdf
+bxrig share folder ~/Photos/trip --to="Pixel 9"
+bxrig share clipboard
+bxrig share receive
+```
+
+> Sending uses LocalSend's command line, localsend-cli (LocalSend 1.18 and later): without --to it lists the devices it finds and you pick one, on your terminal (the menu opens one). Without a path a file chooser asks (kdialog on Plasma, else zenity). clipboard sends what you copied as a text file. receive opens the LocalSend app. Exit 4 when localsend-cli or LocalSend is missing.
+
 ### `bxrig record` {#bxrig-record}
 
 Screen recording: start, stop, toggle, with desktop or microphone audio if you like.
 
 ```text
-bxrig record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--dry-run] [--json]
+bxrig record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--webcam[=bottom-right|bottom-left|top-right|top-left]] [--webcam-size=small|medium|large] [--dry-run] [--json]
 ```
 
 ```bash
 bxrig record toggle
 bxrig record start --region
 bxrig record toggle --audio=desktop
+bxrig record toggle --webcam
+bxrig record start --webcam=top-left --webcam-size=small --audio=mic
 ```
 
-> --audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value.
+> --audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value. --webcam puts your webcam in a corner while it records (bottom-right unless you name another), so it is in the video; it ends with the recording. Hyprland pins it (the BxRig module's rules); on Plasma it is a small window you can drag.
 
 ### `bxrig browser` {#bxrig-browser}
 
@@ -1610,6 +1645,7 @@ Minimize, restore and snap windows, and the quake console.
 bxrig window minimize|restore|quake [--json]
 bxrig window quake send [--json]
 bxrig window snap left|right|top|bottom [--json]
+bxrig window close-all | tiled-fullscreen [--json]
 ```
 
 ```bash
@@ -1618,9 +1654,10 @@ bxrig window restore
 bxrig window quake
 bxrig window quake send
 bxrig window snap left
+bxrig window tiled-fullscreen
 ```
 
-> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right|top|bottom floats the focused window onto that half of its monitor. Hyprland only.
+> quake shows or hides the special workspace qconsole (the default terminal starts there the first time); quake send moves the focused window onto it. snap left|right|top|bottom floats the focused window onto that half of its monitor. Hyprland only. close-all asks every window to close (apps with unsaved work still ask), then goes to workspace 1; tiled-fullscreen makes the app full screen inside its tile (again to undo).
 
 ### `bxrig overview` {#bxrig-overview}
 
@@ -1687,15 +1724,21 @@ bxrig strata integrations --dry-run
 
 ### `bxrig gpu` {#bxrig-gpu}
 
-GPU check: driver, rendering, NVIDIA specifics.
+GPU check: driver, rendering, NVIDIA specifics; the mode of a laptop with two GPUs.
 
 ```text
 bxrig gpu doctor [--json]
+bxrig gpu mode [status] [--json]
+bxrig gpu mode hybrid|integrated [--yes] [--dry-run] [--json]
 ```
 
 ```bash
 bxrig gpu doctor
+bxrig gpu mode
+bxrig gpu mode integrated --yes
 ```
+
+> mode needs two GPUs (counted in /sys/bus/pci/devices) and supergfxctl (supergfxd); a switch is `supergfxctl -m Hybrid|Integrated`, then log out or reboot.
 
 ### `bxrig input` {#bxrig-input}
 
@@ -1708,6 +1751,7 @@ bxrig input apple [--scroll-speed=0..63] [--yes] [--dry-run] [--json]
 bxrig input logitech [--json]
 bxrig input undo [--yes] [--dry-run] [--json]
 bxrig input doctor | gestures [--yes] [--dry-run] [--json]
+bxrig input touchpad|touchscreen [on|off|toggle|status] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -1717,7 +1761,10 @@ bxrig input status
 bxrig input offer --dry-run
 bxrig input apple --scroll-speed=48 --yes
 bxrig input logitech
+bxrig input touchpad off
 ```
+
+> touchpad and touchscreen switch the device off and on in a Hyprland session (hyprctl eval hl.device); a login turns it back on.
 
 ### `bxrig audio` {#bxrig-audio}
 
@@ -1751,18 +1798,21 @@ bxrig bluetooth status --json
 
 ### `bxrig wifi` {#bxrig-wifi}
 
-Wi-Fi status: the radio, the Wi-Fi devices and the network you are on.
+Wi-Fi status: the radio, the Wi-Fi devices and the network you are on; a QR code to join it.
 
 ```text
 bxrig wifi status [--json]
+bxrig wifi qr [--out=FILE.png] [--json]
 ```
 
 ```bash
 bxrig wifi status
 bxrig wifi status --json
+bxrig wifi qr
+bxrig wifi qr --out=wifi.png
 ```
 
-> Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing.
+> Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing. qr draws the network you are on as a QR code a phone camera reads to join (qrencode); the password is in the code only, never printed.
 
 ### `bxrig airplay` {#bxrig-airplay}
 

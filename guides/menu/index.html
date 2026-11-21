@@ -235,6 +235,8 @@
 		
 		
 		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#what-the-menu-shows">What the menu shows</a></li><li class="toc-level-2"><a href="#your-own-entries">Your own entries</a></li></ul></details>
+		
 
 		
 		<h1 id="the-control-center"><a href="#the-control-center" id="the-control-center" name="the-control-center" class="anchor"></a>The control center</h1>
@@ -249,23 +251,41 @@
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Install</td><td>Any package from the repositories or the AUR, the catalog by group (AI, Development, Terminal, Gaming), web apps, virtual machines, fonts.</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Remove</td><td>Packages, catalog apps, web apps, themes, virtual machines, agent skills. It asks first.</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Appearance</td><td>Theme, mode, font, background, bar, dock, windows, animations. See <a href="/guides/appearance/index.html">Appearance</a>.</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Trigger</td><td>Screenshots, recording (screen, a region, with desktop or microphone audio), the color picker, notices (time, battery, weather), toggles (do not disturb, dictation, dock, stay awake, night light), emoji, clipboard history, force quit, minimize and restore, overview, the quake console, a private browser window, the file manager in the current folder.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Trigger</td><td>Screenshots, recording (screen, a region, with desktop or microphone audio, with your webcam in a corner), sharing with LocalSend (a file, a folder, the clipboard, receive), the color picker, notices (time, battery, weather), toggles (do not disturb, dictation, dock, stay awake, night light), emoji, clipboard history, force quit, minimize and restore, overview, the quake console, a private browser window, the file manager in the current folder.</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Shortcuts</td><td>List, search, rebind and run a shortcut, check conflicts, write them to Hyprland and Plasma, pick the Traditional or Mac style. See <a href="/guides/shortcuts/index.html">Shortcuts</a>.</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware</td><td>Monitors, laptop panel, mirror, brightness, webcam preview, GPU check, input devices and gestures, Audio, Bluetooth and Wi-Fi (they open the Noctalia control center panel, like <code>Super+Alt+C</code>), the terminal fallbacks <code>Audio mixer (terminal)</code> (wiremix) and <code>Bluetooth devices (terminal)</code> (bluetui), the status checks for audio, Bluetooth and Wi-Fi, AirPlay.</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Setup</td><td>Power, Display, Defaults, Keyboard, Security, Time, DNS, Kernel, Cloud storage, Backup, NAS.</td></tr>
-<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Update</td><td>BxRig updates, the system update (a snapshot first), skills, re-apply appearance and display.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware</td><td>Monitors, laptop panel, mirror, brightness, webcam preview, GPU check, GPU mode (hybrid laptops), touchpad and touchscreen on or off, a Wi-Fi QR code, Network and speed (the System panel's Network tab on Hyprland, the Control Center Network page elsewhere), network and disk speed tests, input devices and gestures, Audio, Bluetooth and Wi-Fi (they open the Noctalia control center panel, like <code>Super+Alt+C</code>), the terminal fallbacks <code>Audio mixer (terminal)</code> (wiremix) and <code>Bluetooth devices (terminal)</code> (bluetui), the status checks for audio, Bluetooth and Wi-Fi, AirPlay.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Setup</td><td>Power, Display, Defaults (browser, terminal, file manager, editor), Keyboard, Security, Time, DNS (with &quot;Test and pick the fastest&quot;, <code>dns bench</code>), Kernel, Cloud storage, Backup, NAS.</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Update</td><td>BxRig updates, the system update (a snapshot first), firmware updates, restarting the shell, audio, Wi-Fi or Bluetooth when one is stuck, changing your password, skills, re-apply appearance and display.</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Develop</td><td>BoxLang, databases, virtual machines, containers, the editor.</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Agent</td><td>Open an agent, the pull-down AI shell, sessions, local models, API keys.</td></tr>
 <tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Learn, About, System</td><td>Docs and cheat sheets, the status of this machine, lock, suspend, log out, reboot, shut down.</td></tr>
 </tbody>
 </table></div>
 <p>Every entry is a command you can type: <code>bxrig menu items</code> lists them with the command each one runs, and <code>bxrig menu search TEXT</code> finds one. <code>bxrig menu open capture</code> opens one submenu on its own (<code>bxrig menu open</code> lists the routes; System, Capture, Toggle, Hardware and Agent have keys). Entries that print something open in a terminal and wait for Enter; entries that need a choice (a theme, a font, a time zone, a monitor) ask you in the same menu.</p>
+<h2 id="what-the-menu-shows"><a href="#what-the-menu-shows" id="what-the-menu-shows" name="what-the-menu-shows" class="anchor"></a>What the menu shows</h2>
+<ul>
+<li><strong>A tick on the current value.</strong> The bar position and style, the dock, the window look, the theme mode, the layout and the power profile show a ✓ on what is set now.</li>
+<li><strong>Only what applies here.</strong> Laptop entries (laptop panel, lid, power tools) show on a laptop; the touchpad and touchscreen switches when you have one (Hyprland); webcam entries when there is a webcam; GPU mode on a laptop with two GPUs. Install lists only the apps you do not have yet.</li>
+</ul>
+<h2 id="your-own-entries"><a href="#your-own-entries" id="your-own-entries" name="your-own-entries" class="anchor"></a>Your own entries</h2>
+<p><code>~/.config/bxrig/menu.json</code> adds entries, hides entries and renames them. <code>bxrig menu file --yes</code> writes an example; <code>bxrig menu ids</code> lists the id of every entry.</p>
+<pre><code class="language-json">{
+	&quot;add&quot;: [
+		{ &quot;under&quot;: &quot;trigger&quot;, &quot;label&quot;: &quot;Open my notes&quot;, &quot;command&quot;: [ &quot;xdg-open&quot;, &quot;~/Notes&quot; ] },
+		{ &quot;under&quot;: &quot;system&quot;, &quot;label&quot;: &quot;Disk usage&quot;, &quot;command&quot;: [ &quot;ncdu&quot;, &quot;~&quot; ], &quot;terminal&quot;: true },
+		{ &quot;under&quot;: &quot;appearance&quot;, &quot;label&quot;: &quot;Next theme&quot;, &quot;bxrig&quot;: [ &quot;theme&quot;, &quot;next&quot; ] }
+	],
+	&quot;hide&quot;: [ &quot;trigger.share-localsend&quot; ],
+	&quot;rename&quot;: { &quot;system.lock&quot;: &quot;Lock now&quot; }
+}
+</code></pre>
+<p><code>command</code> runs a program (in a terminal with <code>&quot;terminal&quot;: true</code>), <code>bxrig</code> runs a BxRig command. Leave out <code>under</code> to add at the top. A mistake in the file is shown as a warning by <code>bxrig menu file</code> and <code>bxrig menu items</code>; the menu still opens.</p>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/menu.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/menu.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 21, 2026, 5&#x3a;31&#x3a;32 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20control%20center&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fmenu%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/menu.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/menu.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 21, 2026, 10&#x3a;29&#x3a;24 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20control%20center&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fmenu%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -307,6 +327,10 @@
 			</main>
 
 			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#what-the-menu-shows">What the menu shows</a></li><li class="toc-level-2"><a href="#your-own-entries">Your own entries</a></li></ul></nav>
+				</aside>
 			
 		</div>
 		

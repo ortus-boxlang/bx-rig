@@ -74,12 +74,13 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 | Gradle | the same for Gradle |
 | Versions | BoxLang, MatchBox, Java and Node in one table; Enter opens the deep page |
 | Ports | what listens on which port and who owns it; stop or kill it, with a plan first. A port with two owners is red |
+| Network | the Wi-Fi you are on, your VPNs, the DNS providers (the one in use is marked, with their last benchmark times and the fastest) and the last internet speed. `t` speed test, `b` DNS benchmark, `u` use the DNS on the row, `c` VPN on or off, `q` the Wi-Fi QR code, `w` bring Wi-Fi back |
 | Packages | search the repos and the AUR with `/`, then install or remove |
 | Shortcuts | every shortcut; rebind (it asks for the keys), reset, conflicts |
 | Machines | your VMs (Windows and Linux desktops in containers): start, stop, info, new |
 | Databases | the databases BxRig runs: start, stop, info, new |
 | Mail | the mail your apps send to the catcher (`bxrig mail`): headers and text of the highlighted message, delete, clear, open it in the browser, send a test; it refreshes by itself every 3 seconds |
-| Storage | NAS shares and cloud remotes: mount, unmount, test |
+| Storage | this computer's disk first (space used and the last disk speed; `t` tests it), then NAS shares and cloud remotes: mount, unmount, test |
 | Secrets | names only; `v` shows one value for one look |
 | Look | the top bar layout (Minimal, Standard, Dense) with a picture of the bar and the dock, battery percentage, clock format, the key that hides the bar, the app grid style (Launchpad or Terminal-style) and the dock. `-` and `+` (or Right, Space, Enter) pick the previous or next value, and the plan comes first. The color theme is a link to the Themes page |
 | Themes | the 21 themes with a palette and wallpaper preview; Enter shows the plan, y applies |

@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#displays">Displays</a></li><li class="toc-level-2"><a href="#laptop-power">Laptop power</a></li><li class="toc-level-2"><a href="#time-zone-and-travel">Time zone and travel</a></li><li class="toc-level-2"><a href="#dns-kernels-and-stay-awake">DNS, kernels and stay awake</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#displays">Displays</a></li><li class="toc-level-2"><a href="#laptop-power">Laptop power</a></li><li class="toc-level-2"><a href="#time-zone-and-travel">Time zone and travel</a></li><li class="toc-level-2"><a href="#dns-kernels-and-stay-awake">DNS, kernels and stay awake</a></li><li class="toc-level-2"><a href="#when-something-is-stuck">When something is stuck</a></li><li class="toc-level-2"><a href="#password-firmware-and-speed">Password, firmware and speed</a></li><li class="toc-level-2"><a href="#hardware-switches">Hardware switches</a></li></ul></details>
 		
 
 		
@@ -278,17 +278,45 @@ bxrig time ntp on --yes
 <h2 id="dns-kernels-and-stay-awake"><a href="#dns-kernels-and-stay-awake" id="dns-kernels-and-stay-awake" name="dns-kernels-and-stay-awake" class="anchor"></a>DNS, kernels and stay awake</h2>
 <pre><code class="language-bash">bxrig dns                              # the servers in use
 bxrig dns cloudflare --yes             # google, quad9, custom 9.9.9.10, dhcp
+bxrig dns bench                        # time each provider and see the fastest
 bxrig kernel list
 bxrig kernel install linux-cachyos-lts --yes
 bxrig toggle stay-awake                # keep the screen from idling (Noctalia)
 </code></pre>
-<p><code>dns</code> changes the active NetworkManager connections. <code>kernel</code> installs or removes kernel packages with their headers; it never edits the bootloader, never removes the running or the last kernel, and you pick the kernel in the boot menu. Stay awake needs Noctalia (Hyprland); on Plasma use System Settings.</p>
+<p><code>dns</code> changes the active NetworkManager connections. <code>dns bench</code> asks Cloudflare, Quad9, Google, your router and your own servers (when you use some) the same five names twice with <code>dig</code> and shows the median of the second round, the one in use marked; it needs <code>dig</code> (<code>bind</code> on Arch, <code>bind9-dnsutils</code> on Debian and Ubuntu, <code>bind-utils</code> on openSUSE). <code>kernel</code> installs or removes kernel packages with their headers; it never edits the bootloader, never removes the running or the last kernel, and you pick the kernel in the boot menu. Stay awake needs Noctalia (Hyprland); on Plasma use System Settings.</p>
+<h2 id="when-something-is-stuck"><a href="#when-something-is-stuck" id="when-something-is-stuck" name="when-something-is-stuck" class="anchor"></a>When something is stuck</h2>
+<pre><code class="language-bash">bxrig system restart shell        # Noctalia (or Plasma's shell)
+bxrig system restart audio        # PipeWire and WirePlumber
+bxrig system restart wifi         # unblock the radio, Wi-Fi on, rescan
+bxrig system restart bluetooth    # unblock the radio, adapter on
+</code></pre>
+<p>Each shows a plan first; add <code>--yes</code> (the menu's Update &gt; Restart does).</p>
+<h2 id="password-firmware-and-speed"><a href="#password-firmware-and-speed" id="password-firmware-and-speed" name="password-firmware-and-speed" class="anchor"></a>Password, firmware and speed</h2>
+<pre><code class="language-bash">bxrig system password             # passwd, on this terminal
+bxrig system firmware             # firmware updates your vendors offer (fwupd, from LVFS)
+bxrig system firmware update --yes
+bxrig system speedtest network    # speedtest-cli: ping, download, upload
+bxrig system speedtest disk       # write and read 1 GiB in ~/.cache
+bxrig system speedtest dns        # the same as dns bench
+bxrig system speedtest last       # the last result of each
+</code></pre>
+<p>Only the last result of each test is kept (<code>~/.local/state/bxrig/speedtest-last.json</code>), so the panels can show it when they open. On the bar, the System panel's Network tab has the Wi-Fi (with Share Wi-Fi, a QR code a phone scans), the speed and disk tests and a DNS list to pick from; the Quick panel has Share Wi-Fi and Control Center buttons at the top. The Control Center has the same on its Network page.</p>
+<p>Firmware updates cover BIOS/UEFI, SSDs, docks and some keyboards and mice, from vendors that publish to LVFS (Dell, Lenovo, HP, Framework, Logitech and others). Many consumer laptops are not covered.</p>
+<h2 id="hardware-switches"><a href="#hardware-switches" id="hardware-switches" name="hardware-switches" class="anchor"></a>Hardware switches</h2>
+<pre><code class="language-bash">bxrig input touchpad off          # and on, toggle, status (Hyprland); also touchscreen
+bxrig gpu mode                    # a laptop with two GPUs: the current mode
+bxrig gpu mode integrated --yes   # the dedicated GPU off (battery); hybrid turns it back on
+bxrig wifi qr                     # a QR code a phone scans to join your network
+bxrig share file report.pdf       # LocalSend: a file, a folder or the clipboard to a device nearby
+bxrig default editor neovim --yes # the app for text files, and EDITOR / VISUAL
+</code></pre>
+<p><code>gpu mode</code> uses supergfxctl (supergfxd); log out or reboot after a switch. <code>share</code> needs LocalSend's command line, <code>localsend-cli</code> (LocalSend 1.18 and later); <code>bxrig share receive</code> opens the LocalSend app.</p>
 
 	
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/system.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/system.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 21, 2026, 5&#x3a;31&#x3a;32 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Displays%2C%20power%20and%20time&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fsystem%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/system.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/system.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 21, 2026, 10&#x3a;29&#x3a;24 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Displays%2C%20power%20and%20time&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fsystem%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -332,7 +360,7 @@ bxrig toggle stay-awake                # keep the screen from idling (Noctalia)
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#displays">Displays</a></li><li class="toc-level-2"><a href="#laptop-power">Laptop power</a></li><li class="toc-level-2"><a href="#time-zone-and-travel">Time zone and travel</a></li><li class="toc-level-2"><a href="#dns-kernels-and-stay-awake">DNS, kernels and stay awake</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#displays">Displays</a></li><li class="toc-level-2"><a href="#laptop-power">Laptop power</a></li><li class="toc-level-2"><a href="#time-zone-and-travel">Time zone and travel</a></li><li class="toc-level-2"><a href="#dns-kernels-and-stay-awake">DNS, kernels and stay awake</a></li><li class="toc-level-2"><a href="#when-something-is-stuck">When something is stuck</a></li><li class="toc-level-2"><a href="#password-firmware-and-speed">Password, firmware and speed</a></li><li class="toc-level-2"><a href="#hardware-switches">Hardware switches</a></li></ul></nav>
 				</aside>
 			
 		</div>
