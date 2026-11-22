@@ -1,0 +1,508 @@
+// `bxrig scheduler`: one scheduler for everything BxRig runs on a timer, on the BoxLang JVM.
+//   status | list [--group=G]           the service and every task: group, when, next run, last run and result
+//   show NAME                           one task: its command, schedule, stats (runs, failures, success rate, average time) and recent runs
+//   add NAME --when=WHEN [--group=G] [--notify=failure|always|never] [--timeout=SECONDS] -- COMMAND...   a task of your own
+//   remove NAME | enable NAME | disable NAME | pause GROUP | resume GROUP | run NAME | history NAME [--limit=N]
+//   install [--yes] | uninstall [--yes] | reload     the service (a plan until --yes); reload restarts it after a change
+//   exec NAME                           what the service runs for a task: the command, timed, recorded and notified (not for people)
+// WHEN: "every 15 minutes", "every 2 hours", "hourly", "daily 02:30", "weekdays 09:00", "weekly mon 09:00" or "cron M H DOM MON DOW".
+// Files: ~/.config/bxrig/schedule.json (the tasks), ~/.local/state/bxrig/scheduler/ (tasks.json for the runner, history/NAME.jsonl,
+// stats/NAME.json written by the runner after each run), ~/.local/share/bxrig/scheduler/Scheduler.bx (the runner) and the user unit
+// bxrig-scheduler.service (`boxlang schedule` on the runner, restarted on failure).
+// A task's command is BxRig words (`-- bxrig backup data run`) or any program (`-- /usr/bin/restic ...`). Exit 10 means "needs attention"
+// (an update is there) and is not a failure for tasks that list it in ok_codes.
+class Scheduler {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "scheduler" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		variables.config = new bxrig.ConfigService().quiet( true );
+		variables.systemd = new bxrig.util.Systemd( variables.proc.runner() );
+		return this;
+	}
+
+	// ---- where things are ----
+	function scheduleFile() { return variables.env.config( "schedule.json" ); }
+	function stateDir() { return variables.env.state( "scheduler" ); }
+	function compiledFile() { return stateDir() & "/tasks.json"; }
+	function historyFile( name ) { return stateDir() & "/history/" & arguments.name & ".jsonl"; }
+	function statsFile( name ) { return stateDir() & "/stats/" & arguments.name & ".json"; }
+	function runnerFile() { return variables.env.data( "scheduler/Scheduler.bx" ); }
+	function unitName() { return "bxrig-scheduler.service"; }
+	function unitFile() { return variables.env.xdgConfig( "systemd/user/" & unitName() ); }
+
+	// ---- WHEN, pure ----
+
+	function dayNumber( d ) {
+		var days = [ "sun", "mon", "tue", "wed", "thu", "fri", "sat" ];
+		var i = arrayFind( days, left( lCase( arguments.d ), 3 ) );
+		return i ? i - 1 : -1;
+	}
+
+	// "HH:MM" -> [ hour, minute ], or [] when it is not a time.
+	function clock( t ) {
+		if ( !reFind( "^[0-9]{1,2}:[0-9]{2}$", arguments.t ) ) return [];
+		var h = int( listFirst( arguments.t, ":" ) ); var m = int( listLast( arguments.t, ":" ) );
+		return h <= 23 && m <= 59 ? [ h, m ] : [];
+	}
+
+	// WHEN -> a 5-field cron expression, or "" when it cannot be read.
+	function whenToCron( when ) {
+		var w = listToArray( lCase( trim( arguments.when ) ), " " );
+		if ( !w.len() ) return "";
+		if ( w[ 1 ] == "cron" ) return w.len() == 6 && validCron( w.slice( 2 ).toList( " " ) ) ? w.slice( 2 ).toList( " " ) : "";
+		if ( w[ 1 ] == "hourly" && w.len() == 1 ) return "0 * * * *";
+		if ( w[ 1 ] == "every" && w.len() == 3 && isNumeric( w[ 2 ] ) ) {
+			var n = int( w[ 2 ] );
+			if ( reFind( "^(m|min|mins|minute|minutes)$", w[ 3 ] ) && n >= 1 && n <= 59 ) return n == 1 ? "* * * * *" : "*/" & n & " * * * *";
+			if ( reFind( "^(h|hour|hours)$", w[ 3 ] ) && n >= 1 && n <= 23 ) return n == 1 ? "0 * * * *" : "0 */" & n & " * * *";
+			return "";
+		}
+		if ( ( w[ 1 ] == "daily" || w[ 1 ] == "weekdays" ) && w.len() <= 2 ) {
+			var c = w.len() == 2 ? clock( w[ 2 ] ) : [ 3, 0 ];
+			if ( !c.len() ) return "";
+			return c[ 2 ] & " " & c[ 1 ] & " * * " & ( w[ 1 ] == "daily" ? "*" : "1-5" );
+		}
+		if ( w[ 1 ] == "weekly" && w.len() == 3 ) {
+			var d = dayNumber( w[ 2 ] ); var c2 = clock( w[ 3 ] );
+			if ( d < 0 || !c2.len() ) return "";
+			return c2[ 2 ] & " " & c2[ 1 ] & " * * " & d;
+		}
+		return "";
+	}
+
+	// Five fields of numbers, *, */N, ranges and lists, each in its range.
+	function validCron( expr ) {
+		var f = listToArray( arguments.expr, " " );
+		if ( f.len() != 5 ) return false;
+		var ranges = [ [ 0, 59 ], [ 0, 23 ], [ 1, 31 ], [ 1, 12 ], [ 0, 7 ] ];
+		for ( var i = 1; i <= 5; i++ ) if ( !cronValues( f[ i ], ranges[ i ][ 1 ], ranges[ i ][ 2 ] ).len() ) return false;
+		return true;
+	}
+
+	// The values one cron field allows: "*/15" in 0..59 -> [ 0, 15, 30, 45 ]; [] when the field is not valid.
+	function cronValues( field, lo, hi ) {
+		var out = [];
+		for ( var part in listToArray( arguments.field, "," ) ) {
+			var step = 1; var body = part;
+			if ( find( "/", part ) ) { step = val( listLast( part, "/" ) ); body = listFirst( part, "/" ); if ( step < 1 ) return []; }
+			var a = arguments.lo; var b = arguments.hi;
+			if ( body != "*" ) {
+				if ( !reFind( "^[0-9]+(-[0-9]+)?$", body ) ) return [];
+				a = int( listFirst( body, "-" ) ); b = find( "-", body ) ? int( listLast( body, "-" ) ) : ( find( "/", part ) ? arguments.hi : a );
+			}
+			if ( a < arguments.lo || b > arguments.hi || a > b ) return [];
+			for ( var v = a; v <= b; v += step ) if ( !arrayFind( out, v ) ) out.append( v );
+		}
+		return out;
+	}
+
+	// The next minute after `from` that a cron expression matches (within 400 days), as a date; "" when none.
+	function nextRun( expr, from ) {
+		if ( !validCron( arguments.expr ) ) return "";
+		var f = listToArray( arguments.expr, " " );
+		var mins = cronValues( f[ 1 ], 0, 59 ); var hours = cronValues( f[ 2 ], 0, 23 ); var doms = cronValues( f[ 3 ], 1, 31 );
+		var mons = cronValues( f[ 4 ], 1, 12 ); var dows = cronValues( f[ 5 ], 0, 7 );
+		if ( arrayFind( dows, 7 ) && !arrayFind( dows, 0 ) ) dows.append( 0 );
+		var anyDom = f[ 3 ] == "*"; var anyDow = f[ 5 ] == "*";
+		var t = dateAdd( "n", 1, createDateTime( year( arguments.from ), month( arguments.from ), day( arguments.from ), hour( arguments.from ), minute( arguments.from ), 0 ) );
+		for ( var d = 0; d < 400; d++ ) {
+			var day0 = dateAdd( "d", d, createDate( year( t ), month( t ), day( t ) ) );
+			if ( !arrayFind( mons, month( day0 ) ) ) continue;
+			var domOk = arrayFind( doms, day( day0 ) ) > 0; var dowOk = arrayFind( dows, dayOfWeek( day0 ) - 1 ) > 0;
+			// cron's rule: when both day fields are restricted, either one matching is enough
+			var dayOk = anyDom && anyDow ? true : ( anyDom ? dowOk : ( anyDow ? domOk : domOk || dowOk ) );
+			if ( !dayOk ) continue;
+			for ( var h in hours ) for ( var m in mins ) {
+				var c = createDateTime( year( day0 ), month( day0 ), day( day0 ), h, m, 0 );
+				if ( dateCompare( c, t ) >= 0 ) return c;
+			}
+		}
+		return "";
+	}
+
+	// WHEN -> the BoxLang scheduled-task call that runs it: ".every( 15, ""minutes"" )", ".everyDayAt( ""02:30"" )", ".onMondays( ""09:00"" )"...
+	// The fluent calls work on every BoxLang; a 5-field cron() did not fire on 1.19, so "cron ..." is the one form that needs a newer BoxLang.
+	function fluent( when ) {
+		var w = listToArray( lCase( trim( arguments.when ) ), " " );
+		var c = whenToCron( arguments.when );
+		if ( !len( c ) ) return "";
+		var q = function( x ) { return '"' & x & '"'; };
+		var hm = function( t ) { var k = clock( t ); return numberFormat( k[ 1 ], "00" ) & ":" & numberFormat( k[ 2 ], "00" ); };
+		if ( w[ 1 ] == "cron" ) return ".cron( " & q( c ) & " )";
+		if ( w[ 1 ] == "hourly" ) return ".everyHour()";
+		if ( w[ 1 ] == "every" ) return ".every( " & int( w[ 2 ] ) & ", " & q( reFind( "^h", w[ 3 ] ) ? "hours" : "minutes" ) & " )";
+		if ( w[ 1 ] == "daily" ) return ".everyDayAt( " & q( w.len() == 2 ? hm( w[ 2 ] ) : "03:00" ) & " )";
+		if ( w[ 1 ] == "weekdays" ) return ".onWeekdays( " & q( w.len() == 2 ? hm( w[ 2 ] ) : "03:00" ) & " )";
+		var days = [ "Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays" ];
+		return ".on" & days[ dayNumber( w[ 2 ] ) + 1 ] & "( " & q( hm( w[ 3 ] ) ) & " )";
+	}
+
+	// A WHEN for people: "every 15 minutes" stays, a cron is shown as it is.
+	function describe( when ) { return trim( arguments.when ); }
+
+	// ---- the tasks ----
+
+	function load() {
+		var j = new bxrig.util.Json().read( scheduleFile(), {} );
+		return isStruct( j ) && isArray( j.tasks ?: "" ) ? j.tasks : [];
+	}
+
+	// Writes schedule.json and the runner's tasks.json (name, group, cron, timeout of the enabled tasks).
+	function save( tasks ) {
+		directoryCreate( getDirectoryFromPath( scheduleFile() ), true, true );
+		fileWrite( scheduleFile(), jsonPrettify( serializeJSON( { tasks: arguments.tasks } ) ) & chr( 10 ) );
+		compile( arguments.tasks );
+	}
+
+	// The enabled tasks as the runner needs them, written to tasks.json (for people and tools) and into the runner itself.
+	function compile( tasks ) {
+		directoryCreate( stateDir(), true, true );
+		var rows = [];
+		for ( var t in arguments.tasks ) if ( ( t.enabled ?: true ) && len( fluent( t.when ) ) ) rows.append( { name: t.name, group: t.group ?: "", when: t.when, call: fluent( t.when ), timeout: t.timeout ?: 3600 } );
+		fileWrite( compiledFile(), serializeJSON( { tasks: rows } ) );
+		directoryCreate( getDirectoryFromPath( runnerFile() ), true, true );
+		fileWrite( runnerFile(), runnerText( rows ) );
+	}
+
+	function findTask( name ) {
+		for ( var t in load() ) if ( t.name == arguments.name ) return t;
+		return {};
+	}
+
+	// The tasks BxRig adds when the scheduler is installed: the update check (it replaces bxrig-update-check.timer), the file backup
+	// when one is set up (it replaces bxrig-backup.timer) and the BoxLang check. Each one only when what it runs is there.
+	function builtins( backupSchedule = "off", updateNotify = true ) {
+		var out = [];
+		if ( arguments.updateNotify ) out.append( { name: "update-check", group: "system", when: "daily 11:47", run: [ "update", "check", "--notify" ], ok_codes: [ 0, 10 ], notify: "failure", builtin: true, enabled: true } );
+		if ( arguments.backupSchedule == "hourly" || arguments.backupSchedule == "daily" ) out.append( { name: "backup-data", group: "backups", when: arguments.backupSchedule == "hourly" ? "hourly" : "daily 02:30", run: [ "backup", "data", "run", "--all", "--yes", "--scheduled" ], ok_codes: [ 0 ], notify: "failure", timeout: 14400, builtin: true, enabled: true } );
+		out.append( { name: "boxlang-check", group: "boxlang", when: "daily 10:13", run: [ "boxlang", "check" ], ok_codes: [ 0, 10 ], notify: "attention", builtin: true, enabled: true } );
+		return out;
+	}
+
+	// ---- running a task ----
+
+	// The argv of a task: BxRig words run with this BxRig, else the program as given.
+	function argvOf( t ) {
+		if ( isArray( arguments.t.run ?: "" ) ) { var a = [ variables.env.self() ]; for ( var w in arguments.t.run ) a.append( w & "" ); return a; }
+		return isArray( arguments.t.command ?: "" ) ? arguments.t.command : [];
+	}
+
+	// ok, attention (exit 10 when it is an ok code), failed, timeout.
+	function classify( t, exitCode, timedOut ) {
+		if ( arguments.timedOut ) return "timeout";
+		var okc = isArray( arguments.t.ok_codes ?: "" ) ? arguments.t.ok_codes : [ 0 ];
+		if ( !arrayFind( okc, arguments.exitCode ) ) return "failed";
+		return arguments.exitCode == 10 ? "attention" : "ok";
+	}
+
+	function shouldNotify( t, status ) {
+		var n = arguments.t.notify ?: "failure";
+		if ( n == "never" ) return false;
+		if ( n == "always" ) return true;
+		if ( arguments.status == "failed" || arguments.status == "timeout" ) return true;
+		return n == "attention" && arguments.status == "attention";
+	}
+
+	function history( name, limit = 0 ) {
+		var f = historyFile( arguments.name );
+		if ( !fileExists( f ) ) return [];
+		var out = [];
+		for ( var line in listToArray( fileRead( f ), chr( 10 ) ) ) {
+			try { out.append( jsonDeserialize( line ) ); } catch ( any e ) {}
+		}
+		return arguments.limit > 0 && out.len() > arguments.limit ? out.slice( out.len() - arguments.limit + 1 ) : out;
+	}
+
+	// Appends one run and keeps the last 500.
+	function record( name, run ) {
+		var f = historyFile( arguments.name );
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		var lines = fileExists( f ) ? listToArray( fileRead( f ), chr( 10 ) ) : [];
+		lines.append( serializeJSON( arguments.run ) );
+		if ( lines.len() > 500 ) lines = lines.slice( lines.len() - 499 );
+		fileWrite( f, lines.toList( chr( 10 ) ) & chr( 10 ) );
+	}
+
+	function exec( name, asJson ) {
+		var t = findTask( arguments.name );
+		if ( structIsEmpty( t ) ) return variables.out.fail( "precondition", "no task named " & arguments.name, arguments.asJson );
+		var argv = argvOf( t );
+		if ( !argv.len() ) return variables.out.fail( "precondition", arguments.name & " has nothing to run", arguments.asJson );
+		var started = now();
+		var t0 = getTickCount();
+		var r = variables.proc.exec( argv, t.timeout ?: 3600 );
+		var ms = getTickCount() - t0;
+		var st = classify( t, r.exitCode, r.timeout ?: false );
+		var tail = new bxrig.util.Text().tail( ( r.output ?: "" ) & chr( 10 ) & ( r.error ?: "" ) );
+		var run = { started: dateTimeFormat( started, "yyyy-MM-dd'T'HH:mm:ss" ), ms: ms, exit: r.exitCode, status: st, output: left( tail, 2000 ) };
+		record( arguments.name, run );
+		if ( shouldNotify( t, st ) && variables.proc.has( "notify-send" ) ) {
+			var title = st == "attention" ? arguments.name & " needs attention" : ( st == "ok" ? arguments.name & " ran" : arguments.name & " failed" );
+			variables.proc.exec( [ "notify-send", "--app-name=bxrig", title, left( len( trim( tail ) ) ? trim( listLast( trim( tail ), chr( 10 ) ) ) : "exit " & r.exitCode, 200 ) & " (bxrig scheduler show " & arguments.name & ")" ], 10 );
+		}
+		return variables.out.say( st == "failed" || st == "timeout" ? "failed" : "ok", run, arguments.asJson, [ arguments.name & ": " & st & " in " & numberFormat( ms / 1000, "0.0" ) & " s (exit " & r.exitCode & ")" ] );
+	}
+
+	// ---- reading what happened ----
+
+	// Runs, failures, success rate, average and the last 30 durations (the trend), from the history.
+	function statsFrom( runs ) {
+		var n = arguments.runs.len();
+		var fails = arguments.runs.filter( function( r ) { return r.status == "failed" || r.status == "timeout"; } ).len();
+		var total = 0;
+		for ( var r in arguments.runs ) total += r.ms;
+		var recent = n > 30 ? arguments.runs.slice( n - 29 ) : arguments.runs;
+		return { runs: n, failures: fails, success_rate: n ? round( ( n - fails ) * 100 / n ) : 0, avg_ms: n ? round( total / n ) : 0, trend: recent.map( function( r ) { return { ms: r.ms, status: r.status }; } ), last: n ? arguments.runs[ n ] : {} };
+	}
+
+	// A task as shown: its own fields, the cron, next run (the runner's stats, else computed), last run and its stats.
+	function view( t ) {
+		var v = duplicate( arguments.t );
+		v.cron = whenToCron( v.when );
+		v.enabled = v.enabled ?: true;
+		v.group = v.group ?: "";
+		var s = statsFrom( history( v.name ) );
+		v.stats = s;
+		v.last_status = s.runs ? s.last.status : "never";
+		v.last_run = s.runs ? s.last.started : "";
+		var jvm = new bxrig.util.Json().read( statsFile( v.name ), {} );
+		var nr = isStruct( jvm ) ? ( jvm.next_local ?: "" ) : "";
+		if ( !len( nr ) && v.enabled && len( v.cron ) ) { var n2 = nextRun( v.cron, now() ); nr = isDate( n2 ) ? dateTimeFormat( n2, "yyyy-MM-dd'T'HH:mm:ss" ) : ""; }
+		v.next_run = v.enabled ? left( nr, 19 ) : "";
+		v.command_text = argvOf( arguments.t ).toList( " " );
+		return v;
+	}
+
+	function serviceState() {
+		if ( !fileExists( unitFile() ) ) return "not installed";
+		var r = variables.proc.exec( [ "systemctl", "--user", "is-active", unitName() ], 10 );
+		var s = trim( r.output );
+		return len( s ) ? s : "unknown";
+	}
+
+	function status( group, asJson ) {
+		var all = load().map( function( t ) { return view( t ); } );
+		if ( len( arguments.group ) ) all = all.filter( function( t ) { return t.group == group; } );
+		var svc = serviceState();
+		var failing = all.filter( function( t ) { return t.last_status == "failed" || t.last_status == "timeout"; } );
+		var lines = [ "Scheduler: " & svc & ( svc == "not installed" ? " (bxrig scheduler install --yes)" : "" ) & ". " & all.len() & " task" & ( all.len() == 1 ? "" : "s" ) & ( failing.len() ? ", " & failing.len() & " failing" : "" ) ];
+		for ( var t in all ) {
+			lines.append( ( t.enabled ? ( t.last_status == "failed" || t.last_status == "timeout" ? "✗ " : ( t.last_status == "ok" ? "✓ " : "· " ) ) : "‖ " ) & t.name & repeatString( " ", max( 1, 18 - len( t.name ) ) ) & ( len( t.group ) ? t.group : "-" ) & repeatString( " ", max( 1, 10 - len( t.group ) ) ) & t.when & repeatString( " ", max( 1, 20 - len( t.when ) ) ) & ( t.enabled ? "next " & ( len( t.next_run ) ? replace( mid( t.next_run, 6, 11 ), "T", " " ) : "?" ) : "paused" ) );
+		}
+		return variables.out.say( "ok", { service: svc, tasks: all, failing: failing.len() }, arguments.asJson, lines );
+	}
+
+	function show( name, limit, asJson ) {
+		var t = findTask( arguments.name );
+		if ( structIsEmpty( t ) ) return unknown( arguments.name, arguments.asJson );
+		var v = view( t );
+		v.runs = history( arguments.name, arguments.limit );
+		var s = v.stats;
+		var lines = [ v.name & ( len( v.group ) ? " (" & v.group & ")" : "" ) & ": " & v.when & ( v.enabled ? "" : ", paused" ), "Runs: " & v.command_text, "Next: " & ( len( v.next_run ) ? v.next_run : "-" ) & "   Last: " & ( len( v.last_run ) ? v.last_run & " " & v.last_status : "never" ), "Stats: " & s.runs & " runs, " & s.failures & " failed, " & s.success_rate & "% ok, " & numberFormat( s.avg_ms / 1000, "0.0" ) & " s average" ];
+		for ( var r in v.runs ) lines.append( "  " & r.started & "  " & r.status & repeatString( " ", max( 1, 10 - len( r.status ) ) ) & numberFormat( r.ms / 1000, "0.0" ) & " s  exit " & r.exit );
+		return variables.out.say( "ok", v, arguments.asJson, lines );
+	}
+
+	function unknown( name, asJson ) { return variables.out.fail( "precondition", "no task named " & arguments.name & " (bxrig scheduler list)", arguments.asJson ); }
+
+	// ---- changing the tasks ----
+
+	function add( name, when, group, notify, timeout, command, asJson ) {
+		if ( !reFind( "^[a-z0-9][a-z0-9-]{0,40}$", arguments.name ) ) return variables.out.fail( "usage", "a task name is lower case letters, digits and dashes", arguments.asJson );
+		if ( !len( whenToCron( arguments.when ) ) ) return variables.out.fail( "usage", "cannot read --when=" & arguments.when & " (every 15 minutes, every 2 hours, hourly, daily 02:30, weekdays 09:00, weekly mon 09:00, cron M H DOM MON DOW)", arguments.asJson );
+		if ( !arrayFind( [ "failure", "always", "never", "attention" ], arguments.notify ) ) return variables.out.fail( "usage", "--notify is failure, attention, always or never", arguments.asJson );
+		if ( !arguments.command.len() ) return variables.out.fail( "usage", "give the command after --", arguments.asJson );
+		var all = load();
+		if ( all.filter( function( t ) { return t.name == name; } ).len() ) return variables.out.fail( "conflict", "a task named " & arguments.name & " exists (bxrig scheduler remove " & arguments.name & ")", arguments.asJson );
+		var t = { name: arguments.name, group: len( arguments.group ) ? arguments.group : "mine", when: arguments.when, notify: arguments.notify, timeout: arguments.timeout, enabled: true, builtin: false };
+		if ( arguments.command[ 1 ] == "bxrig" ) t.run = arguments.command.slice( 2 ); else t.command = arguments.command;
+		all.append( t );
+		save( all );
+		reloadIfRunning();
+		return variables.out.say( "ok", view( t ), arguments.asJson, [ "Added " & t.name & ": " & t.when & ", next " & view( t ).next_run ] );
+	}
+
+	function setTasks( names, field, value ) {
+		var all = load();
+		var hit = 0;
+		for ( var t in all ) if ( arrayFind( arguments.names, t.name ) ) { t[ arguments.field ] = arguments.value; hit++; }
+		if ( hit ) { save( all ); reloadIfRunning(); }
+		return hit;
+	}
+
+	function remove( name, asJson ) {
+		var all = load();
+		var keep = all.filter( function( t ) { return t.name != name; } );
+		if ( keep.len() == all.len() ) return unknown( arguments.name, arguments.asJson );
+		save( keep );
+		reloadIfRunning();
+		return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Removed " & arguments.name & " (its history stays in " & historyFile( arguments.name ) & ")" ] );
+	}
+
+	function toggle( name, on, asJson ) {
+		if ( !setTasks( [ arguments.name ], "enabled", arguments.on ) ) return unknown( arguments.name, arguments.asJson );
+		return variables.out.say( "ok", { name: arguments.name, enabled: arguments.on }, arguments.asJson, [ arguments.name & ( arguments.on ? " is on" : " is paused" ) ] );
+	}
+
+	function group( g, on, asJson ) {
+		var names = load().filter( function( t ) { return ( t.group ?: "" ) == g; } ).map( function( t ) { return t.name; } );
+		if ( !names.len() ) return variables.out.fail( "precondition", "no task in the group " & arguments.g, arguments.asJson );
+		setTasks( names, "enabled", arguments.on );
+		return variables.out.say( "ok", { group: arguments.g, tasks: names, enabled: arguments.on }, arguments.asJson, [ ( arguments.on ? "Resumed " : "Paused " ) & names.toList( ", " ) ] );
+	}
+
+	// ---- the service ----
+
+	// The runner: a BoxLang scheduler class with one task per enabled task. Each runs `bxrig scheduler exec NAME` (which runs the command,
+	// records the run and sends the notices) and then writes its getStats() to stats/NAME.json; onStartup writes every task's next run.
+	// It is written again on every change, and the service is restarted.
+	function runnerText( rows ) {
+		var nl = chr( 10 ); var tb = chr( 9 );
+		var q = function( s ) { return '"' & replace( s, '"', '""', "all" ) & '"'; };
+		var out = [
+			"// Written by `bxrig scheduler`, from " & scheduleFile() & ". Edit the tasks with `bxrig scheduler`, not here.",
+			"class {",
+			tb & 'property name="scheduler";',
+			tb & "variables.bxrig = " & q( variables.env.self() ) & ";",
+			tb & "variables.statsDir = " & q( stateDir() & "/stats" ) & ";",
+			"",
+			tb & "function configure() {",
+			tb & tb & 'scheduler.setSchedulerName( "bxrig" );',
+			tb & tb & "directoryCreate( statsDir, true, true );"
+		];
+		for ( var r in arguments.rows ) {
+			out.append( tb & tb & "scheduler.task( " & q( r.name ) & ", " & q( r.group ) & " )" );
+			out.append( tb & tb & tb & ".call( () => systemExecute( name: bxrig, arguments: [ ""scheduler"", ""exec"", " & q( r.name ) & " ], timeout: " & ( r.timeout + 60 ) & ", terminateOnTimeout: true ).exitCode )" );
+			out.append( tb & tb & tb & ".after( ( task, results ) => writeStats( task ) )" );
+			out.append( tb & tb & tb & r.call & "; // " & r.when );
+		}
+		out.append( tb & "}" );
+		out.append( "" );
+		out.append( tb & "function writeStats( task ) {" );
+		// the JVM's times are UTC instants: next_local and last_local are the same times on this machine's clock
+		out.append( tb & tb & "try {" );
+		out.append( tb & tb & tb & "var st = task.getStats();" );
+		out.append( tb & tb & tb & "try { st.next_local = dateTimeFormat( st.nextRun, ""yyyy-MM-dd'T'HH:mm:ss"" ); } catch ( any e1 ) { st.next_local = """"; }" );
+		out.append( tb & tb & tb & "try { st.last_local = dateTimeFormat( st.lastRun, ""yyyy-MM-dd'T'HH:mm:ss"" ); } catch ( any e2 ) { st.last_local = """"; }" );
+		out.append( tb & tb & tb & "fileWrite( statsDir & ""/"" & task.getName() & "".json"", jsonSerialize( st ) );" );
+		out.append( tb & tb & "} catch ( any e ) {}" );
+		out.append( tb & "}" );
+		out.append( "" );
+		out.append( tb & "function onStartup() {" );
+		for ( var r2 in arguments.rows ) out.append( tb & tb & "writeStats( scheduler.getTaskRecord( " & q( r2.name ) & " ).task );" );
+		out.append( tb & "}" );
+		out.append( "}" );
+		return out.toList( nl ) & nl;
+	}
+
+	function boxlangPath() {
+		var r = variables.proc.exec( [ "sh", "-c", "command -v boxlang" ], 5 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+
+	function unitText( boxlang ) {
+		return new bxrig.util.SystemdUnit().render( [
+				{ name: "Unit", lines: [ "Description=BxRig scheduler (BoxLang): the update check, backups, BoxLang checks and your own tasks", "After=network-online.target" ] },
+				{ name: "Service", lines: [ "ExecStart=" & arguments.boxlang & " schedule " & runnerFile(), "Restart=on-failure", "RestartSec=30", "Nice=5" ] },
+				{ name: "Install", lines: [ "WantedBy=default.target" ] }
+			], "Written by `bxrig scheduler install`." );
+	}
+
+	// The old timers the scheduler replaces, and whether each is on.
+	function oldTimers() {
+		var out = [];
+		for ( var t in [ "bxrig-update-check.timer", "bxrig-backup.timer" ] ) if ( fileExists( variables.env.xdgConfig( "systemd/user/" & t ) ) ) out.append( t );
+		return out;
+	}
+
+	function install( yes, dry, asJson ) {
+		var bl = boxlangPath();
+		if ( !len( bl ) ) return variables.out.fail( "precondition", "boxlang was not found (bxrig boxlang update --yes)", arguments.asJson );
+		var timers = oldTimers();
+		var have = load();
+		var backup = new bxrig.util.Json().read( variables.env.config( "backup.json" ), {} );
+		var bsched = isStruct( backup ) && isStruct( backup.data ?: "" ) ? ( backup.data.schedule ?: "off" ) : "off";
+		var add = builtins( bsched, arrayFind( timers, "bxrig-update-check.timer" ) > 0 || !have.len() ).filter( function( b ) { return !have.filter( function( h ) { return h.name == b.name; } ).len(); } );
+		var steps = [ "write " & runnerFile(), "write " & unitFile() ];
+		for ( var b in add ) steps.append( "add the task " & b.name & " (" & b.group & ", " & b.when & ")" );
+		for ( var tm in timers ) steps.append( "turn off " & tm & " (the scheduler runs it now)" );
+		steps.append( "systemctl --user enable --now " & unitName() );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "run BxRig's timers on the BoxLang scheduler", { steps: steps }, arguments.asJson, arguments.dry, steps );
+		for ( var b2 in add ) have.append( b2 );
+		save( have );
+		var e = { name: "scheduler-unit", target: unitFile(), mode: "644", content: unitText( bl ) };
+		if ( variables.config.configState( e ) != "clean" ) variables.config.configWrite( e, e.content, "install", true, false );
+		for ( var tm2 in timers ) variables.systemd.disable( tm2, true );
+		variables.systemd.reload( true );
+		var r = variables.systemd.enable( unitName(), true );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "could not start " & unitName(), output: variables.proc.why( r ) }, arguments.asJson, [ "error: could not start " & unitName(), variables.proc.why( r ) ] );
+		return variables.out.say( "ok", { installed: true, added: add.map( function( b ) { return b.name; } ), replaced: timers }, arguments.asJson, [ "The scheduler runs: " & load().len() & " tasks. bxrig scheduler status" ] );
+	}
+
+	function uninstall( yes, dry, asJson ) {
+		var steps = [ "systemctl --user disable --now " & unitName(), "remove " & unitFile() & " and " & runnerFile(), "keep " & scheduleFile() & " and the history (install brings them back)" ];
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "stop the BoxLang scheduler", { steps: steps }, arguments.asJson, arguments.dry, steps );
+		variables.systemd.disable( unitName(), true );
+		for ( var f in [ unitFile(), runnerFile() ] ) if ( fileExists( f ) ) fileDelete( f );
+		variables.systemd.reload( true );
+		return variables.out.say( "ok", { installed: false }, arguments.asJson, [ "The scheduler is off. Its tasks stay in " & scheduleFile() & "." ] );
+	}
+
+	function isInstalled() { return fileExists( unitFile() ); }
+
+	// After a change: the runner reads its tasks when it starts, so a running scheduler is restarted.
+	function reloadIfRunning() {
+		if ( isInstalled() ) variables.proc.exec( [ "systemctl", "--user", "try-restart", unitName() ], 30 );
+	}
+
+	function reload( asJson ) {
+		compile( load() );
+		if ( !isInstalled() ) return variables.out.fail( "precondition", "the scheduler is not installed (bxrig scheduler install --yes)", arguments.asJson );
+		var r = variables.proc.exec( [ "systemctl", "--user", "restart", unitName() ], 30 );
+		return variables.out.say( r.exitCode == 0 ? "ok" : "failed", { restarted: r.exitCode == 0 }, arguments.asJson, [ r.exitCode == 0 ? "The scheduler restarted with " & load().len() & " tasks." : "error: could not restart " & unitName() ] );
+	}
+
+	// Used by `update notifications` and `backup data schedule` once the scheduler is installed: the task is turned on or off here.
+	function ensureBuiltin( name, on, when = "" ) {
+		var all = load();
+		var found = false;
+		for ( var t in all ) if ( t.name == arguments.name ) { t.enabled = arguments.on; if ( len( arguments.when ) ) t.when = arguments.when; found = true; }
+		if ( !found && arguments.on ) {
+			var b = builtins( arguments.name == "backup-data" ? ( arguments.when == "hourly" ? "hourly" : "daily" ) : "off", arguments.name == "update-check" ).filter( function( x ) { return x.name == name; } );
+			if ( b.len() ) { if ( len( arguments.when ) ) b[ 1 ].when = arguments.when; all.append( b[ 1 ] ); }
+		}
+		save( all );
+		reloadIfRunning();
+	}
+
+	// ---- the command line ----
+
+	function run( words, opts, rawArgs, asJson ) {
+		var w = arguments.words;
+		var sub = w.len() ? w[ 1 ] : "status";
+		var o = arguments.opts;
+		var yes = structKeyExists( o, "yes" ); var dry = structKeyExists( o, "dry-run" );
+		if ( ( sub == "status" || sub == "list" ) && w.len() <= 1 ) return status( o.group ?: "", arguments.asJson );
+		if ( sub == "install" && w.len() == 1 ) return install( yes, dry, arguments.asJson );
+		if ( sub == "uninstall" && w.len() == 1 ) return uninstall( yes, dry, arguments.asJson );
+		if ( sub == "reload" && w.len() == 1 ) return reload( arguments.asJson );
+		if ( sub == "add" && w.len() >= 2 ) {
+			var dash = arrayFind( arguments.rawArgs, "--" );
+			var cmd = dash ? arguments.rawArgs.slice( dash + 1 ) : [];
+			return add( w[ 2 ], o.when ?: "", o.group ?: "", o.notify ?: "failure", int( val( o.timeout ?: 3600 ) ), cmd, arguments.asJson );
+		}
+		if ( w.len() == 2 ) {
+			if ( sub == "show" ) return show( w[ 2 ], int( val( o.limit ?: 20 ) ), arguments.asJson );
+			if ( sub == "history" ) return show( w[ 2 ], int( val( o.limit ?: 50 ) ), arguments.asJson );
+			if ( sub == "remove" ) return remove( w[ 2 ], arguments.asJson );
+			if ( sub == "enable" ) return toggle( w[ 2 ], true, arguments.asJson );
+			if ( sub == "disable" ) return toggle( w[ 2 ], false, arguments.asJson );
+			if ( sub == "pause" ) return group( w[ 2 ], false, arguments.asJson );
+			if ( sub == "resume" ) return group( w[ 2 ], true, arguments.asJson );
+			if ( sub == "run" || sub == "exec" ) return exec( w[ 2 ], arguments.asJson );
+		}
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "scheduler" ), arguments.asJson );
+	}
+}

@@ -135,7 +135,8 @@ class BackupStatus {
 		r.count = names.len();
 		r = withAction( r, [ "backup", "data", "run", "--all", "--yes" ] );
 		var timerOn = compare( s.data.schedule, "off" ) != 0;
-		var next = timerOn ? variables.systemd.nextRun( "bxrig-backup.timer", true ) : 0;
+		var next = timerOn ? schedulerNext( "backup-data" ) : 0;
+		if ( timerOn && next == 0 ) next = variables.systemd.nextRun( "bxrig-backup.timer", true );
 		r.next_epoch = next;
 		r.next = timerOn ? inText( next, arguments.now ) : "manual";
 		var lastOk = 0;
@@ -172,5 +173,15 @@ class BackupStatus {
 			lines.append( line );
 		}
 		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
+
+	// The next run of a BxRig scheduler task, in epoch seconds (0 when the scheduler is not installed or has no such task).
+	function schedulerNext( name ) {
+		var sc = new bxrig.Scheduler( new bxrig.util.Cli( "0" ) );
+		if ( !sc.isInstalled() ) return 0;
+		var t = sc.findTask( arguments.name );
+		if ( structIsEmpty( t ) ) return 0;
+		var nr = sc.view( t ).next_run;
+		return len( nr ) ? dateDiff( "s", createDateTime( 1970, 1, 1, 0, 0, 0 ), parseDateTime( replace( nr, "T", " " ) ) ) : 0;
 	}
 }

@@ -157,6 +157,13 @@ class Update {
 	function notifications( action, asJson ) {
 		var d = load();
 		if ( arguments.action == "status" ) return variables.out.say( "ok", { enabled: d.notify }, arguments.asJson, [ "Update notifications: " & ( d.notify ? "on (daily)" : "off" ) ] );
+		var sched = new bxrig.Scheduler( variables.cli );
+		if ( sched.isInstalled() && ( arguments.action == "on" || arguments.action == "off" ) ) {
+			// the BoxLang scheduler runs the daily check (its task update-check) instead of a timer
+			sched.ensureBuiltin( "update-check", arguments.action == "on" );
+			d.notify = arguments.action == "on"; save( d );
+			return variables.out.say( "ok", { enabled: d.notify, by: "scheduler" }, arguments.asJson, [ "Update notifications are " & arguments.action & " (the scheduler's update-check task)." ] );
+		}
 		if ( arguments.action == "off" ) {
 			variables.systemd.disable( "bxrig-update-check.timer", true );
 			d.notify = false; save( d );

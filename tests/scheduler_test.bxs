@@ -1,0 +1,43 @@
+// The scheduler: WHEN to cron and to the BoxLang call, cron fields and the next run, how a run is classified and notified,
+// the stats of a history and the runner it writes. Run from src/: (cd src && matchbox ../tests/scheduler_test.bxs)
+testkit = new lib.Check( "scheduler" );
+sc = new bxrig.Scheduler( new bxrig.util.Cli( "0.0.0" ) );
+
+// ---- WHEN ----
+w = { "every 15 minutes": "*/15 * * * *", "every 1 minutes": "* * * * *", "every 2 hours": "0 */2 * * *", "hourly": "0 * * * *", "daily 02:30": "30 2 * * *", "daily": "0 3 * * *", "weekdays 09:00": "0 9 * * 1-5", "weekly mon 09:00": "0 9 * * 1", "weekly Sunday 18:05": "5 18 * * 0", "cron 30 2 1 * *": "30 2 1 * *" };
+bad = [];
+for ( k in w ) if ( sc.whenToCron( k ) != w[ k ] ) bad.append( k & " -> " & sc.whenToCron( k ) );
+testkit.check( "WHEN to cron (" & bad.toList( "; " ) & ")", !bad.len() );
+testkit.check( "WHEN that cannot be read is empty", sc.whenToCron( "sometimes" ) == "" && sc.whenToCron( "every 90 minutes" ) == "" && sc.whenToCron( "daily 25:00" ) == "" && sc.whenToCron( "weekly funday 09:00" ) == "" && sc.whenToCron( "cron 61 * * * *" ) == "" );
+f = { "every 15 minutes": '.every( 15, "minutes" )', "every 2 hours": '.every( 2, "hours" )', "hourly": ".everyHour()", "daily 2:30": '.everyDayAt( "02:30" )', "weekdays 09:00": '.onWeekdays( "09:00" )', "weekly fri 17:00": '.onFridays( "17:00" )', "weekly sun 08:00": '.onSundays( "08:00" )', "cron 0 2 * * *": '.cron( "0 2 * * *" )' };
+bad = [];
+for ( k in f ) if ( sc.fluent( k ) != f[ k ] ) bad.append( k & " -> " & sc.fluent( k ) );
+testkit.check( "WHEN to the BoxLang scheduled-task call (" & bad.toList( "; " ) & ")", !bad.len() );
+
+// ---- cron ----
+testkit.check( "cron fields: */15, ranges, lists", sc.cronValues( "*/15", 0, 59 ).toList() == "0,15,30,45" && sc.cronValues( "1-5", 0, 7 ).toList() == "1,2,3,4,5" && sc.cronValues( "1,3,9", 0, 23 ).toList() == "1,3,9" && sc.cronValues( "*", 1, 12 ).len() == 12 );
+testkit.check( "cron: out of range or not cron", !sc.validCron( "60 * * * *" ) && !sc.validCron( "* * *" ) && !sc.validCron( "a * * * *" ) && sc.validCron( "0 9 * * 1-5" ) );
+from = createDateTime( 2026, 11, 22, 10, 7, 30 ); // a Sunday
+testkit.check( "next run: every 15 minutes from 10:07 is 10:15", dateTimeFormat( sc.nextRun( "*/15 * * * *", from ), "HH:mm" ) == "10:15" );
+testkit.check( "next run: daily 02:30 is tomorrow", dateTimeFormat( sc.nextRun( "30 2 * * *", from ), "yyyy-MM-dd HH:mm" ) == "2026-11-23 02:30" );
+testkit.check( "next run: weekdays 09:00 from a Sunday is Monday", dateTimeFormat( sc.nextRun( "0 9 * * 1-5", from ), "yyyy-MM-dd" ) == "2026-11-23" );
+testkit.check( "next run: the first of the month", dateTimeFormat( sc.nextRun( "30 2 1 * *", from ), "yyyy-MM-dd HH:mm" ) == "2026-12-01 02:30" );
+
+// ---- a run ----
+t = { ok_codes: [ 0, 10 ], notify: "attention" };
+testkit.check( "classify: 0 ok, 10 attention when listed, 3 failed, timeout", sc.classify( t, 0, false ) == "ok" && sc.classify( t, 10, false ) == "attention" && sc.classify( t, 3, false ) == "failed" && sc.classify( t, 0, true ) == "timeout" && sc.classify( {}, 10, false ) == "failed" );
+testkit.check( "notify: failure by default, attention when asked, never and always", sc.shouldNotify( {}, "failed" ) && !sc.shouldNotify( {}, "ok" ) && !sc.shouldNotify( {}, "attention" ) && sc.shouldNotify( t, "attention" ) && !sc.shouldNotify( { notify: "never" }, "failed" ) && sc.shouldNotify( { notify: "always" }, "ok" ) );
+runs = [ { ms: 1000, status: "ok", started: "a" }, { ms: 3000, status: "failed", started: "b" }, { ms: 2000, status: "ok", started: "c" }, { ms: 2000, status: "attention", started: "d" } ];
+st = sc.statsFrom( runs );
+testkit.check( "stats: runs, failures, success rate, average and the trend", st.runs == 4 && st.failures == 1 && st.success_rate == 75 && st.avg_ms == 2000 && st.trend.len() == 4 && st.last.started == "d" );
+testkit.check( "stats: no runs", sc.statsFrom( [] ).runs == 0 && sc.statsFrom( [] ).success_rate == 0 );
+testkit.check( "argv: BxRig words run with this BxRig, else the program", sc.argvOf( { run: [ "backup", "data", "run" ] } )[ 2 ] == "backup" && sc.argvOf( { command: [ "rsync", "-a" ] } ).toList( " " ) == "rsync -a" );
+
+// ---- built-ins and the runner ----
+b = sc.builtins( "hourly", true ).map( function( x ) { return x.name & "@" & x.when; } ).toList();
+testkit.check( "built-ins: the update check, the file backup on its schedule, the BoxLang check", b == "update-check@daily 11:47,backup-data@hourly,boxlang-check@daily 10:13" );
+testkit.check( "built-ins: no backup task while backups are off, no update task when notices are off", sc.builtins( "off", false ).map( function( x ) { return x.name; } ).toList() == "boxlang-check" );
+rt = sc.runnerText( [ { name: "photos", group: "sync", when: "daily 23:00", call: '.everyDayAt( "23:00" )', timeout: 600 } ] );
+testkit.check( "runner: a task per row that runs bxrig scheduler exec NAME with its timeout", find( 'scheduler.task( "photos", "sync" )', rt ) > 0 && find( '[ "scheduler", "exec", "photos" ], timeout: 660, terminateOnTimeout: true', rt ) > 0 && find( '.everyDayAt( "23:00" )', rt ) > 0 );
+testkit.check( "runner: the stats after each run and at startup, with local times", find( ".after( ( task, results ) => writeStats( task ) )", rt ) > 0 && find( 'writeStats( scheduler.getTaskRecord( "photos" ).task )', rt ) > 0 && find( "next_local", rt ) > 0 );
+testkit.done( "all passed" );
