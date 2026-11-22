@@ -21,6 +21,8 @@ bxrig scheduler run backup-data      # run it now (recorded like a scheduled run
 
 `bxrig tui tasks` (or Control Center > Tasks, or System > Scheduler > Task manager in the menu) lists every task with how its last run went, when it runs next and a sparkline of its recent runs.
 
+<video src="../assets/clips/tasks-page.webm" poster="../assets/screenshots/tasks-detail.webp" autoplay loop muted playsinline width="100%"></video>
+
 | Mark | Means |
 |---|---|
 | ✓ | the last run went well |
