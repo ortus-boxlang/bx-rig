@@ -1,0 +1,21 @@
+// Fonts: the coding fonts, the interface fonts, the renderings and the fontconfig file each one writes.
+// Run from src/: (cd src && matchbox ../tests/fonts_test.bxs)
+testkit = new lib.Check( "fonts" );
+fl = new bxrig.Fonts();
+ids = fl.list().map( function( f ) { return f.id; } );
+testkit.check( "fifteen coding fonts, JetBrains Mono first (the default)", ids.len() == 15 && ids[ 1 ] == "jetbrains" );
+testkit.check( "the new coding fonts are there", arrayFind( ids, "geist" ) && arrayFind( ids, "monaspace" ) && arrayFind( ids, "plex" ) && arrayFind( ids, "commit" ) && arrayFind( ids, "atkinson" ) );
+testkit.check( "every coding font is a Nerd Font package", fl.list().filter( function( f ) { return !reFind( "-nerd$", f.pkg ); } ).len() == 0 );
+seen = {};
+for ( f in fl.list() ) seen[ f.id ] = true;
+testkit.check( "coding font ids are unique", structCount( seen ) == 15 );
+testkit.check( "interface fonts: Inter, Noto Sans, IBM Plex Sans", fl.uiList().map( function( f ) { return f.id; } ).toList( "," ) == "inter,noto,plexsans" );
+testkit.check( "uiById finds Inter and nothing for an unknown id", fl.uiById( "inter" ).family == "Inter" && structIsEmpty( fl.uiById( "comic" ) ) );
+testkit.check( "renderings: default, smooth, crisp, sharp, each with a label and a detail", fl.renderingOrder().toList( "," ) == "default,smooth,crisp,sharp" && fl.renderingOrder().filter( function( r ) { return !len( fl.renderings()[ r ].label ) || !len( fl.renderings()[ r ].detail ); } ).len() == 0 );
+testkit.check( "default writes no fontconfig file", fl.fontconfigXml( "default" ) == "" && fl.fontconfigXml( "nope" ) == "" );
+x = fl.fontconfigXml( "smooth" );
+testkit.check( "smooth: no hinting, greyscale", find( "<bool>false</bool>", x ) && find( "hintnone", x ) && find( "<const>none</const>", x ) && find( "lcdnone", x ) );
+x = fl.fontconfigXml( "sharp" );
+testkit.check( "sharp: full hinting, RGB subpixel", find( "hintfull", x ) && find( "<const>rgb</const>", x ) && find( "lcddefault", x ) );
+testkit.check( "the file is indented with tabs (ConfigService keeps it byte for byte)", find( chr( 9 ) & "<match", x ) && !find( "  <", x ) );
+testkit.done( "all passed" );
