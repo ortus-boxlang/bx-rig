@@ -369,6 +369,7 @@ class {
 				if ( blSub == "matchbox" && p.len() == 4 && p[3] == "use" ) CLIExit( bl.use( "mvm", p[4], asJson ) );
 				if ( blSub == "matchbox" && p.len() >= 3 && arrayFind( [ "status", "log-level", "env" ], p[3] ) ) CLIExit( bl.matchbox( p[3], p.len() > 3 ? p.slice( 4 ) : [], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				if ( blSub == "modules" && p.len() >= 3 ) CLIExit( bl.modules( p[3], p.len() > 3 ? p.slice( 4 ) : [], asJson, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ) ) );
+				if ( blSub == "servers" ) CLIExit( new bxrig.Servers( cli ).run( p.len() > 2 ? p.slice( 3 ) : [], args.options, asJson ) );
 				if ( blSub == "check" && p.len() == 2 ) CLIExit( bl.check( asJson ) );
 				if ( blSub == "update" && p.len() == 2 ) CLIExit( bl.update( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				if ( blSub == "home" && p.len() == 2 ) CLIExit( bl.showHome( structKeyExists( args.options, "open" ), asJson ) );

@@ -160,6 +160,14 @@
 			"use": "the BoxLang modules page"
 		},
 		{
+			"name": "bxrig-servers",
+			"glyph": "globe",
+			"category": "develop",
+			"context": "apps",
+			"title": "Servers",
+			"use": "the Servers page"
+		},
+		{
 			"name": "bxrig-java",
 			"glyph": "coffee",
 			"category": "develop",

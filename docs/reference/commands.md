@@ -1411,10 +1411,14 @@ BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code ex
 ```text
 bxrig boxlang status | check | update [--yes] [--dry-run] | home [--open] | run FILE [ARGS...] | repl | use VERSION [--json]
 bxrig boxlang modules list|search TEXT|installed|outdated [--json] | install SLUG... | update [SLUG...] | remove SLUG... [--yes] [--dry-run]
+bxrig boxlang servers [list] | status NAME | add PATH [--name=NAME] | scan DIR [--depth=N] [--yes] | remove NAME | start|stop|restart NAME [--dry-run] | log NAME [--follow] | open NAME | folder NAME [--json]
 bxrig boxlang matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | vscode | links | welcome [--json]
 ```
 
 ```bash
+bxrig boxlang servers scan ~/code --yes
+bxrig boxlang servers start shop-api
+bxrig boxlang servers open shop-api
 bxrig boxlang check
 bxrig boxlang update --yes
 bxrig boxlang home --open
@@ -1429,7 +1433,7 @@ bxrig boxlang matchbox log-level debug --yes
 bxrig boxlang matchbox env set OPENAI_API_KEY sk-... --yes
 ```
 
-> check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows.
+> check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows. servers registers BoxLang MiniServer apps (miniserver.json) and CommandBox apps (server.json) in ~/.config/bxrig/servers.json; a MiniServer runs detached with its log in ~/.local/state/bxrig/servers, a CommandBox app through `box server start|stop|log directory=PATH`; running means its port is listening.
 
 ### `bxrig editor` {#bxrig-editor}
 

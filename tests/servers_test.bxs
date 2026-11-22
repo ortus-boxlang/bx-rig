@@ -1,0 +1,55 @@
+// BoxLang servers: reading miniserver.json and server.json, names, the ports, the commands, the Servers page and the Developer panel tabs.
+// Run from src/: (cd src && matchbox ../tests/servers_test.bxs)
+testkit = new lib.Check( "servers" );
+sv = new bxrig.Servers( new bxrig.util.Cli( "0.0.0" ) );
+tmp = testkit.tmp();
+
+testkit.check( "slug: lower case, dashes, never empty", sv.slug( "Shop API (v2)" ) == "shop-api-v2" && sv.slug( "--" ) == "app" );
+m = sv.fromMiniserver( "/code/shop", { port: 8099, host: "127.0.0.1", webRoot: "public" } );
+testkit.check( "miniserver.json: port, host and a web root relative to the folder", m.kind == "miniserver" && m.port == 8099 && m.host == "127.0.0.1" && m.webroot == "/code/shop/public" && m.name == "shop" );
+d = sv.fromMiniserver( "/code/site", {} );
+testkit.check( "miniserver.json: 8080 and 0.0.0.0 by default, the folder as web root", d.port == 8080 && d.host == "0.0.0.0" && d.webroot == "/code/site" );
+c = sv.fromCommandbox( "/code/intranet", { name: "Intranet App", web: { host: "localhost", http: { port: 8500 }, webroot: "www" } } );
+testkit.check( "server.json: its name, web.http.port, web.host and web.webroot", c.kind == "commandbox" && c.name == "intranet-app" && c.port == 8500 && c.host == "localhost" && c.webroot == "/code/intranet/www" );
+testkit.check( "server.json without a port: 0 (CommandBox picks one)", sv.fromCommandbox( "/code/x", {} ).port == 0 );
+testkit.check( "url: a wildcard host opens on this machine", sv.url( d ) == "http://127.0.0.1:8080/" && sv.url( c ) == "http://localhost:8500/" );
+
+// a folder with both files is a MiniServer app; a folder with neither is nothing
+testkit.text( tmp & "/both/miniserver.json", '{"port":8101}' ); testkit.text( tmp & "/both/server.json", '{"name":"x"}' );
+testkit.check( "detect: miniserver.json wins over server.json", sv.detect( tmp & "/both" ).kind == "miniserver" && sv.detect( tmp & "/both" ).port == 8101 );
+directoryCreate( tmp & "/plain", true, true );
+testkit.check( "detect: neither file, no kind", sv.detect( tmp & "/plain" ).kind == "" );
+
+// /proc/net/tcp: state 0A is LISTEN, the port is hex
+procNet = "  sl  local_address rem_address   st" & chr( 10 ) & "   0: 0100007F:1FA3 00000000:0000 0A 00000000:00000000" & chr( 10 ) & "   1: 0100007F:1F90 0100007F:9C40 01 00000000:00000000" & chr( 10 ) & "   2: 00000000:0016 00000000:0000 0A 00000000:00000000";
+ports = sv.parseProcNet( procNet );
+testkit.check( "proc/net/tcp: the listening ports (8099 and 22), not an established one", structKeyExists( ports, "8099" ) && structKeyExists( ports, "22" ) && !structKeyExists( ports, "8080" ) );
+
+// the commands
+r = { name: "shop", kind: "miniserver", path: "/code/shop", log: "/s/shop.log" };
+st = sv.startArgv( r );
+testkit.check( "start MiniServer: boxlang-miniserver miniserver.json in the folder, detached, output to the log", st[ 1 ] == "sh" && find( "setsid boxlang-miniserver miniserver.json", st[ 3 ] ) > 0 && st[ 5 ] == "/code/shop" && st[ 6 ] == "/s/shop.log" );
+testkit.check( "stop MiniServer: TERM to its pid", sv.stopArgv( r, 4242 ).toList( " " ) == "kill -TERM 4242" );
+cb = { name: "intranet", kind: "commandbox", path: "/code/intranet" };
+testkit.check( "CommandBox: box server start|stop directory=PATH", sv.startArgv( cb ).toList( " " ) == "box server start directory=/code/intranet --noOpenBrowser" && sv.stopArgv( cb, 0 ).toList( " " ) == "box server stop directory=/code/intranet" );
+
+// ---- the Servers page ----
+pv = new bxrig.ServersProvider( true );
+rows = pv.load();
+testkit.check( "page: the demo apps, running, stopped and missing", rows.len() == 5 && rows[ 1 ].state == "running" && rows[ 2 ].state == "stopped" && rows[ 5 ].state == "missing" && rows[ 1 ].kindLabel == "MiniServer" && rows[ 3 ].kindLabel == "CommandBox" );
+testkit.check( "page: style by state", pv.style( rows[ 1 ] ) == "ok" && pv.style( rows[ 2 ] ) == "dim" && pv.style( rows[ 5 ] ) == "error" );
+acts = {};
+for ( a in pv.actions() ) acts[ a.key ] = a;
+testkit.check( "page: s stops a running app and starts a stopped one", acts.s.run( rows[ 1 ] ).args.toList( " " ) == "boxlang servers stop shop-api" && acts.s.run( rows[ 2 ] ).args.toList( " " ) == "boxlang servers start docs-site" );
+testkit.check( "page: r restarts, o opens, f the folder, l the log, x forgets", acts.r.run( rows[ 1 ] ).args[ 3 ] == "restart" && acts.o.run( rows[ 1 ] ).args[ 3 ] == "open" && acts.f.run( rows[ 1 ] ).args[ 3 ] == "folder" && acts.l.run( rows[ 1 ] ).args[ 3 ] == "log" && acts.x.run( rows[ 1 ] ).args[ 3 ] == "remove" );
+testkit.check( "page: a asks for a folder and registers it", acts.a.run( rows[ 1 ] ).make( "~/code/new" ).args.toList( " " ) == "boxlang servers add ~/code/new" );
+testkit.check( "page: registered after Modules, with its icon", new bxrig.ControlCenterPages().ids()[ 5 ] == "servers" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "server" ) == chr( inputBaseN( "f233", 16 ) ) );
+
+// ---- the Developer panel ----
+pn = fileRead( expandPath( "../templates/noctalia-plugins/dev/panel.luau" ) );
+dv = fileRead( expandPath( "../templates/noctalia-plugins/dev/dev.luau" ) );
+testkit.check( "panel: BoxLang and Ports tabs", find( '{ id = "servers", label = "BoxLang" }', pn ) > 0 && find( '{ id = "ports", label = "Ports" }', pn ) > 0 );
+testkit.check( "panel: the data comes from boxlang servers list and tui ports, the system ports left out", find( '"boxlang", "servers", "list", "--json"', dv ) > 0 && find( '"tui", "ports", "--json"', dv ) > 0 && find( "p.system ~= true", dv ) > 0 && find( "local pending = 5", dv ) > 0 );
+testkit.check( "panel: start and stop (a second click) run boxlang servers, the log follows in a terminal", find( '{ "boxlang", "servers", "start", name }', pn ) > 0 && find( '{ "boxlang", "servers", "stop", name }', pn ) > 0 && find( '" boxlang servers log "', pn ) > 0 );
+testkit.check( "panel: only an http URL is opened", find( 'url:match("^https?://', pn ) > 0 );
+testkit.done( "all passed" );
