@@ -35,7 +35,8 @@ class Servers {
 		fileWrite( registryFile(), jsonPrettify( serializeJSON( { servers: arguments.rows } ) ) & chr( 10 ) );
 	}
 
-	function find( name ) {
+	// Not called find: a method of that name hides the find() built-in inside this class.
+	function findApp( name ) {
 		for ( var r in readRegistry() ) if ( r.name == arguments.name ) return r;
 		return {};
 	}
@@ -146,7 +147,7 @@ class Servers {
 	}
 
 	function status( name, asJson ) {
-		var reg = find( arguments.name );
+		var reg = findApp( arguments.name );
 		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
 		var r = row( reg, listening() );
 		return variables.out.say( "ok", r, arguments.asJson, [ r.name & ": " & r.state & ( len( r.url ) ? " at " & r.url : "" ), "Kind:   " & r.kind, "Folder: " & r.path, "Web root: " & r.webroot ] );
@@ -238,7 +239,7 @@ class Servers {
 	}
 
 	function start( name, dry, asJson ) {
-		var reg = find( arguments.name );
+		var reg = findApp( arguments.name );
 		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
 		var r = row( reg, listening() );
 		if ( r.state == "missing" ) return variables.out.fail( "precondition", r.path & " is gone (bxrig boxlang servers remove " & r.name & ")", arguments.asJson );
@@ -256,7 +257,7 @@ class Servers {
 	}
 
 	function stop( name, dry, asJson ) {
-		var reg = find( arguments.name );
+		var reg = findApp( arguments.name );
 		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
 		var r = row( reg, listening() );
 		var pid = r.kind == "miniserver" ? miniPid( r ) : 0;
@@ -271,7 +272,7 @@ class Servers {
 	}
 
 	function log( name, follow, asJson ) {
-		var reg = find( arguments.name );
+		var reg = findApp( arguments.name );
 		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
 		var r = row( reg, {} );
 		if ( r.kind == "commandbox" ) {
@@ -286,7 +287,7 @@ class Servers {
 	}
 
 	function open( name, what, asJson ) {
-		var reg = find( arguments.name );
+		var reg = findApp( arguments.name );
 		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
 		var r = row( reg, {} );
 		var target = arguments.what == "folder" ? r.path : r.url;
