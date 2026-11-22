@@ -192,6 +192,7 @@ jobs:
           (cd src && matchbox ../tests/gaps_test.bxs)
           (cd src && matchbox ../tests/network_test.bxs)
           (cd src && matchbox ../tests/accessibility_test.bxs)
+          (cd src && matchbox ../tests/fonts_test.bxs)
           (cd src && matchbox ../tests/text_test.bxs)
           (cd src && matchbox ../tests/fmt_test.bxs)
           (cd src && matchbox ../tests/command_spec_test.bxs)

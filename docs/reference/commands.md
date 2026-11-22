@@ -775,6 +775,10 @@ bxrig appearance layout dwindle|master|columns|scrolling|monocle|floating
 bxrig appearance font list
 bxrig appearance font ID
 bxrig appearance font install ID [--yes]
+bxrig appearance ui-font list
+bxrig appearance ui-font ID
+bxrig appearance ui-font install ID [--yes]
+bxrig appearance font-rendering default|smooth|crisp|sharp|status
 bxrig appearance background list
 bxrig appearance background set NAME_OR_PATH
 bxrig appearance background next
@@ -789,11 +793,13 @@ bxrig appearance dock off --yes
 bxrig appearance windows gaps off
 bxrig appearance layout columns
 bxrig appearance font install cascadia --yes
+bxrig appearance ui-font inter
+bxrig appearance font-rendering smooth
 bxrig appearance background random
 bxrig appearance icons papirus --yes
 ```
 
-> Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet. `icons` is the exception to "act at once": it installs papirus-icon-theme and writes the BxRig icon theme and settings files, so it prints a plan (exit 2) until --yes; `bxrig` (the default after setup) is the BxRig icons over Papirus-Dark, `papirus` is Papirus-Dark alone.
+> Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet. `icons` is the exception to "act at once": it installs papirus-icon-theme and writes the BxRig icon theme and settings files, so it prints a plan (exit 2) until --yes; `bxrig` (the default after setup) is the BxRig icons over Papirus-Dark, `papirus` is Papirus-Dark alone. `font` is the coding font (terminals, and the shell until an interface font is set); `ui-font` is the font of the bar, panels and GTK apps; `font-rendering` writes ~/.config/fontconfig/conf.d/60-bxrig-rendering.conf (`default` removes it unless you edited it).
 
 ### `bxrig screensaver` {#bxrig-screensaver}
 

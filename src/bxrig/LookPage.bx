@@ -3,6 +3,7 @@
 //   Colors  the color theme (Enter opens the Themes page, the bigger selector)
 //   Apps    app grid style (Launchpad or Terminal-style) and the dock
 //   Screen  the screensaver on or off, and when it starts and the screen locks
+//   Fonts   the coding font (terminals), the interface font (bar, panels, GTK apps) and how text is drawn
 // Up and Down pick a setting, + and Right (or Space, or Enter) change it to the next value and - to the previous one (a text setting asks, a link opens its page). A change is a
 // bxrig command like any other in the Control Center: the plan (the command with --dry-run) first, then a y runs it. Values come from LookData.
 //   id() title() icon() load() state() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) act( hit ) onScroll( dir ) usesLeft()
@@ -33,6 +34,7 @@ class LookPage {
 	function rows() {
 		var l = variables.loaded ? variables.look : variables.data.defaults();
 		var theme = new bxrig.Theme( "" ).label( l.theme );
+		var fl = new bxrig.Fonts();
 		return [
 			{ group: "Bar", id: "layout", label: "Top bar layout", kind: "choice", value: variables.bl.layout( l.layout ).name, hint: "Minimal, Standard, Dense", desc: variables.bl.layout( l.layout ).detail, cmd: "bxrig appearance bar layout " & l.layout },
 			{ group: "Bar", id: "battery", label: "Battery percentage", kind: "toggle", value: l.battery_percent, hint: l.battery_found ? "next to the battery icon" : "laptops only (no battery found)", desc: "Shows 78% next to the battery icon. Ignored on a desktop with no battery.", cmd: "bxrig appearance battery-percent " & l.battery_percent },
@@ -42,7 +44,10 @@ class LookPage {
 			{ group: "Apps", id: "appgrid", label: "App grid style", kind: "choice", value: l.appgrid == "terminal" ? "Terminal-style grid" : "Launchpad grid", hint: "Launchpad or Terminal-style", desc: "The grid of every installed app, opened from the first button of the dock. Same apps and search, a different look.", cmd: "bxrig appearance appgrid " & l.appgrid },
 			{ group: "Apps", id: "dock", label: "Dock", kind: "toggle", value: l.dock ? "on" : "off", hint: "bottom of the screen", desc: "A dock of your apps. When it is on, the grid button is its first button and leaves the bar.", cmd: "bxrig appearance dock " & ( l.dock ? "on" : "off" ) },
 			{ group: "Screen", id: "screensaver", label: "Screensaver", kind: "toggle", value: l.screensaver ? "on" : "off", hint: "terminal art on every monitor", desc: "After a while idle, BXRIG art in the theme's colours on every monitor; any key or mouse move closes it. bxrig screensaver preview shows it.", cmd: "bxrig screensaver " & ( l.screensaver ? "on" : "off" ) },
-			{ group: "Screen", id: "screensaver-time", label: "Screensaver, then lock", kind: "choice", value: timingLabel( l.screensaver_seconds, l.lock_seconds ), hint: "after this long idle", desc: "When the screensaver starts and when the screen locks, both counted from the start of idle.", cmd: "bxrig screensaver set screensaver=" & l.screensaver_seconds & " lock=" & l.lock_seconds }
+			{ group: "Screen", id: "screensaver-time", label: "Screensaver, then lock", kind: "choice", value: timingLabel( l.screensaver_seconds, l.lock_seconds ), hint: "after this long idle", desc: "When the screensaver starts and when the screen locks, both counted from the start of idle.", cmd: "bxrig screensaver set screensaver=" & l.screensaver_seconds & " lock=" & l.lock_seconds },
+			{ group: "Fonts", id: "font", label: "Coding font", kind: "choice", value: fontLabel( l.font, fl.list() ), hint: "terminals and editors", desc: "The monospaced font of the terminals. A font that is not installed asks to install it: bxrig appearance font install ID.", cmd: "bxrig appearance font " & fontId( l.font, fl.list() ) },
+			{ group: "Fonts", id: "ui-font", label: "Interface font", kind: "choice", value: len( l.ui_font ) ? fontLabel( l.ui_font, fl.uiList() ) : "follows the coding font", hint: "bar, panels, GTK apps", desc: "The font of the bar, the panels and GTK apps. Inter is made for screens; until you pick one the shell uses the coding font.", cmd: "bxrig appearance ui-font " & ( len( l.ui_font ) ? fontId( l.ui_font, fl.uiList() ) : "list" ) },
+			{ group: "Fonts", id: "rendering", label: "Font rendering", kind: "choice", value: ( fl.renderings()[ l.rendering ] ?: fl.renderings().default ).label, hint: "how text is drawn", desc: ( fl.renderings()[ l.rendering ] ?: fl.renderings().default ).detail, cmd: "bxrig appearance font-rendering " & l.rendering }
 		];
 	}
 
@@ -88,10 +93,28 @@ class LookPage {
 			var nt = at == 0 ? ( arguments.d > 0 ? 1 : ts.len() ) : ( ( at - 1 + arguments.d + ts.len() ) mod ts.len() ) + 1;
 			return { action: "cli", title: "Screensaver, then lock: " & timingLabel( ts[ nt ][ 1 ], ts[ nt ][ 2 ] ), args: [ "screensaver", "set", "screensaver=" & ts[ nt ][ 1 ], "lock=" & ts[ nt ][ 2 ] ] };
 		}
+		if ( r.id == "font" || r.id == "ui-font" ) {
+			var fl = new bxrig.Fonts();
+			var list = r.id == "font" ? fl.list() : fl.uiList();
+			var at2 = 0;
+			for ( var fi = 1; fi <= list.len(); fi++ ) if ( list[ fi ].family == ( r.id == "font" ? l.font : l.ui_font ) ) at2 = fi;
+			var nf = at2 == 0 ? ( arguments.d > 0 ? 1 : list.len() ) : ( ( at2 - 1 + arguments.d + list.len() ) mod list.len() ) + 1;
+			return { action: "cli", title: ( r.id == "font" ? "Coding font: " : "Interface font: " ) & list[ nf ].label, args: [ "appearance", r.id, list[ nf ].id ] };
+		}
+		if ( r.id == "rendering" ) {
+			var ro = new bxrig.Fonts().renderingOrder();
+			var ri = max( 1, arrayFind( ro, l.rendering ) );
+			var nr = ro[ ( ( ri - 1 + arguments.d + ro.len() ) mod ro.len() ) + 1 ];
+			return { action: "cli", title: "Font rendering: " & new bxrig.Fonts().renderings()[ nr ].label, args: [ "appearance", "font-rendering", nr ] };
+		}
 		if ( r.id == "toggle" ) return { action: "goto", page: "shortcuts" };
 		if ( r.id == "theme" ) return { action: "goto", page: "themes" };
 		return {};
 	}
+
+	// The label (or the family itself) and id of a font family in a list.
+	function fontLabel( family, list ) { for ( var f in arguments.list ) if ( f.family == arguments.family ) return f.label; return arguments.family; }
+	function fontId( family, list ) { for ( var f in arguments.list ) if ( f.family == arguments.family ) return f.id; return arguments.family; }
 
 	// The screensaver timings the page steps through: [ screensaver, lock ] seconds.
 	function timings() { return [ [ 150, 300 ], [ 300, 600 ], [ 600, 1200 ], [ 900, 1800 ] ]; }
@@ -133,7 +156,7 @@ class LookPage {
 		if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, C( "GREEN" ), C( "BASE" ) );
 		var tx = arguments.x + 1 + ( len( ico ) ? 2 : 0 );
 		k.put( tx, arguments.y, "Look", C( "TEXT" ), C( "BASE" ), true );
-		k.put( tx + 6, arguments.y, k.trunc( "Layout, theme, app grid, dock and screensaver. A change shows its plan first.", arguments.w - 12 ), C( "OVERLAY" ), C( "BASE" ) );
+		k.put( tx + 6, arguments.y, k.trunc( "Layout, theme, fonts, app grid, dock and screensaver. A change shows its plan first.", arguments.w - 12 ), C( "OVERLAY" ), C( "BASE" ) );
 		var px = arguments.x + 1;
 		var pw = arguments.w - 2;
 		var cy = arguments.y + 2;
@@ -150,7 +173,7 @@ class LookPage {
 			cy += ph;
 		}
 		var rws = rows();
-		var groups = [ "Bar", "Colors", "Apps", "Screen" ];
+		var groups = [ "Bar", "Colors", "Apps", "Screen", "Fonts" ];
 		var idx = 0;
 		var labelW = 22;
 		for ( var g in groups ) {

@@ -1,4 +1,4 @@
-// The Nerd Font families `bxrig appearance font` offers (names read from the installed packages in the Arch test container) and the Arch package of each.
+// The Nerd Font families `bxrig appearance font` offers (the coding font) (names read from the installed packages in the Arch test container) and the Arch package of each.
 // A leaf class with no references of its own: Appearance, Theme and the Themes page all read it (Theme cannot reference Appearance, which reaches Theme again).
 // A theme names its font by id in colors.toml (`font = "sharetech"`).
 class Fonts {
@@ -14,8 +14,60 @@ class Fonts {
 			f( "iosevka", "Iosevka", "Iosevka Nerd Font", "ttf-iosevka-nerd" ),
 			f( "sharetech", "Share Tech Mono", "ShareTechMono Nerd Font", "ttf-sharetech-mono-nerd" ),
 			f( "hack", "Hack", "Hack Nerd Font", "ttf-hack-nerd" ),
-			f( "sourcecodepro", "Source Code Pro", "SauceCodePro Nerd Font", "ttf-sourcecodepro-nerd" )
+			f( "sourcecodepro", "Source Code Pro", "SauceCodePro Nerd Font", "ttf-sourcecodepro-nerd" ),
+			f( "geist", "Geist Mono", "GeistMono Nerd Font", "otf-geist-mono-nerd" ),
+			f( "monaspace", "Monaspace Neon", "MonaspiceNe Nerd Font", "otf-monaspace-nerd" ),
+			f( "plex", "IBM Plex Mono", "BlexMono Nerd Font", "ttf-ibmplex-mono-nerd" ),
+			f( "commit", "Commit Mono", "CommitMono Nerd Font", "otf-commit-mono-nerd" ),
+			f( "atkinson", "Atkinson Hyperlegible Mono", "AtkynsonMono Nerd Font", "otf-atkinsonhyperlegiblemono-nerd" )
 		];
+	}
+
+	// The interface fonts `bxrig appearance ui-font` offers: the bar, panels and GTK apps (names from the installed Arch packages).
+	function uiList() {
+		var f = function( id, label, family, pkg ) { return { id: id, label: label, family: family, pkg: pkg }; };
+		return [
+			f( "inter", "Inter", "Inter", "inter-font" ),
+			f( "noto", "Noto Sans", "Noto Sans", "noto-fonts" ),
+			f( "plexsans", "IBM Plex Sans", "IBM Plex Sans", "ttf-ibm-plex" )
+		];
+	}
+
+	function uiById( id ) {
+		for ( var f in uiList() ) if ( f.id == arguments.id ) return f;
+		return {};
+	}
+
+	// How text is drawn (fontconfig, and GTK through gsettings). default leaves the system's own settings.
+	//   smooth: no hinting, greyscale smoothing (the Mac look; best on HiDPI screens)
+	//   crisp:  slight hinting, greyscale (sharper on 1x screens, still smooth)
+	//   sharp:  full hinting, RGB subpixel smoothing (low-DPI LCD panels)
+	function renderings() {
+		return {
+			"default": { label: "System default", detail: "Leaves text as your distribution draws it. BxRig writes no fontconfig file.", hinting: "", hintstyle: "", antialias: "", rgba: "" },
+			"smooth": { label: "Smooth (no hinting, greyscale)", detail: "Letters keep their designed shapes, as on a Mac. Best on HiDPI screens.", hinting: "none", hintstyle: "hintnone", antialias: "grayscale", rgba: "none" },
+			"crisp": { label: "Crisp (slight hinting, greyscale)", detail: "Lines snap a little to the pixel grid: sharper on 1x screens and still smooth.", hinting: "slight", hintstyle: "hintslight", antialias: "grayscale", rgba: "none" },
+			"sharp": { label: "Sharp (full hinting, subpixel)", detail: "Full hinting and RGB subpixel smoothing, for low-resolution LCD panels.", hinting: "full", hintstyle: "hintfull", antialias: "rgba", rgba: "rgb" }
+		};
+	}
+
+	function renderingOrder() { return [ "default", "smooth", "crisp", "sharp" ]; }
+
+	// The fontconfig file of a rendering ("" for default: no file).
+	function fontconfigXml( id ) {
+		var r = renderings()[ arguments.id ] ?: {};
+		if ( !len( r.hintstyle ?: "" ) ) return "";
+		var nl = chr( 10 );
+		var x = '<?xml version="1.0"?>' & nl & '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">' & nl;
+		x &= "<!-- Written by `bxrig appearance font-rendering " & arguments.id & "`. bxrig appearance font-rendering default removes it. -->" & nl;
+		x &= "<fontconfig>" & nl & chr( 9 ) & '<match target="font">' & nl;
+		x &= chr( 9 ) & chr( 9 ) & '<edit name="antialias" mode="assign"><bool>true</bool></edit>' & nl;
+		x &= chr( 9 ) & chr( 9 ) & '<edit name="hinting" mode="assign"><bool>' & ( r.hinting == "none" ? "false" : "true" ) & "</bool></edit>" & nl;
+		x &= chr( 9 ) & chr( 9 ) & '<edit name="hintstyle" mode="assign"><const>' & r.hintstyle & "</const></edit>" & nl;
+		x &= chr( 9 ) & chr( 9 ) & '<edit name="rgba" mode="assign"><const>' & r.rgba & "</const></edit>" & nl;
+		x &= chr( 9 ) & chr( 9 ) & '<edit name="lcdfilter" mode="assign"><const>' & ( r.rgba == "none" ? "lcdnone" : "lcddefault" ) & "</const></edit>" & nl;
+		x &= chr( 9 ) & "</match>" & nl & "</fontconfig>" & nl;
+		return x;
 	}
 
 	// The font row of an id ({} for an unknown id).
