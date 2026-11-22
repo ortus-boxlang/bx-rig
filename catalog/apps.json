@@ -1842,6 +1842,22 @@
 			}
 		},
 		{
+			"id": "vdirsyncer",
+			"name": "vdirsyncer",
+			"description": "Synchronize calendars and contacts (CalDAV, Google Calendar, iCal) to local files",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "everyday",
+			"category": "Productivity",
+			"tier": "optional",
+			"homepage": "https://github.com/pimutils/vdirsyncer",
+			"macos": null,
+			"origin": [
+				"owner-pick"
+			],
+			"decided_by_owner": true
+		},
+		{
 			"id": "lazydocker",
 			"name": "Lazydocker",
 			"description": "A simple terminal UI for docker and docker-compose, written in Go with the gocui library",

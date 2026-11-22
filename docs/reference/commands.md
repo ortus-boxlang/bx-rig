@@ -51,7 +51,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Desktop setup**: [`setup`](#bxrig-setup), [`session`](#bxrig-session), [`tiling`](#bxrig-tiling), [`plasma`](#bxrig-plasma), [`keys`](#bxrig-keys), [`runner`](#bxrig-runner), [`default`](#bxrig-default), [`layout`](#bxrig-layout), [`assets`](#bxrig-assets), [`launchers`](#bxrig-launchers), [`config`](#bxrig-config)
 
-**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`accessibility`](#bxrig-accessibility), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
+**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`calendar`](#bxrig-calendar), [`remind`](#bxrig-remind), [`accessibility`](#bxrig-accessibility), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
 **System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`git`](#bxrig-git), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
 
@@ -953,6 +953,53 @@ bxrig time format "%a %-I:%M %p"
 ```
 
 > `time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first. `time format` sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.
+
+### `bxrig calendar` {#bxrig-calendar}
+
+Your calendars on this machine (iCal addresses and Google Calendar), kept in sync by vdirsyncer, and the agenda read from them.
+
+```text
+bxrig calendar [list] [--json]
+bxrig calendar add ical NAME URL [--json]
+bxrig calendar add google NAME --client-id=ID --client-secret-file=FILE [--json]
+bxrig calendar remove NAME [--yes] [--dry-run]
+bxrig calendar sync [NAME] [--json]
+bxrig calendar agenda [--days=N] [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig calendar add ical holidays webcal://example.org/holidays.ics
+bxrig calendar add google work --client-id=123.apps.googleusercontent.com --client-secret-file=~/Downloads/secret.txt
+bxrig calendar sync
+bxrig calendar agenda --days=3
+```
+
+> BxRig writes its own vdirsyncer config (~/.config/bxrig/vdirsyncer/config, mode 600, passed as VDIRSYNCER_CONFIG), so a vdirsyncer setup of your own is never touched. An iCal address is read only; webcal:// is fetched as https://. Google needs the CalDAV API on and an OAuth client of type Desktop app; the first sync, in a terminal, opens Google's sign-in. With the scheduler installed, adding a calendar adds the task calendar-sync (every 15 minutes). remove deletes only the local copy.
+
+### `bxrig remind` {#bxrig-remind}
+
+A reminder that pops up at a time you choose.
+
+```text
+bxrig remind TEXT --at=HH:MM | --at="YYYY-MM-DD HH:MM" | --in=30m|2h|1d [--json]
+bxrig remind [list] [--json]
+bxrig remind done ID | remove ID [--json]
+bxrig remind due [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig remind "Call Ana" --in=30m
+bxrig remind "Stand up" --at=09:25
+bxrig remind "Renew the domain" --at="2026-12-01 10:00"
+bxrig remind list
+bxrig remind done 3
+```
+
+> Reminders are kept in ~/.config/bxrig/reminders.json. An HH:MM that has passed today means tomorrow. `due` shows the reminders whose time has come as notices; the scheduler task reminders runs it every minute (added with the first reminder when the scheduler is installed).
 
 ### `bxrig accessibility` {#bxrig-accessibility}
 

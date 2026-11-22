@@ -1106,3 +1106,11 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - `scheduler show` adds the trend: a sparkline of the last 30 durations and a mark per result.
 - The System panel's Tasks tab and the bar share the failure count through noctalia.state (taskFailures); the bar reads `scheduler --json` with the updates every 10 minutes and draws a red dot while a task fails.
 - `doctor --dev` has a scheduler row (installed, no task failing); init has an optional scheduler step.
+
+## Calendar (decided with the owner 2026-11-22)
+
+- `bxrig calendar` keeps calendars on this machine with vdirsyncer: an iCal address (read only, `collections = null`, webcal:// fetched as https://) or Google Calendar (`google_calendar` storage, collections discovered, OAuth on the first sync in a terminal). The user's own vdirsyncer config is never touched: BxRig writes ~/.config/bxrig/vdirsyncer/config (mode 600, it holds the Google client secret) and passes it as VDIRSYNCER_CONFIG. The registry is ~/.config/bxrig/calendars.json; the events are .ics files in ~/.local/share/bxrig/calendars/NAME.
+- `calendar agenda` reads those files with bxrig.Ical (pure: VEVENT, all-day dates, UTC times moved by `date +%z`, TZID and floating times as local, DURATION, RRULE DAILY/WEEKLY with BYDAY/MONTHLY/YEARLY with INTERVAL, COUNT, UNTIL, EXDATE, cancelled events left out).
+- `bxrig remind TEXT --at|--in` keeps reminders in ~/.config/bxrig/reminders.json; `remind due` shows the ones whose time has come as critical notices, once each.
+- The scheduler owns the timing: calendar-sync every 15 minutes and reminders every minute, added by the first calendar or reminder when the scheduler is installed, and by `scheduler install` when calendars or reminders exist. `Scheduler.upsert` never adds a task twice.
+- The Clock panel shows the agenda of today and tomorrow and the reminders still to come under the world clocks, with a check button per reminder.

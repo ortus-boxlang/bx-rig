@@ -175,6 +175,13 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `time` | `--local` | any |  |
 | `time` | `--packages` | any |  |
 | `time` | `--path` | any |  |
+| `calendar` | `--client-id` | value | `123.apps.googleusercontent.com` |
+| `calendar` | `--client-secret-file` | value |  |
+| `calendar` | `--days` | value | `3` |
+| `calendar` | `--yes` | bool |  |
+| `calendar` | `--dry-run` | bool |  |
+| `remind` | `--at` | value | `09` |
+| `remind` | `--in` | value | `3` |
 | `nightshift` | `--location` | value | `40.4` |
 | `notify` | `--history` | bool |  |
 | `system` | `--repo` | bool |  |

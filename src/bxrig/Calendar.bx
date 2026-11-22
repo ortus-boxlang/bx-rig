@@ -1,0 +1,198 @@
+// `bxrig calendar`: your calendars on this machine, kept in sync by vdirsyncer, and an agenda read from them.
+//   [list]                                       the calendars: kind, events, last sync
+//   add ical NAME URL                            a calendar published as an iCal address (webcal://, https://...ics): read only
+//   add google NAME --client-id=ID --client-secret-file=FILE   Google Calendar (CalDAV); the first sync asks you to sign in
+//   remove NAME [--yes]                          forget it and delete its local copy (the calendar itself stays where it is)
+//   sync [NAME]                                  vdirsyncer discover + sync, every calendar or one
+//   agenda [--days=N]                            what is coming, today first (N days, 7 by default)
+// BxRig keeps its own vdirsyncer config (~/.config/bxrig/vdirsyncer/config, passed as VDIRSYNCER_CONFIG), so a vdirsyncer setup of your own
+// is never touched. The events are .ics files in ~/.local/share/bxrig/calendars/NAME. With the scheduler installed, adding a calendar adds
+// the task calendar-sync (every 15 minutes).
+class Calendar {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "calendar" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	function registryFile() { return variables.env.config( "calendars.json" ); }
+	function configFile() { return variables.env.config( "vdirsyncer/config" ); }
+	function dataDir() { return variables.env.data( "calendars" ); }
+	function stateDir() { return variables.env.state( "vdirsyncer" ); }
+
+	function load() {
+		var j = new bxrig.util.Json().read( registryFile(), {} );
+		return isStruct( j ) && isArray( j.calendars ?: "" ) ? j.calendars : [];
+	}
+
+	function save( cals ) {
+		directoryCreate( getDirectoryFromPath( registryFile() ), true, true );
+		fileWrite( registryFile(), jsonPrettify( serializeJSON( { calendars: arguments.cals } ) ) & chr( 10 ) );
+		writeConfig( arguments.cals );
+	}
+
+	// vdirsyncer names: letters, digits and underscores.
+	function pairName( name ) { return reReplace( arguments.name, "[^A-Za-z0-9]", "_", "all" ); }
+	function q( s ) { return serializeJSON( arguments.s & "" ); }
+
+	// The vdirsyncer config for the calendars (pure apart from the paths): a pair per calendar, a filesystem storage on this side.
+	// An iCal address is an http storage with collections = null (read only); Google is a google_calendar storage whose collections
+	// (one per calendar of the account) are discovered.
+	function configText( cals ) {
+		var nl = chr( 10 );
+		var t = "## Written by bxrig calendar. Change the calendars with bxrig calendar, not here." & nl & nl & "[general]" & nl & "status_path = " & q( stateDir() & "/status/" ) & nl;
+		for ( var c in arguments.cals ) {
+			var p = pairName( c.name );
+			t &= nl & "[pair " & p & "]" & nl & "a = " & q( p & "_local" ) & nl & "b = " & q( p & "_remote" ) & nl;
+			t &= c.kind == "google" ? "collections = [""from b""]" & nl & "metadata = [""displayname"", ""color""]" & nl : "collections = null" & nl;
+			t &= nl & "[storage " & p & "_local]" & nl & "type = ""filesystem""" & nl & "path = " & q( dataDir() & "/" & c.name & "/" ) & nl & "fileext = "".ics""" & nl;
+			t &= nl & "[storage " & p & "_remote]" & nl;
+			if ( c.kind == "google" ) t &= "type = ""google_calendar""" & nl & "token_file = " & q( stateDir() & "/" & c.name & ".token" ) & nl & "client_id = " & q( c.client_id ) & nl & "client_secret = " & q( c.client_secret ) & nl;
+			else t &= "type = ""http""" & nl & "url = " & q( c.url ) & nl;
+		}
+		return t;
+	}
+
+	// The config holds the Google client secret, so only you can read it.
+	function writeConfig( cals ) {
+		directoryCreate( getDirectoryFromPath( configFile() ), true, true );
+		fileWrite( configFile(), configText( arguments.cals ) );
+		variables.proc.exec( [ "chmod", "600", configFile() ], 5 );
+		for ( var c in arguments.cals ) directoryCreate( dataDir() & "/" & c.name, true, true );
+		directoryCreate( stateDir() & "/status", true, true );
+	}
+
+	// webcal:// is https:// (vdirsyncer's advice).
+	function normalizeUrl( url ) {
+		var u = trim( arguments.url );
+		if ( lCase( left( u, 9 ) ) == "webcal://" ) u = "https://" & mid( u, 10, len( u ) );
+		return u;
+	}
+
+	function unknown( name, asJson ) { return variables.out.fail( "precondition", "no calendar named " & arguments.name & " (bxrig calendar list)", arguments.asJson ); }
+
+	// The .ics files of a calendar (a Google one has a folder per calendar of the account).
+	function icsFiles( name ) {
+		var d = dataDir() & "/" & arguments.name;
+		if ( !directoryExists( d ) ) return [];
+		return directoryList( d, true, "path", "*.ics" );
+	}
+
+	function list( asJson ) {
+		var rows = load().map( function( c ) {
+				var files = icsFiles( c.name );
+				var r = { name: c.name, kind: c.kind, url: c.kind == "ical" ? c.url : "", events: files.len() };
+				return r;
+			} );
+		var lines = rows.map( function( r ) { return r.name & repeatString( " ", max( 1, 14 - len( r.name ) ) ) & ( r.kind == "google" ? "Google" : "iCal  " ) & "  " & r.events & " events" & ( len( r.url ) ? "  " & r.url : "" ); } );
+		if ( !rows.len() ) lines = [ "No calendars yet. bxrig calendar add ical NAME URL, or add google NAME --client-id=ID --client-secret-file=FILE" ];
+		return variables.out.say( "ok", { calendars: rows }, arguments.asJson, lines );
+	}
+
+	function addCal( kind, name, url, opts, asJson ) {
+		if ( !reFind( "^[a-z0-9][a-z0-9-]{0,30}$", arguments.name ) ) return variables.out.fail( "usage", "a calendar name is lower case letters, digits and dashes", arguments.asJson );
+		var cals = load();
+		if ( cals.filter( function( c ) { return c.name == name; } ).len() ) return variables.out.fail( "conflict", "a calendar named " & arguments.name & " exists", arguments.asJson );
+		var c = { name: arguments.name, kind: arguments.kind };
+		if ( arguments.kind == "ical" ) {
+			c.url = normalizeUrl( arguments.url );
+			if ( !reFind( "^https?://", c.url ) ) return variables.out.fail( "usage", "an iCal address starts with https://, http:// or webcal://", arguments.asJson );
+		} else {
+			var id = arguments.opts[ "client-id" ] ?: "";
+			var sf = arguments.opts[ "client-secret-file" ] ?: "";
+			if ( !len( id ) || !len( sf ) ) return variables.out.fail( "usage", "Google needs --client-id=ID and --client-secret-file=FILE (an OAuth client of type Desktop app, with the CalDAV API on)", arguments.asJson );
+			if ( !fileExists( sf ) ) return variables.out.fail( "precondition", "no file " & sf, arguments.asJson );
+			c.client_id = id;
+			c.client_secret = trim( fileRead( sf ) );
+		}
+		cals.append( c );
+		save( cals );
+		var sched = new bxrig.Scheduler( variables.cli, variables.proc.runner() );
+		var notes = [];
+		if ( sched.isInstalled() ) { sched.upsert( task() ); notes.append( "The scheduler syncs it every 15 minutes (task calendar-sync)." ); }
+		else notes.append( "bxrig scheduler install --yes syncs it every 15 minutes." );
+		var first = arguments.kind == "google" ? "Now run bxrig calendar sync in a terminal: the first sync opens Google's sign-in." : "bxrig calendar sync fetches it now.";
+		var lines = [ "Added " & c.name & ( arguments.kind == "google" ? " (Google)" : ": " & c.url ), first ];
+		for ( var n in notes ) lines.append( n );
+		return variables.out.say( "ok", { name: c.name, kind: c.kind }, arguments.asJson, lines );
+	}
+
+	function remove( name, yes, dry, asJson ) {
+		var cals = load();
+		var keep = cals.filter( function( c ) { return c.name != name; } );
+		if ( keep.len() == cals.len() ) return unknown( arguments.name, arguments.asJson );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "forget the calendar " & arguments.name, { name: arguments.name }, arguments.asJson, arguments.dry, [ "delete its local copy " & dataDir() & "/" & arguments.name & " (the calendar itself stays where it is)" ] );
+		save( keep );
+		var d = dataDir() & "/" & arguments.name;
+		if ( directoryExists( d ) ) directoryDelete( d, true );
+		return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Forgot " & arguments.name ] );
+	}
+
+	// The scheduler task that keeps the calendars in sync.
+	function task() { return new bxrig.Scheduler( variables.cli, variables.proc.runner() ).calendarTask(); }
+
+	// vdirsyncer with BxRig's config: discover answers yes to creating the local folders, then sync.
+	function syncArgv( pair ) {
+		var a = [ "env", "VDIRSYNCER_CONFIG=" & configFile(), "sh", "-c", 'yes | vdirsyncer discover "$@" >/dev/null 2>&1; vdirsyncer sync "$@"', "_" ];
+		if ( len( arguments.pair ) ) a.append( arguments.pair );
+		return a;
+	}
+
+	function sync( name, asJson ) {
+		var cals = load();
+		if ( !cals.len() ) return variables.out.say( "ok", { synced: [] }, arguments.asJson, [ "No calendars to sync." ] );
+		if ( len( arguments.name ) && !cals.filter( function( c ) { return c.name == name; } ).len() ) return unknown( arguments.name, arguments.asJson );
+		if ( !variables.proc.has( "vdirsyncer" ) ) return variables.out.fail( "precondition", "vdirsyncer was not found (bxrig pkg install vdirsyncer)", arguments.asJson );
+		writeConfig( cals );
+		var r = variables.proc.exec( syncArgv( len( arguments.name ) ? pairName( arguments.name ) : "" ), 600 );
+		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "vdirsyncer failed", output: variables.proc.why( r ) }, arguments.asJson, [ "error: vdirsyncer failed", variables.proc.why( r ) ] );
+		return variables.out.say( "ok", { synced: len( arguments.name ) ? [ arguments.name ] : cals.map( function( c ) { return c.name; } ) }, arguments.asJson, [ "Synced " & ( len( arguments.name ) ? arguments.name : cals.len() & " calendar" & ( cals.len() == 1 ? "" : "s" ) ) ] );
+	}
+
+	// This machine's offset from UTC in minutes (from `date +%z`, e.g. -0500 -> -300).
+	function offsetMinutes() {
+		var z = trim( variables.proc.exec( [ "date", "+%z" ], 5 ).output );
+		if ( !reFind( "^[+-][0-9]{4}$", z ) ) return 0;
+		var m = int( mid( z, 2, 2 ) ) * 60 + int( mid( z, 4, 2 ) );
+		return left( z, 1 ) == "-" ? -m : m;
+	}
+
+	// The events of the next `days` days, from the start of today: [ { calendar, summary, location, start, end, all_day, day } ].
+	function upcoming( days, from = "" ) {
+		var start = isDate( arguments.from ) ? arguments.from : createDate( year( now() ), month( now() ), day( now() ) );
+		var texts = [];
+		for ( var c in load() ) for ( var f in icsFiles( c.name ) ) texts.append( { calendar: c.name, text: fileRead( f ) } );
+		var ic = new bxrig.Ical();
+		return ic.agenda( texts, start, dateAdd( "d", arguments.days, start ), offsetMinutes() ).map( function( o ) {
+				return { calendar: o.calendar, summary: o.summary, location: o.location, start: dateTimeFormat( o.start, "yyyy-MM-dd'T'HH:mm" ), end: dateTimeFormat( o.end, "yyyy-MM-dd'T'HH:mm" ), all_day: o.allDay, day: dateTimeFormat( o.start, "yyyy-MM-dd" ) };
+			} );
+	}
+
+	function agenda( days, asJson ) {
+		var evs = upcoming( arguments.days );
+		var lines = [];
+		var shown = "";
+		var today = dateTimeFormat( now(), "yyyy-MM-dd" );
+		var tomorrow = dateTimeFormat( dateAdd( "d", 1, now() ), "yyyy-MM-dd" );
+		for ( var e in evs ) {
+			if ( e.day != shown ) { shown = e.day; lines.append( e.day == today ? "Today" : ( e.day == tomorrow ? "Tomorrow" : dateTimeFormat( parseDateTime( e.day ), "EEEE d MMMM" ) ) ); }
+			lines.append( "  " & ( e.all_day ? "all day    " : mid( e.start, 12, 5 ) & "-" & mid( e.end, 12, 5 ) ) & "  " & e.summary & ( len( e.location ) ? "  (" & e.location & ")" : "" ) & ( load().len() > 1 ? "  [" & e.calendar & "]" : "" ) );
+		}
+		if ( !evs.len() ) lines = [ load().len() ? "Nothing in the next " & arguments.days & " days." : "No calendars yet. bxrig calendar add ical NAME URL" ];
+		return variables.out.say( "ok", { days: arguments.days, today: today, events: evs }, arguments.asJson, lines );
+	}
+
+	function run( words, opts, asJson ) {
+		var w = arguments.words;
+		var sub = w.len() ? w[ 1 ] : "list";
+		if ( sub == "list" && w.len() <= 1 ) return list( arguments.asJson );
+		if ( sub == "add" && w.len() == 4 && w[ 2 ] == "ical" ) return addCal( "ical", w[ 3 ], w[ 4 ], arguments.opts, arguments.asJson );
+		if ( sub == "add" && w.len() == 3 && w[ 2 ] == "google" ) return addCal( "google", w[ 3 ], "", arguments.opts, arguments.asJson );
+		if ( sub == "remove" && w.len() == 2 ) return remove( w[ 2 ], structKeyExists( arguments.opts, "yes" ), structKeyExists( arguments.opts, "dry-run" ), arguments.asJson );
+		if ( sub == "sync" && w.len() <= 2 ) return sync( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
+		if ( sub == "agenda" && w.len() == 1 ) return agenda( max( 1, min( 60, int( val( arguments.opts.days ?: 7 ) ) ) ), arguments.asJson );
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "calendar" ), arguments.asJson );
+	}
+}

@@ -2382,6 +2382,15 @@
 			],
 			"verified_on": "2026-11-13"
 		},
+		"vdirsyncer": {
+			"source": "pacman",
+			"targets": [
+				"vdirsyncer",
+				"python-aiohttp-oauthlib"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
+		},
 		"vicinae": {
 			"source": "aur",
 			"targets": [
