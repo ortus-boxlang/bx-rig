@@ -23,10 +23,12 @@ class AccessibilityProvider {
 		return { action: "cli", title: ( r.active ? "Back to your theme" : r.name ), args: [ "accessibility", "contrast", r.active ? "off" : r.ref ] };
 	}
 
+	// The runs are closures, which cannot call this class's methods, so the provider they need is captured.
 	function actions() {
+		var me = this;
 		return [
-			{ key: "Enter", label: "switch", run: function( r ) { return switchIntent( r ); } },
-			{ key: "Space", label: "switch", run: function( r ) { return switchIntent( r ); } }
+			{ key: "Enter", label: "switch", run: function( r ) { return me.switchIntent( r ); } },
+			{ key: "Space", label: "switch", run: function( r ) { return me.switchIntent( r ); } }
 		];
 	}
 
