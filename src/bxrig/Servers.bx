@@ -1,0 +1,314 @@
+// `bxrig boxlang servers`: your BoxLang and CFML web apps, registered once and run from anywhere.
+//   list | status NAME                 every app: kind, port, running or stopped (a listening port, from `ss -ltnH`)
+//   add PATH [--name=NAME]             register a folder with a miniserver.json (BoxLang MiniServer) or a server.json (CommandBox)
+//   scan DIR [--depth=N] [--yes]       find those files below DIR (default depth 3) and register the new ones (a plan until --yes)
+//   remove NAME                        forget it (the folder is never touched)
+//   start | stop | restart NAME        MiniServer: `boxlang-miniserver miniserver.json` in the folder, detached, its output in
+//                                      ~/.local/state/bxrig/servers/NAME.log; CommandBox: `box server start|stop directory=PATH`
+//   log NAME [--follow]                the log (MiniServer: that file; CommandBox: `box server log directory=PATH`)
+//   open NAME | folder NAME            the app in the browser (http://host:port), the folder in the file manager
+// The registry is ~/.config/bxrig/servers.json: [ { name, path, kind } ]. Port, host and web root are read from the app's own file
+// each time, so editing it is enough. start and stop act at once; --dry-run shows the command. The Proc runner can be injected for tests.
+class Servers {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "boxlang servers" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	function registryFile() { return variables.env.config( "servers.json" ); }
+	function logDir() { return variables.env.state( "servers" ); }
+	function logFile( name ) { return logDir() & "/" & arguments.name & ".log"; }
+	function pidFile( name ) { return logDir() & "/" & arguments.name & ".pid"; }
+
+	// ---- the registry ----
+
+	function readRegistry() {
+		var f = registryFile();
+		if ( !fileExists( f ) ) return [];
+		try {
+			var j = jsonDeserialize( fileRead( f ) );
+			return isArray( j.servers ?: "" ) ? j.servers : [];
+		} catch ( any e ) {
+			return [];
+		}
+	}
+
+	function writeRegistry( rows ) {
+		directoryCreate( getDirectoryFromPath( registryFile() ), true, true );
+		fileWrite( registryFile(), jsonPrettify( serializeJSON( { servers: arguments.rows } ) ) & chr( 10 ) );
+	}
+
+	function find( name ) {
+		for ( var r in readRegistry() ) if ( r.name == arguments.name ) return r;
+		return {};
+	}
+
+	// ---- reading an app's own file (pure apart from the read) ----
+
+	// A name from text: lower case letters, digits and dashes.
+	function slug( text ) {
+		var s = lCase( reReplace( trim( arguments.text ), "[^A-Za-z0-9]+", "-", "all" ) );
+		s = reReplace( s, "^-+|-+$", "", "all" );
+		return len( s ) ? left( s, 40 ) : "app";
+	}
+
+	// What a folder is: { kind: miniserver|commandbox|"", file, name, port, host, webroot }. A miniserver.json wins when a folder has both.
+	function detect( path ) {
+		var p = reReplace( arguments.path, "/+$", "" );
+		if ( fileExists( p & "/miniserver.json" ) ) return fromMiniserver( p, readJson( p & "/miniserver.json" ) );
+		if ( fileExists( p & "/server.json" ) ) return fromCommandbox( p, readJson( p & "/server.json" ) );
+		return { kind: "", file: "", name: slug( listLast( p, "/" ) ), port: 0, host: "", webroot: p };
+	}
+
+	function readJson( file ) {
+		try { var j = jsonDeserialize( fileRead( arguments.file ) ); return isStruct( j ) ? j : {}; } catch ( any e ) { return {}; }
+	}
+
+	// miniserver.json: port (8080 when missing), host (0.0.0.0), webRoot (the folder).
+	function fromMiniserver( dir, j ) {
+		var wr = arguments.j.webRoot ?: "";
+		if ( len( wr ) && left( wr, 1 ) != "/" ) wr = arguments.dir & "/" & wr;
+		return { kind: "miniserver", file: arguments.dir & "/miniserver.json", name: slug( listLast( arguments.dir, "/" ) ), port: int( val( arguments.j.port ?: 8080 ) ), host: arguments.j.host ?: "0.0.0.0", webroot: len( wr ) ? wr : arguments.dir };
+	}
+
+	// server.json: name, web.http.port (0 when CommandBox picks one), web.host (127.0.0.1), web.webroot (the folder).
+	function fromCommandbox( dir, j ) {
+		var web = isStruct( arguments.j.web ?: "" ) ? arguments.j.web : {};
+		var http = isStruct( web.http ?: "" ) ? web.http : {};
+		var wr = web.webroot ?: "";
+		if ( len( wr ) && left( wr, 1 ) != "/" ) wr = arguments.dir & "/" & wr;
+		return { kind: "commandbox", file: arguments.dir & "/server.json", name: slug( len( arguments.j.name ?: "" ) ? arguments.j.name : listLast( arguments.dir, "/" ) ), port: int( val( http.port ?: ( web.port ?: 0 ) ) ), host: web.host ?: "127.0.0.1", webroot: len( wr ) ? wr : arguments.dir };
+	}
+
+	// The URL to open: a wildcard host is opened on this machine.
+	function url( d ) {
+		var h = arguments.d.host;
+		if ( !len( h ) || h == "0.0.0.0" || h == "::" ) h = "127.0.0.1";
+		return "http://" & h & ":" & arguments.d.port & "/";
+	}
+
+	// ---- running state ----
+
+	// The listening TCP ports of /proc/net/tcp and tcp6 text: { "8099": 0 } (state 0A is LISTEN; the port is the hex after the colon).
+	function parseProcNet( text ) {
+		var out = {};
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var parts = listToArray( trim( line ), " " );
+			if ( parts.len() < 4 || parts[ 4 ] != "0A" || !find( ":", parts[ 2 ] ) ) continue;
+			out[ inputBaseN( listLast( parts[ 2 ], ":" ), 16 ) & "" ] = 0;
+		}
+		return out;
+	}
+
+	// The listening TCP ports: { "8099": pid } from `ss -ltnpH`, or from /proc/net/tcp (pid 0) where ss is not installed.
+	function listening() {
+		var out = {};
+		if ( !variables.proc.has( "ss" ) ) return parseProcNet( variables.proc.exec( [ "cat", "/proc/net/tcp", "/proc/net/tcp6" ], 10 ).output );
+		var r = variables.proc.exec( [ "ss", "-ltnpH" ], 10 );
+		var pp = new bxrig.PortsProvider( false );
+		for ( var line in listToArray( r.output, chr( 10 ) ) ) {
+			var s = pp.parseSsLine( line );
+			if ( !structIsEmpty( s ) ) out[ s.port & "" ] = s.pid;
+		}
+		return out;
+	}
+
+	// A registry row with what its file says and whether it runs.
+	function row( reg, ports ) {
+		var d = detect( arguments.reg.path );
+		var gone = !directoryExists( arguments.reg.path );
+		var up = !gone && d.port > 0 && structKeyExists( arguments.ports, d.port & "" );
+		return { name: arguments.reg.name, path: arguments.reg.path, kind: len( d.kind ) ? d.kind : ( arguments.reg.kind ?: "" ), port: d.port, host: d.host, webroot: d.webroot,
+			url: d.port > 0 ? url( d ) : "", state: gone ? "missing" : ( up ? "running" : "stopped" ), pid: up ? arguments.ports[ d.port & "" ] : 0, log: logFile( arguments.reg.name ) };
+	}
+
+	function rows() {
+		var ports = listening();
+		return readRegistry().map( function( r ) { return row( r, ports ); } );
+	}
+
+	// ---- commands ----
+
+	function list( asJson ) {
+		var all = rows();
+		var lines = all.map( function( r ) {
+				return ( r.state == "running" ? "● " : "○ " ) & r.name & repeatString( " ", max( 1, 18 - len( r.name ) ) ) & ( r.kind == "miniserver" ? "MiniServer" : "CommandBox" ) & "  " & ( r.port > 0 ? ":" & r.port : ":auto" ) & "  " & r.state & "  " & r.path;
+			} );
+		if ( !all.len() ) lines = [ "No apps registered. bxrig boxlang servers add PATH, or scan DIR to find miniserver.json and server.json files." ];
+		return variables.out.say( "ok", { servers: all, running: all.filter( function( r ) { return r.state == "running"; } ).len() }, arguments.asJson, lines );
+	}
+
+	function status( name, asJson ) {
+		var reg = find( arguments.name );
+		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
+		var r = row( reg, listening() );
+		return variables.out.say( "ok", r, arguments.asJson, [ r.name & ": " & r.state & ( len( r.url ) ? " at " & r.url : "" ), "Kind:   " & r.kind, "Folder: " & r.path, "Web root: " & r.webroot ] );
+	}
+
+	function unknown( name, asJson ) {
+		return variables.out.fail( "precondition", "no app named " & arguments.name & " (bxrig boxlang servers list)", arguments.asJson );
+	}
+
+	// Registers one folder without printing: { ok, error, added, name, path, kind, port }.
+	function register( path, name ) {
+		var p = reReplace( arguments.path, "/+$", "" );
+		if ( left( p, 1 ) != "/" ) p = expandPath( p );
+		if ( !directoryExists( p ) ) return { ok: false, error: p & " is not a folder" };
+		var d = detect( p );
+		if ( !len( d.kind ) ) return { ok: false, error: p & " has no miniserver.json or server.json" };
+		var all = readRegistry();
+		for ( var r in all ) if ( r.path == p ) return { ok: true, added: false, name: r.name, path: p, kind: d.kind, port: d.port };
+		var n = len( arguments.name ) ? slug( arguments.name ) : d.name;
+		var taken = all.map( function( r ) { return r.name; } );
+		var base = n; var i = 2;
+		while ( arrayFind( taken, n ) ) { n = base & "-" & i; i++; }
+		all.append( { name: n, path: p, kind: d.kind } );
+		writeRegistry( all );
+		return { ok: true, added: true, name: n, path: p, kind: d.kind, port: d.port };
+	}
+
+	function add( path, name, asJson ) {
+		var r = register( arguments.path, arguments.name );
+		if ( !r.ok ) return variables.out.fail( "precondition", r.error, arguments.asJson );
+		if ( !r.added ) return variables.out.say( "ok", r, arguments.asJson, [ r.path & " is already registered as " & r.name ] );
+		return variables.out.say( "ok", r, arguments.asJson, [ "Registered " & r.name & " (" & ( r.kind == "miniserver" ? "MiniServer" : "CommandBox" ) & ( r.port > 0 ? ", port " & r.port : "" ) & "): " & r.path ] );
+	}
+
+	// The folders below dir with a miniserver.json or server.json, skipping dependency and hidden folders.
+	function findApps( dir, depth ) {
+		var argv = [ "find", arguments.dir, "-maxdepth", arguments.depth + 1, "(", "-name", "node_modules", "-o", "-name", "boxlang_modules", "-o", "-name", "modules", "-o", "-name", ".*", "-not", "-name", ".", ")", "-prune", "-o", "-type", "f", "(", "-name", "miniserver.json", "-o", "-name", "server.json", ")", "-print" ];
+		var r = variables.proc.exec( argv, 60 );
+		var seen = {};
+		var out = [];
+		for ( var f in listToArray( r.output, chr( 10 ) ) ) {
+			var d = reReplace( getDirectoryFromPath( trim( f ) ), "/+$", "" );
+			if ( len( d ) && !structKeyExists( seen, d ) ) { seen[ d ] = true; out.append( d ); }
+		}
+		out.sort( "textnocase" );
+		return out;
+	}
+
+	function scan( dir, depth, yes, dry, asJson ) {
+		var p = reReplace( arguments.dir, "/+$", "" );
+		if ( left( p, 1 ) != "/" ) p = expandPath( p );
+		if ( !directoryExists( p ) ) return variables.out.fail( "precondition", p & " is not a folder", arguments.asJson );
+		var known = readRegistry().map( function( r ) { return r.path; } );
+		var found = findApps( p, arguments.depth ).map( function( d ) { var x = detect( d ); x.path = d; x.registered = arrayFind( known, d ) > 0; return x; } );
+		var fresh = found.filter( function( x ) { return !x.registered; } );
+		var lines = found.map( function( x ) { return ( x.registered ? "  registered  " : "  new         " ) & ( x.kind == "miniserver" ? "MiniServer  " : "CommandBox  " ) & x.path; } );
+		if ( !found.len() ) return variables.out.say( "ok", { found: [], added: [] }, arguments.asJson, [ "No miniserver.json or server.json below " & p ] );
+		if ( !fresh.len() ) { arrayPrepend( lines, "Every app below " & p & " is registered:" ); return variables.out.say( "ok", { found: found, added: [] }, arguments.asJson, lines ); }
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "register " & fresh.len() & " app" & ( fresh.len() == 1 ? "" : "s" ) & " found below " & p, { found: found }, arguments.asJson, arguments.dry, lines );
+		var names = [];
+		for ( var x in fresh ) { var rr = register( x.path, "" ); if ( rr.ok ) names.append( rr.name ); }
+		return variables.out.say( "ok", { found: found, added: names }, arguments.asJson, [ "Registered " & names.toList( ", " ) ] );
+	}
+
+	function remove( name, asJson ) {
+		var all = readRegistry();
+		var keep = all.filter( function( r ) { return r.name != name; } );
+		if ( keep.len() == all.len() ) return unknown( arguments.name, arguments.asJson );
+		writeRegistry( keep );
+		return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Forgot " & arguments.name & " (its folder is untouched)" ] );
+	}
+
+	// The commands that start and stop an app (pure, for tests and --dry-run).
+	function startArgv( r ) {
+		if ( arguments.r.kind == "miniserver" ) return [ "sh", "-c", 'cd "$1" && setsid boxlang-miniserver miniserver.json >>"$2" 2>&1 </dev/null & echo $!', "_", arguments.r.path, arguments.r.log ];
+		return [ "box", "server", "start", "directory=" & arguments.r.path, "--noOpenBrowser" ];
+	}
+
+	function stopArgv( r, pid ) {
+		if ( arguments.r.kind == "miniserver" ) return [ "kill", "-TERM", arguments.pid & "" ];
+		return [ "box", "server", "stop", "directory=" & arguments.r.path ];
+	}
+
+	// The MiniServer's process: the pid it wrote, else the one listening on its port.
+	function miniPid( r ) {
+		if ( fileExists( pidFile( arguments.r.name ) ) ) {
+			var p = int( val( trim( fileRead( pidFile( arguments.r.name ) ) ) ) );
+			if ( p > 0 && variables.proc.exec( [ "kill", "-0", p & "" ], 5 ).exitCode == 0 ) return p;
+		}
+		return arguments.r.pid;
+	}
+
+	function start( name, dry, asJson ) {
+		var reg = find( arguments.name );
+		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
+		var r = row( reg, listening() );
+		if ( r.state == "missing" ) return variables.out.fail( "precondition", r.path & " is gone (bxrig boxlang servers remove " & r.name & ")", arguments.asJson );
+		if ( r.state == "running" ) return variables.out.say( "ok", r, arguments.asJson, [ r.name & " is already running at " & r.url ] );
+		var tool = r.kind == "miniserver" ? "boxlang-miniserver" : "box";
+		if ( !variables.proc.has( tool ) ) return variables.out.fail( "precondition", tool & " was not found (" & ( tool == "box" ? "bxrig boxlang modules install bx-cli, or CommandBox" : "bxrig boxlang update --yes" ) & ")", arguments.asJson );
+		var argv = startArgv( r );
+		if ( arguments.dry ) return variables.out.plan( "start " & r.name, { command: argv }, arguments.asJson, true, [ argv.toList( " " ) ] );
+		directoryCreate( logDir(), true, true );
+		var res = variables.proc.exec( argv, r.kind == "miniserver" ? 15 : 600 );
+		if ( res.exitCode != 0 ) return variables.out.say( "failed", { error: "could not start " & r.name, output: variables.proc.why( res ) }, arguments.asJson, [ "error: could not start " & r.name, variables.proc.why( res ) ] );
+		if ( r.kind == "miniserver" ) fileWrite( pidFile( r.name ), trim( listLast( trim( res.output ), chr( 10 ) ) ) );
+		return variables.out.say( "ok", { name: r.name, url: r.url, log: r.kind == "miniserver" ? r.log : "" }, arguments.asJson, [ "Starting " & r.name & ( r.port > 0 ? " at " & r.url : "" ) & ( r.kind == "miniserver" ? " (log: " & r.log & ")" : "" ) ] );
+	}
+
+	function stop( name, dry, asJson ) {
+		var reg = find( arguments.name );
+		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
+		var r = row( reg, listening() );
+		var pid = r.kind == "miniserver" ? miniPid( r ) : 0;
+		if ( r.state != "running" && pid == 0 ) return variables.out.say( "ok", r, arguments.asJson, [ r.name & " is not running" ] );
+		if ( r.kind == "miniserver" && pid == 0 ) return variables.out.fail( "precondition", "port " & r.port & " is in use, but not by a process BxRig can see (bxrig tui ports)", arguments.asJson );
+		var argv = stopArgv( r, pid );
+		if ( arguments.dry ) return variables.out.plan( "stop " & r.name, { command: argv }, arguments.asJson, true, [ argv.toList( " " ) ] );
+		var res = variables.proc.exec( argv, r.kind == "miniserver" ? 15 : 300 );
+		if ( res.exitCode != 0 ) return variables.out.say( "failed", { error: "could not stop " & r.name, output: variables.proc.why( res ) }, arguments.asJson, [ "error: could not stop " & r.name ] );
+		if ( fileExists( pidFile( r.name ) ) ) fileDelete( pidFile( r.name ) );
+		return variables.out.say( "ok", { name: r.name, stopped: true }, arguments.asJson, [ "Stopped " & r.name ] );
+	}
+
+	function log( name, follow, asJson ) {
+		var reg = find( arguments.name );
+		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
+		var r = row( reg, {} );
+		if ( r.kind == "commandbox" ) {
+			var a = [ "server", "log", "directory=" & r.path ];
+			if ( arguments.follow ) a.append( "--follow" );
+			return systemExecute( "box", a, 0, false, ".", "", "", true, {}, true ).exitCode;
+		}
+		if ( !fileExists( r.log ) ) return variables.out.say( "ok", { log: r.log, lines: [] }, arguments.asJson, [ "No log yet: " & r.log ] );
+		if ( arguments.follow && !arguments.asJson ) return systemExecute( "tail", [ "-n", "50", "-f", r.log ], 0, false, ".", "", "", true, {}, true ).exitCode;
+		var tail = variables.proc.exec( [ "tail", "-n", "200", r.log ], 10 ).output;
+		return variables.out.say( "ok", { log: r.log, lines: listToArray( tail, chr( 10 ) ) }, arguments.asJson, listToArray( tail, chr( 10 ) ) );
+	}
+
+	function open( name, what, asJson ) {
+		var reg = find( arguments.name );
+		if ( structIsEmpty( reg ) ) return unknown( arguments.name, arguments.asJson );
+		var r = row( reg, {} );
+		var target = arguments.what == "folder" ? r.path : r.url;
+		if ( !len( target ) ) return variables.out.fail( "precondition", r.name & " has no fixed port (CommandBox picks one): set web.http.port in server.json", arguments.asJson );
+		variables.proc.detach( [ "xdg-open", target ] );
+		return variables.out.say( "ok", { opened: target }, arguments.asJson, [ "Opened " & target ] );
+	}
+
+	// Main's entry: words after `servers`.
+	function run( words, opts, asJson ) {
+		var w = arguments.words;
+		var dry = structKeyExists( arguments.opts, "dry-run" );
+		var sub = w.len() ? w[ 1 ] : "list";
+		if ( sub == "list" && w.len() <= 1 ) return list( arguments.asJson );
+		if ( sub == "add" && w.len() == 2 ) return add( w[ 2 ], arguments.opts.name ?: "", arguments.asJson );
+		if ( sub == "scan" && w.len() == 2 ) return scan( w[ 2 ], int( val( arguments.opts.depth ?: 3 ) ), structKeyExists( arguments.opts, "yes" ), dry, arguments.asJson );
+		if ( w.len() == 2 ) {
+			if ( sub == "status" ) return status( w[ 2 ], arguments.asJson );
+			if ( sub == "remove" ) return remove( w[ 2 ], arguments.asJson );
+			if ( sub == "start" ) return start( w[ 2 ], dry, arguments.asJson );
+			if ( sub == "stop" ) return stop( w[ 2 ], dry, arguments.asJson );
+			if ( sub == "restart" ) { var s = stop( w[ 2 ], dry, arguments.asJson ); if ( s != 0 || dry ) return s; sleep( 1500 ); return start( w[ 2 ], dry, arguments.asJson ); }
+			if ( sub == "log" ) return log( w[ 2 ], structKeyExists( arguments.opts, "follow" ), arguments.asJson );
+			if ( sub == "open" || sub == "folder" ) return open( w[ 2 ], sub == "folder" ? "folder" : "browser", arguments.asJson );
+		}
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "boxlang" ), arguments.asJson );
+	}
+}

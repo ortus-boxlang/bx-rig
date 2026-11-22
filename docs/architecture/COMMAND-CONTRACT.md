@@ -1083,3 +1083,11 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - `boxlang home`: BOXLANG_HOME, else ~/.boxlang. `run` and `repl` hand the terminal to `boxlang` and return its exit code.
 - No `new`, `test` or CommandBox commands here: those stay in CommandBox and bx-cli.
 - The scheduled checks (new BoxLang versions, module updates) arrive with the scheduler; until then the System panel's BoxLang tab checks while it is open.
+
+## BoxLang servers (decided with the owner 2026-11-22)
+
+- `boxlang servers`, not a new namespace: list, status, add, scan, remove, start, stop, restart, log, open, folder. No `new`, `test` or CommandBox server settings: those stay in CommandBox.
+- The registry holds only name, path and kind; port, host and web root are read from the app's own miniserver.json or server.json each time. A folder with both is a MiniServer app.
+- MiniServer apps run detached (`setsid boxlang-miniserver miniserver.json`), the pid and log under ~/.local/state/bxrig/servers. CommandBox apps go through `box server start|stop|log directory=PATH` (CommandBox or bx-cli).
+- Running means the port is listening (`ss -ltnpH`, else /proc/net/tcp). scan skips node_modules, boxlang_modules, modules and hidden folders and is a plan until --yes; add and remove act at once (BxRig's own file only); start and stop act at once and honour --dry-run.
+- The Developer panel gets two tabs: BoxLang (the servers) and Ports (`tui ports --json` without the system's own).
