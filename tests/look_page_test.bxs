@@ -13,8 +13,8 @@ testkit.check( "registry: Look sits before Themes, which stays its own page", fi
 testkit.check( "the page builds, for the real run and for --demo", new bxrig.PageFactory().make( "look", true, {} ).id() == "look" && new bxrig.PageFactory().make( "themes", false, {} ).id() == "themes" );
 
 s = page.state();
-testkit.check( "rows: layout, battery, clock, bar toggle, theme, app grid, dock, screensaver, its timing", s.items.map( function( r ) { return r.id; } ).toList( "," ) == "layout,battery,clock,toggle,theme,appgrid,dock,screensaver,screensaver-time" );
-testkit.check( "rows: no theme list on the page (the theme is a link to the Themes page)", s.items.filter( function( r ) { return r.id == "theme"; } )[ 1 ].kind == "link" && s.items.filter( function( r ) { return r.kind == "choice"; } ).len() == 3 );
+testkit.check( "rows: layout, battery, clock, bar toggle, theme, app grid, dock, screensaver, its timing, then the fonts", s.items.map( function( r ) { return r.id; } ).toList( "," ) == "layout,battery,clock,toggle,theme,appgrid,dock,screensaver,screensaver-time,font,ui-font,rendering" );
+testkit.check( "rows: no theme list on the page (the theme is a link to the Themes page)", s.items.filter( function( r ) { return r.id == "theme"; } )[ 1 ].kind == "link" && s.items.filter( function( r ) { return r.kind == "choice"; } ).len() == 6 );
 
 t = shot();
 testkit.check( "screen: the title, the preview of the bar and the dock, the three groups", find( "Look", t ) > 0 && find( "Preview", t ) > 0 && find( "Nov 5 - 04:00", t ) > 0 && find( "▦", t ) > 0 && find( "Bar", t ) > 0 && find( "Colors", t ) > 0 && find( "Apps", t ) > 0 );
@@ -48,8 +48,15 @@ testkit.check( "Right on the app grid switches style (and + does the same)", it.
 app.onKey( "Down" );
 it = app.onKey( " " );
 testkit.check( "Space on the dock turns it off", it.args.toList( " " ) == "appearance dock off" );
-app.onKey( "Down" ); app.onKey( "Down" ); app.onKey( "Down" );
-testkit.check( "the cursor stops on the last row", app.page().state().cursor == 9 );
+for ( i = 1; i <= 8; i++ ) app.onKey( "Down" );
+testkit.check( "the cursor stops on the last row", app.page().state().cursor == 12 );
+seek( 10 );
+it = app.onKey( "Right" );
+testkit.check( "Fonts: Right on the coding font steps from JetBrains Mono to the next font", it.args.toList( " " ) == "appearance font " & new bxrig.Fonts().list()[ 2 ].id );
+app.onKey( "Down" ); it = app.onKey( "Right" );
+testkit.check( "Fonts: the interface font, which follows the coding font, steps to Inter", it.args.toList( " " ) == "appearance ui-font inter" );
+app.onKey( "Down" ); it = app.onKey( "Right" );
+testkit.check( "Fonts: rendering steps from the default to smooth, and - goes around to sharp", it.args.toList( " " ) == "appearance font-rendering smooth" && app.onKey( "-" ).args.toList( " " ) == "appearance font-rendering sharp" );
 
 // clicks
 view.paint( app, 10, 120, 40 );

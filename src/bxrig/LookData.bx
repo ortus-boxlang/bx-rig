@@ -4,7 +4,7 @@
 //   ld = new bxrig.LookData( demo = false )
 //   ld.demo()   made-up values (`bxrig tui look --demo`)         ld.load()   the real ones
 // A look is { layout, dock (bool), appgrid, battery_percent (on|off), battery_found (bool), clock_format, clock_sample, theme, bar_toggle_keys,
-// screensaver (bool), screensaver_seconds, lock_seconds }.
+// screensaver (bool), screensaver_seconds, lock_seconds, font (the coding font family), ui_font (empty: follows the font), rendering }.
 class LookData {
 	function init( demo = false, proc = "" ) {
 		variables.demo = arguments.demo;
@@ -13,7 +13,7 @@ class LookData {
 	}
 
 	function defaults() {
-		return { layout: "standard", dock: true, appgrid: "launchpad", battery_percent: "off", battery_found: true, clock_format: "%b %-d - %H:%M", clock_sample: "Nov 5 - 04:00", theme: "bxrig", bar_toggle_keys: "Super+Shift+Space", screensaver: true, screensaver_seconds: 150, lock_seconds: 300 };
+		return { layout: "standard", dock: true, appgrid: "launchpad", battery_percent: "off", battery_found: true, clock_format: "%b %-d - %H:%M", clock_sample: "Nov 5 - 04:00", theme: "bxrig", bar_toggle_keys: "Super+Shift+Space", screensaver: true, screensaver_seconds: 150, lock_seconds: 300, font: "JetBrainsMono Nerd Font", ui_font: "", rendering: "default" };
 	}
 
 	function demo() {
@@ -42,6 +42,10 @@ class LookData {
 		out.clock_sample = field( tm, "sample", out.clock_sample );
 		var name = new bxrig.Palette().activeName();
 		if ( len( name ) ) out.theme = name;
+		var ap = variables.proc.selfData( [ "appearance", "status" ], 30 );
+		out.font = field( ap, "font", out.font );
+		out.ui_font = field( ap, "ui_font", out.ui_font );
+		out.rendering = field( ap, "rendering", out.rendering );
 		var keys = variables.proc.selfData( [ "keys", "show" ], 30 );
 		var ss = variables.proc.selfData( [ "screensaver", "status" ], 30 );
 		if ( structKeyExists( ss, "enabled" ) && isBoolean( ss.enabled ) ) out.screensaver = ss.enabled;

@@ -88,7 +88,7 @@ hypr "$binary" appearance windows snap on >/dev/null; ! lookhas 'snap' || fail '
 [[ "$(code "$binary" appearance windows snap maybe)" == 2 ]] || fail 'bad snap value'
 
 # ---- the font: list, install, set (Noctalia + the terminal starters you have not changed) ----
-run "$binary" appearance font list --json | jq -e '(.data.fonts | length == 10) and (.data.fonts | map(select(.id == "cascadia" and .installed)) | length == 1) and (.data.fonts | map(select(.id == "victor" and (.installed | not))) | length == 1)' >/dev/null || fail 'font list'
+run "$binary" appearance font list --json | jq -e '(.data.fonts | length == 15) and (.data.fonts | map(select(.id == "cascadia" and .installed)) | length == 1) and (.data.fonts | map(select(.id == "victor" and (.installed | not))) | length == 1)' >/dev/null || fail 'font list'
 [[ "$(code "$binary" appearance font victor)" == 4 ]] || fail 'a font that is not installed exits 4'
 [[ "$(code "$binary" appearance font install nope)" == 2 ]] || fail 'unknown font id'
 run "$binary" appearance font install victor --yes >/dev/null; has 'pacman -S --needed --noconfirm ttf-victor-mono-nerd' || fail "font install: $(cat "$LOG")"
@@ -100,6 +100,23 @@ grep -q 'font-family = CaskaydiaMono Nerd Font' "$tmp/cfg/ghostty/config" || fai
 echo '# mine' >> "$tmp/cfg/ghostty/config"
 run "$binary" appearance font iosevka --json | jq -e '.data.notes | map(test("ghostty")) | any' >/dev/null || fail 'a changed terminal config is kept and reported'
 grep -q '^# mine' "$tmp/cfg/ghostty/config" && grep -q 'CaskaydiaMono' "$tmp/cfg/ghostty/config" || fail 'your ghostty config was rewritten'
+
+# ---- the interface font and font rendering ----
+printf 'Inter,Inter Display\n' >> "$tmp/fake/fonts"
+run "$binary" appearance ui-font list --json | jq -e '(.data.fonts | map(select(.id == "inter" and .installed)) | length == 1) and (.data.fonts | map(select(.id == "noto" and (.installed | not))) | length == 1)' >/dev/null || fail 'ui-font list'
+[[ "$(code "$binary" appearance ui-font noto)" == 4 ]] || fail 'an interface font that is not installed exits 4'
+: > "$LOG"; run "$binary" appearance ui-font inter >/dev/null; has "config-set shell.font_family 'Inter'" || fail "ui-font: $(cat "$LOG")"
+: > "$LOG"; run "$binary" appearance font cascadia --json | jq -e '.data.applied.noctalia | test("kept")' >/dev/null || fail 'the coding font keeps the interface font in the shell'
+! has 'shell.font_family' || fail 'the coding font changed the shell font while an interface font is set'
+run "$binary" appearance status --json | jq -e '.data.ui_font == "Inter" and .data.font == "CaskaydiaMono Nerd Font"' >/dev/null || fail 'status has both fonts'
+rc="$tmp/cfg/fontconfig/conf.d/60-bxrig-rendering.conf"
+run "$binary" appearance font-rendering crisp --dry-run >/dev/null; [[ ! -e "$rc" ]] || fail 'font-rendering --dry-run wrote a file'
+run "$binary" appearance font-rendering crisp >/dev/null; grep -q '<const>hintslight</const>' "$rc" || fail 'font-rendering crisp writes the fontconfig file'
+run "$binary" appearance font-rendering status --json | jq -e '.data.rendering == "crisp"' >/dev/null || fail 'font-rendering status'
+run "$binary" appearance font-rendering default >/dev/null; [[ ! -e "$rc" ]] || fail 'font-rendering default removes the file BxRig wrote'
+run "$binary" appearance font-rendering sharp >/dev/null; echo '<!-- mine -->' >> "$rc"
+run "$binary" appearance font-rendering default >/dev/null; [[ -e "$rc" ]] || fail 'a rendering file you edited is kept'
+[[ "$(code "$binary" appearance font-rendering blurry)" == 2 ]] || fail 'bad rendering exits 2'
 
 # ---- backgrounds ----
 : > "$tmp/home/Pictures/BxRig/nord.jpg"; : > "$tmp/home/Pictures/BxRig/notes.txt"
@@ -170,7 +187,7 @@ nopower "$binary" appearance battery-percent on --yes --json | jq -e '.data.note
 
 # ---- apply pushes what is remembered; no Noctalia is saved-only ----
 : > "$LOG"; hypr "$binary" appearance apply >/dev/null
-has "config-set bar.main.position 'bottom'" && has "config-set dock.position 'left'" && has "config-set shell.font_family 'Iosevka Nerd Font'" && has 'hyprctl reload' || fail "apply: $(cat "$LOG")"
+has "config-set bar.main.position 'bottom'" && has "config-set dock.position 'left'" && has "config-set shell.font_family 'Inter'" && has 'hyprctl reload' || fail "apply: $(cat "$LOG")"
 mv "$tmp/bin/noctalia" "$tmp/noctalia.off"
 run "$binary" appearance bar position top --json | jq -e '.ok and (.data.applied.noctalia | test("saved only"))' >/dev/null || fail 'no Noctalia: saved only, not an error'
 jq -e '.bar.position == "top"' "$tmp/cfg/bxrig/appearance.json" >/dev/null || fail 'the choice is remembered'
