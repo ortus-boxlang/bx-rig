@@ -302,6 +302,10 @@ class Scheduler {
 		var s = v.stats;
 		var lines = [ v.name & ( len( v.group ) ? " (" & v.group & ")" : "" ) & ": " & v.when & ( v.enabled ? "" : ", paused" ), "Runs: " & v.command_text, "Next: " & ( len( v.next_run ) ? v.next_run : "-" ) & "   Last: " & ( len( v.last_run ) ? v.last_run & " " & v.last_status : "never" ), "Stats: " & s.runs & " runs, " & s.failures & " failed, " & s.success_rate & "% ok, " & numberFormat( s.avg_ms / 1000, "0.0" ) & " s average" ];
 		for ( var r in v.runs ) lines.append( "  " & r.started & "  " & r.status & repeatString( " ", max( 1, 10 - len( r.status ) ) ) & numberFormat( r.ms / 1000, "0.0" ) & " s  exit " & r.exit );
+		if ( v.runs.len() && len( trim( v.runs[ v.runs.len() ].output ?: "" ) ) ) {
+			lines.append( "Last output:" );
+			for ( var ol in listToArray( trim( v.runs[ v.runs.len() ].output ), chr( 10 ) ) ) lines.append( "  " & ol );
+		}
 		return variables.out.say( "ok", v, arguments.asJson, lines );
 	}
 
