@@ -685,6 +685,10 @@ class {
 				// One scheduler on the BoxLang JVM for every BxRig timer and your own tasks. See bxrig.Scheduler and COMMAND-CONTRACT.md (Scheduler).
 				CLIExit( new bxrig.Scheduler( cli ).run( p.slice( 2 ), args.options, rawArgs.len() ? rawArgs : [], asJson ) );
 				break;
+			case "launcher":
+				// Vicinae as the launcher: its BxRig theme, BxRig's script commands, file search. See bxrig.Launcher and COMMAND-CONTRACT.md (Launcher).
+				CLIExit( new bxrig.Launcher( cli ).run( p.slice( 2 ), args.options, asJson ) );
+				break;
 			case "calendar":
 				// Calendars kept in sync by vdirsyncer, and the agenda. See bxrig.Calendar and COMMAND-CONTRACT.md (Calendar).
 				CLIExit( new bxrig.Calendar( cli ).run( p.slice( 2 ), args.options, asJson ) );

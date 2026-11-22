@@ -1114,3 +1114,10 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - `bxrig remind TEXT --at|--in` keeps reminders in ~/.config/bxrig/reminders.json; `remind due` shows the ones whose time has come as critical notices, once each.
 - The scheduler owns the timing: calendar-sync every 15 minutes and reminders every minute, added by the first calendar or reminder when the scheduler is installed, and by `scheduler install` when calendars or reminders exist. `Scheduler.upsert` never adds a task twice.
 - The Clock panel shows the agenda of today and tomorrow and the reminders still to come under the world clocks, with a check button per reminder.
+
+## Launcher (decided with the owner 2026-11-22)
+
+- `bxrig launcher` makes Vicinae BxRig's launcher. setup is a plan until --yes: `runner set vicinae` and `runner menu-set vicinae`, the theme written and selected with `vicinae theme set bxrig`, the script commands written, and `vicinae server` started when `vicinae ping` fails. Vicinae's settings.json (JSONC, the user's) is never edited.
+- The theme is a generated file of `theme set` like the others: ~/.local/share/vicinae/themes/bxrig.toml (meta version 1, name, description, variant; colour keys only from Vicinae's theme parser's RECOGNIZED_KEYS). Vicinae watches the folder; `theme set` selects it again only while Vicinae is the launcher.
+- Script commands are ~/.local/share/vicinae/scripts/bxrig/*.sh, rewritten by `launcher scripts --yes`; a file BxRig no longer offers is deleted, other folders are not touched. Each sets BXRIG to this BxRig (BXRIG_SELF) and runs one command.
+- `launcher files [QUERY]` opens vicinae://launch/files/search with fallbackText. The Vicinae menu uses `vicinae dmenu --placeholder` (it has no --prompt).

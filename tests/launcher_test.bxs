@@ -1,0 +1,57 @@
+// The Vicinae theme BxRig writes and the script commands: keys Vicinae's theme parser knows, the header directives, the arguments.
+// Run from src/: (cd src && matchbox ../tests/launcher_test.bxs)
+testkit = new lib.Check( "launcher" );
+tc = new bxrig.ThemeColors();
+td = new bxrig.ThemeData();
+// The keys of Vicinae's theme parser (src/server/src/theme/theme-parser.cpp, RECOGNIZED_KEYS), as of Vicinae 0.18
+known = [ "core.accent", "core.accent_foreground", "core.background", "core.foreground", "core.secondary_background", "core.border", "shortcut.border",
+	"main_window.border", "main_window.shadow", "main_window.outer_border", "main_window.footer.background", "settings_window.border",
+	"accents.blue", "accents.green", "accents.magenta", "accents.orange", "accents.red", "accents.yellow", "accents.cyan", "accents.purple",
+	"text.default", "text.muted", "text.danger", "text.success", "text.placeholder", "text.links.default", "text.links.visited", "text.selection.background", "text.selection.foreground",
+	"input.background", "input.border", "input.border_focus", "input.border_error",
+	"button.primary.background", "button.primary.foreground", "button.primary.hover.background", "button.primary.hover.foreground", "button.primary.focus.outline",
+	"list.item.hover.background", "list.item.hover.foreground", "list.item.hover.secondary_foreground", "list.item.selection.background", "list.item.selection.foreground",
+	"list.item.selection.secondary_background", "list.item.selection.secondary_foreground", "grid.item.selection.outline", "grid.item.hover.outline", "grid.item.background",
+	"scrollbars.background", "scrollbars.secondary_background", "tooltip.background", "tooltip.foreground", "tooltip.border", "loading.bar", "loading.spinner" ];
+
+// the color keys of a generated theme: "[colors.X]" sections and "k = v" lines -> "X.k"
+function colorKeys( text ) {
+	var out = [];
+	var section = "";
+	for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+		var t = trim( line );
+		if ( left( t, 1 ) == "[" ) { section = replace( replace( t, "[", "" ), "]", "" ); continue; }
+		if ( left( section, 7 ) == "colors." && find( "=", t ) ) out.append( mid( section, 8, 99 ) & "." & trim( listFirst( t, "=" ) ) );
+	}
+	return out;
+}
+for ( name in [ "bxrig", "bxrig-light", "bxrig-contrast-dark" ] ) {
+	c = tc.parse( td.colors( name ) ).colors;
+	t = tc.vicinae( c );
+	keys = colorKeys( t );
+	unknown = keys.filter( function( k ) { return !arrayFind( known, k ); } );
+	testkit.check( name & ": every color key is one Vicinae knows", keys.len() >= 25 && !unknown.len() );
+	testkit.check( name & ": meta version 1, name, description and variant", find( "[meta]", t ) && find( "version = 1", t ) && find( 'name = "BxRig"', t ) && find( "description = ", t ) && reFind( 'variant = "(dark|light)"', t ) );
+	testkit.check( name & ": every value is #rrggbb", !listToArray( t, chr( 10 ) ).filter( function( l ) { return find( '= "##', l ) && !reFind( '= "##[0-9a-f]{6}"$', l ); } ).len() && reFind( 'accent = "##[0-9a-f]{6}"', t ) );
+	testkit.check( name & ": the accent is the theme's", find( 'accent = "' & c.accent & '"', t ) );
+}
+testkit.check( "a light theme is a light variant", find( 'variant = "light"', tc.vicinae( tc.parse( td.colors( "bxrig-light" ) ).colors ) ) );
+
+// the script commands
+ln = new bxrig.Launcher( new bxrig.util.Cli( "0" ) );
+ids = ln.scripts().map( function( s ) { return s.id; } );
+testkit.check( "eleven script commands, unique ids", ids.len() == 11 && arrayToList( ids ) == arrayToList( ids.reduce( function( acc, x ) { if ( !arrayFind( acc, x ) ) acc.append( x ); return acc; }, [] ) ) );
+modes = [ "fullOutput", "compact", "silent", "inline", "terminal" ];
+testkit.check( "every mode is one Vicinae has", !ln.scripts().filter( function( s ) { return !arrayFind( modes, s.mode ); } ).len() );
+rm = ln.scriptText( ln.scripts().filter( function( s ) { return s.id == "remind"; } )[ 1 ], "/opt/bxrig/bxrig" );
+lines = listToArray( rm, chr( 10 ) );
+testkit.check( "script: a bash shebang, then schemaVersion 1 and the title", lines[ 1 ] == "##!/usr/bin/env bash" && lines[ 2 ] == "## @vicinae.schemaVersion 1" && lines[ 3 ] == "## @vicinae.title Remind me" );
+testkit.check( "script: mode, icon, keywords as a JSON array", find( "## @vicinae.mode compact", rm ) && find( "## @vicinae.icon ⏰", rm ) && find( '## @vicinae.keywords ["reminder","timer","alarm"]', rm ) );
+argLine = lines.filter( function( l ) { return find( "@vicinae.argument1 ", l ); } )[ 1 ];
+a1 = deserializeJSON( mid( argLine, find( "{", argLine ), 999 ) );
+testkit.check( "script: arguments are one-line JSON with a type", a1.type == "text" && a1.placeholder == "what" && find( "## @vicinae.argument2 ", rm ) && !find( "@vicinae.argument3", rm ) );
+testkit.check( "script: this BxRig, quoted", find( 'BXRIG="/opt/bxrig/bxrig"', rm ) );
+testkit.check( "script: a time with a colon is --at, else --in", find( '*:*) exec "$BXRIG" remind "$1" --at="$2"', rm ) && find( '*) exec "$BXRIG" remind "$1" --in="$2"', rm ) );
+testkit.check( "file search query is percent-encoded", ln.urlPart( "my invoice&co" ) == "my%20invoice%26co" );
+testkit.check( "the dmenu flag is --placeholder (Vicinae has no --prompt)", new bxrig.RunnerProviders().get( "vicinae" ).menu.argv.toList( " " ) == "vicinae dmenu --placeholder {prompt}" );
+testkit.done();

@@ -49,7 +49,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Install and remove**: [`install`](#bxrig-install), [`remove`](#bxrig-remove), [`pkg`](#bxrig-pkg), [`catalog`](#bxrig-catalog), [`plan`](#bxrig-plan), [`install-plan`](#bxrig-install-plan), [`optional-plan`](#bxrig-optional-plan), [`profile-plan`](#bxrig-profile-plan), [`profile-install-plan`](#bxrig-profile-install-plan), [`profile-install`](#bxrig-profile-install), [`optional-install`](#bxrig-optional-install), [`profile-list`](#bxrig-profile-list), [`optional-list`](#bxrig-optional-list), [`desktop-list`](#bxrig-desktop-list), [`tui-list`](#bxrig-tui-list), [`web-list`](#bxrig-web-list), [`package-status`](#bxrig-package-status), [`package-source`](#bxrig-package-source), [`dev-plan`](#bxrig-dev-plan), [`prerequisites`](#bxrig-prerequisites), [`apps-doctor`](#bxrig-apps-doctor), [`web`](#bxrig-web), [`toolchain`](#bxrig-toolchain)
 
-**Desktop setup**: [`setup`](#bxrig-setup), [`session`](#bxrig-session), [`tiling`](#bxrig-tiling), [`plasma`](#bxrig-plasma), [`keys`](#bxrig-keys), [`runner`](#bxrig-runner), [`default`](#bxrig-default), [`layout`](#bxrig-layout), [`assets`](#bxrig-assets), [`launchers`](#bxrig-launchers), [`config`](#bxrig-config)
+**Desktop setup**: [`setup`](#bxrig-setup), [`session`](#bxrig-session), [`tiling`](#bxrig-tiling), [`plasma`](#bxrig-plasma), [`keys`](#bxrig-keys), [`runner`](#bxrig-runner), [`launcher`](#bxrig-launcher), [`default`](#bxrig-default), [`layout`](#bxrig-layout), [`assets`](#bxrig-assets), [`launchers`](#bxrig-launchers), [`config`](#bxrig-config)
 
 **Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`calendar`](#bxrig-calendar), [`remind`](#bxrig-remind), [`accessibility`](#bxrig-accessibility), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
@@ -674,6 +674,28 @@ bxrig runner set rofi
 bxrig runner icon-theme Papirus
 bxrig runner doctor
 ```
+
+### `bxrig launcher` {#bxrig-launcher}
+
+Vicinae as BxRig's launcher: the BxRig theme, BxRig's actions as script commands, and file search.
+
+```text
+bxrig launcher [status] [--json]
+bxrig launcher setup [--yes] [--dry-run] [--json]
+bxrig launcher scripts [--yes] [--dry-run] | scripts remove [--yes] [--json]
+bxrig launcher files [QUERY]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig launcher
+bxrig launcher setup --yes
+bxrig launcher scripts --yes
+bxrig launcher files invoice
+```
+
+> setup is a plan until --yes: it makes Vicinae the launcher and the menu, writes ~/.local/share/vicinae/themes/bxrig.toml (rewritten by every `bxrig theme set`) and selects it with `vicinae theme set bxrig`, writes the script commands to ~/.local/share/vicinae/scripts/bxrig and starts `vicinae server` when it is not running. Vicinae's settings.json is never edited. files opens vicinae://launch/files/search with QUERY typed in.
 
 ### `bxrig default` {#bxrig-default}
 

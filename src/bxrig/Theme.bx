@@ -12,6 +12,7 @@
 //   Hyprland accent   ~/.config/bxrig/theme/hypr.lua (read by the managed bxrig.lua), then `hyprctl reload`
 //   Neovim            ~/.local/state/bxrig/current/theme/neovim.lua (nvim's lua/plugins/theme.lua links to it)
 //   Plasma            `plasma-apply-colorscheme BreezeDark|BreezeLight`
+//   Vicinae           ~/.local/share/vicinae/themes/bxrig.toml (Vicinae watches the folder), then `vicinae theme set bxrig` when Vicinae is the launcher
 // Like `runner set` these are settings: they act at once (no --yes) and take --dry-run. User config files are never edited.
 // Exit: 0 done, 2 bad usage, 4 precondition (unknown or invalid theme), 6 a file could not be written.
 class Theme {
@@ -146,7 +147,8 @@ class Theme {
 			{ name: "theme-qt6ct", target: cfg() & "/qt6ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
 			{ name: "theme-qt5ct", target: cfg() & "/qt5ct/colors/bxrig.conf", mode: "644", content: variables.tc.qtct( arguments.c ) },
 			{ name: "theme-fuzzel", target: cfg() & "/fuzzel/fuzzel.ini", mode: "644", content: variables.tc.fuzzel( arguments.c, icons ) },
-			{ name: "theme-wofi", target: cfg() & "/wofi/style.css", mode: "644", content: variables.tc.wofi( arguments.c ) }
+			{ name: "theme-wofi", target: cfg() & "/wofi/style.css", mode: "644", content: variables.tc.wofi( arguments.c ) },
+			{ name: "theme-vicinae", target: variables.environ.xdgData( "vicinae/themes/bxrig.toml" ), mode: "644", content: variables.tc.vicinae( arguments.c ) }
 		];
 		// Rofi reads config.rasi: a stub that imports the generated theme, written only when you have none.
 		out.append( { name: "theme-rofi-config", target: cfg() & "/rofi/config.rasi", mode: "644", content: '@theme "' & d & '/rofi.rasi"' & chr( 10 ) } );
@@ -295,10 +297,19 @@ class Theme {
 			out.gtk = gs.exitCode == 0 ? "applied" : "failed";
 			if ( gs.exitCode == 0 && ( directoryExists( "/usr/share/themes/adw-gtk3" ) || directoryExists( variables.environ.home() & "/.local/share/themes/adw-gtk3" ) ) ) variables.proc.exec( [ "gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", arguments.mode == "light" ? "adw-gtk3" : "adw-gtk3-dark" ], 15 );
 		}
+		// Vicinae: select the theme only when it is BxRig's launcher and its server answers (otherwise `bxrig launcher setup` selects it)
+		out.vicinae = "skipped";
+		if ( variables.proc.has( "vicinae" ) && vicinaeIsLauncher() ) {
+			out.vicinae = variables.proc.exec( [ "vicinae", "theme", "set", "bxrig" ], 15 ).exitCode == 0 ? "applied" : "not running";
+		}
 		if ( new bxrig.util.Desktop().inHyprland() && variables.proc.has( "hyprctl" ) ) {
 			out.hyprland = variables.proc.exec( [ "hyprctl", "reload" ], 20 ).exitCode == 0 ? "reloaded" : "failed";
 		}
 		return out;
+	}
+
+	function vicinaeIsLauncher() {
+		try { return new bxrig.Runner( variables.cli ).load().provider == "vicinae"; } catch ( any e ) { return false; }
 	}
 
 	function set( name, mode = "", keepWallpaper = false, dry = false, asJson = false ) {

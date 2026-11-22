@@ -1238,6 +1238,34 @@
 					]
 				},
 				{
+					"name": "launcher",
+					"summary": "Vicinae as BxRig's launcher: the BxRig theme, BxRig's actions as script commands, and file search.",
+					"usage": [
+						"launcher [status] [--json]",
+						"launcher setup [--yes] [--dry-run] [--json]",
+						"launcher scripts [--yes] [--dry-run] | scripts remove [--yes] [--json]",
+						"launcher files [QUERY]"
+					],
+					"examples": [
+						"bxrig launcher",
+						"bxrig launcher setup --yes",
+						"bxrig launcher scripts --yes",
+						"bxrig launcher files invoice"
+					],
+					"mutates": true,
+					"note": "setup is a plan until --yes: it makes Vicinae the launcher and the menu, writes ~/.local/share/vicinae/themes/bxrig.toml (rewritten by every `bxrig theme set`) and selects it with `vicinae theme set bxrig`, writes the script commands to ~/.local/share/vicinae/scripts/bxrig and starts `vicinae server` when it is not running. Vicinae's settings.json is never edited. files opens vicinae://launch/files/search with QUERY typed in.",
+					"flags": [
+						{
+							"name": "yes",
+							"type": "bool"
+						},
+						{
+							"name": "dry-run",
+							"type": "bool"
+						}
+					]
+				},
+				{
 					"name": "default",
 					"summary": "Default apps: browser, terminal, file manager.",
 					"usage": [

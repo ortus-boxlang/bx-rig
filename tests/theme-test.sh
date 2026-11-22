@@ -16,7 +16,7 @@ run "$binary" theme show bxrig | grep -q 'accent #00ff78' || fail 'show'
 [[ "$(code "$binary" theme)" == 2 ]] || fail 'usage exits 2'
 
 # dry run changes nothing
-run "$binary" theme set catppuccin --dry-run --json | jq -e '.dry_run and (.data.files | length == 21)' >/dev/null || fail 'dry run plan'
+run "$binary" theme set catppuccin --dry-run --json | jq -e '.dry_run and (.data.files | length == 22)' >/dev/null || fail 'dry run plan'
 [[ ! -e "$tmp/cfg" ]] || fail 'dry run wrote files'
 
 # set a dark theme: files, then the desktop is told
@@ -31,7 +31,7 @@ grep -q 'noctalia msg color-scheme-set custom BxRigTheme' "$LOG" && grep -q 'noc
 jq -e '.name == "catppuccin" and .mode == "theme"' "$tmp/cfg/bxrig/theme.json" >/dev/null || fail 'state file'
 
 # the same theme again: nothing rewritten; a light theme sets light; KDE gets Breeze; Hyprland reloads
-run "$binary" theme set catppuccin --json | jq -e '(.data.written | length == 0) and (.data.unchanged | length == 21)' >/dev/null || fail 'second set is a no-op'
+run "$binary" theme set catppuccin --json | jq -e '(.data.written | length == 0) and (.data.unchanged | length == 22)' >/dev/null || fail 'second set is a no-op'
 : > "$LOG"; XDG_CURRENT_DESKTOP=KDE HYPRLAND_INSTANCE_SIGNATURE=x run "$binary" theme set catppuccin-latte --json | jq -e '.data.applied_mode == "light" and .data.plasma == "applied" and .data.hyprland == "reloaded"' >/dev/null || fail 'light theme on KDE and Hyprland'
 grep -q 'noctalia msg theme-mode-set light' "$LOG" && grep -q 'plasma-apply-colorscheme BreezeLight' "$LOG" && grep -q 'hyprctl reload' "$LOG" || fail "light: $(cat "$LOG")"
 grep -q 'plasma-apply-colorscheme BxRig' "$LOG" || fail 'Plasma gets the theme scheme, not only Breeze'
@@ -56,7 +56,7 @@ run "$binary" theme mode theme >/dev/null; jq -e '.mode == "theme"' "$tmp/cfg/bx
 [[ "$(code "$binary" theme mode sideways)" == 2 ]] || fail 'bad mode value'
 
 # status, next, random
-run "$binary" theme status --json | jq -e '.data.name == "catppuccin" and (.data.files | map(select(.state == "clean")) | length == 21)' >/dev/null || fail 'status'
+run "$binary" theme status --json | jq -e '.data.name == "catppuccin" and (.data.files | map(select(.state == "clean")) | length == 22)' >/dev/null || fail 'status'
 run "$binary" theme next --json | jq -e '.ok and .data.theme != "catppuccin"' >/dev/null || fail 'next'
 before="$(jq -r .name "$tmp/cfg/bxrig/theme.json")"; run "$binary" theme random >/dev/null; [[ "$(jq -r .name "$tmp/cfg/bxrig/theme.json")" != "$before" ]] || fail 'random picks another theme'
 
