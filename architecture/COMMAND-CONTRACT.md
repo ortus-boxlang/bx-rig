@@ -1060,3 +1060,11 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - **accessibility contrast dark|light|colorblind|off|status:** `bxrig theme set bxrig-contrast-dark|bxrig-contrast-light|bxrig-colorblind`; the theme in use before is remembered and `off` sets it back (`bxrig` when none was recorded). The three themes keep every text colour (foreground, accent, muted, light_foreground and the six colours with their bright forms) at 7:1 or more on the background, checked by `tests/accessibility_test.bxs`. Neovim: `projekt0n/github-nvim-theme` (github_dark_high_contrast, github_light_high_contrast, github_dark_colorblind). Wallpapers: `tools/gen-contrast-wallpapers.py`.
 - **Panels:** a Control Center page (`tui accessibility`, after Themes), Appearance > Accessibility in the menu (ticked by MenuState), and a Zoom switch in the Quick panel (`accessibility zoom status --json`).
 - **Not verified on a real desktop:** the Hyprland `cursor.zoom_factor` call and the KWin D-Bus names were checked against their documentation only.
+
+## Fonts (decided with the owner 2026-11-22)
+
+- `appearance font` stays the coding font (terminals). It sets Noctalia's `shell.font_family` only while no interface font is set, so existing setups keep working.
+- `appearance ui-font list|ID|install ID [--yes]` is the interface font: Noctalia's `shell.font_family` and GTK's `font-name`. Plasma is left alone, with a note.
+- `appearance font-rendering default|smooth|crisp|sharp|status` writes one fontconfig file through ConfigService (backup and journal) and GTK's `font-hinting` and `font-antialiasing`. `default` removes only a file BxRig wrote.
+- Both are settings: they act at once, `--dry-run` shows the commands. Both are remembered in appearance.json (`ui_font`, `rendering`) and `appearance status` shows them.
+- JetBrains Mono stays the default coding font; Inter is the recommended interface font.

@@ -260,7 +260,9 @@ bxrig appearance layout columns           # dwindle, master, columns, scrolling,
 bxrig appearance windows snap off         # floating windows stop snapping to edges (on by default)
 bxrig appearance font list
 bxrig appearance font install cascadia --yes
-bxrig appearance font cascadia            # Noctalia and the terminals follow
+bxrig appearance font cascadia            # the coding font: terminals (and the shell, until you pick an interface font)
+bxrig appearance ui-font inter            # the interface font: bar, panels and GTK apps
+bxrig appearance font-rendering smooth    # default, smooth, crisp, sharp
 bxrig appearance background random        # or: list, set NAME, next
 bxrig appearance apply                    # push everything you chose again
 bxrig appearance icons papirus --yes      # the icon set: bxrig (default), papirus, status
@@ -292,10 +294,25 @@ bxrig appearance icons papirus --yes      # the icon set: bxrig (default), papir
 <p>These five settings (<code>bar layout</code>, <code>dock on|off|toggle</code>, <code>appgrid</code>, <code>battery-percent</code>, <code>time format</code>) rewrite <code>~/.config/noctalia/config.toml</code> through the config service: the theme and wallpaper you have are kept, a backup is made, and a running Noctalia reloads the file. If the file has changes of your own, the command shows a plan and <code>--yes</code> replaces it (the backup keeps yours). Noctalia's own settings window stores its changes separately and wins over the file; if the bar does not follow a change, look at <code>~/.local/state/noctalia/settings.toml</code>. The plate images are written to <code>~/.local/share/bxrig/plates/</code>. Noctalia's own first-run wizard is turned off in this config.</p>
 <h2 id="where-the-changes-go"><a href="#where-the-changes-go" id="where-the-changes-go" name="where-the-changes-go" class="anchor"></a>Where the changes go</h2>
 <ul>
-<li><strong>Noctalia</strong> (bar position and style, dock mode and position, battery, font, corner radius) is changed with <code>noctalia msg config-set</code>, so your <code>config.toml</code> is not edited. Without Noctalia the choice is saved and <code>appearance apply</code> pushes it later.</li>
-<li><strong>Hyprland</strong> window looks (gaps, corners, opacity, animations, layout) are one generated file, <code>~/.config/bxrig/theme/look.lua</code>, loaded by <code>bxrig.lua</code>. BxRig reloads Hyprland after a change. Your own <code>hyprland.lua</code> is never touched.</li>
-<li><strong>Fonts</strong> come from seven Nerd Fonts. Changing the font also updates the terminal configs BxRig wrote, but never one you edited (it tells you which).</li>
-<li><strong>Backgrounds</strong> are read from <code>~/Pictures/BxRig</code>, <code>~/Pictures</code> and the current theme's folder.</li>
+<li>
+<p><strong>Noctalia</strong> (bar position and style, dock mode and position, battery, font, corner radius) is changed with <code>noctalia msg config-set</code>, so your <code>config.toml</code> is not edited. Without Noctalia the choice is saved and <code>appearance apply</code> pushes it later.</p>
+</li>
+<li>
+<p><strong>Hyprland</strong> window looks (gaps, corners, opacity, animations, layout) are one generated file, <code>~/.config/bxrig/theme/look.lua</code>, loaded by <code>bxrig.lua</code>. BxRig reloads Hyprland after a change. Your own <code>hyprland.lua</code> is never touched.</p>
+</li>
+<li>
+<p><strong>Fonts</strong> are in three parts, also on the Look page of the Control Center (Fonts):</p>
+<p><img src="/assets/screenshots/font-specimen.webp"  alt="The coding fonts and Inter" /></p>
+<p><video src="../assets/clips/fonts-look.webm" poster="../assets/screenshots/look-fonts.webp" autoplay loop muted playsinline width="100%"></video></p>
+<ul>
+<li><strong>Coding font</strong>, one of fifteen Nerd Fonts (<code>appearance font list</code>). JetBrains Mono is the default. Geist Mono, Monaspace Neon, IBM Plex Mono, Commit Mono and Atkinson Hyperlegible Mono (made for low vision) are new. Changing it updates the terminal configs BxRig wrote, but never one you edited (it tells you which).</li>
+<li><strong>Interface font</strong> (<code>appearance ui-font list</code>): Inter, Noto Sans or IBM Plex Sans, for the bar, the panels and GTK apps. Inter is made for screens and is the closest to the Mac's system font. Until you pick one the shell uses the coding font. Plasma keeps its own font (System Settings &gt; Text &amp; Fonts).</li>
+<li><strong>Rendering</strong>: <code>smooth</code> (no hinting, the Mac look, best on HiDPI), <code>crisp</code> (slight hinting, sharper on 1x screens), <code>sharp</code> (full hinting and subpixel, for low-resolution LCDs) or <code>default</code> (your distribution's). BxRig writes <code>~/.config/fontconfig/conf.d/60-bxrig-rendering.conf</code> and GTK's hinting settings; <code>default</code> removes the file unless you edited it. Open apps pick it up when they restart.</li>
+</ul>
+</li>
+<li>
+<p><strong>Backgrounds</strong> are read from <code>~/Pictures/BxRig</code>, <code>~/Pictures</code> and the current theme's folder.</p>
+</li>
 </ul>
 <p>The menu has all of this under Appearance.</p>
 <h2 id="icons"><a href="#icons" id="icons" name="icons" class="anchor"></a>Icons</h2>
@@ -363,7 +380,7 @@ bxrig about --json     # version, theme and links as data
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 22, 2026, 9&#x3a;17&#x3a;16 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 22, 2026, 9&#x3a;19&#x3a;11 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
