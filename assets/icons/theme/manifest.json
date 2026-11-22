@@ -168,6 +168,14 @@
 			"use": "the Servers page"
 		},
 		{
+			"name": "bxrig-tasks",
+			"glyph": "list-checks",
+			"category": "system",
+			"context": "apps",
+			"title": "Tasks",
+			"use": "the Tasks page"
+		},
+		{
 			"name": "bxrig-java",
 			"glyph": "coffee",
 			"category": "develop",

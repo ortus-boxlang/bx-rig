@@ -1174,6 +1174,13 @@
 					"help": "Commits and tags get GitHub's Verified badge once you add the key as a signing key."
 				},
 				{
+					"type": "confirm",
+					"id": "scheduler",
+					"label": "Run timed jobs on the BoxLang scheduler",
+					"default": true,
+					"help": "The update check, backups and BoxLang checks in one task manager, with a history of every run."
+				},
+				{
 					"type": "choice",
 					"id": "editor_starter",
 					"label": "Neovim setup",

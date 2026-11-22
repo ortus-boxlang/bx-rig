@@ -257,6 +257,19 @@ class Scheduler {
 		return { runs: n, failures: fails, success_rate: n ? round( ( n - fails ) * 100 / n ) : 0, avg_ms: n ? round( total / n ) : 0, trend: recent.map( function( r ) { return { ms: r.ms, status: r.status }; } ), last: n ? arguments.runs[ n ] : {} };
 	}
 
+	// The durations of runs as a sparkline (▁ to █, scaled to the slowest) and their results as marks (✓ ok, ! attention, ✗ failed or timed out).
+	function sparkline( trend ) {
+		var bars = [ "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" ];
+		var top = 1;
+		for ( var r in arguments.trend ) if ( r.ms > top ) top = r.ms;
+		var line = ""; var marks = "";
+		for ( var r2 in arguments.trend ) {
+			line &= bars[ min( 8, int( r2.ms * 7 / top ) + 1 ) ];
+			marks &= r2.status == "ok" ? "✓" : ( r2.status == "attention" ? "!" : "✗" );
+		}
+		return { bars: line, marks: marks };
+	}
+
 	// A task as shown: its own fields, the cron, next run (the runner's stats, else computed), last run and its stats.
 	function view( t ) {
 		var v = duplicate( arguments.t );
@@ -301,6 +314,11 @@ class Scheduler {
 		v.runs = history( arguments.name, arguments.limit );
 		var s = v.stats;
 		var lines = [ v.name & ( len( v.group ) ? " (" & v.group & ")" : "" ) & ": " & v.when & ( v.enabled ? "" : ", paused" ), "Runs: " & v.command_text, "Next: " & ( len( v.next_run ) ? v.next_run : "-" ) & "   Last: " & ( len( v.last_run ) ? v.last_run & " " & v.last_status : "never" ), "Stats: " & s.runs & " runs, " & s.failures & " failed, " & s.success_rate & "% ok, " & numberFormat( s.avg_ms / 1000, "0.0" ) & " s average" ];
+		if ( s.runs ) {
+			var sp = sparkline( s.trend );
+			lines.append( "Trend:  " & sp.bars & "   (the last " & s.trend.len() & " runs, slowest " & numberFormat( arrayMax( s.trend.map( function( x ) { return x.ms; } ) ) / 1000, "0.0" ) & " s)" );
+			lines.append( "        " & sp.marks );
+		}
 		for ( var r in v.runs ) lines.append( "  " & r.started & "  " & r.status & repeatString( " ", max( 1, 10 - len( r.status ) ) ) & numberFormat( r.ms / 1000, "0.0" ) & " s  exit " & r.exit );
 		if ( v.runs.len() && len( trim( v.runs[ v.runs.len() ].output ?: "" ) ) ) {
 			lines.append( "Last output:" );

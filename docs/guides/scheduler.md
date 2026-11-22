@@ -17,6 +17,24 @@ bxrig scheduler run backup-data      # run it now (recorded like a scheduled run
 
 <video src="../assets/clips/scheduler-cli.webm" poster="../assets/screenshots/scheduler-show.webp" autoplay loop muted playsinline width="100%"></video>
 
+## The task manager
+
+`bxrig tui tasks` (or Control Center > Tasks, or System > Scheduler > Task manager in the menu) lists every task with how its last run went, when it runs next and a sparkline of its recent runs.
+
+| Mark | Means |
+|---|---|
+| ✓ | the last run went well |
+| ! | it needs your attention (an update is waiting) |
+| ✗ | it failed or timed out |
+| · | it has not run yet |
+| ‖ | paused |
+
+Enter shows the task: its command, runs, failures, success rate, average time, the trend of its last 30 runs, recent runs and the last output. r runs it now, p pauses or resumes it, g pauses or resumes its group, a adds a task (name, when, command), x removes one of yours (the built-in ones can be paused, not removed).
+
+The **System panel** has a Tasks tab: whether the scheduler runs (with Install when it does not), a card for each failing task with its last output, Run again, Show and Pause, and the next runs. While a task is failing, the System icon in the bar has a red dot.
+
+`bxrig doctor --dev` has a scheduler row, and the setup wizard offers to install the scheduler.
+
 ## Your own tasks
 
 ```bash

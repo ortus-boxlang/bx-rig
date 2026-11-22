@@ -9,6 +9,7 @@ class ControlCenterPages {
 			{ id: "boxlang", title: "BoxLang", icon: "archive" },
 			{ id: "modules", title: "Modules", icon: "cubes" },
 			{ id: "servers", title: "Servers", icon: "server" },
+			{ id: "tasks", title: "Tasks", icon: "tasks" },
 			{ id: "java", title: "Java", icon: "coffee" },
 			{ id: "maven", title: "Maven", icon: "wrench" },
 			{ id: "gradle", title: "Gradle", icon: "gear" },

@@ -5,6 +5,8 @@
 -- Data: `bxrig system updates --json` (data.total, data.needs_reboot), read at load and every 10 minutes in the background. The panel
 -- refreshes the same data every 60 s while it is open and publishes it with noctalia.state, which this widget watches, so the badge
 -- follows the panel without a second command.
+-- A red dot follows the glyph while a scheduled task is failing (`bxrig scheduler --json`, data.failing, read with the updates; the
+-- panel's Tasks tab publishes taskFailures with noctalia.state too).
 -- Click opens the panel, right click checks again now.
 
 local bxrig = require("./bxrig.luau")
@@ -15,9 +17,13 @@ local count = nil -- number of waiting updates, nil when unknown
 local reboot = false
 local failure = nil
 local loading = false
+local taskFailures = 0
 
 local function draw()
 	local kids = { ui.glyph({ name = "device-desktop-cog", color = reboot and "tertiary" or "secondary" }) }
+	if taskFailures > 0 then
+		table.insert(kids, ui.box({ width = 7, height = 7, radius = 4, fill = "error" }))
+	end
 	if count ~= nil and count > 0 then
 		local text = count > 99 and "99+" or tostring(count)
 		table.insert(kids, ui.label({ text = text, fontWeight = "bold", color = "primary" }))
@@ -33,6 +39,9 @@ local function draw()
 		end
 	elseif failure ~= nil then
 		tip = "System: updates unknown (" .. failure .. ")"
+	end
+	if taskFailures > 0 then
+		tip = tip .. " - " .. (taskFailures == 1 and "1 scheduled task is failing" or (taskFailures .. " scheduled tasks are failing"))
 	end
 	barWidget.setTooltip(tip)
 end
@@ -56,6 +65,13 @@ local function fetch()
 		end
 		draw()
 	end, 240000)
+	bxrig.json({ "scheduler", "--json" }, function(data, err)
+		if err == nil then
+			taskFailures = tonumber(data.failing) or 0
+			noctalia.state.set("taskFailures", taskFailures)
+			draw()
+		end
+	end, 30000)
 end
 
 -- the panel publishes its fresher numbers
@@ -63,6 +79,12 @@ noctalia.state.watch("updates", function(value)
 	if type(value) == "number" then
 		count = value
 		failure = nil
+		draw()
+	end
+end)
+noctalia.state.watch("taskFailures", function(value)
+	if type(value) == "number" then
+		taskFailures = value
 		draw()
 	end
 end)

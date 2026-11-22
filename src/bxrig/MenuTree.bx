@@ -389,6 +389,7 @@ class MenuTree {
 							run( "Off", [ "update", "notifications", "off" ] )
 						] ),
 					sub( "Scheduler", [
+							tui( "Task manager", [ "tasks" ], "tasks" ),
 							run( "Status", [ "scheduler", "status" ] ),
 							run( "Install (runs the timers on BoxLang)", [ "scheduler", "install", "--yes" ] ),
 							run( "Restart with the latest tasks", [ "scheduler", "reload" ] )

@@ -196,6 +196,7 @@ jobs:
           (cd src && matchbox ../tests/boxlang_runtime_test.bxs)
           (cd src && matchbox ../tests/servers_test.bxs)
           (cd src && matchbox ../tests/scheduler_test.bxs)
+          (cd src && matchbox ../tests/tasks_test.bxs)
           (cd src && matchbox ../tests/text_test.bxs)
           (cd src && matchbox ../tests/fmt_test.bxs)
           (cd src && matchbox ../tests/command_spec_test.bxs)

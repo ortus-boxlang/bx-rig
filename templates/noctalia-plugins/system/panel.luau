@@ -1,5 +1,5 @@
 --!nonstrict
--- BxRig System panel: four tabs, Updates, Backups, Network and BoxLang.
+-- BxRig System panel: five tabs, Updates, Backups, Network, BoxLang and Tasks.
 --
 -- Updates (`bxrig system updates --json`, every 60 s while open): the number waiting and the repo / AUR split, a banner when a restart is
 --   needed (a pending kernel, systemd or glibc update, or a kernel that was already replaced), a filter (All, Repo, AUR), the package list
@@ -15,6 +15,9 @@
 -- BoxLang (`bxrig boxlang check --json`, every 10 minutes while open, since it asks ForgeBox): the BoxLang you run and the latest release
 --   with "Update BoxLang" (`bxrig boxlang update --yes` in a terminal), the modules with the ForgeBox version of each outdated one and
 --   "Update modules" (`bxrig boxlang modules update`), "Open home folder" (`bxrig boxlang home --open`) and the Modules page in the Control Center.
+-- Tasks (`bxrig scheduler --json`, every 60 s while open): the scheduler (running or not, with Install when it is not), a card for
+--   each failing task (its last output, Run again, Show in a terminal, Pause), the next five runs, and Open the task manager
+--   (`bxrig tui tasks`). The number of failing tasks is published with noctalia.state (taskFailures) for the bar badge.
 -- The Updates count and the restart flag are published with noctalia.state for the bar widget.
 -- Colors are palette roles only, so the panel follows the active theme.
 
@@ -42,6 +45,10 @@ local bkFetchedMs = -REFRESH_MS
 local net = { wifi = nil, last = nil, dnsCurrent = "", busy = {}, err = nil, qr = nil, qrStamp = 0 }
 local netFetchedMs = -REFRESH_MS
 local DNS_ORDER = { { id = "cloudflare", name = "Cloudflare" }, { id = "quad9", name = "Quad9" }, { id = "google", name = "Google" }, { id = "dhcp", name = "Your router" } }
+
+local tk = nil -- data of `scheduler --json`
+local tkErr = nil
+local tkFetchedMs = -REFRESH_MS
 
 local bl = nil -- data of `boxlang check --json`
 local blErr = nil
@@ -180,7 +187,25 @@ local function fetchBoxlang()
 	render()
 end
 
+local function fetchTasks()
+	tkFetchedMs = noctalia.nowMs()
+	bxrig.json({ "scheduler", "--json" }, function(data, err)
+		if err ~= nil then
+			tkErr = err
+		else
+			tk = data
+			tkErr = nil
+			noctalia.state.set("taskFailures", num(data.failing))
+		end
+		render()
+	end, 30000)
+end
+
 local function fetchCurrent()
+	if tab == "tasks" then
+		fetchTasks()
+		return
+	end
 	if tab == "updates" then
 		fetchUpdates()
 	elseif tab == "backups" then
@@ -197,6 +222,8 @@ local function fetchedFor(name)
 		return updFetchedMs
 	elseif name == "backups" then
 		return bkFetchedMs
+	elseif name == "tasks" then
+		return tkFetchedMs
 	elseif name == "boxlang" then
 		-- the BoxLang check asks ForgeBox, so it is refreshed every 10 minutes, not every minute
 		return blFetchedMs + BL_REFRESH_MS - REFRESH_MS
@@ -677,6 +704,118 @@ local function networkBody(items)
 		end }))
 end
 
+-- ---- the Tasks tab ----
+
+-- "2026-11-22T23:00:00" -> "23:00", or "Mon 09:00" when it is not today
+local function whenText(iso)
+	local s2 = str(iso)
+	if s2 == "" then
+		return "-"
+	end
+	local today = os.date("%Y-%m-%d")
+	if s2:sub(1, 10) == today then
+		return s2:sub(12, 16)
+	end
+	return s2:sub(6, 10) .. " " .. s2:sub(12, 16)
+end
+
+local function tasksBody(items)
+	if tk == nil then
+		if tkErr ~= nil then
+			table.insert(items, notice("alert-triangle", "error", "Could not read the scheduler", tkErr, "tk-err"))
+		else
+			table.insert(items, centered("loader", "primary", "Reading the scheduler…", "tk-loading"))
+		end
+		return
+	end
+	local svc = str(tk.service)
+	local tasks = list(tk.tasks)
+	local up = svc == "active"
+	local headRow = {
+		ui.box({ width = 10, height = 10, radius = 5, fill = up and "primary" or "error" }),
+		ui.column({ flexGrow = 1, gap = 1 }, {
+			ui.label({ text = up and "Scheduler running" or ("Scheduler " .. svc), fontSize = 14, fontWeight = "semibold" }),
+			ui.label({ text = #tasks .. " tasks" .. (num(tk.failing) > 0 and (", " .. num(tk.failing) .. " failing") or ""), fontSize = 11, color = "on_surface_variant" }),
+		}),
+	}
+	if svc == "not installed" then
+		table.insert(headRow, ui.button({ key = "tk-install", text = "Install", glyph = "download", variant = "primary", controlSize = "sm",
+			onClick = function()
+				inTerminal({ bx({ "scheduler", "install", "--yes" }) })
+				panel.close()
+			end }))
+	end
+	table.insert(items, card("tk-head", { ui.row({ align = "center", gap = 10 }, headRow) }))
+
+	for _, t in ipairs(tasks) do
+		local st = str(t.last_status)
+		if (st == "failed" or st == "timeout") and t.enabled ~= false then
+			local name = str(t.name)
+			local runs = list((t.stats or {}).trend)
+			local lastOut = ""
+			local stats = t.stats or {}
+			if type(stats.last) == "table" then
+				lastOut = str(stats.last.output)
+			end
+			local lastLine = lastOut:match("([^\n]+)%s*$") or ""
+			table.insert(items, ui.column({ key = "fail-" .. name, gap = 8, paddingH = 12, paddingV = 10, radius = 12, fill = "error/0.10" }, {
+				ui.row({ align = "center", gap = 8 }, {
+					ui.glyph({ name = "alert-circle", size = 18, color = "error" }),
+					ui.label({ text = name .. " " .. (st == "timeout" and "timed out" or "failed"), fontSize = 13, fontWeight = "semibold", flexGrow = 1, maxLines = 1 }),
+					ui.label({ text = whenText(t.last_run), fontSize = 11, color = "on_surface_variant" }),
+				}),
+				ui.label({ text = lastLine ~= "" and lastLine or ("exit " .. str((stats.last or {}).exit)), fontSize = 11, color = "error", maxLines = 2 }),
+				ui.row({ gap = 6 }, {
+					ui.button({ text = "Run again", glyph = "player-play", variant = "primary", controlSize = "sm", onClick = function()
+						inTerminal({ bx({ "scheduler", "run", name }) })
+						panel.close()
+					end }),
+					ui.button({ text = "Show", glyph = "file-text", variant = "outline", controlSize = "sm", onClick = function()
+						inTerminal({ bx({ "scheduler", "show", name }) })
+						panel.close()
+					end }),
+					ui.button({ text = "Pause", glyph = "player-pause", variant = "outline", controlSize = "sm", onClick = function()
+						bxrig.run({ "scheduler", "disable", name }, function()
+							fetchTasks()
+						end, 30000)
+					end }),
+				}),
+			}))
+		end
+	end
+
+	-- the next runs, soonest first
+	local upcoming = {}
+	for _, t in ipairs(tasks) do
+		if t.enabled ~= false and str(t.next_run) ~= "" then
+			table.insert(upcoming, t)
+		end
+	end
+	table.sort(upcoming, function(a, b)
+		return str(a.next_run) < str(b.next_run)
+	end)
+	local nextRows = { ui.label({ text = "Next up", fontSize = 13, fontWeight = "semibold" }) }
+	for i, t in ipairs(upcoming) do
+		if i > 5 then
+			break
+		end
+		table.insert(nextRows, ui.row({ key = "next-" .. str(t.name), gap = 10, align = "center" }, {
+			ui.label({ text = whenText(t.next_run), fontSize = 12, color = "primary", width = 76, maxLines = 1 }),
+			ui.label({ text = str(t.name), fontSize = 12, flexGrow = 1, maxLines = 1 }),
+			ui.label({ text = str(t.when), fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
+		}))
+	end
+	if #upcoming == 0 then
+		table.insert(nextRows, ui.label({ text = "Nothing scheduled.", fontSize = 11, color = "on_surface_variant" }))
+	end
+	table.insert(items, card("tk-next", nextRows))
+	table.insert(items, ui.button({ key = "tk-open", text = "Open the task manager", glyph = "terminal-2", variant = "ghost",
+		onClick = function()
+			noctalia.runInTerminal(shq(bxrig.command()) .. " tui tasks")
+			panel.close()
+		end }))
+end
+
 -- ---- the BoxLang tab ----
 
 local function boxlangBody(items)
@@ -802,6 +941,18 @@ render = function()
 				end,
 			}),
 			ui.button({
+				key = "tab-tasks",
+				text = (tk ~= nil and num(tk.failing) > 0) and ("Tasks " .. num(tk.failing) .. " ✗") or "Tasks",
+				glyph = "list-check",
+				variant = tab == "tasks" and "primary" or "outline",
+				selected = tab == "tasks",
+				controlSize = "sm",
+				flexGrow = 1,
+				onClick = function()
+					selectTab("tasks")
+				end,
+			}),
+			ui.button({
 				key = "tab-boxlang",
 				text = (bl ~= nil and (bl.boxlang or {}).update == true or num((bl or {}).outdated) > 0) and "BoxLang •" or "BoxLang",
 				glyph = "brand-java",
@@ -836,6 +987,8 @@ render = function()
 		backupsFooter(sections)
 	elseif tab == "boxlang" then
 		boxlangBody(sections)
+	elseif tab == "tasks" then
+		tasksBody(sections)
 	else
 		networkBody(sections)
 	end
@@ -853,7 +1006,7 @@ end
 function onOpen(context)
 	closeButton = noctalia.getSetting("shell.show_close_buttons") ~= false
 	-- `noctalia msg panel-toggle bxrig/system:panel network` opens straight on a tab
-	if type(context) == "string" and (context == "updates" or context == "backups" or context == "network" or context == "boxlang") then
+	if type(context) == "string" and (context == "updates" or context == "backups" or context == "network" or context == "boxlang" or context == "tasks") then
 		tab = context
 	end
 	panel.setWantsSecondTicks(true)

@@ -56,6 +56,7 @@ ICONS = [
 	('bxrig-boxlang', 'cube', 'develop', 'apps', 'BoxLang', 'the BoxLang page'),
 	('bxrig-modules', 'stack', 'develop', 'apps', 'BoxLang modules', 'the BoxLang modules page'),
 	('bxrig-servers', 'globe', 'develop', 'apps', 'Servers', 'the Servers page'),
+	('bxrig-tasks', 'list-checks', 'system', 'apps', 'Tasks', 'the Tasks page'),
 	('bxrig-java', 'coffee', 'develop', 'apps', 'Java', 'the Java page'),
 	('bxrig-maven', 'wrench', 'develop', 'apps', 'Maven', 'the Maven page'),
 	('bxrig-gradle', 'hammer', 'develop', 'apps', 'Gradle', 'the Gradle page'),
