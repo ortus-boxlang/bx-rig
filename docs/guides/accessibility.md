@@ -17,6 +17,10 @@ bxrig accessibility contrast dark         # dark, light, colorblind, or off to g
 
 They are settings: they act at once, and `--dry-run` shows the commands first.
 
+<video src="../assets/clips/accessibility-page.webm" poster="../assets/screenshots/accessibility-page.webp" autoplay loop muted playsinline width="100%"></video>
+
+![The accessibility commands and the zoom keys](../assets/screenshots/accessibility-cli.webp)
+
 ## Zoom
 
 The same keys as on a Mac (Option is `Alt`, Cmd is `Super`):
@@ -40,5 +44,9 @@ Turns off the animations of windows and workspaces (Hyprland), of the bar and pa
 | `bxrig-contrast-dark` | white on black, a yellow accent |
 | `bxrig-contrast-light` | black on white, a blue accent |
 | `bxrig-colorblind` | blue and orange instead of red and green (Okabe-Ito hues), on a dark slate |
+
+![BxRig Contrast Dark in the Themes page](../assets/screenshots/theme-contrast-dark.webp)
+
+![BxRig Colorblind in the Themes page](../assets/screenshots/theme-colorblind.webp)
 
 Every text colour in them is at least 7:1 against the background (WCAG AAA); a test checks it. Their wallpapers are plain, and Neovim gets the matching high-contrast or colour-blind GitHub colorscheme. `bxrig accessibility contrast off` goes back to the theme you had before. They are ordinary themes too: `bxrig theme set bxrig-colorblind` works.
