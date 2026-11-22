@@ -9,6 +9,7 @@ class PageFactory {
 			case "dashboard": return new bxrig.DashboardPage( arguments.dashboard );
 			case "apps": return new bxrig.AppsPage( d );
 			case "boxlang": return new bxrig.ListPage( new bxrig.BoxlangProvider( d ) );
+			case "modules": return new bxrig.ListPage( new bxrig.BoxlangModulesProvider( d ) );
 			case "java": return new bxrig.ListPage( new bxrig.JavaProvider( d ) );
 			case "maven": return new bxrig.ListPage( new bxrig.SdkProvider( "maven", d ) );
 			case "gradle": return new bxrig.ListPage( new bxrig.SdkProvider( "gradle", d ) );

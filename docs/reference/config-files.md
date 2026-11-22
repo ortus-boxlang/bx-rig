@@ -23,6 +23,7 @@ summary: Where BxRig keeps things.
 | `~/.local/share/bxrig/plates/` | the logo-button and Launchpad-grid plates (SVG and PNG) the Noctalia bar and dock point at |
 | `~/.matchbox.env` | your MatchBox environment variables (`bxrig boxlang matchbox env`, mode 600); a MatchBox with a runtime home reads it on every run |
 | `~/.matchbox/config/boxlang.json` | the MatchBox runtime config (`bxrig boxlang matchbox log-level` changes `logging.rootLevel`); `MATCHBOX_HOME` moves the home |
+| `~/.boxlang` | BoxLang's home: modules (`bxrig boxlang modules`), `config/boxlang.json` and logs; `BOXLANG_HOME` moves it (`bxrig boxlang home`) |
 | `~/.config/bxrig/display.json` | what you chose in `bxrig display` (scale, rotation, mirror, laptop panel) |
 | `~/.config/bxrig/theme.json` | the current theme and mode |
 | `~/.config/bxrig/theme/hypr.lua` | generated Hyprland border colours of the theme; never edit |

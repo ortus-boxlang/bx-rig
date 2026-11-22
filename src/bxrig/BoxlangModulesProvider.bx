@@ -1,0 +1,70 @@
+// BoxLang modules: what bx-module has installed in BoxLang's home, with the ForgeBox version next to each one.
+// Reads `bxrig boxlang modules installed --json` and `modules outdated --json`. u updates the module (or every outdated one on the
+// "all" row), x removes it, i asks for a module to install. A module another one pulled in is shown under it (└) and cannot be removed here.
+class BoxlangModulesProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "modules"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "modules" ); }
+	function title() { return "Modules"; }
+	function hint() { return "BoxLang modules from ForgeBox"; }
+	function emptyText() { return "No BoxLang modules installed. Press i to install one (bx-ai, bx-orm, bx-image...)."; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "label", label: "module", w: 26 }, { key: "version", label: "installed", w: 18 }, { key: "latest", label: "ForgeBox", w: 0 } ]; }
+	function style( r ) { return r.outdated ? "warn" : ( r.nested ? "dim" : "ok" ); }
+
+	function detail( r ) {
+		if ( r.kind == "all" ) return [ r.label, "u updates every outdated module (bx-module update --force)." ];
+		var lines = [ r.name & " " & r.version & ( r.outdated ? ", ForgeBox has " & r.latest : "" ) ];
+		lines.append( r.nested ? "Installed because another module needs it." : "u " & ( r.outdated ? "updates it" : "checks it again" ) & ", x removes it. https://forgebox.io/view/" & r.name );
+		return lines;
+	}
+
+	function actions() {
+		return [
+			{ key: "u", label: "update", run: function( r ) {
+					if ( r.kind == "all" ) return { action: "cli", title: "Update the outdated modules", args: [ "boxlang", "modules", "update" ] };
+					return { action: "cli", title: "Update " & r.name, args: [ "boxlang", "modules", "update", r.name ] };
+				} },
+			{ key: "x", label: "remove", run: function( r ) {
+					if ( r.kind == "all" || r.nested ) return {};
+					return { action: "cli", title: "Remove " & r.name, args: [ "boxlang", "modules", "remove", r.name ] };
+				} },
+			{ key: "i", label: "install", run: function( r ) {
+					return { action: "ask", title: "Install a BoxLang module", prompt: "Module (bx-ai, bx-orm@2.5.0 ...)", make: function( v ) { return { action: "cli", title: "Install " & v, args: [ "boxlang", "modules", "install", v ] }; } };
+				} }
+		];
+	}
+
+	// Rows from the two answers (pure, for tests): the modules in bx-module's order, the ForgeBox version merged in, and an "all" row on top when any is outdated.
+	function rowsFrom( installed, outdated ) {
+		var latest = {};
+		for ( var o in arguments.outdated ) latest[ o.name ] = o;
+		var rows = [];
+		var behind = 0;
+		for ( var m in arguments.installed ) {
+			var o2 = latest[ m.name ] ?: {};
+			var old = o2.outdated ?: false;
+			if ( old ) behind++;
+			rows.append( { kind: "module", name: m.name, label: ( m.nested ? "  └ " : "" ) & m.name, version: m.version, latest: old ? o2.latest : "", outdated: old, nested: m.nested, mark: old ? "↑" : "●" } );
+		}
+		if ( behind ) arrayPrepend( rows, { kind: "all", name: "", label: "Update " & behind & " outdated", version: "", latest: "", outdated: true, nested: false, mark: "↑" } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) {
+			var bl = new bxrig.Boxlang( new bxrig.util.Cli( "0" ) );
+			return rowsFrom( bl.parseModules( demoList() ), bl.parseOutdated( demoOutdated() ) );
+		}
+		return rowsFrom( variables.proc.selfData( [ "boxlang", "modules", "installed" ], 300 ).modules ?: [], variables.proc.selfData( [ "boxlang", "modules", "outdated" ], 300 ).modules ?: [] );
+	}
+
+	function demoList() {
+		var nl = chr( 10 );
+		return "✓ bx-ai (2.4.0+31)" & nl & "✓ bx-orm (2.5.0+12)" & nl & "✓ bx-sites (1.0.0+8)" & nl & "  ↳ bx-markdown (1.1.0+4)" & nl & "  ↳ bx-yaml (1.1.0+3)" & nl & "✓ bx-image (1.14.0+28)" & nl & "✓ bx-mail (1.6.0+9)";
+	}
+	function demoOutdated() {
+		var nl = chr( 10 );
+		return "bx-ai                     2.4.0+31        2.4.0+31        ✅ up to date" & nl & "bx-orm                    2.5.0+12        2.6.0+14        🆙 outdated" & nl & "bx-sites                  1.0.0+8         1.0.0+8         ✅ up to date" & nl
+		& "  bx-markdown             1.1.0+4         1.1.0+4         ✅ up to date" & nl & "  bx-yaml                 1.1.0+3         1.2.0+4         🆙 outdated" & nl & "bx-image                  1.14.0+28       1.16.0+30       🆙 outdated" & nl & "bx-mail                   1.6.0+9         1.6.0+9         ✅ up to date";
+	}
+}

@@ -93,4 +93,38 @@ run "$binary" boxlang links --json | jq -e '(.data.links | map(.url) | index("ht
 run "$binary" boxlang welcome >/dev/null; f="$tmp/cfg/bxrig/welcome.html"
 grep -q 'Try BoxLang' "$f" && grep -q 'matchbox.boxlang.io' "$f" && grep -q 'xdg-open' "$LOG" || fail 'welcome page'
 [[ "$(code "$binary" boxlang nope)" == 2 ]] || fail 'usage exits 2'
+
+# ---- check, update, home, modules as rows (the bx-module text is the real output, from tests/fixtures/boxlang) ----
+fx="$root/tests/fixtures/boxlang"
+mkdir -p "$tmp/lib"; : > "$tmp/lib/boxlang-1.18.2.jar"
+logger bx-module "case \"\$1\" in list) cat '$fx/bx-module-list.txt' ;; outdated) cat '$fx/bx-module-outdated.txt' ;; *) echo done ;; esac"
+printf '#!/usr/bin/env bash\necho "curl $*" >> "$LOG"\ncase "$*" in *version-latest*) printf "version=1.19.0+67\\nbuildDate=2026-11-03\\n" ;; *) exit 22 ;; esac\n' > "$tmp/bin/curl"
+chmod +x "$tmp/bin"/*
+j="$(run "$binary" boxlang check --json || true)"
+jq -e '.exit == 10 and .data.boxlang.installed == "1.18.2" and .data.boxlang.latest == "1.19.0+67" and .data.boxlang.update and .data.outdated == 3 and (.data.modules | length) == 7' <<<"$j" >/dev/null || fail "check: $j"
+jq -e '[.data.modules[] | select(.outdated) | .name] == ["bx-toml","bx-yaml","bx-image"] and (.data.modules[] | select(.name == "bx-toml") | .nested and .latest == "1.1.0+2")' <<<"$j" >/dev/null || fail "check rows: $j"
+{ run "$binary" boxlang check || true; } | grep -q '1.18.2  ->  1.19.0+67' || fail 'check text'
+: > "$tmp/lib/boxlang-1.19.0.jar"; rm "$tmp/lib/boxlang-1.18.2.jar"
+{ run "$binary" boxlang check --json || true; } | jq -e '.data.boxlang.update == false' >/dev/null || fail 'the same version with a build number is current'
+run "$binary" boxlang modules installed --json | jq -e '(.data.modules | length) == 7 and .data.modules[0].name == "bx-sites" and .data.modules[1].nested and .data.modules[6].version == "1.14.0+28"' >/dev/null || fail 'modules installed rows'
+run "$binary" boxlang modules outdated --json | jq -e '[.data.modules[] | select(.outdated)] | length == 3' >/dev/null || fail 'modules outdated rows'
+: > "$LOG"; [[ "$(code "$binary" boxlang modules remove bx-ftp)" == 2 ]] && ! grep -q '^bx-module remove' "$LOG" || fail 'remove is a plan without --yes'
+run "$binary" boxlang modules remove bx-ftp --yes >/dev/null; grep -q '^bx-module remove --force bx-ftp' "$LOG" || fail "remove --yes: $(cat "$LOG")"
+: > "$LOG"; run "$binary" boxlang modules update --dry-run >/dev/null; ! grep -q '^bx-module update' "$LOG" || fail 'update --dry-run ran bx-module'
+# update: bvm when it is there, the quick installer when not
+[[ "$(code "$binary" boxlang update)" == 2 ]] || fail 'update without --yes is a plan'
+: > "$LOG"; run "$binary" boxlang update --yes >/dev/null; grep -q '^bvm install latest' "$LOG" && grep -q '^bvm use latest' "$LOG" || fail "update with bvm: $(cat "$LOG")"
+# (only the fakes and the system folders on the PATH, so a real bvm in /usr/local/bin does not count)
+lean() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/bin:/usr/bin:/bin" LOG="$LOG" "$@"; }
+rm "$tmp/bin/bvm"; logger install-boxlang; chmod +x "$tmp/bin/install-boxlang"
+: > "$LOG"; lean "$binary" boxlang update --yes >/dev/null; grep -q '^install-boxlang latest --non-interactive' "$LOG" || fail "update with the quick installer: $(cat "$LOG")"
+rm "$tmp/bin/install-boxlang"; rc=0; lean "$binary" boxlang update --yes >/dev/null 2>&1 || rc=$?; [[ "$rc" == 4 ]] || fail "update with neither exits 4, not $rc"
+# home
+mkdir -p "$tmp/home/.boxlang"
+run "$binary" boxlang home --json | jq -e --arg h "$tmp/home/.boxlang" '.data.home == $h and .data.exists and .data.modules == ($h + "/modules")' >/dev/null || fail 'home'
+{ run env BOXLANG_HOME="$tmp/bh" "$binary" boxlang home --json || true; } | jq -e --arg h "$tmp/bh" '.data.home == $h and (.data.exists | not)' >/dev/null || fail 'home from BOXLANG_HOME'
+: > "$LOG"; run "$binary" boxlang home --open >/dev/null; grep -q "xdg-open $tmp/home/.boxlang" "$LOG" || fail 'home --open'
+# run and repl hand the terminal to boxlang
+: > "$LOG"; run "$binary" boxlang run hello.bxs a b >/dev/null; grep -q '^boxlang hello.bxs a b' "$LOG" || fail "run: $(cat "$LOG")"
+: > "$LOG"; run "$binary" boxlang repl </dev/null >/dev/null; grep -q '^boxlang *$' "$LOG" || fail "repl: $(cat "$LOG")"
 echo "boxlang-test ok"

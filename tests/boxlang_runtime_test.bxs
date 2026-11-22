@@ -1,0 +1,44 @@
+// BoxLang runtime: the version helpers, the bx-module parsers on its real output (tests/fixtures/boxlang), the Modules page and the
+// System panel's BoxLang tab. Run from src/: (cd src && matchbox ../tests/boxlang_runtime_test.bxs)
+testkit = new lib.Check( "boxlang runtime" );
+bl = new bxrig.Boxlang( new bxrig.util.Cli( "0.0.0" ) );
+fx = expandPath( "../tests/fixtures/boxlang" );
+
+// ---- versions ----
+testkit.check( "plainVersion: the x.y.z of a build, a launcher line or a jar name", bl.plainVersion( "1.19.0+67" ) == "1.19.0" && bl.plainVersion( "Ortus BoxLang v1.19.0+67" ) == "1.19.0" && bl.plainVersion( "boxlang-1.18.2.jar" ) == "1.18.2" && bl.plainVersion( "1.20.0-snapshot" ) == "1.20.0-snapshot" && bl.plainVersion( "none" ) == "" );
+testkit.check( "compareVersions: numeric, the build number ignored, a snapshot older than its release", bl.compareVersions( "1.9.0", "1.19.0" ) == -1 && bl.compareVersions( "1.19.0+67", "1.19.0" ) == 0 && bl.compareVersions( "2.0.0", "1.99.9" ) == 1 && bl.compareVersions( "1.20.0-snapshot", "1.20.0" ) == -1 );
+testkit.check( "propertiesVersion: the version= line of version-latest.properties", bl.propertiesVersion( "version=1.19.0+67" & chr( 10 ) & "buildDate=2026-11-03" ) == "1.19.0+67" && bl.propertiesVersion( "codename=Jericho" ) == "" );
+
+// ---- bx-module output ----
+mods = bl.parseModules( fileRead( fx & "/bx-module-list.txt" ) );
+testkit.check( "list: seven modules, the ones another pulled in are nested", mods.len() == 7 && mods[ 1 ].name == "bx-sites" && !mods[ 1 ].nested && mods[ 2 ].nested && mods[ 7 ].name == "bx-image" && mods[ 7 ].version == "1.14.0+28" );
+testkit.check( "list: the header and the requirements line are not modules", mods.filter( function( m ) { return find( "Installed", m.name ) || find( "Running", m.name ); } ).len() == 0 );
+od = bl.parseOutdated( fileRead( fx & "/bx-module-outdated.txt" ) );
+testkit.check( "outdated: a row per module, the dashes and headers skipped", od.len() == 7 && od[ 1 ].name == "bx-sites" );
+testkit.check( "outdated: three behind, with the ForgeBox version", od.filter( function( m ) { return m.outdated; } ).map( function( m ) { return m.name & "@" & m.latest; } ).toList( "," ) == "bx-toml@1.1.0+2,bx-yaml@1.2.0+4,bx-image@1.16.0+30" );
+testkit.check( "outdated: nested rows are marked", od[ 5 ].nested && !od[ 7 ].nested );
+
+// ---- the Modules page ----
+pv = new bxrig.BoxlangModulesProvider( true );
+rows = pv.rowsFrom( mods, od );
+testkit.check( "page: an Update-all row first when any is outdated, then every module", rows.len() == 8 && rows[ 1 ].kind == "all" && find( "3 outdated", rows[ 1 ].label ) > 0 && rows[ 2 ].name == "bx-sites" );
+img = rows.filter( function( r ) { return r.name == "bx-image"; } )[ 1 ];
+testkit.check( "page: an outdated row shows the ForgeBox version and is marked", img.outdated && img.latest == "1.16.0+30" && img.mark == "↑" && pv.style( img ) == "warn" );
+testkit.check( "page: a nested module is indented and dim", rows[ 3 ].nested && find( "└", rows[ 3 ].label ) > 0 && pv.style( rows[ 3 ] ) == "dim" );
+acts = {};
+for ( a in pv.actions() ) acts[ a.key ] = a;
+testkit.check( "page: u on a module updates it, on the first row updates all", acts.u.run( img ).args.toList( " " ) == "boxlang modules update bx-image" && acts.u.run( rows[ 1 ] ).args.toList( " " ) == "boxlang modules update" );
+testkit.check( "page: x removes a module, never a nested one or the all row", acts.x.run( img ).args.toList( " " ) == "boxlang modules remove bx-image" && structIsEmpty( acts.x.run( rows[ 3 ] ) ) && structIsEmpty( acts.x.run( rows[ 1 ] ) ) );
+testkit.check( "page: i asks for a module and installs it", acts.i.run( img ).make( "bx-ai" ).args.toList( " " ) == "boxlang modules install bx-ai" );
+testkit.check( "page: nothing outdated, no all row", pv.rowsFrom( mods, [] ).len() == 7 );
+testkit.check( "page: registered after BoxLang, with its icon", new bxrig.ControlCenterPages().ids()[ 4 ] == "modules" && new bxrig.ControlCenterPages().icon( "modules" ) == "cubes" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "cubes" ) == chr( inputBaseN( "f1b3", 16 ) ) );
+testkit.check( "page: the demo has an outdated module", pv.load().filter( function( r ) { return r.outdated; } ).len() > 0 );
+
+// ---- the System panel's BoxLang tab ----
+pn = fileRead( expandPath( "../templates/noctalia-plugins/system/panel.luau" ) );
+usage = new bxrig.CommandSpec();
+testkit.check( "panel: a BoxLang tab that opens from its context", find( 'key = "tab-boxlang"', pn ) > 0 && find( 'context == "boxlang"', pn ) > 0 && find( "boxlangBody(sections)", pn ) > 0 );
+testkit.check( "panel: it reads boxlang check --json itself (exit 10 is an answer), every 10 minutes", find( '"boxlang", "check", "--json"', pn ) > 0 && find( "BL_REFRESH_MS = 600000", pn ) > 0 && find( "decoded.data.boxlang", pn ) > 0 );
+testkit.check( "panel: Update BoxLang, Update modules, the home folder and the Modules page", find( '{ "boxlang", "update", "--yes" }', pn ) > 0 && find( '{ "boxlang", "modules", "update" }', pn ) > 0 && find( '{ "boxlang", "home", "--open" }', pn ) > 0 && find( '" tui modules"', pn ) > 0 );
+testkit.check( "panel: every command it runs is in the registry", find( "boxlang check", usage.usage( "boxlang" ) ) > 0 && find( "update [--yes]", usage.usage( "boxlang" ) ) > 0 && find( "home [--open]", usage.usage( "boxlang" ) ) > 0 );
+testkit.done( "all passed" );
