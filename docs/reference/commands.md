@@ -1409,10 +1409,18 @@ BoxLang, editors, databases, containers, virtual machines and AI agents.
 BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code extension, links.
 
 ```text
-bxrig boxlang status | use VERSION | matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | modules list|search TEXT|install SLUG...|installed|outdated|update | vscode | links | welcome [--json]
+bxrig boxlang status | check | update [--yes] [--dry-run] | home [--open] | run FILE [ARGS...] | repl | use VERSION [--json]
+bxrig boxlang modules list|search TEXT|installed|outdated [--json] | install SLUG... | update [SLUG...] | remove SLUG... [--yes] [--dry-run]
+bxrig boxlang matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | vscode | links | welcome [--json]
 ```
 
 ```bash
+bxrig boxlang check
+bxrig boxlang update --yes
+bxrig boxlang home --open
+bxrig boxlang run hello.bxs
+bxrig boxlang modules outdated --json
+bxrig boxlang modules remove bx-ftp --yes
 bxrig boxlang status
 bxrig boxlang modules list
 bxrig boxlang use 1.8.0
@@ -1420,6 +1428,8 @@ bxrig boxlang matchbox status
 bxrig boxlang matchbox log-level debug --yes
 bxrig boxlang matchbox env set OPENAI_API_KEY sk-... --yes
 ```
+
+> check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows.
 
 ### `bxrig editor` {#bxrig-editor}
 

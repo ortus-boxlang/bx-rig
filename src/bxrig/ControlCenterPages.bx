@@ -7,6 +7,7 @@ class ControlCenterPages {
 			{ id: "dashboard", title: "Dashboard", icon: "home" },
 			{ id: "apps", title: "Apps", icon: "cube" },
 			{ id: "boxlang", title: "BoxLang", icon: "archive" },
+			{ id: "modules", title: "Modules", icon: "cubes" },
 			{ id: "java", title: "Java", icon: "coffee" },
 			{ id: "maven", title: "Maven", icon: "wrench" },
 			{ id: "gradle", title: "Gradle", icon: "gear" },

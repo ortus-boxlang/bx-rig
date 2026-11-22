@@ -27,6 +27,29 @@ bxrig boxlang welcome                 # a getting-started page
 
 Modules come from [ForgeBox](https://forgebox.io) and install with `bx-module`. VS Code is a default app; the wizard offers to add the BoxLang extension (`ortus-solutions.vscode-boxlang`) and the developer pack.
 
+## Keep BoxLang up to date
+
+BoxLang runs on the JVM next to BxRig, for scripts, schedulers and web apps. Keeping it and its modules current is one command each:
+
+```bash
+bxrig boxlang check                   # your BoxLang against the latest release, and every module against ForgeBox
+bxrig boxlang update --yes            # bvm install latest + bvm use latest (or the quick installer when there is no bvm)
+bxrig boxlang modules outdated        # the bx-module table
+bxrig boxlang modules update          # every outdated module (bx-module update --force)
+bxrig boxlang modules remove bx-ftp --yes
+bxrig boxlang home --open             # ~/.boxlang (or BOXLANG_HOME): modules, config, logs
+bxrig boxlang run hello.bxs           # the real boxlang, in this terminal
+bxrig boxlang repl
+```
+
+![bxrig boxlang check](../assets/screenshots/boxlang-check.webp)
+
+`check` reads the version from the jar next to `boxlang`, so the runtime is never started for it, and the latest from `version-latest.properties` on downloads.ortussolutions.com. It exits 10 when anything is behind, like `bxrig update check`. A build number does not count: 1.19.0 and 1.19.0+67 are the same release.
+
+The **System panel** has a BoxLang tab: the version you run and the latest, an Update button, the modules with the ForgeBox version of each outdated one, Update modules, Open home folder and the Modules page. It asks ForgeBox at most every 10 minutes. The **Control Center** has a Modules page (`bxrig tui modules`): u updates a module (or all outdated, on the first row), x removes one, i installs one.
+
+<video src="../assets/clips/boxlang-modules-page.webm" poster="../assets/screenshots/modules-page.webp" autoplay loop muted playsinline width="100%"></video>
+
 ## The MatchBox home, `.env` files and logs
 
 MatchBox follows the BoxLang CLI. On its first run it creates `~/.matchbox` (move it with `MATCHBOX_HOME`) holding `config/boxlang.json` and `logs/`. Every run also reads two `.env` files: `~/.matchbox.env` (yours) and `.env` in the directory you run from, where the project file wins. Scripts read the values with `getSystemSetting()`. BxRig is a MatchBox program, so it reads them too.

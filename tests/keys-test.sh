@@ -5,7 +5,7 @@ out="$("$binary" keys show)"
 [[ "$out" == *"Super+C"* && "$out" == *"Super+Shift+Q"* ]] || fail 'show lists the shortcuts'
 "$binary" keys show --json | jq -e '.command == "keys show" and .ok and (.data.shortcuts | length) > 100' >/dev/null || fail 'show --json envelope'
 # one unbound row per Control Center page: no keys, not rendered, never a conflict
-"$binary" keys show --json | jq -e '[.data.shortcuts[] | select(.id | startswith("tui-"))] | length == 20 and all(.keys == "")' >/dev/null || fail 'tui rows are unbound'
+"$binary" keys show --json | jq -e '[.data.shortcuts[] | select(.id | startswith("tui-"))] | length == 21 and all(.keys == "")' >/dev/null || fail 'tui rows are unbound'
 "$binary" keys render hyprland | grep -q 'tui databases' && fail 'an unbound row was rendered' || true
 "$binary" keys conflicts --json | jq -e '(.data.within | length) == 0' >/dev/null || fail 'unbound rows are not conflicts'
 "$binary" keys render xremap | grep -q 'Super-c: Ctrl-Shift-c' || fail 'xremap terminal rule'

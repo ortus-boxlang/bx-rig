@@ -54,6 +54,7 @@ ICONS = [
 	('bxrig-dev-services', 'stack', 'develop', 'apps', 'Dev services', 'the developer panel (databases, containers, VMs)'),
 	('bxrig-about', 'info', 'control', 'apps', 'About', 'the About launcher'),
 	('bxrig-boxlang', 'cube', 'develop', 'apps', 'BoxLang', 'the BoxLang page'),
+	('bxrig-modules', 'stack', 'develop', 'apps', 'BoxLang modules', 'the BoxLang modules page'),
 	('bxrig-java', 'coffee', 'develop', 'apps', 'Java', 'the Java page'),
 	('bxrig-maven', 'wrench', 'develop', 'apps', 'Maven', 'the Maven page'),
 	('bxrig-gradle', 'hammer', 'develop', 'apps', 'Gradle', 'the Gradle page'),

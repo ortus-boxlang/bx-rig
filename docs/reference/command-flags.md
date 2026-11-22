@@ -255,6 +255,9 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `bxtimemachine` | `--path` | any |  |
 | `boxlang` | `--list` | any |  |
 | `boxlang` | `--no-open` | any |  |
+| `boxlang` | `--yes` | bool |  |
+| `boxlang` | `--dry-run` | bool |  |
+| `boxlang` | `--open` | bool |  |
 | `db` | `--ask-password` | bool |  |
 | `db` | `--keep-data` | bool |  |
 | `db` | `--name` | bool |  |
