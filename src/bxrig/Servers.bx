@@ -35,6 +35,7 @@ class Servers {
 		fileWrite( registryFile(), jsonPrettify( serializeJSON( { servers: arguments.rows } ) ) & chr( 10 ) );
 	}
 
+	// Not called find: a method of that name hides the find() built-in inside this class.
 	function findApp( name ) {
 		for ( var r in readRegistry() ) if ( r.name == arguments.name ) return r;
 		return {};
