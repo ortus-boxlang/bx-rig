@@ -66,12 +66,16 @@ bxrig boxlang servers stop shop-api
 bxrig boxlang servers remove shop-api       # forgets it; the folder stays
 ```
 
+<video src="../assets/clips/servers-cli.webm" poster="../assets/screenshots/servers-cli.webp" autoplay loop muted playsinline width="100%"></video>
+
 | The folder has | It runs on | How BxRig drives it |
 |---|---|---|
 | `miniserver.json` | BoxLang MiniServer | `boxlang-miniserver miniserver.json` in the folder, detached; its output in `~/.local/state/bxrig/servers/NAME.log` |
 | `server.json` | CommandBox | `box server start`, `stop` and `log` with `directory=` the folder |
 
 The port, host and web root are read from that file every time, so editing it is enough. An app runs when its port is listening. A CommandBox app without `web.http.port` gets a port from CommandBox, so BxRig cannot tell it runs or open it: set the port in `server.json`. The registry is `~/.config/bxrig/servers.json`.
+
+![The Servers page](../assets/screenshots/servers-page.webp)
 
 The Developer panel also has a **Ports** tab: what listens on this machine (your dev servers, databases and apps, not the system's own), with a button to open a web port.
 
