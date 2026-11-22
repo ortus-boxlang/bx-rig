@@ -53,7 +53,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`accessibility`](#bxrig-accessibility), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
-**System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
+**System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`git`](#bxrig-git), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
 
 **Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`ai`](#bxrig-ai), [`skills`](#bxrig-skills)
 
@@ -140,16 +140,19 @@ bxrig status --json
 
 ### `bxrig doctor` {#bxrig-doctor}
 
-Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing.
+Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing. --dev adds advice on your developer setup.
 
 ```text
-bxrig doctor [--json]
+bxrig doctor [--dev] [--json]
 ```
 
 ```bash
 bxrig doctor
+bxrig doctor --dev
 bxrig doctor --json
 ```
+
+> --dev checks git name and email, an SSH key, the SSH agent, commit signing, a container engine and EDITOR. They print warn with the command that fixes them and never change the exit code.
 
 ### `bxrig update` {#bxrig-update}
 
@@ -1090,6 +1093,26 @@ bxrig ssh key [--email=ADDRESS] [--yes] [--dry-run] [--json]
 bxrig ssh key --email=me@example.com --yes
 ```
 
+### `bxrig git` {#bxrig-git}
+
+Sign commits and tags with your SSH key.
+
+```text
+bxrig git signing [status] [--json]
+bxrig git signing on [--key=PATH] [--yes] [--dry-run] [--json]
+bxrig git signing off [--yes] [--dry-run] [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig git signing
+bxrig git signing on --yes
+bxrig git signing on --key=~/.ssh/work_ed25519 --yes
+```
+
+> on sets gpg.format ssh, user.signingkey, commit.gpgsign and tag.gpgsign, and adds your email and key to ~/.config/git/allowed_signers so git can verify. It needs the key (bxrig ssh key --yes) and git user.email. off stops signing and keeps the key. Add the key to GitHub as a Signing key for the Verified badge.
+
 ### `bxrig secrets` {#bxrig-secrets}
 
 API keys and tokens in the system keyring, loaded per command, exported encrypted.
@@ -1386,10 +1409,18 @@ BoxLang, editors, databases, containers, virtual machines and AI agents.
 BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code extension, links.
 
 ```text
-bxrig boxlang status | use VERSION | matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | modules list|search TEXT|install SLUG...|installed|outdated|update | vscode | links | welcome [--json]
+bxrig boxlang status | check | update [--yes] [--dry-run] | home [--open] | run FILE [ARGS...] | repl | use VERSION [--json]
+bxrig boxlang modules list|search TEXT|installed|outdated [--json] | install SLUG... | update [SLUG...] | remove SLUG... [--yes] [--dry-run]
+bxrig boxlang matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | vscode | links | welcome [--json]
 ```
 
 ```bash
+bxrig boxlang check
+bxrig boxlang update --yes
+bxrig boxlang home --open
+bxrig boxlang run hello.bxs
+bxrig boxlang modules outdated --json
+bxrig boxlang modules remove bx-ftp --yes
 bxrig boxlang status
 bxrig boxlang modules list
 bxrig boxlang use 1.8.0
@@ -1397,6 +1428,8 @@ bxrig boxlang matchbox status
 bxrig boxlang matchbox log-level debug --yes
 bxrig boxlang matchbox env set OPENAI_API_KEY sk-... --yes
 ```
+
+> check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows.
 
 ### `bxrig editor` {#bxrig-editor}
 

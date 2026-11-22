@@ -27,6 +27,7 @@
 - [Mice, trackpads and keyboards](https://bxcachy.boxlang.io/guides/input.md) ([HTML](https://bxcachy.boxlang.io/guides/input/index.html))
 - [Your NAS](https://bxcachy.boxlang.io/guides/nas.md) ([HTML](https://bxcachy.boxlang.io/guides/nas/index.html))
 - [BoxLang and MatchBox](https://bxcachy.boxlang.io/guides/boxlang.md) ([HTML](https://bxcachy.boxlang.io/guides/boxlang/index.html))
+- [Developer tools](https://bxcachy.boxlang.io/guides/developer-tools.md) ([HTML](https://bxcachy.boxlang.io/guides/developer-tools/index.html))
 - [Updates and channels](https://bxcachy.boxlang.io/guides/updates.md) ([HTML](https://bxcachy.boxlang.io/guides/updates/index.html))
 - [Move to another machine](https://bxcachy.boxlang.io/guides/settings.md) ([HTML](https://bxcachy.boxlang.io/guides/settings/index.html))
 - [Security](https://bxcachy.boxlang.io/guides/security.md) ([HTML](https://bxcachy.boxlang.io/guides/security/index.html))

@@ -1068,3 +1068,18 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - `appearance font-rendering default|smooth|crisp|sharp|status` writes one fontconfig file through ConfigService (backup and journal) and GTK's `font-hinting` and `font-antialiasing`. `default` removes only a file BxRig wrote.
 - Both are settings: they act at once, `--dry-run` shows the commands. Both are remembered in appearance.json (`ui_font`, `rendering`) and `appearance status` shows them.
 - JetBrains Mono stays the default coding font; Inter is the recommended interface font.
+
+## Developer tools (decided with the owner 2026-11-22)
+
+- Catalog: Postman, Insomnia and Bruno (API clients; AUR on Arch, Flathub elsewhere); kubectl, k9s, Helm, OpenTofu, AWS, Google Cloud and Azure CLIs (a new `cloud` profile); atuin and just. No other shell tools. Every package name was checked on each distribution; one that is not packaged is not offered.
+- `git signing status|on|off [--key=PATH]`: SSH signing only. `on` and `off` change ~/.gitconfig, so they print a plan until --yes. `on` needs the key and git user.email (exit 4 with the fix). `off` keeps the key and the allowed signers file. The wizard offers `on` after the SSH key, as an optional step.
+- `doctor --dev`: a developer group (git identity, SSH key, SSH agent, signing, container engine, EDITOR). Its rows are advice (`warn`, `advice: true`) and never change the exit code.
+
+## BoxLang runtime (decided with the owner 2026-11-22)
+
+- Built on the tools BoxLang ships, never a copy of them: bvm for versions, the quick installer (`install-boxlang`) when there is no bvm, bx-module for modules. Their text output is parsed leniently; the parsers are tested on real output kept in tests/fixtures/boxlang.
+- `boxlang check`: the installed version comes from the jar next to the `boxlang` launcher (no runtime start), the latest from downloads.ortussolutions.com `version-latest.properties`, modules from `bx-module outdated`. That command asks "update now?" on /dev/tty, so BxRig runs bx-module under `setsid` (no controlling terminal) and the question fails instead of waiting. Exit 10 when BoxLang or any module is behind, as `update check`.
+- `boxlang update` prints a plan until --yes. `modules remove` too; `modules update` and `modules install` keep running at once (as before), and honour --dry-run so the Control Center can show its plan.
+- `boxlang home`: BOXLANG_HOME, else ~/.boxlang. `run` and `repl` hand the terminal to `boxlang` and return its exit code.
+- No `new`, `test` or CommandBox commands here: those stay in CommandBox and bx-cli.
+- The scheduled checks (new BoxLang versions, module updates) arrive with the scheduler; until then the System panel's BoxLang tab checks while it is open.
