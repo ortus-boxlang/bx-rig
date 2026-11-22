@@ -405,6 +405,8 @@ class MenuTree {
 							run( "Update BoxLang", [ "boxlang", "update", "--yes" ] ),
 							spawn( "Open the home folder", [ "boxlang", "home", "--open" ] ),
 							tui( "Modules", [ "modules" ], "cubes" ),
+							tui( "Web apps (servers)", [ "servers" ], "server" ),
+							run( "Find web apps in ~/code", [ "boxlang", "servers", "scan", "~/code", "--yes" ] ),
 							spawn( "Welcome and getting started", [ "boxlang", "welcome" ] ),
 							run( "Browse modules (ForgeBox)", [ "boxlang", "modules", "list" ] ),
 							run( "Update modules", [ "boxlang", "modules", "update" ] ),

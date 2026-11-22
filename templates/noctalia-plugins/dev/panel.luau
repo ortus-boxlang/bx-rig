@@ -1,9 +1,11 @@
 --!nonstrict
--- BxRig Developer panel: three tabs (Databases, Containers, VMs). Every row has a state dot, its name, the host ports as chips and
+-- BxRig Developer panel: five tabs (Databases, Containers, VMs, BoxLang, Ports). Every row has a state dot, its name, the host ports as chips and
 -- buttons: start or stop, copy the connection string (databases and VMs), restart (containers), logs, open (VMs).
 -- Stop and restart need a second click (the button turns into "Sure?" for 4 seconds).
 --
--- Data: dev.luau (bxrig db list, containers list and vm list, all --json), fetched on open and every 15 s while open.
+-- BoxLang: the web apps of `bxrig boxlang servers` (MiniServer and CommandBox): start or stop, open in the browser, the folder, the log.
+-- Ports: what listens on this machine, the system's own left out (`bxrig tui ports --json`): open a web port, the Ports page.
+-- Data: dev.luau (bxrig db list, containers list, vm list, boxlang servers list and tui ports, all --json), fetched on open and every 15 s.
 -- Actions: bxrig db start|stop, containers start|stop|restart, vm start|stop|open, run with runAsync (never through a shell).
 -- Logs and the Machines page open in a terminal with noctalia.runInTerminal (`bxrig containers logs NAME`, `bxrig tui machines`).
 -- Copy: the connection string comes from `bxrig db info ENGINE --show-password --json` and goes to the clipboard through the shell
@@ -20,6 +22,8 @@ local TABS = {
 	{ id = "databases", label = "Databases" },
 	{ id = "containers", label = "Containers" },
 	{ id = "vms", label = "VMs" },
+	{ id = "servers", label = "BoxLang" },
+	{ id = "ports", label = "Ports" },
 }
 
 local data = nil -- last answer of dev.load
@@ -157,6 +161,23 @@ local function openLogs(container)
 	-- the pager keeps the terminal open; without less the output is followed by a prompt (read from the tty: stdin is the pipe, already at its end)
 	noctalia.runInTerminal(cmd .. " | { command -v less >/dev/null 2>&1 && less -R +G || { cat; printf '\\nPress Enter to close '; read -r _ </dev/tty; }; }")
 	panel.close()
+end
+
+-- A server's or a port's log or page, run in a terminal through the shell (names are checked first).
+local function openServerLog(name)
+	if not safeName(name) then
+		actionError = "Not an app name: " .. str(name)
+		render()
+		return
+	end
+	noctalia.runInTerminal(shq(bxrig.command()) .. " boxlang servers log " .. shq(name) .. " --follow")
+	panel.close()
+end
+
+local function openInBrowser(url)
+	if type(url) == "string" and url:match("^https?://[%w%.%-:]+/?$") ~= nil then
+		noctalia.runAsync({ "xdg-open", url })
+	end
 end
 
 local function openMachines()
@@ -390,10 +411,66 @@ local function noEngineBlock()
 	return messageBlock("alert-triangle", "on_surface_variant", "No container engine installed", "Install Podman with: bxrig profile-install containers")
 end
 
+local function serverRow(item, i)
+	local name = str(item.name)
+	local key = "srv-" .. name .. "-" .. i
+	local up = item.state == "running"
+	local buttons = {}
+	if item.state ~= "missing" then
+		if up then
+			table.insert(buttons, confirmButton(key .. "-stop", "player-stop", "Stop", function()
+				perform(key, { "boxlang", "servers", "stop", name })
+			end))
+			table.insert(buttons, iconButton({ key = key .. "-open", glyph = "external-link", tooltip = "Open " .. str(item.url), onClick = function()
+				openInBrowser(item.url)
+			end }))
+		else
+			table.insert(buttons, iconButton({ key = key .. "-start", glyph = "player-play", tooltip = "Start", onClick = function()
+				perform(key, { "boxlang", "servers", "start", name })
+			end }))
+		end
+		table.insert(buttons, iconButton({ key = key .. "-folder", glyph = "folder", tooltip = "Open the folder", onClick = function()
+			perform(key, { "boxlang", "servers", "folder", name })
+		end }))
+	end
+	table.insert(buttons, iconButton({ key = key .. "-log", glyph = "file-text", tooltip = "Log", onClick = function()
+		openServerLog(name)
+	end }))
+	return machineRow({
+		key = key,
+		title = name,
+		subtitle = (item.kind == "miniserver" and "MiniServer" or "CommandBox") .. " · " .. str(item.path),
+		state = item.state,
+		ports = portList(item.port),
+		buttons = buttons,
+	})
+end
+
+local function portRow(item, i)
+	local port = tonumber(item.port) or 0
+	local key = "port-" .. tostring(port) .. "-" .. i
+	local buttons = {}
+	if item.dev == true then
+		table.insert(buttons, iconButton({ key = key .. "-open", glyph = "external-link", tooltip = "Open http://localhost:" .. tostring(port), onClick = function()
+			openInBrowser("http://localhost:" .. tostring(port) .. "/")
+		end }))
+	end
+	return machineRow({
+		key = key,
+		title = str(item.process) ~= "" and str(item.process) or "unknown",
+		subtitle = (item.conflict == true and "conflict · " or "") .. str(item.user) .. " · up " .. str(item.up) .. " · " .. str(item.command),
+		state = item.conflict == true and "missing" or "running",
+		ports = portList(port),
+		buttons = buttons,
+	})
+end
+
 local TAB_EMPTY = {
 	databases = { "database-off", "No databases yet", "Start one with: bxrig db start postgres --yes" },
 	containers = { "box", "No containers", "Containers made with podman or docker run show up here" },
 	vms = { "device-desktop-off", "No virtual machines yet", "Create one with: bxrig vm create linux NAME" },
+	servers = { "world-off", "No BoxLang apps yet", "Add one with: bxrig boxlang servers scan ~/code --yes" },
+	ports = { "plug-off", "Nothing of yours is listening", "Dev servers, databases and apps show up here with their port" },
 }
 
 local function tabBody()
@@ -402,13 +479,13 @@ local function tabBody()
 	end
 	local list = data[tab]
 	if list == nil then
-		if data.engineMissing and tab ~= "vms" then
+		if data.engineMissing and (tab == "databases" or tab == "containers") then
 			return noEngineBlock()
 		end
 		return messageBlock("alert-triangle", "error", str(data.errors[tab]) ~= "" and str(data.errors[tab]) or "Could not read the list", nil)
 	end
 	if #list == 0 then
-		if data.engineMissing and tab ~= "vms" then
+		if data.engineMissing and (tab == "databases" or tab == "containers") then
 			return noEngineBlock()
 		end
 		local e = TAB_EMPTY[tab]
@@ -421,6 +498,10 @@ local function tabBody()
 				table.insert(rows, databaseRow(item, i))
 			elseif tab == "containers" then
 				table.insert(rows, containerRow(item, i))
+			elseif tab == "servers" then
+				table.insert(rows, serverRow(item, i))
+			elseif tab == "ports" then
+				table.insert(rows, portRow(item, i))
 			else
 				table.insert(rows, vmRow(item, i))
 			end
@@ -498,7 +579,10 @@ render = function()
 	table.insert(sections, ui.separator({}))
 	table.insert(sections, ui.row({ align = "center", gap = 8 }, {
 		ui.spacer({ flexGrow = 1 }),
-		ui.button({ text = "Open Machines page", glyph = "terminal-2", variant = "ghost", controlSize = "sm", onClick = openMachines }),
+		ui.button({ text = tab == "servers" and "Open Servers page" or (tab == "ports" and "Open Ports page" or "Open Machines page"), glyph = "terminal-2", variant = "ghost", controlSize = "sm", onClick = function()
+			noctalia.runInTerminal(shq(bxrig.command()) .. " tui " .. (tab == "servers" and "servers" or (tab == "ports" and "ports" or "machines")))
+			panel.close()
+		end }),
 	}))
 	panel.render(ui.column({ flexGrow = 1, gap = 10, padding = 12 }, sections))
 end
@@ -513,7 +597,7 @@ fetch = function()
 		loading = false
 		-- a list that could not be read this time keeps its last good rows (the error shows under the list), unless the engine is gone
 		if data ~= nil and not result.engineMissing then
-			for _, key in ipairs({ "databases", "containers", "vms" }) do
+			for _, key in ipairs({ "databases", "containers", "vms", "servers", "ports" }) do
 				if result[key] == nil and data[key] ~= nil then
 					result[key] = data[key]
 				end

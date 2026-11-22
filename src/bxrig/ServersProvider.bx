@@ -1,0 +1,58 @@
+// Servers: the BoxLang MiniServer and CommandBox apps registered with `bxrig boxlang servers`, running or not.
+// Reads `bxrig boxlang servers list --json`. s starts or stops the app on the row, r restarts it, o opens it in the browser, f opens its
+// folder, l shows its log, a asks for a folder to register, x forgets it (the folder stays).
+class ServersProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "servers"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "servers" ); }
+	function title() { return "Servers"; }
+	function hint() { return "BoxLang and CFML web apps"; }
+	function emptyText() { return "No apps yet. Press a to add a folder with a miniserver.json or server.json (or: bxrig boxlang servers scan ~/code --yes)."; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "app", w: 18 }, { key: "kindLabel", label: "runs on", w: 12 }, { key: "portLabel", label: "port", w: 7 }, { key: "state", label: "", w: 9 }, { key: "path", label: "folder", w: 0 } ]; }
+	function style( r ) { return r.state == "running" ? "ok" : ( r.state == "missing" ? "error" : "dim" ); }
+
+	function detail( r ) {
+		var lines = [ r.name & ( r.state == "running" ? " runs at " & r.url : " is " & r.state ) ];
+		lines.append( ( r.kind == "miniserver" ? "BoxLang MiniServer (miniserver.json)" : "CommandBox (server.json)" ) & ". Web root: " & r.webroot );
+		return lines;
+	}
+
+	function actions() {
+		return [
+			{ key: "s", label: "start/stop", run: function( r ) { return r.state == "running" ? { action: "cli", title: "Stop " & r.name, args: [ "boxlang", "servers", "stop", r.name ] } : { action: "cli", title: "Start " & r.name, args: [ "boxlang", "servers", "start", r.name ] }; } },
+			{ key: "r", label: "restart", run: function( r ) { return { action: "cli", title: "Restart " & r.name, args: [ "boxlang", "servers", "restart", r.name ] }; } },
+			{ key: "o", label: "open", run: function( r ) { return { action: "show", title: "Open " & r.name, args: [ "boxlang", "servers", "open", r.name ] }; } },
+			{ key: "f", label: "folder", run: function( r ) { return { action: "show", title: "Folder of " & r.name, args: [ "boxlang", "servers", "folder", r.name ] }; } },
+			{ key: "l", label: "log", run: function( r ) { return { action: "show", title: "Log of " & r.name, args: [ "boxlang", "servers", "log", r.name ] }; } },
+			{ key: "a", label: "add", run: function( r ) { return { action: "ask", title: "Add an app", prompt: "Folder with a miniserver.json or server.json", make: function( v ) { return { action: "show", title: "Add " & v, args: [ "boxlang", "servers", "add", v ] }; } }; } },
+			{ key: "x", label: "forget", run: function( r ) { return { action: "show", title: "Forget " & r.name, args: [ "boxlang", "servers", "remove", r.name ] }; } }
+		];
+	}
+
+	// The rows from `servers list --json` data (pure, for tests).
+	function rowsFrom( list ) {
+		return arguments.list.map( function( s ) {
+				var r = duplicate( s );
+				r.mark = s.state == "running" ? "●" : ( s.state == "missing" ? "!" : "○" );
+				r.kindLabel = s.kind == "miniserver" ? "MiniServer" : "CommandBox";
+				r.portLabel = s.port > 0 ? s.port & "" : "auto";
+				return r;
+			} );
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoList() );
+		return rowsFrom( variables.proc.selfData( [ "boxlang", "servers", "list" ], 20 ).servers ?: [] );
+	}
+
+	function demoList() {
+		var row = function( name, kind, port, state, path ) { return { name: name, kind: kind, port: port, state: state, path: path, host: "127.0.0.1", webroot: path & ( kind == "commandbox" ? "/public" : "" ), url: "http://127.0.0.1:" & port & "/", pid: state == "running" ? 41020 : 0 }; };
+		return [
+			row( "shop-api", "miniserver", 8080, "running", "~/code/shop-api" ),
+			row( "docs-site", "miniserver", 8090, "stopped", "~/code/docs-site" ),
+			row( "intranet", "commandbox", 8500, "running", "~/code/intranet" ),
+			row( "legacy-cfml", "commandbox", 8888, "stopped", "~/code/legacy-cfml" ),
+			row( "old-demo", "miniserver", 8095, "missing", "~/code/old-demo" )
+		];
+	}
+}

@@ -50,6 +50,35 @@ The **System panel** has a BoxLang tab: the version you run and the latest, an U
 
 <video src="../assets/clips/boxlang-modules-page.webm" poster="../assets/screenshots/modules-page.webp" autoplay loop muted playsinline width="100%"></video>
 
+## Your web apps
+
+Register your BoxLang and CFML web apps once, then start, stop and open them from anywhere: the command line, the Control Center's Servers page (`bxrig tui servers`) or the BoxLang tab of the Developer panel.
+
+```bash
+bxrig boxlang servers scan ~/code --yes     # every folder with a miniserver.json or server.json (3 levels deep; --depth=N)
+bxrig boxlang servers add ~/code/shop-api   # or one folder
+bxrig boxlang servers                       # what is registered, and what runs
+bxrig boxlang servers start shop-api
+bxrig boxlang servers open shop-api         # in the browser
+bxrig boxlang servers log shop-api --follow
+bxrig boxlang servers folder shop-api       # in the file manager
+bxrig boxlang servers stop shop-api
+bxrig boxlang servers remove shop-api       # forgets it; the folder stays
+```
+
+<video src="../assets/clips/servers-cli.webm" poster="../assets/screenshots/servers-cli.webp" autoplay loop muted playsinline width="100%"></video>
+
+| The folder has | It runs on | How BxRig drives it |
+|---|---|---|
+| `miniserver.json` | BoxLang MiniServer | `boxlang-miniserver miniserver.json` in the folder, detached; its output in `~/.local/state/bxrig/servers/NAME.log` |
+| `server.json` | CommandBox | `box server start`, `stop` and `log` with `directory=` the folder |
+
+The port, host and web root are read from that file every time, so editing it is enough. An app runs when its port is listening. A CommandBox app without `web.http.port` gets a port from CommandBox, so BxRig cannot tell it runs or open it: set the port in `server.json`. The registry is `~/.config/bxrig/servers.json`.
+
+![The Servers page](../assets/screenshots/servers-page.webp)
+
+The Developer panel also has a **Ports** tab: what listens on this machine (your dev servers, databases and apps, not the system's own), with a button to open a web port.
+
 ## The MatchBox home, `.env` files and logs
 
 MatchBox follows the BoxLang CLI. On its first run it creates `~/.matchbox` (move it with `MATCHBOX_HOME`) holding `config/boxlang.json` and `logs/`. Every run also reads two `.env` files: `~/.matchbox.env` (yours) and `.env` in the directory you run from, where the project file wins. Scripts read the values with `getSystemSetting()`. BxRig is a MatchBox program, so it reads them too.
