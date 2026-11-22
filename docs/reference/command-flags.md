@@ -41,6 +41,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `wizard` | `--demo` | bool |  |
 | `wizard` | `--out` | value |  |
 | `wizard` | `--pages` | value |  |
+| `doctor` | `--dev` | bool |  |
 | `update` | `--notify` | bool |  |
 | `ascii` | `--font` | value | `dos` |
 | `ascii` | `--color` | value |  |
@@ -175,6 +176,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `system` | `--aur` | bool |  |
 | `system` | `--all` | bool |  |
 | `ssh` | `--email` | value | `me` |
+| `git` | `--key` | value |  |
 | `secrets` | `--from-file` | value |  |
 | `secrets` | `--keyring` | value |  |
 | `secrets` | `--overwrite` | bool |  |

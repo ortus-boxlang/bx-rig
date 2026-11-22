@@ -53,6 +53,8 @@ testkit.check( "power_setup is a step that skips itself without a battery", cmd(
 testkit.check( "input_devices: each choice but none is one optional `input offer` step, no answer adds nothing", cmd( ip.plan( { input_devices: "detect" } ), "input-devices" ) == "bxrig input offer --for=detect" && cmd( ip.plan( { input_devices: "logitech" } ), "input-devices" ) == "bxrig input offer --for=logitech" && cmd( ip.plan( { input_devices: "both" } ), "input-devices" ) == "bxrig input offer --for=both" && find( "input-devices", ids( ip.plan( { input_devices: "none" } ) ) ) == 0 && find( "input-devices", ids( ip.plan( {} ) ) ) == 0 && ( ip.plan( { input_devices: "apple" } ).steps[ 1 ].optional ?: false ) );
 p = ip.plan( { desktops: "hyprland", input_devices: "apple", gestures: true } );
 testkit.check( "the input helpers install before the gestures step needs them", find( "input-devices,gestures", ids( p ) ) > 0 );
+pg = ip.plan( { ssh_key: true, git_signing: true, git_email: "ada@example.com" } );
+testkit.check( "git_signing is an optional step after the SSH key", cmd( pg, "git-signing" ) == "bxrig git signing on --yes" && find( "ssh-key,git-signing", ids( pg ) ) > 0 && find( "git-signing", ids( ip.plan( { ssh_key: true } ) ) ) == 0 );
 testkit.check( "the SSH key takes the git email as its comment", cmd( ip.plan( { ssh_key: true, git_email: "ada@example.com" } ), "ssh-key" ) == "bxrig ssh key --email=ada@example.com" && find( "ssh-key", ids( ip.plan( { ssh_key: false } ) ) ) == 0 );
 p = ip.plan( { desktops: "plasma", layouts: [ "us-intl", "es" ] } );
 testkit.check( "Plasma gets its keyboard layouts through setup keyboard (not pending)", cmd( p, "plasma-keyboard" ) == "bxrig setup keyboard --layouts=us-intl,es" && p.pending.len() == 0 );

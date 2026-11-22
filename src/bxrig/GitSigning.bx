@@ -1,0 +1,101 @@
+// `bxrig git signing status|on|off [--key=PATH] [--yes] [--dry-run] [--json]`: sign commits and tags with your SSH key.
+//   on    git config --global gpg.format ssh, user.signingkey KEY.pub, commit.gpgsign true, tag.gpgsign true and
+//         gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers (your email and key, so `git log --show-signature` can verify)
+//   off   commit.gpgsign and tag.gpgsign false; the key and the allowed signers file stay
+//   status  whether commits and tags are signed, with which key
+// The key is ~/.ssh/id_ed25519.pub unless --key names one (a private key path gets .pub added). on needs the key and git user.email
+// (exit 4 with the command that makes them). on and off change ~/.gitconfig, so they print a plan (exit 2) until --yes.
+// The Proc runner can be injected for tests.
+class GitSigning {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "git signing" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	function home() { return variables.env.home(); }
+	function defaultKey() { return home() & "/.ssh/id_ed25519.pub"; }
+	function signersFile() { return variables.env.xdgConfig( "git/allowed_signers" ); }
+
+	// The public key file for a --key value: "" means the default; a private key path gets .pub.
+	function publicKey( key = "" ) {
+		var k = len( arguments.key ) ? arguments.key : defaultKey();
+		if ( left( k, 2 ) == "~/" ) k = home() & mid( k, 2, len( k ) );
+		return right( k, 4 ) == ".pub" ? k : k & ".pub";
+	}
+
+	// A global git setting, or "" when it is not set.
+	function get( name ) {
+		var r = variables.proc.exec( [ "git", "config", "--global", "--get", arguments.name ], 10 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+
+	// The settings `on` writes (pure, for tests).
+	function onArgvs( pub ) {
+		return [
+			[ "git", "config", "--global", "gpg.format", "ssh" ],
+			[ "git", "config", "--global", "user.signingkey", arguments.pub ],
+			[ "git", "config", "--global", "gpg.ssh.allowedSignersFile", signersFile() ],
+			[ "git", "config", "--global", "commit.gpgsign", "true" ],
+			[ "git", "config", "--global", "tag.gpgsign", "true" ]
+		];
+	}
+
+	function offArgvs() {
+		return [ [ "git", "config", "--global", "commit.gpgsign", "false" ], [ "git", "config", "--global", "tag.gpgsign", "false" ] ];
+	}
+
+	// The allowed signers line: `EMAIL namespaces="git" TYPE KEY` (the key's comment is dropped).
+	function signersLine( email, pubText ) {
+		var parts = listToArray( trim( arguments.pubText ), " " );
+		return arguments.email & ' namespaces="git" ' & ( parts.len() >= 2 ? parts[ 1 ] & " " & parts[ 2 ] : trim( arguments.pubText ) );
+	}
+
+	function state() {
+		var signs = get( "commit.gpgsign" ) == "true";
+		var fmt = get( "gpg.format" );
+		return {
+			signing: signs && fmt == "ssh" ? "on" : ( signs ? "on (" & ( len( fmt ) ? fmt : "openpgp" ) & ")" : "off" ),
+			commits: signs, tags: get( "tag.gpgsign" ) == "true", format: fmt, key: get( "user.signingkey" ), allowed_signers: get( "gpg.ssh.allowedSignersFile" ), email: get( "user.email" )
+		};
+	}
+
+	function status( asJson ) {
+		var s = state();
+		var lines = [ "Signing: " & s.signing & ( s.commits ? " (commits" & ( s.tags ? " and tags" : "" ) & ")" : "" ) ];
+		if ( len( s.key ) ) lines.append( "Key:     " & s.key );
+		if ( s.signing == "off" ) lines.append( "Turn it on: bxrig git signing on --yes" );
+		return variables.out.say( "ok", s, arguments.asJson, lines );
+	}
+
+	function run( words, key, yes, dry, asJson ) {
+		var v = arguments.words.len() ? arguments.words[ 1 ] : "status";
+		if ( arguments.words.len() > 1 || !arrayFind( [ "status", "on", "off" ], v ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "git" ), arguments.asJson );
+		if ( !variables.proc.has( "git" ) ) return variables.out.fail( "precondition", "git was not found (bxrig pkg install git)", arguments.asJson );
+		if ( v == "status" ) return status( arguments.asJson );
+		if ( v == "off" ) {
+			var offs = offArgvs();
+			if ( !arguments.yes || arguments.dry ) return variables.out.plan( "stop signing commits and tags", { commands: offs.map( function( a ) { return a.toList( " " ); } ) }, arguments.asJson, arguments.dry );
+			for ( var a in offs ) if ( variables.proc.exec( a, 10 ).exitCode != 0 ) return variables.out.fail( "failed", "git config failed: " & a.toList( " " ), arguments.asJson );
+			return variables.out.say( "ok", state(), arguments.asJson, [ "Commits and tags are no longer signed. Your key and allowed signers file are kept." ] );
+		}
+		var pub = publicKey( arguments.key );
+		if ( !fileExists( pub ) ) return variables.out.fail( "precondition", "no public key at " & pub & ( len( arguments.key ) ? "" : " (create one: bxrig ssh key --yes)" ), arguments.asJson );
+		var email = get( "user.email" );
+		if ( !len( email ) ) return variables.out.fail( "precondition", "git user.email is not set (git config --global user.email YOU@EXAMPLE.COM)", arguments.asJson );
+		var ons = onArgvs( pub );
+		var line = signersLine( email, fileRead( pub ) );
+		var data = { key: pub, allowed_signers: signersFile(), signer: line, commands: ons.map( function( a ) { return a.toList( " " ); } ) };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "sign commits and tags with " & pub, data, arguments.asJson, arguments.dry, [ "Add the same key to GitHub as a signing key (Settings, SSH keys, Key type: Signing key) for the Verified badge." ] );
+		// the allowed signers file: your line added once, any others kept
+		var sf = signersFile();
+		directoryCreate( getDirectoryFromPath( sf ), true, true );
+		var have = fileExists( sf ) ? fileRead( sf ) : "";
+		if ( !find( line, have ) ) fileWrite( sf, have & ( len( have ) && right( have, 1 ) != chr( 10 ) ? chr( 10 ) : "" ) & line & chr( 10 ) );
+		for ( var a2 in ons ) if ( variables.proc.exec( a2, 10 ).exitCode != 0 ) return variables.out.fail( "failed", "git config failed: " & a2.toList( " " ), arguments.asJson );
+		var s = state();
+		return variables.out.say( "ok", s, arguments.asJson, [ "Commits and tags are signed with " & pub & ".", "Add it to GitHub as a signing key (Settings, SSH keys, Key type: Signing key) for the Verified badge." ] );
+	}
+}
