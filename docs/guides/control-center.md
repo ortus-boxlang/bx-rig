@@ -83,7 +83,8 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 | Storage | this computer's disk first (space used and the last disk speed; `t` tests it), then NAS shares and cloud remotes: mount, unmount, test |
 | Secrets | names only; `v` shows one value for one look |
 | Look | the top bar layout (Minimal, Standard, Dense) with a picture of the bar and the dock, battery percentage, clock format, the key that hides the bar, the app grid style (Launchpad or Terminal-style) and the dock. `-` and `+` (or Right, Space, Enter) pick the previous or next value, and the plan comes first. The color theme is a link to the Themes page |
-| Themes | the 21 themes with a palette and wallpaper preview; Enter shows the plan, y applies |
+| Themes | the 24 themes with a palette and wallpaper preview; Enter shows the plan, y applies |
+| Accessibility | zoom, reduce motion and the three contrast themes, one row each; Enter (or Space) switches the row, with the plan first |
 | Logs | the journal of this boot; `p` changes the lowest priority shown |
 
 In a table, `/` filters the rows (or searches, on Packages), Enter keeps it and Escape clears it. Every key that changes something shows a plan first.

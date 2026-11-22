@@ -8,7 +8,7 @@ chmod +x "$tmp/bin"/*
 run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" PATH="$tmp/bin:$PATH" LOG="$LOG" "$@"; }
 
 # list: 21 bundled themes (11 BxRig: 6 dark, 5 light; 10 from Omarchy), both origins, nothing current yet
-run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 21) and (.data.themes | map(select(.valid)) | length == 21) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-dawn","bxrig-light","bxrig-mint","bxrig-paper","bxrig-sky","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'
+run "$binary" theme list --json | jq -e '.ok and (.data.themes | length == 24) and (.data.themes | map(select(.valid)) | length == 24) and (.data.themes | map(select(.light)) | map(.name) | sort == ["bxrig-contrast-light","bxrig-dawn","bxrig-light","bxrig-mint","bxrig-paper","bxrig-sky","catppuccin-latte","flexoki-light","rose-pine"])' >/dev/null || fail 'list'
 run "$binary" theme show bxrig | grep -q 'accent #00ff78' || fail 'show'
 [[ "$(code "$binary" theme show nope)" == 4 ]] || fail 'unknown theme exits 4'
 [[ "$(code "$binary" theme set nope)" == 4 ]] || fail 'set unknown exits 4'

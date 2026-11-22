@@ -1503,6 +1503,25 @@
 					]
 				},
 				{
+					"name": "accessibility",
+					"summary": "Zoom like a Mac, reduce motion, and three high-contrast themes. All off until you turn them on.",
+					"usage": [
+						"accessibility [status] [--json]",
+						"accessibility zoom on|off|status|in|out|toggle [--dry-run] [--json]",
+						"accessibility reduce-motion on|off|status [--dry-run] [--json]",
+						"accessibility contrast dark|light|colorblind|off|status [--dry-run] [--json]"
+					],
+					"examples": [
+						"bxrig accessibility",
+						"bxrig accessibility zoom on",
+						"bxrig accessibility reduce-motion on",
+						"bxrig accessibility contrast dark"
+					],
+					"mutates": true,
+					"note": "zoom on makes the zoom keys work: Option+Cmd+8 toggles, Option+Cmd+= zooms in, Option+Cmd+- zooms out (Option is Alt, Cmd is Super). While zoom is off the keys only say how to turn it on. Hyprland zooms around the pointer (cursor:zoom_factor); Plasma uses KWin's Zoom effect. reduce-motion turns off window, bar and app animations. contrast picks bxrig-contrast-dark, bxrig-contrast-light or bxrig-colorblind (every text colour at least 7:1, WCAG AAA); off goes back to your theme. Settings act at once; --dry-run shows the commands.",
+					"flags": []
+				},
+				{
 					"name": "toggle",
 					"summary": "Quick switches. Today: stay awake (Noctalia caffeine).",
 					"usage": [

@@ -256,6 +256,14 @@
 			"use": "the Themes page"
 		},
 		{
+			"name": "bxrig-accessibility",
+			"glyph": "person-arms-spread",
+			"category": "look",
+			"context": "apps",
+			"title": "Accessibility",
+			"use": "the Accessibility page"
+		},
+		{
 			"name": "bxrig",
 			"glyph": "",
 			"category": "brand",

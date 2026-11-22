@@ -475,6 +475,12 @@ class {
 				for ( ssi = 2; ssi <= p.len(); ssi++ ) ssWords.append( p[ ssi ] );
 				CLIExit( new bxrig.Screensaver( cli ).run( ssWords, { effect: args.options.effect ?: "", idle: structKeyExists( args.options, "idle" ) }, structKeyExists( args.options, "dry-run" ), structKeyExists( args.options, "yes" ), asJson ) );
 				break;
+			case "accessibility":
+				// Zoom, reduce motion and the contrast themes. See COMMAND-CONTRACT.md (Accessibility).
+				axWords = [];
+				for ( axi = 2; axi <= p.len(); axi++ ) axWords.append( p[ axi ] );
+				CLIExit( new bxrig.Accessibility( cli ).run( axWords, structKeyExists( args.options, "dry-run" ), asJson ) );
+				break;
 			case "toggle":
 			case "dns":
 			case "kernel":

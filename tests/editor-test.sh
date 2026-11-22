@@ -40,7 +40,7 @@ jq -e '.extras == ["lazyvim.plugins.extras.editor.neo-tree"]' "$nv/lazyvim.json"
 cp "$tmp/lazyvim.keep" "$nv/lazyvim.json"
 [[ -L "$nv/lua/plugins/theme.lua" ]] && [[ "$(readlink "$nv/lua/plugins/theme.lua")" == "$tmp/state/bxrig/current/theme/neovim.lua" ]] && [[ -s "$nv/lua/plugins/theme.lua" ]] || fail 'theme.lua links to the current theme file, which exists'
 grep -q 'catppuccin-frappe' "$nv/lua/plugins/theme.lua" || fail 'the default theme is bxrig (catppuccin frappe)'
-[[ "$(ls "$cfg/bxrig/nvim-themes" | wc -l)" == 21 ]] || fail "every theme's neovim.lua is synced ($(ls "$cfg/bxrig/nvim-themes" | wc -l))"
+[[ "$(ls "$cfg/bxrig/nvim-themes" | wc -l)" == 24 ]] || fail "every theme's neovim.lua is synced ($(ls "$cfg/bxrig/nvim-themes" | wc -l))"
 
 # a theme change rewrites the file the link points at
 run "$binary" theme set tokyo-night >/dev/null; grep -q 'tokyonight-night' "$nv/lua/plugins/theme.lua" || fail 'theme set reaches nvim through the link'

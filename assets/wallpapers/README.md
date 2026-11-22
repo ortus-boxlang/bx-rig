@@ -31,3 +31,7 @@ One wallpaper per bundled theme: `<theme>.jpg`, 2560x1440. `bxrig theme set NAME
 ## bxrig-retro
 
 `bxrig-retro.jpg` (2560x1440, JPEG quality 84, about 0.8 MB) is not a Canva design: it is original artwork made for BxRig and drawn by `python3 tools/gen-retro-wallpaper.py` (Pillow), so it is reproducible and the licence is the repository's own. It follows the Retro design: a sliced sunset sun, neon mountains, a perspective grid, stars and scanlines, in the palette of `themes/bxrig-retro/colors.toml`. Change the script and run it again, then `bootstrap/gen-assets.sh` to refresh the hash.
+
+## The accessible themes
+
+`bxrig-contrast-dark.jpg`, `bxrig-contrast-light.jpg` and `bxrig-colorblind.jpg` (2560x1440) are drawn by `python3 tools/gen-contrast-wallpapers.py` (Pillow): the theme's background with one short accent line near the bottom. They are plain on purpose, so text and the pointer stay easy to see. Change the script and run it again, then `bootstrap/gen-assets.sh`.

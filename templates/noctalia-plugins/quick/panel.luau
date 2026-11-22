@@ -10,8 +10,9 @@
 --   appearance bar layout status --json       data.layout
 --   appearance battery-percent status --json  data.battery_percent, data.battery_found (the row is shown on a laptop only)
 --   time format status --json                 data.format
+--   accessibility zoom status --json          data.zoom ("on" | "off")
 -- Writes: toggle stay-awake on|off, notify dnd on|off, theme mode MODE, appearance dock on|off, appearance appgrid launchpad|terminal,
---   appearance bar layout minimal|standard|dense, appearance battery-percent on|off, time format FORMAT.
+--   appearance bar layout minimal|standard|dense, appearance battery-percent on|off, time format FORMAT, accessibility zoom on|off.
 -- Caffeine: Noctalia has IPC to switch it (`noctalia msg caffeine-enable|disable|toggle`, which `bxrig toggle stay-awake` runs) but no
 -- command that reports its state, so the switch shows what this panel last set (kept in noctalia.state until the shell restarts).
 -- Night light is not a command here: it lives in the control center Home tile, so a button opens that tab.
@@ -110,6 +111,9 @@ local function fetchAll()
 	end)
 	read("Clock format", { "time", "format", "status", "--json" }, function(d)
 		S.format = d.format
+	end)
+	read("Zoom", { "accessibility", "zoom", "status", "--json" }, function(d)
+		S.zoom = d.zoom == "on"
 	end)
 end
 
@@ -275,6 +279,12 @@ render = function()
 		local want = v == "true"
 		apply("Dock", { "appearance", "dock", want and "on" or "off" }, function()
 			S.dock = want
+		end)
+	end))
+	table.insert(items, switchRow("zoom", "zoom-in", "Zoom", "Option+Cmd+8 zooms in and out, Option+Cmd+= and - change how much.", S.zoom, function(v)
+		local want = v == "true"
+		apply("Zoom", { "accessibility", "zoom", want and "on" or "off" }, function()
+			S.zoom = want
 		end)
 	end))
 	if S.laptop == true then

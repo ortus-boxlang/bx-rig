@@ -1,0 +1,32 @@
+# BxRig Contrast Dark: white on black, yellow focus. Every text colour is at least 7:1 on the background (WCAG AAA).
+mode = "dark"
+
+accent = "#ffd400"
+selection = "#3a3a3a"
+muted = "#c8c8c8"
+
+background = "#000000"
+dark_background = "#000000"
+darker_background = "#000000"
+lighter_background = "#1f1f1f"
+
+foreground = "#ffffff"
+dark_foreground = "#c8c8c8"
+light_foreground = "#e6e6e6"
+bright_foreground = "#ffffff"
+
+red = "#ff7070"
+yellow = "#ffd400"
+orange = "#ffb347"
+green = "#5cff5c"
+cyan = "#5ce1ff"
+blue = "#7ab8ff"
+magenta = "#ff8cff"
+brown = "#d9a066"
+
+bright_red = "#ff9e9e"
+bright_yellow = "#fff176"
+bright_green = "#9effa0"
+bright_cyan = "#9ef0ff"
+bright_blue = "#a8d1ff"
+bright_magenta = "#ffb3ff"

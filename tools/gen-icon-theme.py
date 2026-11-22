@@ -67,6 +67,7 @@ ICONS = [
 	('bxrig-packages', 'package', 'utility', 'apps', 'Packages', 'the Packages page'),
 	('bxrig-shortcuts', 'keyboard', 'control', 'apps', 'Shortcuts', 'the Shortcuts page'),
 	('bxrig-themes', 'palette', 'look', 'apps', 'Themes', 'the Themes page'),
+	('bxrig-accessibility', 'person-arms-spread', 'look', 'apps', 'Accessibility', 'the Accessibility page'),
 ]
 # existing artwork reused as it is: name -> (scalable source, small source, where)
 REUSED = {

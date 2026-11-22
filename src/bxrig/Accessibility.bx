@@ -1,0 +1,206 @@
+// `bxrig accessibility`: zoom like a Mac, reduce motion, and the three high-contrast themes. Everything is off until you turn it on.
+//   accessibility [status] [--json]
+//   accessibility zoom on|off|status          on: the zoom keys work (Option+Cmd+8 toggles, Option+Cmd+= in, Option+Cmd+- out;
+//                                              Option is Alt and Cmd is Super, as in BxRig's Mac key style). off: zoom out, keys do nothing
+//   accessibility zoom in|out|toggle          what the keys run. While zoom is off they only say how to turn it on
+//   accessibility reduce-motion on|off|status window, bar and app animations off (Hyprland and Noctalia through `appearance animations`,
+//                                              GTK apps with gsettings, Plasma's animation speed in kdeglobals)
+//   accessibility contrast dark|light|colorblind|off|status
+//                                              the theme bxrig-contrast-dark, bxrig-contrast-light or bxrig-colorblind (`theme set`);
+//                                              off goes back to the theme you had before
+// Zoom on Hyprland sets cursor:zoom_factor with `hyprctl eval 'hl.config({ cursor = { zoom_factor = N } })'` (the factor follows the
+// pointer). On Plasma it loads KWin's Zoom effect and calls its shortcuts (view_zoom_in, view_zoom_out, view_actual_size) through
+// kglobalaccel; Plasma also keeps its own keys, Meta+= and Meta+-.
+// State: ~/.config/bxrig/accessibility.json. They are settings: they act at once (no --yes); --dry-run shows the commands.
+// Exit: 0 done, 2 usage, 4 precondition (no Hyprland or Plasma for zoom), 6 a command failed.
+class Accessibility {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "accessibility" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
+
+	function stateFile() { return variables.config.cfgHome() & "/bxrig/accessibility.json"; }
+
+	function defaults() { return { zoom: "off", zoomLevel: 1, zoomLast: 2, reduceMotion: "off", contrast: "off", themeBefore: "" }; }
+
+	function readState() {
+		var s = new bxrig.util.JsonStore().read( stateFile(), {} );
+		var d = defaults();
+		for ( var k in d ) if ( !structKeyExists( s, k ) ) s[ k ] = d[ k ];
+		return s;
+	}
+
+	function writeState( s ) {
+		directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
+		new bxrig.util.JsonStore().write( "accessibility", stateFile(), arguments.s );
+	}
+
+	// The three contrast themes: id -> theme name.
+	function contrastThemes() { return { dark: "bxrig-contrast-dark", light: "bxrig-contrast-light", colorblind: "bxrig-colorblind" }; }
+
+	// ---- zoom (pure parts) ----
+	function zoomMin() { return 1; }
+	function zoomMax() { return 10; }
+	function zoomStepSize() { return 0.5; }
+
+	// The next zoom after a key: { level, last }. in and out move by half a step of magnification; toggle goes to 1 and back to the last zoom.
+	function zoomNext( level, last, action ) {
+		var l = arguments.level;
+		var keep = arguments.last >= 1.5 ? arguments.last : 2;
+		if ( arguments.action == "in" ) l = min( zoomMax(), l + zoomStepSize() );
+		else if ( arguments.action == "out" ) l = max( zoomMin(), l - zoomStepSize() );
+		else if ( arguments.action == "toggle" ) l = l > 1 ? 1 : keep;
+		if ( l > 1 ) keep = l;
+		return { level: l, last: keep };
+	}
+
+	// The command that sets the zoom on Hyprland.
+	function hyprZoomArgv( level ) {
+		return [ "hyprctl", "eval", "hl.config({ cursor = { zoom_factor = " & numberFormat( arguments.level, "0.0" ) & " } })" ];
+	}
+
+	// The KWin shortcut a key maps to on Plasma.
+	function plasmaShortcut( action, level ) {
+		if ( arguments.action == "in" ) return "view_zoom_in";
+		if ( arguments.action == "out" ) return "view_zoom_out";
+		return arguments.level > 1 ? "view_zoom_in" : "view_actual_size";
+	}
+
+	function qdbus() { return variables.proc.has( "qdbus6" ) ? "qdbus6" : "qdbus"; }
+
+	function plasmaShortcutArgv( name ) {
+		return [ qdbus(), "org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component.invokeShortcut", arguments.name ];
+	}
+
+	function plasmaEffectArgv( on ) {
+		return [ qdbus(), "org.kde.KWin", "/Effects", arguments.on ? "org.kde.kwin.Effects.loadEffect" : "org.kde.kwin.Effects.unloadEffect", "zoom" ];
+	}
+
+	// Where zoom runs: "hyprland", "plasma" or "".
+	function desktop() {
+		var d = new bxrig.util.Desktop();
+		if ( d.inHyprland() && variables.proc.has( "hyprctl" ) ) return "hyprland";
+		if ( d.inPlasma() ) return "plasma";
+		return "";
+	}
+
+	// ---- reduce motion (pure parts) ----
+	// The commands besides `appearance animations`: GTK and Plasma.
+	function motionArgvs( reduce ) {
+		var out = [];
+		if ( variables.proc.has( "gsettings" ) ) out.append( [ "gsettings", "set", "org.gnome.desktop.interface", "enable-animations", arguments.reduce ? "false" : "true" ] );
+		var kw = variables.proc.has( "kwriteconfig6" ) ? "kwriteconfig6" : ( variables.proc.has( "kwriteconfig5" ) ? "kwriteconfig5" : "" );
+		if ( len( kw ) ) out.append( [ kw, "--file", "kdeglobals", "--group", "KDE", "--key", "AnimationDurationFactor", arguments.reduce ? "0" : "1" ] );
+		return out;
+	}
+
+	function join( first, rest ) {
+		var out = [ arguments.first ];
+		for ( var x in arguments.rest ) out.append( "  " & x );
+		return out;
+	}
+
+	// ---- commands ----
+	function status( asJson ) {
+		var s = readState();
+		var lines = [
+			"Zoom:          " & s.zoom & ( s.zoom == "on" ? " (now " & numberFormat( s.zoomLevel, "0.0" ) & "x; Option+Cmd+8 toggles, Option+Cmd+= and - zoom)" : "" ),
+			"Reduce motion: " & s.reduceMotion,
+			"Contrast:      " & ( s.contrast == "off" ? "off" : s.contrast & " (" & contrastThemes()[ s.contrast ] & ")" )
+		];
+		return variables.out.say( "ok", { zoom: s.zoom, zoom_level: s.zoomLevel, reduce_motion: s.reduceMotion, contrast: s.contrast }, arguments.asJson, lines );
+	}
+
+	function run( words, dry, asJson ) {
+		var w = arguments.words;
+		if ( !w.len() || ( w.len() == 1 && w[ 1 ] == "status" ) ) return status( arguments.asJson );
+		if ( w.len() != 2 ) return usage( arguments.asJson );
+		if ( w[ 1 ] == "zoom" ) return zoom( w[ 2 ], arguments.dry, arguments.asJson );
+		if ( w[ 1 ] == "reduce-motion" ) return reduceMotion( w[ 2 ], arguments.dry, arguments.asJson );
+		if ( w[ 1 ] == "contrast" ) return contrast( w[ 2 ], arguments.dry, arguments.asJson );
+		return usage( arguments.asJson );
+	}
+
+	function usage( asJson ) { return variables.out.usage( new bxrig.CommandSpec().usage( "accessibility" ), arguments.asJson ); }
+
+	function zoom( action, dry, asJson ) {
+		if ( !arrayFind( [ "on", "off", "status", "in", "out", "toggle" ], arguments.action ) ) return usage( arguments.asJson );
+		var s = readState();
+		if ( arguments.action == "status" ) return variables.out.say( "ok", { zoom: s.zoom, zoom_level: s.zoomLevel }, arguments.asJson, [ "Zoom is " & s.zoom & "." ] );
+		var where = desktop();
+		// the keys while zoom is off: a hint, nothing else (exit 0, so the key does not show an error)
+		if ( arrayFind( [ "in", "out", "toggle" ], arguments.action ) && s.zoom != "on" ) {
+			return variables.out.say( "ok", { zoom: "off", changed: false }, arguments.asJson, [ "Zoom is off. Turn it on: bxrig accessibility zoom on (or the Accessibility page)." ] );
+		}
+		var cmds = [];
+		var next = { level: s.zoomLevel, last: s.zoomLast };
+		if ( arguments.action == "on" ) {
+			s.zoom = "on";
+			if ( where == "plasma" ) cmds.append( plasmaEffectArgv( true ) );
+		} else if ( arguments.action == "off" ) {
+			s.zoom = "off";
+			next = { level: 1, last: s.zoomLast };
+			if ( where == "hyprland" ) cmds.append( hyprZoomArgv( 1 ) );
+			if ( where == "plasma" ) { cmds.append( plasmaShortcutArgv( "view_actual_size" ) ); cmds.append( plasmaEffectArgv( false ) ); }
+		} else {
+			if ( !len( where ) ) return variables.out.precondition( "zoom works in Hyprland or Plasma", arguments.asJson );
+			next = zoomNext( s.zoomLevel, s.zoomLast, arguments.action );
+			cmds.append( where == "hyprland" ? hyprZoomArgv( next.level ) : plasmaShortcutArgv( plasmaShortcut( arguments.action, next.level ) ) );
+		}
+		var data = { zoom: s.zoom, zoom_level: next.level, desktop: where, commands: cmds.map( function( c ) { return c.toList( " " ); } ) };
+		if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, join( "Dry run: zoom " & arguments.action, data.commands ), true );
+		for ( var c in cmds ) {
+			var r = variables.proc.exec( c, 15 );
+			if ( r.exitCode != 0 ) return variables.out.failed( c[ 1 ] & ": " & trim( variables.proc.why( r ) ), arguments.asJson );
+		}
+		s.zoomLevel = next.level;
+		s.zoomLast = next.last;
+		writeState( s );
+		var lines = [];
+		if ( arguments.action == "on" ) lines.append( "Zoom is on: Option+Cmd+8 toggles, Option+Cmd+= zooms in, Option+Cmd+- zooms out." );
+		else if ( arguments.action == "off" ) lines.append( "Zoom is off." );
+		else lines.append( "Zoom " & numberFormat( next.level, "0.0" ) & "x." );
+		if ( arguments.action == "on" && !len( where ) ) lines.append( "note: no Hyprland or Plasma session here; the keys work once you log in to one." );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	function reduceMotion( action, dry, asJson ) {
+		if ( !arrayFind( [ "on", "off", "status" ], arguments.action ) ) return usage( arguments.asJson );
+		var s = readState();
+		if ( arguments.action == "status" ) return variables.out.say( "ok", { reduce_motion: s.reduceMotion }, arguments.asJson, [ "Reduce motion is " & s.reduceMotion & "." ] );
+		var reduce = arguments.action == "on";
+		var cmds = motionArgvs( reduce );
+		var shown = [ "bxrig appearance animations " & ( reduce ? "off" : "on" ) ];
+		for ( var c in cmds ) shown.append( c.toList( " " ) );
+		var data = { reduce_motion: arguments.action, commands: shown };
+		if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, join( "Dry run: reduce motion " & arguments.action, shown ), true );
+		var a = variables.proc.self( [ "appearance", "animations", reduce ? "off" : "on" ], 60 );
+		if ( a.exitCode != 0 ) return variables.out.failed( "appearance animations: " & trim( variables.proc.why( a ) ), arguments.asJson );
+		for ( var c2 in cmds ) variables.proc.exec( c2, 15 );
+		s.reduceMotion = arguments.action;
+		writeState( s );
+		return variables.out.say( "ok", data, arguments.asJson, [ reduce ? "Reduce motion is on: windows, the bar and apps stop animating." : "Reduce motion is off." ] );
+	}
+
+	function contrast( id, dry, asJson ) {
+		var themes = contrastThemes();
+		if ( arguments.id != "off" && arguments.id != "status" && !structKeyExists( themes, arguments.id ) ) return usage( arguments.asJson );
+		var s = readState();
+		if ( arguments.id == "status" ) return variables.out.say( "ok", { contrast: s.contrast }, arguments.asJson, [ "Contrast theme: " & s.contrast & "." ] );
+		var current = new bxrig.Theme( variables.cli ).readState().name;
+		var target = arguments.id == "off" ? ( len( s.themeBefore ) ? s.themeBefore : "bxrig" ) : themes[ arguments.id ];
+		var data = { contrast: arguments.id, theme: target, command: "bxrig theme set " & target };
+		if ( arguments.dry ) return variables.out.say( "ok", data, arguments.asJson, [ "Dry run: " & data.command ], true );
+		var r = variables.proc.self( [ "theme", "set", target ], 300 );
+		if ( r.exitCode != 0 ) return variables.out.failed( "theme set " & target & ": " & trim( variables.proc.why( r ) ), arguments.asJson );
+		// remember the theme to go back to, only when leaving a theme that is not a contrast one
+		if ( arguments.id != "off" && s.contrast == "off" ) s.themeBefore = current;
+		s.contrast = arguments.id;
+		if ( arguments.id == "off" ) s.themeBefore = "";
+		writeState( s );
+		return variables.out.say( "ok", data, arguments.asJson, [ arguments.id == "off" ? "Back to " & target & "." : "Theme " & target & " is on." ] );
+	}
+}
