@@ -152,6 +152,14 @@
 			"use": "the BoxLang page"
 		},
 		{
+			"name": "bxrig-modules",
+			"glyph": "stack",
+			"category": "develop",
+			"context": "apps",
+			"title": "BoxLang modules",
+			"use": "the BoxLang modules page"
+		},
+		{
 			"name": "bxrig-java",
 			"glyph": "coffee",
 			"category": "develop",

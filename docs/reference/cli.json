@@ -2305,9 +2305,17 @@
 					"name": "boxlang",
 					"summary": "BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code extension, links.",
 					"usage": [
-						"boxlang status | use VERSION | matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | modules list|search TEXT|install SLUG...|installed|outdated|update | vscode | links | welcome [--json]"
+						"boxlang status | check | update [--yes] [--dry-run] | home [--open] | run FILE [ARGS...] | repl | use VERSION [--json]",
+						"boxlang modules list|search TEXT|installed|outdated [--json] | install SLUG... | update [SLUG...] | remove SLUG... [--yes] [--dry-run]",
+						"boxlang matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | vscode | links | welcome [--json]"
 					],
 					"examples": [
+						"bxrig boxlang check",
+						"bxrig boxlang update --yes",
+						"bxrig boxlang home --open",
+						"bxrig boxlang run hello.bxs",
+						"bxrig boxlang modules outdated --json",
+						"bxrig boxlang modules remove bx-ftp --yes",
 						"bxrig boxlang status",
 						"bxrig boxlang modules list",
 						"bxrig boxlang use 1.8.0",
@@ -2324,8 +2332,21 @@
 						{
 							"name": "no-open",
 							"type": "any"
+						},
+						{
+							"name": "yes",
+							"type": "bool"
+						},
+						{
+							"name": "dry-run",
+							"type": "bool"
+						},
+						{
+							"name": "open",
+							"type": "bool"
 						}
-					]
+					],
+					"note": "check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows."
 				},
 				{
 					"name": "editor",

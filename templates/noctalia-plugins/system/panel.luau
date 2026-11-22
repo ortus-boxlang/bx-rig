@@ -1,5 +1,5 @@
 --!nonstrict
--- BxRig System panel: three tabs, Updates, Backups and Network.
+-- BxRig System panel: four tabs, Updates, Backups, Network and BoxLang.
 --
 -- Updates (`bxrig system updates --json`, every 60 s while open): the number waiting and the repo / AUR split, a banner when a restart is
 --   needed (a pending kernel, systemd or glibc update, or a kernel that was already replaced), a filter (All, Repo, AUR), the package list
@@ -12,6 +12,9 @@
 --   speed, disk and DNS results (`bxrig system speedtest last --json`) with a Test button each (`system speedtest network|disk --json`,
 --   `dns bench --json`), the DNS providers as a pick-one list (`bxrig dns --json` for the one in use; picking runs `bxrig dns NAME --yes`)
 --   and "Open in Control Center" (`bxrig tui network` in a terminal). A running test shows a spinner label; it cannot be cancelled here.
+-- BoxLang (`bxrig boxlang check --json`, every 10 minutes while open, since it asks ForgeBox): the BoxLang you run and the latest release
+--   with "Update BoxLang" (`bxrig boxlang update --yes` in a terminal), the modules with the ForgeBox version of each outdated one and
+--   "Update modules" (`bxrig boxlang modules update`), "Open home folder" (`bxrig boxlang home --open`) and the Modules page in the Control Center.
 -- The Updates count and the restart flag are published with noctalia.state for the bar widget.
 -- Colors are palette roles only, so the panel follows the active theme.
 
@@ -39,6 +42,12 @@ local bkFetchedMs = -REFRESH_MS
 local net = { wifi = nil, last = nil, dnsCurrent = "", busy = {}, err = nil, qr = nil, qrStamp = 0 }
 local netFetchedMs = -REFRESH_MS
 local DNS_ORDER = { { id = "cloudflare", name = "Cloudflare" }, { id = "quad9", name = "Quad9" }, { id = "google", name = "Google" }, { id = "dhcp", name = "Your router" } }
+
+local bl = nil -- data of `boxlang check --json`
+local blErr = nil
+local blLoading = false
+local BL_REFRESH_MS = 600000
+local blFetchedMs = -BL_REFRESH_MS
 
 local TYPE_GLYPH = { config = "adjustments", system = "device-desktop", data = "folders" }
 
@@ -144,11 +153,40 @@ local function fetchNetwork()
 	end, 20000)
 end
 
+local function fetchBoxlang()
+	if blLoading then
+		return
+	end
+	blLoading = true
+	blFetchedMs = noctalia.nowMs()
+	-- `boxlang check` exits 10 (ok false) when something is behind, and its data is still the answer, so it is read here and not with bxrig.json
+	local started = noctalia.runAsync({ bxrig.command(), "boxlang", "check", "--json" }, function(res)
+		blLoading = false
+		local decoded = noctalia.json.decode(res.stdout or "")
+		if res.timedOut then
+			blErr = "bxrig timed out"
+		elseif type(decoded) == "table" and type(decoded.data) == "table" and decoded.data.boxlang ~= nil then
+			bl = decoded.data
+			blErr = nil
+		else
+			blErr = (type(decoded) == "table" and type(decoded.data) == "table" and decoded.data.error) or "could not check BoxLang"
+		end
+		render()
+	end, 360000)
+	if not started then
+		blLoading = false
+		blErr = "could not start " .. bxrig.command()
+	end
+	render()
+end
+
 local function fetchCurrent()
 	if tab == "updates" then
 		fetchUpdates()
 	elseif tab == "backups" then
 		fetchBackups()
+	elseif tab == "boxlang" then
+		fetchBoxlang()
 	else
 		fetchNetwork()
 	end
@@ -159,6 +197,9 @@ local function fetchedFor(name)
 		return updFetchedMs
 	elseif name == "backups" then
 		return bkFetchedMs
+	elseif name == "boxlang" then
+		-- the BoxLang check asks ForgeBox, so it is refreshed every 10 minutes, not every minute
+		return blFetchedMs + BL_REFRESH_MS - REFRESH_MS
 	end
 	return netFetchedMs
 end
@@ -636,6 +677,83 @@ local function networkBody(items)
 		end }))
 end
 
+-- ---- the BoxLang tab ----
+
+local function boxlangBody(items)
+	if bl == nil then
+		if blErr ~= nil then
+			table.insert(items, notice("alert-triangle", "error", "Could not check BoxLang", blErr, "bl-err"))
+		else
+			table.insert(items, centered("loader", "primary", "Checking BoxLang and its modules (asks ForgeBox)…", "bl-loading"))
+		end
+		return
+	end
+	local b = bl.boxlang or {}
+	local installed = str(b.installed)
+	local latest = str(b.latest)
+	local verRows = {
+		ui.row({ align = "center", gap = 8 }, {
+			ui.glyph({ name = "brand-java", size = 20, color = "primary" }),
+			ui.label({ text = installed ~= "" and ("BoxLang " .. installed) or "BoxLang is not installed", fontSize = 15, fontWeight = "bold", flexGrow = 1 }),
+			ui.label({ text = b.update == true and ("→ " .. latest) or (latest ~= "" and "latest" or ""), fontSize = 12, fontWeight = "semibold", color = b.update == true and "tertiary" or "primary" }),
+		}),
+	}
+	if b.update == true or installed == "" then
+		table.insert(verRows, ui.button({ key = "bl-update", text = installed == "" and "Install BoxLang" or ("Update to " .. latest), glyph = "download", variant = "primary", controlSize = "sm",
+			onClick = function()
+				inTerminal({ bx({ "boxlang", "update", "--yes" }) })
+				panel.close()
+			end }))
+	end
+	table.insert(items, card("bl-version", verRows))
+
+	local mods = list(bl.modules)
+	local behind = num(bl.outdated)
+	local modRows = {
+		ui.row({ align = "center", gap = 8 }, {
+			ui.label({ text = "Modules", fontSize = 13, fontWeight = "semibold" }),
+			ui.label({ text = behind > 0 and (behind .. " outdated") or (#mods .. " up to date"), fontSize = 11, color = behind > 0 and "tertiary" or "on_surface_variant", flexGrow = 1 }),
+		}),
+	}
+	local shown = 0
+	for _, m in ipairs(mods) do
+		if shown >= 12 then
+			break
+		end
+		shown = shown + 1
+		local old = m.outdated == true
+		table.insert(modRows, ui.row({ key = "mod-" .. str(m.name), align = "center", gap = 8, paddingH = 4 }, {
+			ui.glyph({ name = old and "circle-arrow-up" or "circle-check", size = 14, color = old and "tertiary" or "primary" }),
+			ui.label({ text = (m.nested == true and "↳ " or "") .. str(m.name), fontSize = 12, flexGrow = 1, maxLines = 1, color = m.nested == true and "on_surface_variant" or nil }),
+			ui.label({ text = str(m.current) .. (old and (" → " .. str(m.latest)) or ""), fontSize = 11, color = old and "tertiary" or "on_surface_variant", maxLines = 1 }),
+		}))
+	end
+	if #mods == 0 then
+		table.insert(modRows, ui.label({ text = "No modules installed. bx-ai, bx-orm and more are on ForgeBox.", fontSize = 11, color = "on_surface_variant" }))
+	end
+	if behind > 0 then
+		table.insert(modRows, ui.button({ key = "bl-mod-update", text = "Update modules", glyph = "refresh", variant = "outline", controlSize = "sm",
+			onClick = function()
+				inTerminal({ bx({ "boxlang", "modules", "update" }) })
+				panel.close()
+			end }))
+	end
+	table.insert(items, card("bl-modules", modRows))
+
+	table.insert(items, ui.row({ gap = 6 }, {
+		ui.button({ key = "bl-home", text = "Open home folder", glyph = "folder", variant = "ghost", flexGrow = 1,
+			onClick = function()
+				bxrig.run({ "boxlang", "home", "--open" }, function() end, 10000)
+				panel.close()
+			end }),
+		ui.button({ key = "bl-cc", text = "Modules page", glyph = "terminal-2", variant = "ghost", flexGrow = 1,
+			onClick = function()
+				noctalia.runInTerminal(shq(bxrig.command()) .. " tui modules")
+				panel.close()
+			end }),
+	}))
+end
+
 -- ---- the panel ----
 
 render = function()
@@ -684,6 +802,18 @@ render = function()
 				end,
 			}),
 			ui.button({
+				key = "tab-boxlang",
+				text = (bl ~= nil and (bl.boxlang or {}).update == true or num((bl or {}).outdated) > 0) and "BoxLang •" or "BoxLang",
+				glyph = "brand-java",
+				variant = tab == "boxlang" and "primary" or "outline",
+				selected = tab == "boxlang",
+				controlSize = "sm",
+				flexGrow = 1,
+				onClick = function()
+					selectTab("boxlang")
+				end,
+			}),
+			ui.button({
 				key = "tab-network",
 				text = "Network",
 				glyph = "wifi",
@@ -704,6 +834,8 @@ render = function()
 	elseif tab == "backups" then
 		backupsBody(sections)
 		backupsFooter(sections)
+	elseif tab == "boxlang" then
+		boxlangBody(sections)
 	else
 		networkBody(sections)
 	end
@@ -721,7 +853,7 @@ end
 function onOpen(context)
 	closeButton = noctalia.getSetting("shell.show_close_buttons") ~= false
 	-- `noctalia msg panel-toggle bxrig/system:panel network` opens straight on a tab
-	if type(context) == "string" and (context == "updates" or context == "backups" or context == "network") then
+	if type(context) == "string" and (context == "updates" or context == "backups" or context == "network" or context == "boxlang") then
 		tab = context
 	end
 	panel.setWantsSecondTicks(true)

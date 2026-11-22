@@ -401,6 +401,10 @@ class MenuTree {
 			sub( "Develop", [
 					sub( "BoxLang", [
 							run( "Status", [ "boxlang", "status" ] ),
+							run( "Check for updates", [ "boxlang", "check" ] ),
+							run( "Update BoxLang", [ "boxlang", "update", "--yes" ] ),
+							spawn( "Open the home folder", [ "boxlang", "home", "--open" ] ),
+							tui( "Modules", [ "modules" ], "cubes" ),
 							spawn( "Welcome and getting started", [ "boxlang", "welcome" ] ),
 							run( "Browse modules (ForgeBox)", [ "boxlang", "modules", "list" ] ),
 							run( "Update modules", [ "boxlang", "modules", "update" ] ),

@@ -7,12 +7,19 @@
 //   vscode                      `code --install-extension ortus-solutions.vscode-boxlang` and the developer pack
 //   links                       the BoxLang sites (docs, AI, Sites, Agents, MatchBox, ForgeBox, Skills, Try BoxLang...)
 //   welcome                     writes and opens the getting-started page
+//   check                       the BoxLang you run against the latest release (downloads.ortussolutions.com version-latest.properties) and
+//                               `bx-module outdated`; exit 10 when anything is behind, like `update check`
+//   update [--yes]              the latest BoxLang: `bvm install latest` + `bvm use latest` with bvm, else `install-boxlang latest --non-interactive`
+//   home [--open]               BoxLang's home folder (BOXLANG_HOME, else ~/.boxlang): its modules, config and logs
+//   run FILE [ARGS...] | repl   the real `boxlang`, in this terminal
+//   modules remove SLUG... --yes  `bx-module remove --force SLUG...`; modules installed|outdated --json give rows (see parseModules, parseOutdated)
 // Commands come from the BoxLang docs (bvm, bx-module) and the MatchBox quick installer README (mvm). Exit: 0 done, 4 a tool is missing,
 // 6 a command failed.
 class Boxlang {
 	variables.forgebox = "https://forgebox.io/api/v1";
 	variables.extension = "ortus-solutions.vscode-boxlang";
 	variables.pack = "ortus-solutions.vscode-boxlang-developer-pack";
+	variables.latestUrl = "https://downloads.ortussolutions.com/ortussolutions/boxlang/version-latest.properties";
 
 	function init( cli, runner = "" ) {
 		variables.cli = arguments.cli;
@@ -51,6 +58,134 @@ class Boxlang {
 		if ( !variables.proc.has( "bvm" ) ) return "";
 		var r = variables.proc.exec( [ "bvm", "current" ], 30 );
 		return r.exitCode == 0 ? trim( listFirst( r.output, chr( 10 ) ) ) : "";
+	}
+
+	// ---- versions ----
+
+	// "1.19.0+67" -> "1.19.0"; "v1.19.0" -> "1.19.0".
+	function plainVersion( v ) {
+		var m = reFind( "[0-9]+\.[0-9]+\.[0-9]+(-snapshot)?", arguments.v & "", 1, true );
+		return m.pos[ 1 ] > 0 ? mid( arguments.v, m.pos[ 1 ], m.len[ 1 ] ) : "";
+	}
+
+	// -1, 0 or 1, comparing x.y.z numerically (a snapshot counts as older than its release).
+	function compareVersions( a, b ) {
+		var x = listToArray( listFirst( plainVersion( arguments.a ), "-" ), "." );
+		var y = listToArray( listFirst( plainVersion( arguments.b ), "-" ), "." );
+		for ( var i = 1; i <= 3; i++ ) {
+			var p = i <= x.len() ? val( x[ i ] ) : 0;
+			var q = i <= y.len() ? val( y[ i ] ) : 0;
+			if ( p != q ) return p < q ? -1 : 1;
+		}
+		var sa = find( "snapshot", arguments.a ) > 0; var sb = find( "snapshot", arguments.b ) > 0;
+		return sa == sb ? 0 : ( sa ? -1 : 1 );
+	}
+
+	// The `version=` line of a .properties text.
+	function propertiesVersion( text ) {
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) if ( reFindNoCase( "^\s*version\s*=", line ) ) return trim( listRest( line, "=" ) );
+		return "";
+	}
+
+	// The BoxLang on the PATH, from the jar next to its launcher (bin/boxlang -> lib/boxlang-X.jar), so the runtime is never started for it.
+	function installedVersion() {
+		if ( !variables.proc.has( "boxlang" ) ) return "";
+		var r = variables.proc.exec( [ "sh", "-c", 'd=$(dirname "$(readlink -f "$(command -v boxlang)")")/../lib; ls "$d" 2>/dev/null' ], 10 );
+		for ( var f in listToArray( r.output, chr( 10 ) ) ) if ( reFind( "^boxlang-[0-9]", trim( f ) ) ) return plainVersion( f );
+		return plainVersion( bvmCurrent() );
+	}
+
+	function latestVersion() {
+		var r = variables.http.get( variables.latestUrl, 20 );
+		return r.ok ? propertiesVersion( r.output ) : "";
+	}
+
+	function boxlangHome() { return new bxrig.util.Env().named( "boxlangHome", new bxrig.util.Env().home() & "/.boxlang" ); }
+
+	// ---- bx-module output ----
+
+	// `bx-module list`: "✓ name (version)" for a module, "  ↳ name (version)" for one it pulled in. [ { name, version, nested } ]
+	function parseModules( text ) {
+		var out = [];
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var m = reFind( "^(\s*)(?:\S+\s+)?(bx-[A-Za-z0-9._-]+|[a-z][A-Za-z0-9._-]+)\s+\(([^)]+)\)\s*$", line, 1, true );
+			if ( m.pos[ 1 ] == 0 ) continue;
+			out.append( { name: mid( line, m.pos[ 3 ], m.len[ 3 ] ), version: mid( line, m.pos[ 4 ], m.len[ 4 ] ), nested: find( "↳", line ) > 0 } );
+		}
+		return out;
+	}
+
+	// `bx-module outdated`: the table rows "name  current  forgebox  status". [ { name, current, latest, outdated, nested } ]
+	function parseOutdated( text ) {
+		var out = [];
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var m = reFind( "^(\s*)([A-Za-z0-9][A-Za-z0-9._-]*)\s+([0-9][^\s]*)\s+([0-9][^\s]*)\s+(.*)$", line, 1, true );
+			if ( m.pos[ 1 ] == 0 ) continue;
+			var st = mid( line, m.pos[ 6 ], m.len[ 6 ] );
+			out.append( { name: mid( line, m.pos[ 3 ], m.len[ 3 ] ), current: mid( line, m.pos[ 4 ], m.len[ 4 ] ), latest: mid( line, m.pos[ 5 ], m.len[ 5 ] ), outdated: findNoCase( "outdated", st ) > 0, nested: m.len[ 2 ] > 0 } );
+		}
+		return out;
+	}
+
+	// bx-module asks "update now? [y/N]" at the end of `outdated`, reading /dev/tty itself, so closing its input is not enough: it runs in
+	// a new session (setsid), with no controlling terminal, and the question fails instead of waiting for a key.
+	function bxModule( words, timeout = 600 ) {
+		var argv = variables.proc.has( "setsid" ) ? [ "setsid", "-w", "sh", "-c", 'bx-module "$@" </dev/null', "_" ] : [ "sh", "-c", 'bx-module "$@" </dev/null', "_" ];
+		for ( var w in arguments.words ) argv.append( w );
+		return variables.proc.exec( argv, arguments.timeout );
+	}
+
+	// ---- check, update, home, run ----
+
+	function checkData() {
+		var cur = installedVersion();
+		var latest = latestVersion();
+		var mods = variables.proc.has( "bx-module" ) ? parseOutdated( bxModule( [ "outdated" ], 300 ).output ) : [];
+		var behind = mods.filter( function( m ) { return m.outdated; } );
+		var upd = len( cur ) && len( latest ) && compareVersions( cur, latest ) < 0;
+		return { boxlang: { installed: cur, latest: latest, update: upd }, modules: mods, outdated: behind.len(), checked: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ) };
+	}
+
+	function check( asJson ) {
+		var d = checkData();
+		var lines = [ "BoxLang: " & ( len( d.boxlang.installed ) ? d.boxlang.installed : "not installed" ) & ( d.boxlang.update ? "  ->  " & d.boxlang.latest & " (bxrig boxlang update --yes)" : ( len( d.boxlang.latest ) ? "  (latest)" : "  (could not reach downloads.ortussolutions.com)" ) ) ];
+		lines.append( "Modules: " & ( d.outdated ? d.outdated & " outdated (bxrig boxlang modules update)" : d.modules.len() & " up to date" ) );
+		for ( var m in d.modules ) if ( m.outdated ) lines.append( "  " & m.name & "  " & m.current & " -> " & m.latest );
+		return variables.out.say( d.boxlang.update || d.outdated ? "update" : "ok", d, arguments.asJson, lines );
+	}
+
+	// The commands `update` runs.
+	function updateArgvs() {
+		if ( variables.proc.has( "bvm" ) ) return [ [ "bvm", "install", "latest" ], [ "bvm", "use", "latest" ] ];
+		if ( variables.proc.has( "install-boxlang" ) ) return [ [ "install-boxlang", "latest", "--non-interactive" ] ];
+		return [];
+	}
+
+	function update( yes, dry, asJson ) {
+		var cmds = updateArgvs();
+		if ( !cmds.len() ) return variables.out.say( "precondition", { error: "neither bvm nor install-boxlang was found" }, arguments.asJson, [ "error: neither bvm nor install-boxlang was found (curl -fsSL https://install-bvm.boxlang.io | bash)" ] );
+		var lines = cmds.map( function( c ) { return c.toList( " " ); } );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "update BoxLang to the latest release", { commands: lines }, arguments.asJson, arguments.dry );
+		for ( var c in cmds ) {
+			var r = variables.proc.exec( c, 1800 );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: c.toList( " " ) & " failed", output: variables.proc.why( r ) }, arguments.asJson, [ "error: " & c.toList( " " ) & " failed", variables.proc.why( r ) ] );
+		}
+		var now2 = installedVersion();
+		return variables.out.say( "ok", { installed: now2, commands: lines }, arguments.asJson, [ "BoxLang " & now2 & " is installed." ] );
+	}
+
+	function showHome( open, asJson ) {
+		var h = boxlangHome();
+		var d = { home: h, exists: directoryExists( h ), modules: h & "/modules", config: h & "/config/boxlang.json", logs: h & "/logs" };
+		if ( arguments.open && d.exists ) variables.proc.detach( [ "xdg-open", h ] );
+		return variables.out.say( d.exists ? "ok" : "precondition", d, arguments.asJson, [ h & ( d.exists ? "" : " (not there yet: BoxLang creates it on its first run)" ) ] );
+	}
+
+	// `run FILE [ARGS...]` and `repl`: the real boxlang, attached to this terminal; its exit code is BxRig's.
+	function runInTerminal( args ) {
+		if ( !variables.proc.has( "boxlang" ) ) { variables.out.say( "precondition", { error: "boxlang was not found" }, false, [ "error: boxlang was not found (bxrig boxlang update --yes)" ] ); return new bxrig.util.Exit().precondition(); }
+		var r = systemExecute( "boxlang", arguments.args, 0, false, ".", "", "", true, {}, true );
+		return r.exitCode;
 	}
 
 	function status( asJson ) {
@@ -219,7 +354,7 @@ class Boxlang {
 		return { ok: true, rows: rows };
 	}
 
-	function modules( action, args, asJson ) {
+	function modules( action, args, asJson, yes = false, dry = false ) {
 		if ( arguments.action == "list" || arguments.action == "search" ) {
 			var f = forgeboxModules( arguments.action == "search" && arguments.args.len() ? arguments.args.toList( " " ) : "" );
 			if ( !f.ok ) return variables.out.say( "failed", { error: f.error }, arguments.asJson, [ "error: " & f.error ] );
@@ -227,12 +362,28 @@ class Boxlang {
 		}
 		if ( !variables.proc.has( "bx-module" ) ) return variables.out.say( "precondition", { error: "bx-module was not found" }, arguments.asJson, [ "error: bx-module was not found (the BoxLang quick installer or bvm installs it)" ] );
 		for ( var a in arguments.args ) if ( !reFind( "^[A-Za-z0-9._@+-]{1,60}$", a ) ) return variables.out.say( "precondition", { error: "bad module name" }, arguments.asJson, [ "error: bad module name " & a ] );
+		if ( arguments.action == "installed" || arguments.action == "outdated" ) {
+			var lr = bxModule( [ arguments.action == "installed" ? "list" : "outdated" ], 300 );
+			if ( lr.exitCode != 0 && !len( trim( lr.output ) ) ) return variables.out.say( "failed", { error: "bx-module failed" }, arguments.asJson, [ "error: bx-module failed" ] );
+			var rows = arguments.action == "installed" ? parseModules( lr.output ) : parseOutdated( lr.output );
+			return variables.out.say( "ok", { modules: rows, output: trim( lr.output ) }, arguments.asJson, [ trim( lr.output ) ] );
+		}
+		if ( arguments.action == "remove" ) {
+			if ( !arguments.args.len() ) return variables.out.say( "usage", { error: "name the modules" }, arguments.asJson, [ "error: name the modules to remove" ] );
+			var rm = [ "remove", "--force" ];
+			for ( var x in arguments.args ) rm.append( x );
+			if ( !arguments.yes || arguments.dry ) return variables.out.plan( "bx-module " & rm.toList( " " ), { modules: arguments.args }, arguments.asJson, arguments.dry );
+			var rr = bxModule( rm, 300 );
+			if ( rr.exitCode != 0 ) return variables.out.say( "failed", { error: trim( rr.output ) }, arguments.asJson, [ "error: bx-module remove failed" ] );
+			return variables.out.say( "ok", { removed: arguments.args }, arguments.asJson, [ "Removed " & arguments.args.toList( ", " ) ] );
+		}
 		var words = { install: "install", installed: "list", outdated: "outdated", update: "update" };
 		if ( !structKeyExists( words, arguments.action ) ) return variables.out.say( "precondition", { error: "unknown action" }, arguments.asJson, [ "error: unknown action " & arguments.action ] );
 		if ( arguments.action == "install" && !arguments.args.len() ) return variables.out.say( "precondition", { error: "name the modules" }, arguments.asJson, [ "error: name the modules to install" ] );
 		var argv = [ "bx-module", words[ arguments.action ] ];
 		for ( var m in arguments.args ) argv.append( m );
 		if ( arguments.action == "update" ) argv.append( "--force" );
+		if ( arguments.dry ) return variables.out.plan( argv.toList( " " ), { command: argv }, arguments.asJson, true );
 		var r = variables.proc.exec( argv, 1800 );
 		if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: bx-module " & words[ arguments.action ] & " failed" ] );
 		return variables.out.say( "ok", { output: trim( r.output ) }, arguments.asJson, [ trim( r.output ) ] );
