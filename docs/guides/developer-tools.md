@@ -30,6 +30,8 @@ The **Cloud and Kubernetes** profile installs kubectl, k9s, Helm and OpenTofu, a
 
 A tool that is not packaged on your distribution is not offered there.
 
+![The cloud tools and API clients in the catalog](../assets/screenshots/devtools-catalog.webp)
+
 ## Shell helpers
 
 Two more in the picker, under Development > Shell:
@@ -49,6 +51,8 @@ bxrig git signing off --yes     # stop signing; the key stays
 
 For GitHub's Verified badge, add the same public key to GitHub a second time, as a **Signing key** (Settings, SSH and GPG keys).
 
+![bxrig git signing: the plan, then on](../assets/screenshots/devtools-signing-plan.webp)
+
 The setup wizard offers this after the SSH key ("Sign commits with that key").
 
 ## Check your setup
@@ -58,3 +62,5 @@ bxrig doctor --dev
 ```
 
 After the usual tool checks, `--dev` looks at your git name and email, the SSH key, the SSH agent, commit signing, a container engine and `EDITOR`. Each one that is missing prints `warn` with the command that fixes it. They are advice: the exit code stays 0.
+
+<video src="../assets/clips/devtools-cli.webm" poster="../assets/screenshots/devtools-doctor.webp" autoplay loop muted playsinline width="100%"></video>
