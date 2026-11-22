@@ -15,6 +15,8 @@ bxrig scheduler show backup-data     # one task: its command, stats (runs, failu
 bxrig scheduler run backup-data      # run it now (recorded like a scheduled run)
 ```
 
+<video src="../assets/clips/scheduler-cli.webm" poster="../assets/screenshots/scheduler-show.webp" autoplay loop muted playsinline width="100%"></video>
+
 ## Your own tasks
 
 ```bash
