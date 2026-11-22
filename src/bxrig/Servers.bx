@@ -26,14 +26,8 @@ class Servers {
 	// ---- the registry ----
 
 	function readRegistry() {
-		var f = registryFile();
-		if ( !fileExists( f ) ) return [];
-		try {
-			var j = jsonDeserialize( fileRead( f ) );
-			return isArray( j.servers ?: "" ) ? j.servers : [];
-		} catch ( any e ) {
-			return [];
-		}
+		var j = new bxrig.util.Json().read( registryFile() );
+		return isStruct( j ) && isArray( j.servers ?: "" ) ? j.servers : [];
 	}
 
 	function writeRegistry( rows ) {
@@ -64,7 +58,8 @@ class Servers {
 	}
 
 	function readJson( file ) {
-		try { var j = jsonDeserialize( fileRead( arguments.file ) ); return isStruct( j ) ? j : {}; } catch ( any e ) { return {}; }
+		var j = new bxrig.util.Json().read( arguments.file );
+		return isStruct( j ) ? j : {};
 	}
 
 	// miniserver.json: port (8080 when missing), host (0.0.0.0), webRoot (the folder).
