@@ -26,6 +26,8 @@ run "$binary" boxlang servers scan "$tmp/code" --yes --json | jq -e '(.data.adde
 jq -e '(.servers | length) == 2 and (.servers | map(.kind) | sort) == ["commandbox","miniserver"]' "$reg" >/dev/null || fail 'the registry file'
 run "$binary" boxlang servers scan "$tmp/code" | grep -q 'Every app below' || fail 'a second scan has nothing new'
 run "$binary" boxlang servers scan "$tmp/code" --depth=6 --yes --json | jq -e '.data.added == ["app"]' >/dev/null || fail '--depth reaches deeper'
+# a folder reached through a symlink (~/code is often one) is scanned too
+ln -s "$tmp/code" "$tmp/linked"; run "$binary" boxlang servers scan "$tmp/linked" --json | jq -e '(.data.found | length) == 2 and all(.data.found[]; .registered) and (.data.found[0].path | contains("/linked/") | not)' >/dev/null || fail "scan through a symlink: $(run "$binary" boxlang servers scan "$tmp/linked" --json)"
 # add
 [[ "$(code "$binary" boxlang servers add "$tmp/plain")" == 4 ]] || fail 'a folder with no app file exits 4'
 [[ "$(code "$binary" boxlang servers add "$tmp/nope")" == 4 ]] || fail 'a missing folder exits 4'

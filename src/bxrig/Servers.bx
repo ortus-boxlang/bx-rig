@@ -40,6 +40,15 @@ class Servers {
 		return {};
 	}
 
+	// A folder's real path (symlinks resolved), so ~/code and the folder it points to are the same app; the path itself when it cannot be resolved.
+	function realPath( path ) {
+		var p = reReplace( arguments.path, "/+$", "" );
+		if ( left( p, 2 ) == "~/" ) p = variables.env.home() & mid( p, 2, len( p ) );
+		if ( left( p, 1 ) != "/" ) p = expandPath( p );
+		var r = variables.proc.exec( [ "readlink", "-f", p ], 5 );
+		return r.exitCode == 0 && len( trim( r.output ) ) ? trim( r.output ) : p;
+	}
+
 	// ---- reading an app's own file (pure apart from the read) ----
 
 	// A name from text: lower case letters, digits and dashes.
@@ -149,8 +158,7 @@ class Servers {
 
 	// Registers one folder without printing: { ok, error, added, name, path, kind, port }.
 	function register( path, name ) {
-		var p = reReplace( arguments.path, "/+$", "" );
-		if ( left( p, 1 ) != "/" ) p = expandPath( p );
+		var p = realPath( arguments.path );
 		if ( !directoryExists( p ) ) return { ok: false, error: p & " is not a folder" };
 		var d = detect( p );
 		if ( !len( d.kind ) ) return { ok: false, error: p & " has no miniserver.json or server.json" };
@@ -174,7 +182,7 @@ class Servers {
 
 	// The folders below dir with a miniserver.json or server.json, skipping dependency and hidden folders.
 	function findApps( dir, depth ) {
-		var argv = [ "find", arguments.dir, "-maxdepth", arguments.depth + 1, "(", "-name", "node_modules", "-o", "-name", "boxlang_modules", "-o", "-name", "modules", "-o", "-name", ".*", "-not", "-name", ".", ")", "-prune", "-o", "-type", "f", "(", "-name", "miniserver.json", "-o", "-name", "server.json", ")", "-print" ];
+		var argv = [ "find", "-H", arguments.dir, "-maxdepth", arguments.depth + 1, "(", "-name", "node_modules", "-o", "-name", "boxlang_modules", "-o", "-name", "modules", "-o", "-name", ".*", "-not", "-name", ".", ")", "-prune", "-o", "-type", "f", "(", "-name", "miniserver.json", "-o", "-name", "server.json", ")", "-print" ];
 		var r = variables.proc.exec( argv, 60 );
 		var seen = {};
 		var out = [];
@@ -187,8 +195,7 @@ class Servers {
 	}
 
 	function scan( dir, depth, yes, dry, asJson ) {
-		var p = reReplace( arguments.dir, "/+$", "" );
-		if ( left( p, 1 ) != "/" ) p = expandPath( p );
+		var p = realPath( arguments.dir );
 		if ( !directoryExists( p ) ) return variables.out.fail( "precondition", p & " is not a folder", arguments.asJson );
 		var known = readRegistry().map( function( r ) { return r.path; } );
 		var found = findApps( p, arguments.depth ).map( function( d ) { var x = detect( d ); x.path = d; x.registered = arrayFind( known, d ) > 0; return x; } );
@@ -239,7 +246,8 @@ class Servers {
 		var tool = r.kind == "miniserver" ? "boxlang-miniserver" : "box";
 		if ( !variables.proc.has( tool ) ) return variables.out.fail( "precondition", tool & " was not found (" & ( tool == "box" ? "bxrig boxlang modules install bx-cli, or CommandBox" : "bxrig boxlang update --yes" ) & ")", arguments.asJson );
 		var argv = startArgv( r );
-		if ( arguments.dry ) return variables.out.plan( "start " & r.name, { command: argv }, arguments.asJson, true, [ argv.toList( " " ) ] );
+		var said = r.kind == "miniserver" ? "boxlang-miniserver miniserver.json in " & r.path & ", in the background (log: " & r.log & ")" : argv.toList( " " );
+		if ( arguments.dry ) return variables.out.plan( "start " & r.name, { command: argv }, arguments.asJson, true, [ said ] );
 		directoryCreate( logDir(), true, true );
 		var res = variables.proc.exec( argv, r.kind == "miniserver" ? 15 : 600 );
 		if ( res.exitCode != 0 ) return variables.out.say( "failed", { error: "could not start " & r.name, output: variables.proc.why( res ) }, arguments.asJson, [ "error: could not start " & r.name, variables.proc.why( res ) ] );
