@@ -47,6 +47,25 @@ out="$(run env JAVA_VER=17.0.9 "$binary" doctor)" && fail 'Java 17 must exit 4' 
 out="$(run env MB_TUI=no "$binary" doctor)" && fail 'a MatchBox without the terminal UI must exit 4' || true
 [[ "$out" == *'miss matchbox 0.14.0 (cannot compile BxRig; install: install.sh toolchains --yes --matchbox-branch bxrig)'* ]] || fail "doctor matchbox without TUI: $out"
 
+# --dev: advice on the developer setup, never an error
+stub cargo 'echo "cargo 1.100.0 (abc 2026-11-09)"'
+stub git '[[ "$1" == --version ]] && echo "git version 2.50.1" || exit 1'
+out="$(run "$binary" doctor --dev)" || fail "doctor --dev with nothing set up must still exit 0: $out"
+for l in 'Developer setup' 'warn git-identity' 'warn ssh-key (no SSH key; fix: bxrig ssh key --yes)' 'warn git-signing (commits not signed; fix: bxrig git signing on --yes)' 'warn containers' 'warn editor'; do
+	[[ "$out" == *"$l"* ]] || fail "doctor --dev lacks '$l': $out"
+done
+stub git 'case "$*" in "--version") echo "git version 2.50.1";; *user.name) echo Ada;; *user.email) echo ada@example.com;; *commit.gpgsign) echo true;; *gpg.format) echo ssh;; *) exit 1;; esac'
+stub ssh-add 'exit 0'
+stub podman 'echo "podman version 5.6.0"'
+mkdir -p "$tmp/home/.ssh"; : > "$tmp/home/.ssh/id_ed25519"
+out="$(run env EDITOR=nvim "$binary" doctor --dev)" || fail "doctor --dev all set: $out"
+for l in 'ok   git-identity (Ada <ada@example.com>)' 'ok   ssh-key (~/.ssh/id_ed25519)' 'ok   ssh-agent (has your key)' 'ok   git-signing (commits signed (ssh))' 'ok   containers 5.6.0 (podman)' 'ok   editor (EDITOR=nvim)'; do
+	[[ "$out" == *"$l"* ]] || fail "doctor --dev lacks '$l': $out"
+done
+run "$binary" doctor --dev --json | jq -e '[.data.tools[] | select(.group == "dev")] | length == 6 and all(.advice)' >/dev/null || fail 'doctor --dev --json'
+[[ "$(run "$binary" doctor --json | jq '[.data.tools[] | select(.group == "dev")] | length')" == 0 ]] || fail 'doctor without --dev has no dev rows'
+rm -f "$tmp/bin"/{ssh-add,podman}
+
 # nothing at all: every tool is listed as missing, not just the headers
 rm -f "$tmp/bin"/{git,curl,unzip,jq,java,mvm,bvm,boxlang,matchbox,rustc,cargo}
 out="$(run "$binary" doctor)" && fail 'an empty PATH must exit 4' || true

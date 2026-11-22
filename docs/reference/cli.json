@@ -196,16 +196,23 @@
 				},
 				{
 					"name": "doctor",
-					"summary": "Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing.",
+					"summary": "Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing. --dev adds advice on your developer setup.",
 					"usage": [
-						"doctor [--json]"
+						"doctor [--dev] [--json]"
 					],
 					"examples": [
 						"bxrig doctor",
+						"bxrig doctor --dev",
 						"bxrig doctor --json"
 					],
 					"mutates": false,
-					"flags": []
+					"flags": [
+						{
+							"name": "dev",
+							"type": "bool"
+						}
+					],
+					"note": "--dev checks git name and email, an SSH key, the SSH agent, commit signing, a container engine and EDITOR. They print warn with the command that fixes them and never change the exit code."
 				},
 				{
 					"name": "update",
@@ -1685,6 +1692,28 @@
 					"flags": [
 						{
 							"name": "email",
+							"type": "value"
+						}
+					]
+				},
+				{
+					"name": "git",
+					"summary": "Sign commits and tags with your SSH key.",
+					"usage": [
+						"git signing [status] [--json]",
+						"git signing on [--key=PATH] [--yes] [--dry-run] [--json]",
+						"git signing off [--yes] [--dry-run] [--json]"
+					],
+					"examples": [
+						"bxrig git signing",
+						"bxrig git signing on --yes",
+						"bxrig git signing on --key=~/.ssh/work_ed25519 --yes"
+					],
+					"mutates": true,
+					"note": "on sets gpg.format ssh, user.signingkey, commit.gpgsign and tag.gpgsign, and adds your email and key to ~/.config/git/allowed_signers so git can verify. It needs the key (bxrig ssh key --yes) and git user.email. off stops signing and keeps the key. Add the key to GitHub as a Signing key for the Verified badge.",
+					"flags": [
+						{
+							"name": "key",
 							"type": "value"
 						}
 					]

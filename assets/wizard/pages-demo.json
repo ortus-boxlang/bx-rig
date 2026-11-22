@@ -1167,6 +1167,13 @@
 					"help": "An ed25519 key for GitHub and servers."
 				},
 				{
+					"type": "confirm",
+					"id": "git_signing",
+					"label": "Sign commits with that key",
+					"default": true,
+					"help": "Commits and tags get GitHub's Verified badge once you add the key as a signing key."
+				},
+				{
 					"type": "choice",
 					"id": "editor_starter",
 					"label": "Neovim setup",

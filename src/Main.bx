@@ -57,7 +57,7 @@ class {
 			case "doctor":
 			case "prerequisites":
 				// One status line per tool, exit 4 when one is missing. See bxrig.Doctor and COMMAND-CONTRACT.md 13.60.
-				if ( p.len() == 1 ) CLIExit( new bxrig.Doctor( cli ).run( asJson ) );
+				if ( p.len() == 1 ) CLIExit( new bxrig.Doctor( cli ).run( asJson, structKeyExists( args.options, "dev" ) ) );
 				println( new bxrig.CommandSpec().usage( cmd ) );
 				CLIExit( xit.usage() );
 				break;
@@ -673,6 +673,16 @@ class {
 				if ( p.len() >= 2 && p[2] == "open" ) { mnRoute = []; for ( mnj = 3; mnj <= p.len(); mnj++ ) mnRoute.append( p[ mnj ] ); CLIExit( new bxrig.Menu( cli ).open( mnRoute.toList( " " ), asJson ) ); }
 				if ( p.len() >= 3 && p[2] == "search" ) { mnWords = []; for ( mni = 3; mni <= p.len(); mni++ ) mnWords.append( p[ mni ] ); CLIExit( new bxrig.Menu( cli ).search( mnWords.toList( " " ), asJson ) ); }
 				println( new bxrig.CommandSpec().usage( "menu" ) );
+				CLIExit( xit.usage() );
+				break;
+			case "git":
+				// SSH signing of commits and tags. See bxrig.GitSigning and COMMAND-CONTRACT.md (Developer tools).
+				if ( p.len() >= 2 && p[2] == "signing" ) {
+				var gsWords = [];
+				for ( var gi = 3; gi <= p.len(); gi++ ) gsWords.append( p[ gi ] );
+				CLIExit( new bxrig.GitSigning( cli ).run( gsWords, args.options.key ?: "", structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+			}
+				println( new bxrig.CommandSpec().usage( "git" ) );
 				CLIExit( xit.usage() );
 				break;
 			case "ssh":

@@ -42,6 +42,9 @@
 		}
 	],
 	"apps": {
+		"azure-cli": {
+			"source": "none"
+		},
 		"dropbox": {
 			"source": "apt",
 			"targets": [
@@ -58,6 +61,9 @@
 			"source": "none"
 		},
 		"hyprsunset": {
+			"source": "none"
+		},
+		"kubectl": {
 			"source": "none"
 		},
 		"lutris": {

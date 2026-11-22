@@ -1068,3 +1068,9 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - `appearance font-rendering default|smooth|crisp|sharp|status` writes one fontconfig file through ConfigService (backup and journal) and GTK's `font-hinting` and `font-antialiasing`. `default` removes only a file BxRig wrote.
 - Both are settings: they act at once, `--dry-run` shows the commands. Both are remembered in appearance.json (`ui_font`, `rendering`) and `appearance status` shows them.
 - JetBrains Mono stays the default coding font; Inter is the recommended interface font.
+
+## Developer tools (decided with the owner 2026-11-22)
+
+- Catalog: Postman, Insomnia and Bruno (API clients; AUR on Arch, Flathub elsewhere); kubectl, k9s, Helm, OpenTofu, AWS, Google Cloud and Azure CLIs (a new `cloud` profile); atuin and just. No other shell tools. Every package name was checked on each distribution; one that is not packaged is not offered.
+- `git signing status|on|off [--key=PATH]`: SSH signing only. `on` and `off` change ~/.gitconfig, so they print a plan until --yes. `on` needs the key and git user.email (exit 4 with the fix). `off` keeps the key and the allowed signers file. The wizard offers `on` after the SSH key, as an optional step.
+- `doctor --dev`: a developer group (git identity, SSH key, SSH agent, signing, container engine, EDITOR). Its rows are advice (`warn`, `advice: true`) and never change the exit code.

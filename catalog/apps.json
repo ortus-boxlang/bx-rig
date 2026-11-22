@@ -167,6 +167,12 @@
 			"title": "Go",
 			"blurb": "The Go toolchain",
 			"order": 15
+		},
+		{
+			"id": "cloud",
+			"title": "Cloud and Kubernetes",
+			"blurb": "kubectl, k9s, Helm and OpenTofu, plus the AWS, Google Cloud and Azure CLIs to pick",
+			"order": 16
 		}
 	],
 	"categories": [
@@ -459,6 +465,16 @@
 			"group": "webapps",
 			"title": "BoxLang",
 			"order": 8
+		},
+		{
+			"group": "development",
+			"title": "API clients",
+			"order": 8
+		},
+		{
+			"group": "infra",
+			"title": "Cloud and Kubernetes",
+			"order": 4
 		}
 	],
 	"apps": [
@@ -6269,6 +6285,216 @@
 			],
 			"profiles": {
 				"networking": "optional"
+			}
+		},
+		{
+			"id": "postman",
+			"name": "Postman",
+			"description": "Build, test, and document your APIs faster",
+			"description_source": "aur",
+			"kind": "desktop",
+			"group": "development",
+			"category": "API clients",
+			"tier": "optional",
+			"homepage": "https://www.postman.com",
+			"macos": "Postman",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {}
+		},
+		{
+			"id": "insomnia",
+			"name": "Insomnia",
+			"description": "API Client and Design Platform for GraphQL and REST",
+			"description_source": "aur",
+			"kind": "desktop",
+			"group": "development",
+			"category": "API clients",
+			"tier": "optional",
+			"homepage": "https://insomnia.rest",
+			"macos": "Insomnia",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {}
+		},
+		{
+			"id": "bruno",
+			"name": "Bruno",
+			"description": "Opensource API Client for Exploring and Testing APIs",
+			"description_source": "aur",
+			"kind": "desktop",
+			"group": "development",
+			"category": "API clients",
+			"tier": "optional",
+			"homepage": "https://www.usebruno.com/",
+			"macos": "Bruno",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {}
+		},
+		{
+			"id": "kubectl",
+			"name": "kubectl",
+			"description": "A command line tool for communicating with a Kubernetes API server",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://kubernetes.io/",
+			"macos": "kubectl via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "default"
+			}
+		},
+		{
+			"id": "k9s",
+			"name": "k9s",
+			"description": "TUI for managing Kubernetes clusters and pods",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://github.com/derailed/k9s",
+			"macos": "k9s via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "default"
+			}
+		},
+		{
+			"id": "helm",
+			"name": "Helm",
+			"description": "The Kubernetes Package Manager",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://github.com/helm/helm",
+			"macos": "helm via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "default"
+			}
+		},
+		{
+			"id": "opentofu",
+			"name": "OpenTofu",
+			"description": "Lets you declaratively manage your cloud infrastructure",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://github.com/opentofu/opentofu",
+			"macos": "opentofu via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "default"
+			}
+		},
+		{
+			"id": "aws-cli",
+			"name": "AWS CLI",
+			"description": "Universal Command Line Interface for Amazon Web Services (version 2)",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://docs.aws.amazon.com/cli",
+			"macos": "awscli via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "optional"
+			}
+		},
+		{
+			"id": "google-cloud-cli",
+			"name": "Google Cloud CLI",
+			"description": "The gcloud command-line tools for Google Cloud",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://cloud.google.com/cli/",
+			"macos": "gcloud-cli via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "optional"
+			}
+		},
+		{
+			"id": "azure-cli",
+			"name": "Azure CLI",
+			"description": "Command-line tools for Microsoft Azure",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "infra",
+			"category": "Cloud and Kubernetes",
+			"tier": "optional",
+			"homepage": "https://github.com/Azure/azure-cli",
+			"macos": "azure-cli via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"cloud": "optional"
+			}
+		},
+		{
+			"id": "atuin",
+			"name": "Atuin",
+			"description": "Magical shell history",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Shell",
+			"tier": "optional",
+			"homepage": "https://github.com/atuinsh/atuin",
+			"macos": "atuin via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"terminal": "optional"
+			}
+		},
+		{
+			"id": "just",
+			"name": "just",
+			"description": "A handy way to save and run project-specific commands",
+			"description_source": "arch",
+			"kind": "tui",
+			"group": "development",
+			"category": "Shell",
+			"tier": "optional",
+			"homepage": "https://github.com/casey/just",
+			"macos": "just via Homebrew",
+			"origin": [
+				"owner-pick"
+			],
+			"profiles": {
+				"terminal": "optional"
 			}
 		}
 	]
