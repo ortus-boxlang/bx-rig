@@ -51,7 +51,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Desktop setup**: [`setup`](#bxrig-setup), [`session`](#bxrig-session), [`tiling`](#bxrig-tiling), [`plasma`](#bxrig-plasma), [`keys`](#bxrig-keys), [`runner`](#bxrig-runner), [`default`](#bxrig-default), [`layout`](#bxrig-layout), [`assets`](#bxrig-assets), [`launchers`](#bxrig-launchers), [`config`](#bxrig-config)
 
-**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
+**Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`accessibility`](#bxrig-accessibility), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
 **System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
 
@@ -919,6 +919,28 @@ bxrig time format "%a %-I:%M %p"
 ```
 
 > `time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first. `time format` sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.
+
+### `bxrig accessibility` {#bxrig-accessibility}
+
+Zoom like a Mac, reduce motion, and three high-contrast themes. All off until you turn them on.
+
+```text
+bxrig accessibility [status] [--json]
+bxrig accessibility zoom on|off|status|in|out|toggle [--dry-run] [--json]
+bxrig accessibility reduce-motion on|off|status [--dry-run] [--json]
+bxrig accessibility contrast dark|light|colorblind|off|status [--dry-run] [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig accessibility
+bxrig accessibility zoom on
+bxrig accessibility reduce-motion on
+bxrig accessibility contrast dark
+```
+
+> zoom on makes the zoom keys work: Option+Cmd+8 toggles, Option+Cmd+= zooms in, Option+Cmd+- zooms out (Option is Alt, Cmd is Super). While zoom is off the keys only say how to turn it on. Hyprland zooms around the pointer (cursor:zoom_factor); Plasma uses KWin's Zoom effect. reduce-motion turns off window, bar and app animations. contrast picks bxrig-contrast-dark, bxrig-contrast-light or bxrig-colorblind (every text colour at least 7:1, WCAG AAA); off goes back to your theme. Settings act at once; --dry-run shows the commands.
 
 ### `bxrig toggle` {#bxrig-toggle}
 

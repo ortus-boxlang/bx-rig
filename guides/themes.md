@@ -1,12 +1,12 @@
 ---
 title: Themes
 order: 3
-summary: Twenty-one color themes, each with its own wallpaper, that follow you into the shell, terminals, btop, window borders and Neovim.
+summary: Twenty-four color themes, each with its own wallpaper, that follow you into the shell, terminals, btop, window borders and Neovim.
 ---
 
 # Themes
 
-BxRig ships 21 color themes in the `colors.toml` theme format, each with its own wallpaper: eleven of ours (six dark, five light, among them the neon 80s `bxrig-retro`) and ten community themes.
+BxRig ships 24 color themes in the `colors.toml` theme format, each with its own wallpaper: fourteen of ours (six dark, five light, among them the neon 80s `bxrig-retro`, and three accessible ones: `bxrig-contrast-dark`, `bxrig-contrast-light` and `bxrig-colorblind`, see [Accessibility](accessibility.md)) and ten community themes.
 
 ![The BxRig theme: its wallpaper, the bar and a themed terminal](../assets/screenshots/themes/bxrig.webp)
 
