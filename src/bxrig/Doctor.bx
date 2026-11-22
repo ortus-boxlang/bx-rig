@@ -6,6 +6,8 @@
 // A missing tool, a Java that is not 21, or a MatchBox that cannot compile BxRig (stable and snapshot builds have no terminal UI yet)
 // is `miss` with the command that fixes it (owner decision: the toolchain must be able to build BxRig).
 // Exit 0 when every tool is there, 4 when one is missing. `--json`: data { ok, tools: [ { id, group, name, ok, version, detail, fix } ] }.
+// `--dev` adds the developer group: git name and email, an SSH key, the SSH agent, commit signing, a container engine and an editor.
+// They are advice (`warn`, with the command that sets them up) and never change the exit code; their rows have advice: true.
 // The Proc runner can be injected for tests, like the other commands.
 class Doctor {
 	function init( cli, runner = "" ) {
@@ -95,7 +97,40 @@ class Doctor {
 		return r;
 	}
 
-	function run( asJson ) {
+	function advice( id, ok, version, detail, fix ) {
+		var r = row( arguments.id, "dev", arguments.ok, arguments.version, arguments.detail, arguments.fix );
+		r.advice = true;
+		return r;
+	}
+
+	function gitGet( name ) {
+		var r = variables.proc.exec( [ "git", "config", "--global", "--get", arguments.name ], 10 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+
+	// The developer checks (`doctor --dev`).
+	function devRows() {
+		var rows = [];
+		var hasGit = variables.proc.has( "git" );
+		var name = hasGit ? gitGet( "user.name" ) : "";
+		var mail = hasGit ? gitGet( "user.email" ) : "";
+		rows.append( advice( "git-identity", len( name ) && len( mail ), "", len( name ) && len( mail ) ? name & " <" & mail & ">" : "user.name or user.email not set", "git config --global user.name 'Your Name' && git config --global user.email you@example.com" ) );
+		var home = new bxrig.util.Env().home();
+		var keys = [ "id_ed25519", "id_ecdsa", "id_rsa" ].filter( function( k ) { return fileExists( home & "/.ssh/" & k ); } );
+		rows.append( advice( "ssh-key", keys.len() > 0, "", keys.len() ? "~/.ssh/" & keys[ 1 ] : "no SSH key", "bxrig ssh key --yes" ) );
+		// ssh-add -l: 0 keys loaded, 1 an agent with no keys, 2 no agent
+		var agent = variables.proc.has( "ssh-add" ) ? variables.proc.exec( [ "ssh-add", "-l" ], 10 ).exitCode : 2;
+		rows.append( advice( "ssh-agent", agent == 0, "", agent == 0 ? "has your key" : ( agent == 1 ? "running, no key loaded" : "no agent" ), agent == 1 ? "ssh-add" : "systemctl --user enable --now ssh-agent.socket (or your keyring)" ) );
+		var signs = hasGit && gitGet( "commit.gpgsign" ) == "true";
+		rows.append( advice( "git-signing", signs, "", signs ? "commits signed (" & ( len( gitGet( "gpg.format" ) ) ? gitGet( "gpg.format" ) : "openpgp" ) & ")" : "commits not signed", "bxrig git signing on --yes" ) );
+		var engines = [ "podman", "docker" ].filter( function( e ) { return variables.proc.has( e ); } );
+		rows.append( advice( "containers", engines.len() > 0, engines.len() ? versionOf( engines[ 1 ] ) : "", engines.len() ? engines[ 1 ] : "no podman or docker", installHint( "podman" ) ) );
+		var ed = new bxrig.util.Env().get( "EDITOR", "" );
+		rows.append( advice( "editor", len( ed ) > 0, "", len( ed ) ? "EDITOR=" & ed : "EDITOR is not set", "bxrig default editor neovim" ) );
+		return rows;
+	}
+
+	function run( asJson, dev = false ) {
 		var ws = "workstation"; var nb = "native";
 		var rows = [
 			tool( "git", ws, "git" ), tool( "curl", ws, "curl" ), tool( "unzip", ws, "unzip", "-v" ), tool( "jq", ws, "jq" ),
@@ -107,11 +142,12 @@ class Doctor {
 			if ( !r.ok ) r.fix = installHint( "rustup" ) & " && rustup default stable";
 			rows.append( r );
 		}
-		var missing = rows.filter( function( r ) { return !r.ok; } );
+		if ( arguments.dev ) for ( var d in devRows() ) rows.append( d );
+		var missing = rows.filter( function( r ) { return !r.ok && !( r.advice ?: false ); } );
 		var lines = [ "Workstation prerequisites: git, curl, unzip, jq, Java 21, MVM, BVM, BoxLang" ];
 		var shown = "workstation";
 		for ( var r in rows ) {
-			if ( r.group != shown ) { shown = r.group; lines.append( "Native build prerequisites: MatchBox, Rust and Cargo" ); }
+			if ( r.group != shown ) { shown = r.group; lines.append( r.group == "dev" ? "Developer setup (advice, never an error)" : "Native build prerequisites: MatchBox, Rust and Cargo" ); }
 			lines.append( line( r ) );
 		}
 		var code = missing.len() ? "precondition" : "ok";
@@ -120,10 +156,10 @@ class Doctor {
 
 	// "ok   git 2.50.1", "miss jq (install: sudo pacman -S jq)", "ok   matchbox 0.14.0 (compiles BxRig)".
 	function line( r ) {
-		var text = ( r.ok ? "ok   " : "miss " ) & r.id & ( len( r.version ) ? " " & r.version : "" );
+		var text = ( r.ok ? "ok   " : ( r.advice ?: false ) ? "warn " : "miss " ) & r.id & ( len( r.version ) ? " " & r.version : "" );
 		var notes = [];
 		if ( len( r.detail ) ) notes.append( r.detail );
-		if ( !r.ok && len( r.fix ) ) notes.append( "install: " & r.fix );
+		if ( !r.ok && len( r.fix ) ) notes.append( ( ( r.advice ?: false ) ? "fix: " : "install: " ) & r.fix );
 		return text & ( notes.len() ? " (" & notes.toList( "; " ) & ")" : "" );
 	}
 }

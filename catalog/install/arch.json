@@ -51,6 +51,30 @@
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
+		"atuin": {
+			"source": "pacman",
+			"targets": [
+				"atuin"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
+		},
+		"aws-cli": {
+			"source": "pacman",
+			"targets": [
+				"aws-cli-v2"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
+		},
+		"azure-cli": {
+			"source": "pacman",
+			"targets": [
+				"azure-cli"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
+		},
 		"bambustudio": {
 			"source": "aur",
 			"targets": [
@@ -129,6 +153,13 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-15"
+		},
+		"bruno": {
+			"source": "aur",
+			"targets": [
+				"bruno-bin"
+			],
+			"verified_on": "2026-11-22"
 		},
 		"btop": {
 			"source": "pacman",
@@ -657,6 +688,13 @@
 			],
 			"verified_on": "2026-11-09"
 		},
+		"google-cloud-cli": {
+			"source": "aur",
+			"targets": [
+				"google-cloud-cli"
+			],
+			"verified_on": "2026-11-22"
+		},
 		"gopass": {
 			"source": "pacman",
 			"targets": [
@@ -763,6 +801,14 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
+		},
+		"helm": {
+			"source": "pacman",
+			"targets": [
+				"helm"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
 		},
 		"herdr": {
 			"source": "aur",
@@ -881,6 +927,13 @@
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
+		"insomnia": {
+			"source": "aur",
+			"targets": [
+				"insomnia-bin"
+			],
+			"verified_on": "2026-11-22"
+		},
 		"intellij": {
 			"source": "pacman",
 			"targets": [
@@ -911,6 +964,22 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-09"
+		},
+		"just": {
+			"source": "pacman",
+			"targets": [
+				"just"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
+		},
+		"k9s": {
+			"source": "pacman",
+			"targets": [
+				"k9s"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
 		},
 		"kcalc": {
 			"source": "pacman",
@@ -1055,6 +1124,14 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-19"
+		},
+		"kubectl": {
+			"source": "pacman",
+			"targets": [
+				"kubectl"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
 		},
 		"kvantum": {
 			"source": "pacman",
@@ -1554,6 +1631,14 @@
 			],
 			"verified_on": "2026-11-09"
 		},
+		"opentofu": {
+			"source": "pacman",
+			"targets": [
+				"opentofu"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-22"
+		},
 		"openvpn": {
 			"source": "pacman",
 			"targets": [
@@ -1748,6 +1833,13 @@
 				"podman-tui"
 			],
 			"verified_on": "2026-11-09"
+		},
+		"postman": {
+			"source": "aur",
+			"targets": [
+				"postman-bin"
+			],
+			"verified_on": "2026-11-22"
 		},
 		"prismlauncher": {
 			"source": "pacman",

@@ -86,6 +86,24 @@
 				"ark"
 			]
 		},
+		"atuin": {
+			"source": "zypper",
+			"targets": [
+				"atuin"
+			]
+		},
+		"aws-cli": {
+			"source": "zypper",
+			"targets": [
+				"aws-cli"
+			]
+		},
+		"azure-cli": {
+			"source": "zypper",
+			"targets": [
+				"azure-cli"
+			]
+		},
 		"bambustudio": {
 			"source": "flatpak",
 			"targets": [
@@ -132,6 +150,12 @@
 			"source": "zypper",
 			"targets": [
 				"brightnessctl"
+			]
+		},
+		"bruno": {
+			"source": "flatpak",
+			"targets": [
+				"com.usebruno.Bruno"
 			]
 		},
 		"btop": {
@@ -478,6 +502,12 @@
 				"helix"
 			]
 		},
+		"helm": {
+			"source": "zypper",
+			"targets": [
+				"helm"
+			]
+		},
 		"herdr": {
 			"source": "zypper",
 			"targets": [
@@ -538,6 +568,12 @@
 				"imv"
 			]
 		},
+		"insomnia": {
+			"source": "flatpak",
+			"targets": [
+				"rest.insomnia.Insomnia"
+			]
+		},
 		"jan": {
 			"source": "flatpak",
 			"targets": [
@@ -554,6 +590,18 @@
 			"source": "zypper",
 			"targets": [
 				"jq"
+			]
+		},
+		"just": {
+			"source": "zypper",
+			"targets": [
+				"just"
+			]
+		},
+		"k9s": {
+			"source": "zypper",
+			"targets": [
+				"k9s"
 			]
 		},
 		"kcalc": {
@@ -653,6 +701,12 @@
 			"source": "flatpak",
 			"targets": [
 				"io.github.seadve.Kooha"
+			]
+		},
+		"kubectl": {
+			"source": "zypper",
+			"targets": [
+				"kubernetes-client"
 			]
 		},
 		"kvantum": {
@@ -811,6 +865,12 @@
 				"opencode"
 			]
 		},
+		"opentofu": {
+			"source": "zypper",
+			"targets": [
+				"opentofu"
+			]
+		},
 		"openvpn": {
 			"source": "zypper",
 			"targets": [
@@ -917,6 +977,12 @@
 			"source": "flatpak",
 			"targets": [
 				"io.podman_desktop.PodmanDesktop"
+			]
+		},
+		"postman": {
+			"source": "flatpak",
+			"targets": [
+				"com.getpostman.Postman"
 			]
 		},
 		"prismlauncher": {

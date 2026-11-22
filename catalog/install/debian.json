@@ -148,6 +148,24 @@
 				"ark"
 			]
 		},
+		"atuin": {
+			"source": "apt",
+			"targets": [
+				"atuin"
+			]
+		},
+		"aws-cli": {
+			"source": "apt",
+			"targets": [
+				"awscli"
+			]
+		},
+		"azure-cli": {
+			"source": "apt",
+			"targets": [
+				"azure-cli"
+			]
+		},
 		"bambustudio": {
 			"source": "flatpak",
 			"targets": [
@@ -188,6 +206,12 @@
 			"source": "apt",
 			"targets": [
 				"brightnessctl"
+			]
+		},
+		"bruno": {
+			"source": "flatpak",
+			"targets": [
+				"com.usebruno.Bruno"
 			]
 		},
 		"btop": {
@@ -546,6 +570,12 @@
 				"imv"
 			]
 		},
+		"insomnia": {
+			"source": "flatpak",
+			"targets": [
+				"rest.insomnia.Insomnia"
+			]
+		},
 		"jan": {
 			"source": "flatpak",
 			"targets": [
@@ -562,6 +592,12 @@
 			"source": "apt",
 			"targets": [
 				"jq"
+			]
+		},
+		"just": {
+			"source": "apt",
+			"targets": [
+				"just"
 			]
 		},
 		"kcalc": {
@@ -661,6 +697,12 @@
 			"source": "apt",
 			"targets": [
 				"kooha"
+			]
+		},
+		"kubectl": {
+			"source": "apt",
+			"targets": [
+				"kubectl"
 			]
 		},
 		"kvantum": {
@@ -895,6 +937,12 @@
 			"source": "flatpak",
 			"targets": [
 				"io.podman_desktop.PodmanDesktop"
+			]
+		},
+		"postman": {
+			"source": "flatpak",
+			"targets": [
+				"com.getpostman.Postman"
 			]
 		},
 		"prismlauncher": {
