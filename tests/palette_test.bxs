@@ -12,7 +12,7 @@ testkit.check( "the default theme, an empty name and an unknown theme all give t
 names = new bxrig.ThemeData().names();
 bad = [];
 for ( n in names ) { p = pal.forTheme( n ); if ( !complete( p ) ) bad.append( n ); }
-testkit.check( "every bundled theme gives a complete palette (" & bad.toList( "," ) & ")", names.len() == 21 && !bad.len() );
+testkit.check( "every bundled theme gives a complete palette (" & bad.toList( "," ) & ")", names.len() == 24 && !bad.len() );
 
 nord = pal.forTheme( "nord" );
 c = tc.parse( new bxrig.ThemeData().colors( "nord" ) ).colors;

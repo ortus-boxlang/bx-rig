@@ -1,0 +1,32 @@
+# BxRig Contrast Light: black on white, blue focus. Every text colour is at least 7:1 on the background (WCAG AAA).
+mode = "light"
+
+accent = "#0033cc"
+selection = "#cfd8ff"
+muted = "#3d3d3d"
+
+background = "#ffffff"
+dark_background = "#f2f2f2"
+darker_background = "#e6e6e6"
+lighter_background = "#ffffff"
+
+foreground = "#000000"
+dark_foreground = "#3d3d3d"
+light_foreground = "#1a1a1a"
+bright_foreground = "#000000"
+
+red = "#a30000"
+yellow = "#5c4600"
+orange = "#7a3300"
+green = "#005c00"
+cyan = "#00566b"
+blue = "#0033cc"
+magenta = "#7a0078"
+brown = "#4d2600"
+
+bright_red = "#8a0000"
+bright_yellow = "#4d3a00"
+bright_green = "#004d00"
+bright_cyan = "#00475a"
+bright_blue = "#002aa8"
+bright_magenta = "#650063"

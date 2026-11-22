@@ -1,0 +1,74 @@
+// Accessibility: the zoom steps and the commands they become, the three contrast themes (every text colour at least 7:1, WCAG AAA),
+// the reduce-motion commands, the Control Center page rows and keys, the menu entries and the zoom keys.
+// Run from src/: (cd src && matchbox ../tests/accessibility_test.bxs)
+testkit = new lib.Check( "accessibility" );
+cli = new bxrig.util.Cli( "0.0.0" );
+ax = new bxrig.Accessibility( cli );
+
+// ---- zoom steps ----
+n = ax.zoomNext( 1, 2, "in" );
+testkit.check( "zoom in: half a step from 1, remembered as the last zoom", n.level == 1.5 && n.last == 1.5 );
+n = ax.zoomNext( 3, 3, "out" );
+testkit.check( "zoom out: half a step down", n.level == 2.5 && n.last == 2.5 );
+testkit.check( "zoom out never goes below 1, zoom in never above 10", ax.zoomNext( 1, 2, "out" ).level == 1 && ax.zoomNext( 10, 10, "in" ).level == 10 );
+t = ax.zoomNext( 3, 3, "toggle" );
+testkit.check( "toggle while zoomed goes to 1 and keeps 3 to come back to", t.level == 1 && t.last == 3 );
+t2 = ax.zoomNext( t.level, t.last, "toggle" );
+testkit.check( "toggle again goes back to the last zoom", t2.level == 3 );
+testkit.check( "toggle with no last zoom goes to 2", ax.zoomNext( 1, 1, "toggle" ).level == 2 );
+argv = ax.hyprZoomArgv( 2.5 );
+testkit.check( "Hyprland: hyprctl eval sets cursor.zoom_factor", argv[ 1 ] == "hyprctl" && argv[ 2 ] == "eval" && argv[ 3 ] == "hl.config({ cursor = { zoom_factor = 2.5 } })" );
+testkit.check( "Plasma: the KWin zoom shortcuts", ax.plasmaShortcut( "in", 2 ) == "view_zoom_in" && ax.plasmaShortcut( "out", 1 ) == "view_zoom_out" && ax.plasmaShortcut( "toggle", 1 ) == "view_actual_size" && ax.plasmaShortcut( "toggle", 2 ) == "view_zoom_in" );
+sa = ax.plasmaShortcutArgv( "view_zoom_in" );
+testkit.check( "Plasma: kglobalaccel invokeShortcut on the kwin component", sa[ 2 ] == "org.kde.kglobalaccel" && sa[ 3 ] == "/component/kwin" && sa[ 5 ] == "view_zoom_in" );
+testkit.check( "Plasma: the Zoom effect is loaded and unloaded", ax.plasmaEffectArgv( true )[ 4 ] == "org.kde.kwin.Effects.loadEffect" && ax.plasmaEffectArgv( false )[ 4 ] == "org.kde.kwin.Effects.unloadEffect" && ax.plasmaEffectArgv( true )[ 5 ] == "zoom" );
+d = ax.defaults();
+testkit.check( "everything is off by default", d.zoom == "off" && d.reduceMotion == "off" && d.contrast == "off" && d.zoomLevel == 1 );
+
+// ---- contrast themes: WCAG AAA ----
+tc = new bxrig.ThemeColors();
+td = new bxrig.ThemeData();
+textKeys = [ "foreground", "accent", "muted", "light_foreground", "red", "green", "yellow", "blue", "magenta", "cyan", "bright_red", "bright_green", "bright_yellow", "bright_blue", "bright_magenta", "bright_cyan" ];
+for ( id in ax.contrastThemes() ) {
+	name = ax.contrastThemes()[ id ];
+	text = td.colors( name );
+	r = tc.parse( text );
+	low = [];
+	if ( r.ok ) {
+		bg = r.colors.background;
+		for ( k in textKeys ) {
+			m = reFind( "(?m)^" & k & "\s*=\s*""(##[0-9a-fA-F]{6})""", text, 1, true );
+			if ( m.pos[ 1 ] ) {
+				c = mid( text, m.pos[ 2 ], m.len[ 2 ] );
+				if ( tc.contrast( c, bg ) < 7 ) low.append( k & " " & numberFormat( tc.contrast( c, bg ), "0.00" ) );
+			} else low.append( k & " missing" );
+		}
+	}
+	testkit.check( name & ": parses, and every text colour is at least 7:1 on its background (" & low.toList( ", " ) & ")", r.ok && !low.len() );
+	testkit.check( name & ": has its Neovim colorscheme and wallpaper", len( td.neovim( name ) ) > 0 && find( "github", td.neovim( name ) ) > 0 && new bxrig.Theme( cli ).bundledWallpaper( name ) != "" );
+}
+testkit.check( "contrast dark is dark, contrast light is light", !tc.isLight( tc.parse( td.colors( "bxrig-contrast-dark" ) ).colors ) && tc.isLight( tc.parse( td.colors( "bxrig-contrast-light" ) ).colors ) );
+
+// ---- reduce motion ----
+mv = ax.motionArgvs( true ).map( function( a ) { return a.toList( " " ); } );
+on = mv.filter( function( l ) { return find( "enable-animations false", l ) || find( "AnimationDurationFactor 0", l ); } );
+testkit.check( "reduce motion: the GTK and Plasma commands that exist here are all the 'off' ones", on.len() == mv.len() );
+
+// ---- the Control Center page ----
+pv = new bxrig.AccessibilityProvider( true );
+rows = pv.rowsFrom( { zoom: "on", reduce_motion: "off", contrast: "colorblind" } );
+testkit.check( "page: zoom, reduce motion and three contrast themes", rows.len() == 5 && rows[ 1 ].kind == "zoom" && rows[ 2 ].kind == "motion" && rows[ 5 ].ref == "colorblind" );
+testkit.check( "page: what is on is marked", rows[ 1 ].active && !rows[ 2 ].active && rows[ 5 ].active && !rows[ 3 ].active );
+testkit.check( "page: Enter on zoom (on) turns it off", pv.switchIntent( rows[ 1 ] ).args.toList( " " ) == "accessibility zoom off" );
+testkit.check( "page: Enter on reduce motion (off) turns it on", pv.switchIntent( rows[ 2 ] ).args.toList( " " ) == "accessibility reduce-motion on" );
+testkit.check( "page: Enter on a theme picks it, on the one in use goes back", pv.switchIntent( rows[ 3 ] ).args.toList( " " ) == "accessibility contrast dark" && pv.switchIntent( rows[ 5 ] ).args.toList( " " ) == "accessibility contrast off" );
+testkit.check( "page: registered with its icon", new bxrig.ControlCenterPages().icon( "accessibility" ) == "access" && find( "access: ""f29a""", fileRead( expandPath( "bxrig/TuiKit.bx" ) ) ) > 0 );
+
+// ---- keys and menu ----
+keys = {};
+for ( r in new bxrig.Shortcuts( {} ).table() ) keys[ r.id ] = r;
+testkit.check( "keys: Option+Cmd+8, = and - run accessibility zoom", keys[ "zoom-toggle" ].keysBy.mac == "Super+Alt+8" && keys[ "zoom-in" ].keysBy.mac == "Super+Alt+Equal" && keys[ "zoom-out" ].keysBy.mac == "Super+Alt+Minus" && keys[ "zoom-in" ].words == "accessibility zoom in" );
+testkit.check( "keys: floating resize moved off the zoom keys", keys[ "resize-narrower" ].keysBy.mac == "Super+Ctrl+Alt+Minus" && keys[ "resize-wider" ].keysBy.mac == "Super+Ctrl+Alt+Equal" );
+menuText = serializeJSON( new bxrig.MenuTree().sections() );
+testkit.check( "menu: Appearance > Accessibility with zoom, reduce motion and the contrast themes", find( '"Accessibility"', menuText ) > 0 && find( "reduce-motion", menuText ) > 0 && find( "colorblind", menuText ) > 0 );
+testkit.done( "all passed" );

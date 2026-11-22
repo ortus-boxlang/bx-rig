@@ -22,6 +22,7 @@ class ControlCenterPages {
 			{ id: "secrets", title: "Secrets", icon: "key" },
 			{ id: "look", title: "Look", icon: "eye" },
 			{ id: "themes", title: "Themes", icon: "brush" },
+			{ id: "accessibility", title: "Accessibility", icon: "access" },
 			{ id: "logs", title: "Logs", icon: "file" }
 		];
 	}

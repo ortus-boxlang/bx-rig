@@ -120,6 +120,12 @@ class MenuState {
 			put( "appearance animations", s.animations ?: "" );
 			put( "appearance layout", s.layout ?: "" );
 		} catch ( any e ) {}
+		try {
+			var ax = new bxrig.Accessibility( variables.cli ).readState();
+			out[ "accessibility zoom" ] = ax.zoom;
+			out[ "accessibility reduce-motion" ] = ax.reduceMotion;
+			out[ "accessibility contrast" ] = ax.contrast;
+		} catch ( any e ) {}
 		if ( variables.proc.has( "powerprofilesctl" ) ) {
 			var r = variables.proc.exec( [ "powerprofilesctl", "get" ], 10 );
 			if ( r.exitCode == 0 && len( trim( r.output ) ) ) out[ "power profile" ] = trim( r.output );

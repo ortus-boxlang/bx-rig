@@ -1,0 +1,51 @@
+// Accessibility: zoom, reduce motion and the contrast themes, one row each. Reads `accessibility status`.
+// Enter (or Space) switches the row: zoom and reduce motion on or off, a contrast theme on (or off when it is the one in use).
+class AccessibilityProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "accessibility"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "accessibility" ); }
+	function title() { return "Accessibility"; }
+	function hint() { return "zoom, motion and contrast"; }
+	function emptyText() { return "No accessibility settings found"; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "setting", w: 26 }, { key: "value", label: "now", w: 12 }, { key: "more", label: "", w: 0 } ]; }
+	function style( r ) { return r.active ? "ok" : "dim"; }
+
+	function detail( r ) {
+		if ( r.kind == "zoom" ) return [ "Zoom " & r.value & ".", "Option+Cmd+8 toggles, Option+Cmd+= zooms in, Option+Cmd+- zooms out (Alt is Option, Super is Cmd). Enter turns it " & ( r.active ? "off." : "on." ) ];
+		if ( r.kind == "motion" ) return [ "Reduce motion " & r.value & ".", "Stops window, bar and app animations. Enter turns it " & ( r.active ? "off." : "on." ) ];
+		return [ r.name & ( r.active ? " is in use." : "." ), r.more & ". Enter " & ( r.active ? "goes back to your theme." : "switches to it." ) ];
+	}
+
+	// The intent for Enter on a row.
+	function switchIntent( r ) {
+		if ( r.kind == "zoom" ) return { action: "cli", title: "Zoom " & ( r.active ? "off" : "on" ), args: [ "accessibility", "zoom", r.active ? "off" : "on" ] };
+		if ( r.kind == "motion" ) return { action: "cli", title: "Reduce motion " & ( r.active ? "off" : "on" ), args: [ "accessibility", "reduce-motion", r.active ? "off" : "on" ] };
+		return { action: "cli", title: ( r.active ? "Back to your theme" : r.name ), args: [ "accessibility", "contrast", r.active ? "off" : r.ref ] };
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "switch", run: function( r ) { return switchIntent( r ); } },
+			{ key: "Space", label: "switch", run: function( r ) { return switchIntent( r ); } }
+		];
+	}
+
+	// The rows from `accessibility status` data (pure, for tests).
+	function rowsFrom( s ) {
+		var zoomOn = ( arguments.s.zoom ?: "off" ) == "on";
+		var motionOn = ( arguments.s.reduce_motion ?: "off" ) == "on";
+		var contrast = arguments.s.contrast ?: "off";
+		var rows = [
+			{ mark: zoomOn ? "●" : "○", name: "Zoom", kind: "zoom", value: zoomOn ? "on" : "off", more: "Option+Cmd+8 · = · -", active: zoomOn, ref: "" },
+			{ mark: motionOn ? "●" : "○", name: "Reduce motion", kind: "motion", value: motionOn ? "on" : "off", more: "no animations", active: motionOn, ref: "" }
+		];
+		var themes = [ { ref: "dark", name: "Contrast: dark", more: "white on black, yellow focus" }, { ref: "light", name: "Contrast: light", more: "black on white, blue focus" }, { ref: "colorblind", name: "Colour-blind safe", more: "blue and orange, never red and green" } ];
+		for ( var t in themes ) rows.append( { mark: contrast == t.ref ? "●" : "○", name: t.name, kind: "contrast", value: contrast == t.ref ? "in use" : "", more: t.more, active: contrast == t.ref, ref: t.ref } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( { zoom: "on", reduce_motion: "off", contrast: "off" } );
+		return rowsFrom( variables.proc.selfData( [ "accessibility", "status" ] ) );
+	}
+}

@@ -105,6 +105,17 @@ class MenuTree {
 				] ),
 			sub( "Appearance", [
 					pick( "Theme", "themes", [ "theme", "set", "{}" ] ),
+					sub( "Accessibility", [
+							sub( "Zoom (Option+Cmd+8)", [ spawn( "On", [ "accessibility", "zoom", "on" ] ), spawn( "Off", [ "accessibility", "zoom", "off" ] ) ] ),
+							sub( "Reduce motion", [ spawn( "On", [ "accessibility", "reduce-motion", "on" ] ), spawn( "Off", [ "accessibility", "reduce-motion", "off" ] ) ] ),
+							sub( "Contrast theme", [
+									spawn( "Dark", [ "accessibility", "contrast", "dark" ] ),
+									spawn( "Light", [ "accessibility", "contrast", "light" ] ),
+									spawn( "Colour-blind safe", [ "accessibility", "contrast", "colorblind" ] ),
+									spawn( "Off", [ "accessibility", "contrast", "off" ] )
+								] ),
+							tui( "All settings", [ "accessibility" ], "access" )
+						] ),
 					spawn( "Next theme", [ "theme", "next" ] ),
 					spawn( "Random theme", [ "theme", "random" ] ),
 					sub( "Mode", [

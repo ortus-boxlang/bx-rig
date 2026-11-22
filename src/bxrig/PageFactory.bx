@@ -15,6 +15,7 @@ class PageFactory {
 			case "versions": return new bxrig.ListPage( new bxrig.VersionsProvider( d ) );
 			case "ports": return new bxrig.ListPage( new bxrig.PortsProvider( d ) );
 			case "network": return new bxrig.ListPage( new bxrig.NetworkProvider( d ) );
+			case "accessibility": return new bxrig.ListPage( new bxrig.AccessibilityProvider( d ) );
 			case "packages": return new bxrig.ListPage( new bxrig.PackagesProvider( d ) );
 			case "shortcuts": return new bxrig.ListPage( new bxrig.ShortcutsProvider( d ) );
 			case "machines": return new bxrig.ListPage( new bxrig.MachinesProvider( d, arguments.dashboard ) );

@@ -603,6 +603,21 @@
 							"description": "80s synthwave: neon magenta and cyan on night purple, Share Tech Mono."
 						},
 						{
+							"value": "bxrig-contrast-dark",
+							"label": "BxRig Contrast Dark",
+							"description": "High contrast: white on black, yellow focus (WCAG AAA)."
+						},
+						{
+							"value": "bxrig-contrast-light",
+							"label": "BxRig Contrast Light",
+							"description": "High contrast: black on white, blue focus (WCAG AAA)."
+						},
+						{
+							"value": "bxrig-colorblind",
+							"label": "BxRig Colour-blind Safe",
+							"description": "Blue and orange instead of red and green, on dark slate."
+						},
+						{
 							"value": "catppuccin",
 							"label": "Catppuccin",
 							"description": "Mocha: lavender and blue on deep navy."
