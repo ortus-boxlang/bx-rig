@@ -9,7 +9,7 @@ function shot( w = 120, h = 40 ) { view.paint( app, 10, w, h ); return tui.rende
 
 testkit.check( "the page is its own class with the id themes", page.id() == "themes" && page.title() == "Themes" && !isNull( page.previewTheme ) );
 s = page.state();
-testkit.check( "rows: the demo themes, the current one marked, the cursor on it", s.rows == 5 && s.current == "bxrig" && s.selected == "bxrig" && s.items.filter( function( r ) { return r.name == "bxrig-retro" && r.font == "sharetech"; } ).len() == 1 );
+testkit.check( "rows: the demo themes, the current one marked, the cursor on it", s.rows == 8 && s.current == "bxrig" && s.selected == "bxrig" && s.items.filter( function( r ) { return r.name == "bxrig-retro" && r.font == "sharetech"; } ).len() == 1 );
 
 t = shot();
 testkit.check( "120x40: list with swatches, the palette roles, the sample terminal and the keys", find( "BxRig Retro", t ) > 0 && find( "Tokyo Night", t ) > 0 && find( "accent", t ) > 0 && find( "foreground", t ) > 0 && find( "git diff", t ) > 0 && find( "@@ -12,3 +12,4 @@", t ) > 0 && find( "live preview", t ) > 0 && find( "current", t ) > 0 && find( "████", t ) > 0 );
@@ -27,17 +27,17 @@ testkit.check( "Down highlights BxRig Retro: its own colors show in the pane (#f
 
 // filters
 app.onKey( "l" );
-testkit.check( "l: only the light themes", page.state().shown == 1 && page.state().kind == "light" );
+testkit.check( "l: only the light themes", page.state().shown == 2 && page.state().kind == "light" );
 app.onKey( "l" );
 app.onKey( "d" );
-testkit.check( "l again clears it; d: only the dark ones", page.state().shown == 4 && page.state().kind == "dark" );
+testkit.check( "l again clears it; d: only the dark ones", page.state().shown == 6 && page.state().kind == "dark" );
 app.onKey( "a" );
 app.onKey( "/" );
 testkit.check( "/ takes text, so q and Escape do not leave", app.pageCaptures() );
 for ( ch in [ "r", "e", "t" ] ) app.onKey( ch );
 testkit.check( "typing narrows the list to Retro", page.state().shown == 1 && page.state().selected == "bxrig-retro" );
 app.onKey( "Escape" );
-testkit.check( "Escape clears the search", page.state().shown == 5 && !app.pageCaptures() );
+testkit.check( "Escape clears the search", page.state().shown == 8 && !app.pageCaptures() );
 
 // live preview recolours the whole screen without applying
 shot();
