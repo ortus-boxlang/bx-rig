@@ -752,17 +752,8 @@ class {
 				println( new bxrig.CommandSpec().usage( "ai" ) );
 				CLIExit( xit.usage() );
 			}
-				if ( aiSub == "models" ) {
-				aiMod = new bxrig.AiModels( cli );
-				aiAct2 = p.len() >= 3 ? p[3] : "";
-				if ( ( aiAct2 == "list" || aiAct2 == "ps" ) && p.len() == 3 ) CLIExit( aiMod.show( aiAct2, asJson ) );
-				if ( aiAct2 == "pull" && p.len() == 4 ) CLIExit( aiMod.pull( p[4], asJson ) );
-				if ( aiAct2 == "rm" && p.len() == 4 ) CLIExit( aiMod.remove( p[4], structKeyExists( args.options, "yes" ), asJson ) );
-				if ( aiAct2 == "status" && p.len() == 3 ) CLIExit( aiMod.status( asJson ) );
-				if ( aiAct2 == "enable" && p.len() == 3 ) CLIExit( aiMod.enable( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
-				println( new bxrig.CommandSpec().usage( "ai" ) );
-				CLIExit( xit.usage() );
-			}
+				// Local AI on llama.cpp: hardware, engine, models, the server, setup. See COMMAND-CONTRACT.md "Local AI".
+				if ( arrayFind( [ "hardware", "engine", "models", "serve", "setup", "status", "ask" ], aiSub ) ) CLIExit( new bxrig.AiLocal( cli ).run( p.slice( 2 ), args.options, asJson ) );
 				println( new bxrig.CommandSpec().usage( "ai" ) );
 				CLIExit( xit.usage() );
 				break;

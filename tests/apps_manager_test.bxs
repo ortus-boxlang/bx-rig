@@ -115,7 +115,7 @@ app2 = new bxrig.ControlCenterApp( cc.buildPages( true ), "apps" );
 app2.onKey( "[" );
 testkit.check( "[ is text in the box, it does not change the page", app2.page().id() == "apps" && app2.page().model().query() == "[" );
 app2.onKey( "Backspace" ); app2.onKey( "Tab" );
-testkit.check( "Tab always changes the page", app2.page().id() == "boxlang" );
+testkit.check( "Tab always changes the page", app2.page().id() == "ai" );
 app2.onKey( "BackTab" );
 app2.onKey( "Down" );
 testkit.check( "backslash in the list collapses the sidebar", structCount( app2.onKey( chr( 92 ) ) ) == 0 && !app2.sidebarOpen() );

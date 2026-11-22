@@ -6,6 +6,7 @@ class ControlCenterPages {
 		return [
 			{ id: "dashboard", title: "Dashboard", icon: "home" },
 			{ id: "apps", title: "Apps", icon: "cube" },
+			{ id: "ai", title: "AI", icon: "chip" },
 			{ id: "boxlang", title: "BoxLang", icon: "archive" },
 			{ id: "modules", title: "Modules", icon: "cubes" },
 			{ id: "servers", title: "Servers", icon: "server" },

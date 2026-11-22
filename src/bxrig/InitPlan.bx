@@ -221,7 +221,6 @@ class InitPlan {
 			else if ( !arrayFind( agentIds, aiDefault ) ) agentIds.append( aiDefault );
 		}
 		for ( var id in agentIds ) apps.append( id );
-		// local models: the apps you ticked, and the GPU build of Ollama when you named your card
 		// agent sessions that survive closing the terminal are tmux sessions
 		if ( agentIds.len() ) apps.append( "tmux" );
 		// the pull-down AI shell on Plasma is Yakuake (Hyprland needs nothing extra)
@@ -236,13 +235,8 @@ class InitPlan {
 			if ( pick( a, "plasma_weather", true ) ) apps.append( "kdeplasma-addons" );
 			if ( pick( a, "plasma_agenda", false ) ) apps.append( "event-calendar" );
 		}
-		var localAi = pick( a, "ai_local", [] );
-		for ( var id in localAi ) apps.append( id );
-		var gpu = pick( a, "ai_local_gpu" );
-		if ( arrayFind( localAi, "ollama" ) ) {
-			if ( gpu == "nvidia" ) apps.append( "ollama-cuda" );
-			else if ( gpu == "amd" ) apps.append( "ollama-rocm" );
-		}
+		// local model apps you ticked (BxRig's own local AI is the ai-setup step below)
+		for ( var id in pick( a, "ai_local", [] ) ) apps.append( id );
 		if ( pick( a, "cloud_storage", false ) == true ) { apps.append( "rclone" ); apps.append( "fuse3" ); }
 		for ( var id in pick( a, "remote_desktop", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );
 		for ( var id in pick( a, "desktop_utilities", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );
@@ -317,15 +311,13 @@ class InitPlan {
 			}
 		}
 		if ( isSet( aiDefault ) && !structIsEmpty( agentLib.find( aiDefault ) ) ) out.steps.append( { id: "ai-default", title: "make " & aiDefault & " your default coding agent", argv: [ "bxrig", "ai", "default", aiDefault ] } );
-		// Ollama: the service at boot if you asked, then the models you named (optional steps: a failed download never stops the plan)
-		if ( arrayFind( localAi, "ollama" ) ) {
-			if ( pick( a, "ai_ollama_service", false ) == true ) out.steps.append( { id: "ollama-service", title: "start the Ollama service now and at boot (sudo)", argv: [ "bxrig", "ai", "models", "enable" ] } );
-			for ( var mraw in listToArray( pick( a, "ai_models", "" ), "," ) ) {
-				var model = trim( mraw );
-				if ( !len( model ) ) continue;
-				if ( reFind( "^[A-Za-z0-9._:/-]{1,100}$", model ) == 0 ) out.errors.append( "ai_models: bad model name " & model );
-				else out.steps.append( { id: "model-" & model, title: "download the model " & model & " (several GB; you can skip it)", argv: [ "bxrig", "ai", "models", "pull", model ], optional: true } );
-			}
+		// Local AI on llama.cpp: now (the engine, the picked models, the server, the answer check, the tune if asked) or later with
+		// bxrig ai setup. Optional: a failed download never stops the plan.
+		if ( pick( a, "ai_local_setup", "later" ) == "now" ) {
+			var aiArgv = [ "bxrig", "ai", "setup", "--yes" ];
+			if ( pick( a, "ai_local_picks", "balanced" ) == "all" ) aiArgv.append( "--picks=all" );
+			if ( pick( a, "ai_local_tune", false ) == true ) aiArgv.append( "--tune" );
+			out.steps.append( { id: "ai-setup", title: "set up local AI: llama.cpp, " & ( arrayFind( aiArgv, "--picks=all" ) ? "the three models picked for this machine" : "the model picked for this machine" ) & " and an embedding model (several GB; you can skip it)", argv: aiArgv, optional: true } );
 		}
 		if ( len( pick( a, "launcher" ) ) ) out.steps.append( { id: "launcher", title: "use " & a.launcher & " as the app launcher (no shortcut is changed)", argv: [ "bxrig", "runner", "set", a.launcher ] } );
 		if ( len( pick( a, "menu" ) ) ) out.steps.append( { id: "menu", title: "use " & a.menu & " for BxRig menus", argv: [ "bxrig", "runner", "menu-set", a.menu ] } );

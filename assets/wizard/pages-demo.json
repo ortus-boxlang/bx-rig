@@ -2443,53 +2443,55 @@
 				},
 				{
 					"type": "choice",
-					"id": "ai_local_gpu",
-					"label": "Ollama GPU support",
-					"help": "Ollama runs on the CPU unless you add the GPU build for your card.",
-					"default": "none",
+					"id": "ai_local_setup",
+					"label": "BxRig local AI",
+					"help": "BxRig runs models on this machine with llama.cpp, with OpenAI and Anthropic compatible APIs on 127.0.0.1:8089. It checks your hardware and picks models that fit. Later works too: bxrig ai setup.",
+					"default": "now",
+					"options": [
+						{
+							"value": "now",
+							"label": "Set it up now",
+							"description": "Installs llama.cpp (CUDA on NVIDIA, ROCm on AMD, Vulkan or CPU otherwise) and downloads the picked models."
+						},
+						{
+							"value": "later",
+							"label": "Later",
+							"description": "Skip it; run bxrig ai setup or open the AI page of the Control Center when you want it."
+						}
+					]
+				},
+				{
+					"type": "choice",
+					"id": "ai_local_picks",
+					"label": "Models",
+					"help": "BxRig picks up to three chat models for your hardware (fastest, balanced, most capable) plus a small embedding model. Downloads run at the same time.",
+					"default": "balanced",
 					"when": {
-						"id": "ai_local",
-						"has": "ollama"
+						"id": "ai_local_setup",
+						"equals": "now"
 					},
 					"options": [
 						{
-							"value": "none",
-							"label": "CPU only (or I will set it up later)",
-							"description": "Just the ollama package."
+							"value": "balanced",
+							"label": "The balanced pick",
+							"description": "One chat model, the best mix of quality and speed here."
 						},
 						{
-							"value": "nvidia",
-							"label": "NVIDIA (CUDA)",
-							"description": "Adds ollama-cuda, which pulls in the CUDA toolkit."
-						},
-						{
-							"value": "amd",
-							"label": "AMD (ROCm)",
-							"description": "Adds ollama-rocm, which pulls in HIP/ROCm libraries."
+							"value": "all",
+							"label": "All three picks",
+							"description": "Fastest, balanced and most capable; switch between them any time."
 						}
 					]
 				},
 				{
 					"type": "confirm",
-					"id": "ai_ollama_service",
-					"label": "Start Ollama at boot",
-					"default": true,
-					"help": "Enables the ollama service the package ships (needs sudo). Without it, start it yourself before pulling models.",
+					"id": "ai_local_tune",
+					"label": "Tune for this machine",
+					"default": false,
+					"help": "Benchmarks each model for about a minute to find the best threads, batch size and flash attention here. Run it later with bxrig ai models tune.",
 					"when": {
-						"id": "ai_local",
-						"has": "ollama"
-					}
-				},
-				{
-					"type": "text",
-					"id": "ai_models",
-					"label": "Models to download",
-					"default": "",
-					"placeholder": "qwen3:8b, llama3.2",
-					"help": "Ollama model names, comma separated. Leave empty to download none now. Sizes are several GB each.",
-					"when": {
-						"id": "ai_local",
-						"has": "ollama"
+						"id": "ai_local_setup",
+						"equals": "now"
 					}
 				},
 				{

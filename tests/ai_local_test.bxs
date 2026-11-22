@@ -1,0 +1,111 @@
+// Local AI on llama.cpp: the hardware readers, the catalog and its picks, the router presets, the server line, the tune, the Control
+// Center rows and the bar's Local tab. Pure: nothing is downloaded or started.
+// Run from src/: (cd src && matchbox ../tests/ai_local_test.bxs)
+testkit = new lib.Check( "local ai" );
+nl = chr( 10 );
+
+// ---- hardware ----
+hw = new bxrig.AiHardware();
+x86 = "processor	: 0" & nl & "model		: 207" & nl & "model name	: AMD Ryzen 7 7840U" & nl & "physical id	: 0" & nl & "core id		: 0" & nl & "flags		: fpu avx2 avx512f sse" & nl
+& "processor	: 1" & nl & "model		: 207" & nl & "physical id	: 0" & nl & "core id		: 0" & nl
+& "processor	: 2" & nl & "physical id	: 0" & nl & "core id		: 1" & nl & "processor	: 3" & nl & "physical id	: 0" & nl & "core id		: 1" & nl;
+cpu = hw.parseCpu( x86 );
+testkit.check( "cpu: the name, not the x86 model number", cpu.model == "AMD Ryzen 7 7840U" );
+testkit.check( "cpu: threads and distinct cores", cpu.threads == 4 && cpu.cores == 2 );
+testkit.check( "cpu: the instruction sets that matter", cpu.features.toList( "," ) == "avx2,avx512f" );
+arm = hw.parseCpu( "processor	: 0" & nl & "Features	: fp asimd sve" & nl & "processor	: 1" & nl & "Model	: Raspberry Pi 5 Model B" & nl );
+testkit.check( "cpu: ARM's Model line and NEON; no core ids means cores are threads", arm.model == "Raspberry Pi 5 Model B" && arm.cores == 2 && arm.features.toList( "," ) == "neon,sve" );
+testkit.check( "ram: MemTotal in MB", hw.parseRamMb( "MemTotal:       32768000 kB" & nl & "MemFree: 1 kB" ) == 32000 && hw.parseRamMb( "" ) == 0 );
+gp = hw.parseLspci( '00:02.0 "VGA compatible controller" "Intel Corporation" "Iris Xe Graphics" -r01 "Lenovo" "x"' & nl & '01:00.0 "3D controller" "NVIDIA Corporation" "AD107M [GeForce RTX 4060 Max-Q]" "x" "y"' & nl & '00:1f.3 "Audio device" "Intel Corporation" "x"' );
+testkit.check( "lspci: graphics only, vendors named (Intel Corporation is not ATI)", gp.len() == 2 && gp[ 1 ].vendor == "intel" && gp[ 2 ].vendor == "nvidia" );
+testkit.check( "lspci: AMD and ATI cards", hw.parseLspci( '03:00.0 "VGA compatible controller" "Advanced Micro Devices, Inc. [AMD/ATI]" "Navi 33"' ).first().vendor == "amd" );
+testkit.check( "nvidia-smi: name and memory", hw.parseNvidiaSmi( "NVIDIA GeForce RTX 4060 Laptop GPU, 8188" ).first().vram_mb == 8188 );
+sm = hw.summarize( 32000, [ { vendor: "nvidia", name: "RTX 4060", vram_mb: 8188, shared: false } ] );
+testkit.check( "budget: a dedicated card is its memory minus 1 GB; CUDA offered", sm.budget_mb == 7164 && sm.class == "medium" && sm.backend == "cuda" && arrayFind( sm.backends, "vulkan" ) );
+sm = hw.summarize( 16000, [ { vendor: "intel", name: "Iris", vram_mb: 0, shared: true } ] );
+testkit.check( "budget: shared graphics is half the RAM, Vulkan", sm.budget_mb == 8000 && sm.backend == "vulkan" && !arrayFind( sm.backends, "cuda" ) );
+testkit.check( "class: tiny under 6 GB, high above 14 GB; no graphics is CPU", hw.summarize( 8000, [] ).class == "tiny" && hw.summarize( 8000, [] ).backend == "cpu" && hw.summarize( 64000, [] ).class == "high" );
+testkit.check( "rocm only with a dedicated AMD card", arrayFind( hw.summarize( 16000, [ { vendor: "amd", vram_mb: 16384, shared: false } ] ).backends, "rocm" ) && !arrayFind( hw.summarize( 16000, [ { vendor: "amd", vram_mb: 0, shared: true } ] ).backends, "rocm" ) );
+testkit.check( "describe: one line for people", hw.describe( { cpu: cpu, ram_mb: 32768, gpus: [ { name: "Radeon 780M", shared: true, vram_mb: 0 } ] } ) == "AMD Ryzen 7 7840U, 2 cores · 32 GB RAM · Radeon 780M (shared)" );
+
+// ---- the catalog ----
+cat = new bxrig.AiCatalog();
+testkit.check( "catalog: chat and embedding models, each with a file, a checksum and a licence", cat.models( "chat" ).len() >= 10 && cat.models( "embeddings" ).len() >= 1 && cat.models().filter( function( m ) { return !len( m.file ) || ( m.verified && len( m.sha256 ) != 64 ) || !len( m.license ); } ).len() == 0 );
+testkit.check( "catalog: ids are unique", cat.models().map( function( m ) { return m.id; } ).filter( function( id, i, all ) { return all.findAll( id ).len() > 1; } ).len() == 0 );
+testkit.check( "catalog: the default embedding model is EmbeddingGemma", cat.embedding().id == "embeddinggemma-300m" );
+testkit.check( "catalog: download URLs are Hugging Face resolve links", cat.url( cat.find( "qwen3.5-0.8b" ) ) == "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf" );
+testkit.check( "catalog: memory need is the larger of use and file, plus 512 MB", cat.needMb( { mem_mb: 900, size_mb: 533 } ) == 1412 && cat.needMb( { size_mb: 2000 } ) == 2512 );
+roles = function( picks ) { var o = {}; for ( var p in picks ) o[ p.role ] = p.id; return o; };
+r8 = roles( cat.recommend( 8000 ) );
+testkit.check( "picks at 8 GB: balanced, fastest and capable", r8.balanced == "gemma-4-e4b" && r8.fastest == "granite-4.0-350m" && r8.capable == "qwen3.5-9b" );
+testkit.check( "picks at 16 GB: a bigger capable model", roles( cat.recommend( 16000 ) ).capable == "gemma-4-12b" );
+p8 = cat.recommend( 8000 );
+testkit.check( "picks: at most three, one default (balanced), no model twice", p8.len() <= 3 && p8.filter( function( p ) { return p.default; } ).len() == 1 && p8.filter( function( p ) { return p.default; } ).first().role == "balanced" );
+testkit.check( "picks: untested models are never picked", cat.recommend( 64000 ).filter( function( p ) { return !cat.find( p.id ).verified; } ).len() == 0 );
+testkit.check( "picks: nothing fits a tiny budget", cat.recommend( 300 ).len() == 0 );
+small = roles( cat.recommend( 1500 ) );
+testkit.check( "picks: a small machine still gets a balanced pick", len( small.balanced ?: "" ) > 0 && cat.needMb( cat.find( small.balanced ) ) <= 1500 );
+
+// ---- presets, server line, tune ----
+ai = new bxrig.AiLocal( new bxrig.util.Cli( "test" ) );
+st = { active: "qwen3.5-0.8b", serve: { listen: "127.0.0.1", port: 8089 }, models: {
+		"qwen3.5-0.8b": { file: "Qwen3.5-0.8B-Q4_K_M.gguf", kind: "chat", tuned: { threads: 4, ubatch: 512, flash_attn: true } },
+		"embeddinggemma-300m": { file: "embeddinggemma-300M-Q8_0.gguf", kind: "embeddings" } } };
+ini = ai.presetText( st );
+testkit.check( "preset: one section per model, sorted", find( "[embeddinggemma-300m]", ini ) > 0 && find( "[embeddinggemma-300m]", ini ) < find( "[qwen3.5-0.8b]", ini ) );
+testkit.check( "preset: the model file from the models folder", find( "model = " & ai.modelsDir() & "/Qwen3.5-0.8B-Q4_K_M.gguf", ini ) > 0 );
+testkit.check( "preset: the embedding model serves embeddings, no context or tune", find( "embeddings = true", ini ) > 0 && listLen( mid( ini, find( "[embeddinggemma", ini ), find( "[qwen", ini ) - find( "[embeddinggemma", ini ) ), nl ) == 3 );
+testkit.check( "preset: the tuned settings are llama.cpp's long option names", find( "threads = 4", ini ) > 0 && find( "ubatch-size = 512", ini ) > 0 && find( "flash-attn = on", ini ) > 0 && find( "ctx-size = 8192", ini ) > 0 );
+testkit.check( "preset: a header comment (one #)", left( ini, 2 ) == "# " );
+e = { kind: "llama", path: "/home/u/.local/bin/llama", source: "official" };
+sa = ai.serverArgv( st, e ).toList( " " );
+testkit.check( "server: llama serve, router presets, this machine only, no web UI", left( sa, 30 ) == "/home/u/.local/bin/llama serve" && find( "--models-preset " & ai.presetFile(), sa ) > 0 && find( "--host 127.0.0.1 --port 8089", sa ) > 0 && find( "--no-webui", sa ) > 0 && !find( "--api-key-file", sa ) );
+st.serve.listen = "0.0.0.0";
+testkit.check( "server: on the network the API key is required", find( "--host 0.0.0.0", ai.serverArgv( st, e ).toList( " " ) ) > 0 && find( "--api-key-file " & ai.keyFile(), ai.serverArgv( st, e ).toList( " " ) ) > 0 );
+testkit.check( "server: a package's llama-server takes no serve word", ai.serverArgv( st, { kind: "server", path: "llama-server" } )[ 2 ] == "--models-preset" );
+testkit.check( "base URL: 0.0.0.0 is reached on 127.0.0.1", ai.baseUrl( st ) == "http://127.0.0.1:8089" );
+st.serve.listen = "127.0.0.1";
+unit = ai.unitText( st, e );
+testkit.check( "unit: ExecStart is the server line, restarts on failure", find( "ExecStart=/home/u/.local/bin/llama serve --models-preset", unit ) > 0 && find( "Restart=on-failure", unit ) > 0 && find( "WantedBy=default.target", unit ) > 0 );
+ba = ai.benchArgv( e, "/m/q.gguf", 8 ).toList( " " );
+testkit.check( "bench: half and all cores, batch 256 and 512, flash attention off and on, JSON", ba == "/home/u/.local/bin/llama bench -m /m/q.gguf -t 4,8 -ub 256,512 -fa 0,1 -p 256 -n 32 -r 1 -o json" );
+testkit.check( "bench: a 2-core machine tries 2 threads only", find( "-t 2 ", ai.benchArgv( e, "/m/q.gguf", 2 ).toList( " " ) ) > 0 );
+row = function( t, u, fa, p, n, ts ) { return { n_threads: t, n_ubatch: u, flash_attn: fa, n_prompt: p, n_gen: n, avg_ts: ts }; };
+bench = serializeJSON( [ row( 2, 512, false, 256, 0, 240 ), row( 2, 512, false, 0, 32, 20 ), row( 4, 512, true, 256, 0, 421 ), row( 4, 512, true, 0, 32, 32.3 ), row( 4, 256, false, 256, 0, 900 ), row( 4, 256, false, 0, 32, 30 ) ] );
+best = ai.bestTune( bench );
+testkit.check( "tune: writing speed counts most, prompt reading a little", best.threads == 4 && best.ubatch == 256 && !best.flash_attn && best.gen == 30 && best.prompt == 900 );
+best = ai.bestTune( serializeJSON( [ row( 4, 512, 1, 256, 0, 421 ), row( 4, 512, 1, 0, 32, 32.3 ), row( 2, 512, 0, 256, 0, 300 ), row( 2, 512, 0, 0, 32, 25 ) ] ) );
+testkit.check( "tune: flash attention as 1 or 0", best.threads == 4 && best.flash_attn && best.gen == 32.3 );
+
+w = ai.wrapText( "one two three four five six", 9 );
+testkit.check( "ask: answers are wrapped for people", w.toList( "|" ) == "one two|three|four five|six" && ai.wrapText( "", 9 ).len() == 0 );
+
+// ---- the Control Center page ----
+pv = new bxrig.AiProvider( true );
+rows = pv.load();
+testkit.check( "page: this machine, the engine and the server first", rows[ 1 ].kind == "hardware" && rows[ 2 ].kind == "engine" && rows[ 3 ].kind == "server" && rows[ 3 ].ok );
+models = rows.filter( function( r ) { return r.kind == "model"; } );
+testkit.check( "page: the installed models, the active one marked", models.len() == 3 && models.filter( function( r ) { return r.active; } ).len() == 1 && models.filter( function( r ) { return r.active; } ).first().id == "gemma-4-e4b" );
+testkit.check( "page: picks that are installed are not offered again", rows.filter( function( r ) { return r.kind == "pick"; } ).map( function( r ) { return r.id; } ).toList( "," ) == "gemma-4-12b" );
+acts = {}; for ( a in pv.actions() ) acts[ a.key ] = a.run;
+pick = rows.filter( function( r ) { return r.kind == "pick"; } ).first();
+chat = models.filter( function( r ) { return r.id == "qwen3.5-0.8b"; } ).first();
+emb = models.filter( function( r ) { return r.model_kind == "embeddings"; } ).first();
+testkit.check( "page: Enter on a pick downloads it (plan first)", acts.Enter( pick ).action == "cli" && acts.Enter( pick ).args.toList( " " ) == "ai models pull gemma-4-12b" );
+testkit.check( "page: Enter on a chat model uses it; not on the embedding model", acts.Enter( chat ).args.toList( " " ) == "ai models use qwen3.5-0.8b" && structIsEmpty( acts.Enter( emb ) ) );
+testkit.check( "page: Enter on a running server stops it", acts.Enter( rows[ 3 ] ).args.toList( " " ) == "ai serve stop" );
+testkit.check( "page: t tests, u tunes, x removes", acts.t( chat ).args.toList( " " ) == "ai models test qwen3.5-0.8b" && acts.u( chat ).args.toList( " " ) == "ai models tune qwen3.5-0.8b" && acts.x( chat ).action == "cli" && structIsEmpty( acts.x( pick ) ) );
+testkit.check( "page: h opens the Hugging Face page", acts.h( chat ).argv.toList( " " ) == "xdg-open https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF" );
+askIt = acts.p( chat );
+testkit.check( "page: p asks a question of the model under the cursor", askIt.action == "ask" && askIt.make( "hi there" ).args.toList( " " ) == "ai ask hi there --model=qwen3.5-0.8b" );
+testkit.check( "page: s sets everything up (plan first)", acts.s( rows[ 1 ] ).action == "cli" && acts.s( rows[ 1 ] ).args.toList( " " ) == "ai setup" );
+testkit.check( "page: no answer from bxrig is one row that says so", pv.rowsFrom( {}, {} ).len() == 1 );
+
+// ---- the bar's Local tab ----
+root = "../templates/noctalia-plugins/agents/";
+panelSrc = fileRead( root & "panel.luau" );
+localSrc = fileRead( root & "local.luau" );
+testkit.check( "bar: the panel has Agents and Local tabs and loads local.luau", find( 'require("./local.luau")', panelSrc ) > 0 && find( 'label = "Local"', panelSrc ) > 0 && find( 'label = "Agents"', panelSrc ) > 0 );
+testkit.check( "bar: the Local tab runs the commands it documents", find( '"ai", "status", "--json"', localSrc ) > 0 && find( '"ai", "serve", running and "stop" or "start"', localSrc ) > 0 && find( '"ai", "models", "use", id', localSrc ) > 0 && find( '"ai", "ask", question, "--json"', localSrc ) > 0 && find( 'tui ai', localSrc ) > 0 );
+testkit.check( "bar: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), panelSrc & localSrc ) );
+testkit.done( "all passed" );

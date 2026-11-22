@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# `bxrig ai session` and `bxrig ai models` with fake tmux, ollama, systemctl and sudo. Usage: ai-session-test.sh BINARY
+# `bxrig ai session` with a fake tmux. Usage: ai-session-test.sh BINARY
 . "$(dirname "$0")/lib/harness.sh"
 mkdir -p "$tmp/bin" "$tmp/home" "$tmp/cfg/bxrig" "$tmp/tm" "$tmp/work"
 export LOG="$tmp/log"; : > "$LOG"
@@ -14,16 +14,6 @@ case "$1" in
 esac
 SH
 printf '#!/usr/bin/env bash\necho claude\n' > "$tmp/bin/claude"
-cat > "$tmp/bin/ollama" <<'SH'
-#!/usr/bin/env bash
-echo "ollama $*" >> "$LOG"
-case "$1" in
-  list) printf 'NAME ID SIZE\nqwen3:8b abc 5GB\n' ;;
-  ps) printf 'NAME ID\n' ;;
-  pull) echo "pulling $2"; [[ -n "${NO_SERVER:-}" ]] && { echo "could not connect" >&2; exit 1; } ;;
-  rm) echo "deleted '$2'" ;;
-esac
-SH
 printf '#!/usr/bin/env bash\necho "systemctl $*" >> "$LOG"\n[[ "$1" == is-active ]] && echo "${SVC:-inactive}"\nexit 0\n' > "$tmp/bin/systemctl"
 printf '#!/usr/bin/env bash\necho "sudo $*" >> "$LOG"\nexec "$@"\n' > "$tmp/bin/sudo"
 chmod +x "$tmp/bin"/*
@@ -52,20 +42,4 @@ run "$binary" ai session stop claude-code-api --yes | grep -q 'was ended' || fai
 mkdir -p "$tmp/nobin"; ln -sf "$(command -v sh)" "$tmp/nobin/sh"; ln -sf "$tmp/bin/claude" "$tmp/nobin/claude"
 set +e; env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" PATH="$tmp/nobin" "$binary" ai session start >/dev/null 2>&1; rc=$?; set -e; [[ "$rc" == 4 ]] || fail "no tmux exits 4 (got $rc)"
 
-# ---- models ----
-run "$binary" ai models list | grep -q 'qwen3:8b' || fail 'models list'
-run "$binary" ai models ps --json | jq -e '.data.output | startswith("NAME")' >/dev/null || fail 'models ps --json'
-: > "$LOG"; run "$binary" ai models pull qwen3:8b | grep -q 'pulling qwen3:8b' || fail 'pull shows progress'
-grep -q '^ollama pull qwen3:8b$' "$LOG" || fail 'pull command'
-[[ "$(code "$binary" ai models pull 'a;rm -rf')" == 2 ]] || fail 'a bad model name exits 2'
-[[ "$(NO_SERVER=1 code "$binary" ai models pull qwen3:8b)" == 1 ]] || fail "pull returns ollama's exit code"
-[[ "$(code "$binary" ai models rm qwen3:8b)" == 2 ]] || fail 'rm without --yes exits 2'
-run "$binary" ai models rm qwen3:8b --yes | grep -q "deleted" || fail 'rm --yes'
-run "$binary" ai models status --json | jq -e '.data.installed == true and .data.service_active == false' >/dev/null || fail 'status inactive'
-SVC=active run "$binary" ai models status --json | jq -e '.data.service_active == true' >/dev/null || fail 'status active'
-: > "$LOG"; [[ "$(code "$binary" ai models enable)" == 2 ]] || fail 'enable without --yes exits 2'
-[[ ! -s "$LOG" ]] || fail 'the enable plan ran something'
-run "$binary" ai models enable --yes | grep -q 'enabled and running' || fail 'enable --yes'
-grep -q 'sudo systemctl enable --now ollama' "$LOG" || fail 'enable command'
-mv "$tmp/bin/ollama" "$tmp/ollama.off"; [[ "$(code "$binary" ai models list)" == 4 ]] || fail 'no ollama exits 4'
 echo "ai-session-test: ok"

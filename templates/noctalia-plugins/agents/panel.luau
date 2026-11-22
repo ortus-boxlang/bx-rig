@@ -8,9 +8,11 @@
 -- Launch: `bxrig ai launch <id>` (detached; the panel closes).
 -- "Edit agents" (footer) lists every known agent (`bxrig ai panel list --json`) with a
 -- Show/Hide button: `bxrig ai panel add|remove <id> --yes`.
+-- Two tabs: Agents (the above) and Local (BxRig's local AI on llama.cpp, local.luau).
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local localAi = require("./local.luau")
 
 local REFRESH_MS = 60000
 
@@ -22,6 +24,7 @@ local closeButton = true
 local editing = false
 local choices = nil -- `ai panel list` rows while editing
 local busyId = nil
+local tab = "agents" -- "agents" | "local"
 
 -- Leading glyph per agent id; anything else gets the robot.
 local AGENT_GLYPHS = {
@@ -213,7 +216,39 @@ local function editSection()
 	return ui.scroll({ flexGrow = 1, gap = 6 }, rows)
 end
 
+local function tabBar()
+	local buttons = {}
+	for _, t in ipairs({ { id = "agents", label = "Agents", glyph = "robot" }, { id = "local", label = "Local", glyph = "cpu" } }) do
+		table.insert(buttons, ui.button({
+			key = "tab-" .. t.id,
+			text = t.label,
+			glyph = t.glyph,
+			variant = tab == t.id and "secondary" or "ghost",
+			selected = tab == t.id,
+			controlSize = "sm",
+			flexGrow = 1,
+			onClick = function()
+				tab = t.id
+				editing = false
+				if tab == "local" then
+					localAi.fetch(render)
+				end
+				render()
+			end,
+		}))
+	end
+	return ui.row({ align = "center", gap = 4 }, buttons)
+end
+
 local function footer()
+	if tab == "local" then
+		return ui.row({ align = "center", gap = 8 }, {
+			ui.spacer({ flexGrow = 1 }),
+			ui.button({ text = "AI page", glyph = "external-link", variant = "ghost", controlSize = "sm", onClick = function()
+				localAi.openPage()
+			end }),
+		})
+	end
 	return ui.row({ align = "center", gap = 8 }, {
 		ui.spacer({ flexGrow = 1 }),
 		ui.button({
@@ -243,11 +278,14 @@ function render()
 
 	local sections = {
 		ui.row({ align = "center", gap = 10 }, header),
+		tabBar(),
 		ui.separator({}),
 	}
 
 	local agents = data and data.agents or nil
-	if editing then
+	if tab == "local" then
+		table.insert(sections, localAi.view(render))
+	elseif editing then
 		table.insert(sections, editSection())
 	elseif data == nil then
 		table.insert(sections, ui.column({ paddingV = 16, align = "center", gap = 6 }, {
@@ -320,7 +358,11 @@ function onEditClicked()
 end
 
 function onRefresh()
-	fetch()
+	if tab == "local" then
+		localAi.fetch(render)
+	else
+		fetch()
+	end
 end
 
 function onCloseClicked()

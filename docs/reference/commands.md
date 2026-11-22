@@ -1597,19 +1597,20 @@ bxrig vm open dev
 
 ### `bxrig ai` {#bxrig-ai}
 
-AI agents: list, default, launch, tmux sessions, local models, the pull-down AI shell.
+AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), coding agents, tmux sessions, the pull-down AI shell.
 
 ```text
 bxrig ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]
 bxrig ai session list
 bxrig ai session attach NAME
 bxrig ai session stop NAME --yes [--json]
-bxrig ai models list
-bxrig ai models ps
-bxrig ai models pull NAME
-bxrig ai models rm NAME --yes
-bxrig ai models status
-bxrig ai models enable [--yes] [--json]
+bxrig ai status [--json]
+bxrig ai hardware [--json]
+bxrig ai setup [--models=ID,ID|--picks=all] [--tune] [--yes] [--dry-run]
+bxrig ai engine [status|install|update] [--source=official|aur] [--yes] [--dry-run]
+bxrig ai models [list] | recommend [--all] | pull ID... [--no-test] [--yes] | use ID | test [ID] | tune [ID] [--yes] | remove ID [--yes] [--dry-run] [--json]
+bxrig ai serve [status|start|stop|restart] [--listen=127.0.0.1|0.0.0.0] [--port=N] [--yes] [--json]
+bxrig ai ask TEXT [--model=ID] [--json]
 bxrig ai list
 bxrig ai default [ID] [--yes]
 bxrig ai launch [ID] [--dry-run]
@@ -1624,9 +1625,11 @@ bxrig ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
+bxrig ai setup --yes
+bxrig ai models recommend
+bxrig ai models pull gemma-4-e4b --yes
+bxrig ai serve status
 bxrig ai list
-bxrig ai launch
-bxrig ai models pull llama3.2
 bxrig ai session start --name=work
 ```
 

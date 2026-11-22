@@ -303,8 +303,8 @@ class MacExtras {
 		}
 		var lines = cards.len() ? cards.map( function( c ) { return "GPU: " & c; } ) : [ "No GPU found by lspci." ];
 		for ( var r in rows ) lines.append( ( r.installed ? "ok    " : "FIX   " ) & r.vendor & ": " & r.package );
-		if ( arrayFind( vendors, "nvidia" ) ) lines.append( "note: for local AI install ollama-cuda; CachyOS normally installs the NVIDIA driver itself (chwd)." );
-		if ( arrayFind( vendors, "amd" ) ) lines.append( "note: for local AI install ollama-rocm." );
+		if ( arrayFind( vendors, "nvidia" ) ) lines.append( "note: bxrig ai setup installs the CUDA build of llama.cpp for this card; CachyOS normally installs the NVIDIA driver itself (chwd)." );
+		if ( arrayFind( vendors, "amd" ) ) lines.append( "note: bxrig ai setup installs the ROCm build of llama.cpp for this card." );
 		if ( missing.len() ) lines.append( "Install: " & variables.pacman.installLine( missing ) );
 		return variables.cli.say( cmd, missing.len() ? "precondition" : "ok", { gpus: cards, vendors: vendors, packages: rows, missing: missing }, arguments.asJson, lines );
 	}

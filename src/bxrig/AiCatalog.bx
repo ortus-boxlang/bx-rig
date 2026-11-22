@@ -1,0 +1,83 @@
+// The local AI model catalog (catalog/ai-models.json, packed with BxRig): every model BxRig offers, with what BxRig measured for it
+// (score out of 20 on the BxRig tools test, reply time and speed on a reference 4-core CPU) and its file, size, checksum and licence.
+// `recommend` picks up to three chat models that fit a machine's budget, each with a role:
+//   fastest   the quickest with a score of at least 16
+//   balanced  the best score with a reference reply of at most 3 s (else the fastest of the best scores); offered as the default
+//   capable   the best score, the bigger model on a tie
+// Models BxRig has not tested (`verified: false`) are never picked; `all` lists them, marked, with everything else that fits.
+// BXRIG_AI_CATALOG names a catalog file to use instead (the tests use it).
+class AiCatalog {
+	function init( string json = "" ) {
+		// BXRIG_AI_CATALOG: a catalog file of your own (same schema) in place of the one packed with BxRig
+		var own = new bxrig.util.Env().named( "aiCatalog", "" );
+		var text = len( arguments.json ) ? arguments.json : ( len( own ) && fileExists( own ) ? fileRead( own ) : new bxrig.util.Res().trimmed( "catalog/ai-models.json" ) );
+		variables.data = jsonDeserialize( text );
+		return this;
+	}
+
+	array function models( string kind = "" ) {
+		return variables.data.models.filter( function( m ) { return !len( kind ) || m.kind == kind; } );
+	}
+
+	struct function find( required string id ) {
+		for ( var m in variables.data.models ) if ( m.id == arguments.id ) return m;
+		return {};
+	}
+
+	struct function testedWith() { return variables.data.tested_with; }
+
+	// The memory a model needs: what it used in BxRig's test, or its file, whichever is more, plus 512 MB for the context.
+	numeric function needMb( required struct model ) {
+		return max( arguments.model.mem_mb ?: 0, arguments.model.size_mb ) + 512;
+	}
+
+	boolean function fits( required struct model, required numeric budgetMb ) {
+		return needMb( arguments.model ) <= arguments.budgetMb;
+	}
+
+	numeric function score( required struct model ) { return ( arguments.model.score ?: {} ).total ?: 0; }
+	numeric function replySeconds( required struct model ) { return ( arguments.model.reference ?: {} ).reply_s ?: 999; }
+
+	// The picks for a budget: [ { id, role, default } ], at most three, no model twice (pure).
+	array function recommend( required numeric budgetMb ) {
+		var me = this;
+		var budget = arguments.budgetMb;
+		var pool = models( "chat" ).filter( function( m ) { return m.verified && me.fits( m, budget ); } );
+		if ( !pool.len() ) return [];
+		var picks = [];
+		var used = {};
+		var add = function( m, role ) {
+			if ( isStruct( m ) && !structIsEmpty( m ) && !structKeyExists( used, m.id ) ) { used[ m.id ] = true; picks.append( { id: m.id, role: role } ); }
+		};
+		var best = 0;
+		for ( var m in pool ) best = max( best, me.score( m ) );
+		// balanced: the best score among the quick ones
+		var quick = pool.filter( function( m ) { return me.replySeconds( m ) <= 3; } );
+		var balanced = pickBy( quick.len() ? quick : pool, function( a, b ) { return me.score( a ) != me.score( b ) ? me.score( a ) > me.score( b ) : me.replySeconds( a ) < me.replySeconds( b ); } );
+		var fastest = pickBy( pool.filter( function( m ) { return me.score( m ) >= 16; } ), function( a, b ) { return me.replySeconds( a ) < me.replySeconds( b ); } );
+		var capable = pickBy( pool, function( a, b ) { return me.score( a ) != me.score( b ) ? me.score( a ) > me.score( b ) : a.size_mb > b.size_mb; } );
+		add( balanced, "balanced" );
+		add( fastest, "fastest" );
+		add( capable, "capable" );
+		return picks.map( function( p ) { p.default = p.role == "balanced"; return p; } );
+	}
+
+	// The model for which better( a, b ) holds against every other one; {} for an empty list.
+	private struct function pickBy( required array list, required any better ) {
+		if ( !arguments.list.len() ) return {};
+		var top = arguments.list[ 1 ];
+		for ( var m in arguments.list ) if ( better( m, top ) ) top = m;
+		return top;
+	}
+
+	// The default embedding model.
+	struct function embedding() {
+		for ( var m in models( "embeddings" ) ) if ( m.default ?: false ) return m;
+		return {};
+	}
+
+	// The download URL of a model file on Hugging Face.
+	string function url( required struct model ) {
+		return "https://huggingface.co/" & arguments.model.repo & "/resolve/main/" & ( arguments.model.remote_file ?: arguments.model.file );
+	}
+}
