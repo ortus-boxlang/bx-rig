@@ -65,6 +65,11 @@ These five settings (`bar layout`, `dock on|off|toggle`, `appgrid`, `battery-per
 - **Noctalia** (bar position and style, dock mode and position, battery, font, corner radius) is changed with `noctalia msg config-set`, so your `config.toml` is not edited. Without Noctalia the choice is saved and `appearance apply` pushes it later.
 - **Hyprland** window looks (gaps, corners, opacity, animations, layout) are one generated file, `~/.config/bxrig/theme/look.lua`, loaded by `bxrig.lua`. BxRig reloads Hyprland after a change. Your own `hyprland.lua` is never touched.
 - **Fonts** are in three parts, also on the Look page of the Control Center (Fonts):
+
+  ![The coding fonts and Inter](../assets/screenshots/font-specimen.webp)
+
+  <video src="../assets/clips/fonts-look.webm" poster="../assets/screenshots/look-fonts.webp" autoplay loop muted playsinline width="100%"></video>
+
   - **Coding font**, one of fifteen Nerd Fonts (`appearance font list`). JetBrains Mono is the default. Geist Mono, Monaspace Neon, IBM Plex Mono, Commit Mono and Atkinson Hyperlegible Mono (made for low vision) are new. Changing it updates the terminal configs BxRig wrote, but never one you edited (it tells you which).
   - **Interface font** (`appearance ui-font list`): Inter, Noto Sans or IBM Plex Sans, for the bar, the panels and GTK apps. Inter is made for screens and is the closest to the Mac's system font. Until you pick one the shell uses the coding font. Plasma keeps its own font (System Settings > Text & Fonts).
   - **Rendering**: `smooth` (no hinting, the Mac look, best on HiDPI), `crisp` (slight hinting, sharper on 1x screens), `sharp` (full hinting and subpixel, for low-resolution LCDs) or `default` (your distribution's). BxRig writes `~/.config/fontconfig/conf.d/60-bxrig-rendering.conf` and GTK's hinting settings; `default` removes the file unless you edited it. Open apps pick it up when they restart.
