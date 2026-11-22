@@ -15,14 +15,13 @@ class GitSigning {
 		return this;
 	}
 
-	function home() { return variables.env.home(); }
-	function defaultKey() { return home() & "/.ssh/id_ed25519.pub"; }
+	function defaultKey() { return variables.env.home() & "/.ssh/id_ed25519.pub"; }
 	function signersFile() { return variables.env.xdgConfig( "git/allowed_signers" ); }
 
 	// The public key file for a --key value: "" means the default; a private key path gets .pub.
 	function publicKey( key = "" ) {
 		var k = len( arguments.key ) ? arguments.key : defaultKey();
-		if ( left( k, 2 ) == "~/" ) k = home() & mid( k, 2, len( k ) );
+		if ( left( k, 2 ) == "~/" ) k = variables.env.home() & mid( k, 2, len( k ) );
 		return right( k, 4 ) == ".pub" ? k : k & ".pub";
 	}
 
