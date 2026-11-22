@@ -13,7 +13,7 @@ code() { set +e; "$@" >/dev/null 2>&1; echo $?; set -e; }
 "$binary" tui ports --demo --json | jq -e '.data.rows == 7 and (.data.items | map(select(.conflict)) | length == 2)' >/dev/null || fail 'ports demo'
 "$binary" tui java --demo --json | jq -e '.data.items[0].id == "temurin-21.0.13_9"' >/dev/null || fail 'java demo'
 for pg in boxlang maven gradle versions shortcuts machines databases mail storage secrets look themes logs; do "$binary" tui "$pg" --demo --json | jq -e '.ok and (.data.rows > 0)' >/dev/null || fail "$pg demo"; done
-"$binary" tui look --demo --json | jq -e '.data.rows == 9 and (.data.items | map(.id) | join(",")) == "layout,battery,clock,toggle,theme,appgrid,dock,screensaver,screensaver-time" and .data.look.layout == "standard"' >/dev/null || fail 'look demo'
+"$binary" tui look --demo --json | jq -e '.data.rows == 12 and (.data.items | map(.id) | join(",")) == "layout,battery,clock,toggle,theme,appgrid,dock,screensaver,screensaver-time,font,ui-font,rendering" and .data.look.layout == "standard"' >/dev/null || fail 'look demo'
 "$binary" tui themes --demo --json | jq -e '.data.items | map(.name) | index("tokyo-night") != null' >/dev/null || fail 'themes page by name'
 "$binary" tui packages --demo --json | jq -e '.data.rows == 0' >/dev/null || fail 'packages start empty until you search'
 
