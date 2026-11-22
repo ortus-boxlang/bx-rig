@@ -143,7 +143,7 @@ class Boxlang {
 		var mods = variables.proc.has( "bx-module" ) ? parseOutdated( bxModule( [ "outdated" ], 300 ).output ) : [];
 		var behind = mods.filter( function( m ) { return m.outdated; } );
 		var upd = len( cur ) && len( latest ) && compareVersions( cur, latest ) < 0;
-		return { boxlang: { installed: cur, latest: latest, update: upd }, modules: mods, outdated: behind.len(), checked: dateTimeFormat( now(), "yyyy-mm-dd'T'HH:nn:ss" ) };
+		return { boxlang: { installed: cur, latest: latest, update: upd }, modules: mods, outdated: behind.len(), checked: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ) };
 	}
 
 	function check( asJson ) {
