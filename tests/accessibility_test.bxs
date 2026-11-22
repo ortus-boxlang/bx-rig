@@ -62,7 +62,7 @@ testkit.check( "page: what is on is marked", rows[ 1 ].active && !rows[ 2 ].acti
 testkit.check( "page: Enter on zoom (on) turns it off", pv.switchIntent( rows[ 1 ] ).args.toList( " " ) == "accessibility zoom off" );
 testkit.check( "page: Enter on reduce motion (off) turns it on", pv.switchIntent( rows[ 2 ] ).args.toList( " " ) == "accessibility reduce-motion on" );
 testkit.check( "page: Enter on a theme picks it, on the one in use goes back", pv.switchIntent( rows[ 3 ] ).args.toList( " " ) == "accessibility contrast dark" && pv.switchIntent( rows[ 5 ] ).args.toList( " " ) == "accessibility contrast off" );
-testkit.check( "page: registered with its icon", new bxrig.ControlCenterPages().icon( "accessibility" ) == "access" && find( "access: ""f29a""", fileRead( expandPath( "bxrig/TuiKit.bx" ) ) ) > 0 );
+testkit.check( "page: registered with its icon", new bxrig.ControlCenterPages().icon( "accessibility" ) == "access" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "access" ) == chr( inputBaseN( "f29a", 16 ) ) );
 
 // ---- keys and menu ----
 keys = {};
