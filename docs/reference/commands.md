@@ -1619,7 +1619,7 @@ bxrig ai serve [status|start|stop|restart] [--listen=127.0.0.1|0.0.0.0] [--port=
 bxrig ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=N] [--json]
 bxrig ai downloads [clear | cancel ID] [--json]
 bxrig ai bench [ID] [--json]
-bxrig ai agents [local opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
+bxrig ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
 bxrig ai ask TEXT [--model=ID] [--json]
 bxrig ai list
 bxrig ai default [ID] [--yes]

@@ -113,11 +113,11 @@ bxrig ai bench qwen3.5-0.8b
 ## Coding agents on local models
 
 ```bash
-bxrig ai agents                            # which agents use the local server
-bxrig ai agents local opencode --yes       # add BxRig's server to OpenCode
-bxrig ai agents local opencode --default --yes   # and make the active model its default
-bxrig ai agents local crush --yes
-bxrig ai agents local opencode --off --yes
+bxrig ai link                              # which agents use the local server
+bxrig ai link opencode --yes               # add BxRig's server to OpenCode
+bxrig ai link opencode --default --yes     # and make the active model its default
+bxrig ai link crush --yes
+bxrig ai link opencode --off --yes
 ```
 
 Only BxRig's own part of each agent's config is written (a provider called `bxrig`); everything else stays, and the old file is kept as `.bxrig-backup`. OpenCode gets a provider in `~/.config/opencode/opencode.json` with your chat models; Crush gets a `llamacpp` provider block in `~/.config/crush/crushrc` and finds the models itself. A config with comments (JSONC) is not rewritten. While the server listens on your network it needs an API key, so agents are linked only while it listens on 127.0.0.1.

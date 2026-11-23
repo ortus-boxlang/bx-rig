@@ -1,4 +1,4 @@
-// Points coding agents at BxRig's local AI server (`bxrig ai agents local opencode|crush [--off]`). Only BxRig's own part of each
+// Points coding agents at BxRig's local AI server (`bxrig ai link opencode|crush [--off]`). Only BxRig's own part of each
 // agent's config is written or removed; everything else in the file stays as it was. Formats from the agents' docs (read 2026-11-23):
 //   OpenCode  ~/.config/opencode/opencode.json: providers.bxrig = { name, package "@opencode/ai/providers/openai-compatible",
 //             settings.baseURL, models { ID: {} } }; with --default also "model": "bxrig/ID". A file with comments (JSONC) is refused, not rewritten.
@@ -49,7 +49,7 @@ class AiAgentLink {
 
 	// ---- Crush ----
 
-	string function crushBegin() { return "## BxRig local AI (bxrig ai agents local crush --off removes this block)"; }
+	string function crushBegin() { return "## BxRig local AI (bxrig ai link crush --off removes this block)"; }
 	string function crushEnd() { return "## end of BxRig local AI"; }
 
 	string function crushRemove( required string text ) {

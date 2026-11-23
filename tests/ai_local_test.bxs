@@ -163,7 +163,7 @@ arows = ap.load();
 oc2 = arows.filter( function( r ) { return r.id == "opencode-cli"; } ).first();
 testkit.check( "agents page: installed first, the default on top; OpenCode uses the local server; sessions counted", arows[ 1 ].id == "claude-code" && arows[ 1 ].sessions == "2 running" && oc2.linked && oc2.model == "local + cloud" && arows[ arows.len() ].installed == false );
 aacts = {}; for ( a in ap.actions() ) aacts[ a.key ] = a.run;
-testkit.check( "agents page: l unlinks a linked agent, links with --default otherwise, nothing for others", aacts.l( oc2 ).args.toList( " " ) == "ai agents local opencode --off" && structIsEmpty( aacts.l( arows[ 1 ] ) ) );
+testkit.check( "agents page: l unlinks a linked agent, links with --default otherwise, nothing for others", aacts.l( oc2 ).args.toList( " " ) == "ai link opencode --off" && structIsEmpty( aacts.l( arows[ 1 ] ) ) );
 testkit.check( "agents page: d makes it the default (plan first); Enter starts a session", aacts.d( oc2 ).action == "cli" && aacts.d( oc2 ).args.toList( " " ) == "ai default opencode-cli" && structIsEmpty( aacts.d( arows[ 1 ] ) ) && aacts.Enter( oc2 ).args.toList( " " ) == "ai session start opencode-cli" );
 crushRows = ap.rowsFrom( { agents: [] }, { agents: [ { id: "crush", linked: true, installed: true } ] }, {} );
 testkit.check( "agents page: Crush shows when it is installed or linked", crushRows.len() == 1 && crushRows[ 1 ].link == "crush" && crushRows[ 1 ].linked );

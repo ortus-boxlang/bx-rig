@@ -1,7 +1,7 @@
 // Agents: your coding agents in one place. Each row: the default one marked, installed or not, whether it uses BxRig's local AI server
 // (OpenCode and Crush can), and its running tmux sessions. Enter opens the agent in a new terminal session, d makes it the default,
 // l points it at the local server or back (its plan first), n starts a tmux session. Reads `bxrig ai list --json`,
-// `bxrig ai agents --json` and `bxrig ai session list --json`.
+// `bxrig ai link --json` and `bxrig ai session list --json`.
 class AiAgentsProvider {
 	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
 	function id() { return "ai-agents"; }
@@ -29,7 +29,7 @@ class AiAgentsProvider {
 			{ key: "d", label: "default", run: function( r ) { return r.installed && !r.default ? { action: "cli", title: "Make " & r.name & " the default", args: [ "ai", "default", r.id ] } : {}; } },
 			{ key: "l", label: "local model", run: function( r ) {
 					if ( !len( r.link ?: "" ) ) return {};
-					var a = [ "ai", "agents", "local", r.link ];
+					var a = [ "ai", "link", r.link ];
 					if ( r.linked ) a.append( "--off" ); else a.append( "--default" );
 					return { action: "cli", title: ( r.linked ? "Stop using the local server in " : "Use the local server in " ) & r.name, args: a };
 				} },
@@ -66,7 +66,7 @@ class AiAgentsProvider {
 
 	function load( q = "" ) {
 		if ( variables.demo ) return rowsFrom( demoList(), { agents: [ { id: "opencode", linked: true, installed: true }, { id: "crush", linked: false, installed: false } ] }, { sessions: [ "bxrig-claude-code", "bxrig-claude-code-site", "bxrig-opencode-cli-api" ] } );
-		return rowsFrom( variables.proc.selfData( [ "ai", "list" ], 20 ), variables.proc.selfData( [ "ai", "agents" ], 20 ), variables.proc.selfData( [ "ai", "session", "list" ], 20 ) );
+		return rowsFrom( variables.proc.selfData( [ "ai", "list" ], 20 ), variables.proc.selfData( [ "ai", "link" ], 20 ), variables.proc.selfData( [ "ai", "session", "list" ], 20 ) );
 	}
 
 	function demoList() {

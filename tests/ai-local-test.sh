@@ -169,14 +169,14 @@ grep -q '"tools"' "$SRV/requests" || fail 'bench sends the tools'
 
 # ---- agents ----
 mkdir -p "$tmp/home/.config/opencode"; printf '{"theme":"x"}\n' > "$tmp/home/.config/opencode/opencode.json"
-[[ "$(code "$binary" ai agents local opencode)" == 2 ]] || fail 'link without --yes is a plan'
-run "$binary" ai agents local opencode --default --yes >/dev/null
+[[ "$(code "$binary" ai link opencode)" == 2 ]] || fail 'link without --yes is a plan'
+run "$binary" ai link opencode --default --yes >/dev/null
 jq -e --arg active "$(jq -r .active "$cfg/ai.json")" '.theme == "x" and .providers.bxrig.settings.baseURL == "http://127.0.0.1:8089/v1" and .model == ("bxrig/" + $active) and (.providers.bxrig.models | has("tiny-a") and (has("emb-a") | not))' "$tmp/home/.config/opencode/opencode.json" >/dev/null || fail "opencode config: $(cat "$tmp/home/.config/opencode/opencode.json")"
 [[ -e "$tmp/home/.config/opencode/opencode.json.bxrig-backup" ]] || fail 'the old config is kept'
-run "$binary" ai agents local crush --yes >/dev/null; grep -q -- '--type llamacpp --base-url "http://127.0.0.1:8089"' "$tmp/home/.config/crush/crushrc" || fail 'crushrc'
-run "$binary" ai agents --json | jq -e '[.data.agents[] | select(.linked)] | length == 2' >/dev/null || fail 'agents shows both linked'
-run "$binary" ai agents local crush --off --yes >/dev/null; ! grep -q 'provider add bxrig' "$tmp/home/.config/crush/crushrc" || fail 'crush --off'
-run "$binary" ai serve --listen=0.0.0.0 --yes >/dev/null; [[ "$(code "$binary" ai agents local crush --yes)" == 4 ]] || fail 'no link while the server needs a key'; run "$binary" ai serve --listen=127.0.0.1 --yes >/dev/null
+run "$binary" ai link crush --yes >/dev/null; grep -q -- '--type llamacpp --base-url "http://127.0.0.1:8089"' "$tmp/home/.config/crush/crushrc" || fail 'crushrc'
+run "$binary" ai link --json | jq -e '[.data.agents[] | select(.linked)] | length == 2' >/dev/null || fail 'link shows both linked'
+run "$binary" ai link crush --off --yes >/dev/null; ! grep -q 'provider add bxrig' "$tmp/home/.config/crush/crushrc" || fail 'crush --off'
+run "$binary" ai serve --listen=0.0.0.0 --yes >/dev/null; [[ "$(code "$binary" ai link crush --yes)" == 4 ]] || fail 'no link while the server needs a key'; run "$binary" ai serve --listen=127.0.0.1 --yes >/dev/null
 run "$binary" tui ai-discover --json | jq -e '[.data.items[].kind] | index("staff") != null' >/dev/null || fail 'the Discover page'
 run "$binary" tui ai-agents --json | jq -e '.data.items | length > 0' >/dev/null || fail 'the Agents page'
 

@@ -13,7 +13,7 @@
 //                                              the staff picks for this machine, then GGUF models on Hugging Face (pull hf:OWNER/REPO)
 //   downloads [clear | cancel ID]               the download queue (pull --background): each model's share, queued, failed or done
 //   bench [ID]                                 BxRig's 20 tool-calling cases against a local model: score, median reply, misses
-//   agents [local opencode|crush [--off] [--default] [--yes]]
+//   link [opencode|crush [--off] [--default] [--yes]]
 //                                              point an agent at the local server (only BxRig's part of its config changes)
 //   ask TEXT [--model=ID]                      one question to a local model (the active one by default)
 //   status                                     everything above as one answer (the bar panel and the Control Center read it)
@@ -669,7 +669,7 @@ class AiLocal {
 	}
 
 	// Coding agents and the local server: which ones are pointed at it, and pointing one at it or back (OpenCode, Crush). See AiAgentLink.
-	function agentsCmd( words, opts, asJson ) {
+	function linkCmd( words, opts, asJson ) {
 		var link = new bxrig.AiAgentLink();
 		var w = arguments.words;
 		var o = arguments.opts;
@@ -678,11 +678,11 @@ class AiLocal {
 			var rows = link.agents().map( function( a ) { return { id: a, file: link.file( a ), linked: link.linked( a ), installed: variables.proc.has( a ) }; } );
 			var lines = rows.map( function( r ) { return left( r.id & "          ", 10 ) & ( r.linked ? "uses the local server" : "not linked" ) & ( r.installed ? "" : " (not installed)" ) & "   " & r.file; } );
 			lines.append( "" );
-			lines.append( "Link one: bxrig ai agents local opencode --yes (add --default to make the active model its default)" );
+			lines.append( "Link one: bxrig ai link opencode --yes (add --default to make the active model its default)" );
 			return variables.out.say( "ok", { agents: rows, base_url: baseUrl( st ) & "/v1" }, arguments.asJson, lines );
 		}
-		if ( w.len() != 3 || w[ 2 ] != "local" || !arrayFind( link.agents(), w[ 3 ] ) ) return variables.out.fail( "usage", "bxrig ai agents [local opencode|crush [--off] [--default] [--yes]]", arguments.asJson );
-		var agent = w[ 3 ];
+		if ( w.len() != 2 || !arrayFind( link.agents(), w[ 2 ] ) ) return variables.out.fail( "usage", "bxrig ai link [opencode|crush [--off] [--default] [--yes]]", arguments.asJson );
+		var agent = w[ 2 ];
 		var off = structKeyExists( o, "off" );
 		var f = link.file( agent );
 		var text = link.read( agent );
@@ -874,7 +874,7 @@ class AiLocal {
 		if ( sub == "serve" && w.len() <= 2 ) return serve( w.len() == 2 ? w[ 2 ] : "status", o, arguments.asJson );
 		if ( sub == "setup" && w.len() == 1 ) return setup( o, arguments.asJson );
 		if ( sub == "downloads" && w.len() <= 3 ) return downloads( w.len() >= 2 ? w[ 2 ] : "list", w.len() == 3 ? w[ 3 ] : "", arguments.asJson );
-		if ( sub == "agents" ) return agentsCmd( w, o, arguments.asJson );
+		if ( sub == "link" ) return linkCmd( w, o, arguments.asJson );
 		if ( sub == "bench" && w.len() <= 2 ) return bench( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
 		if ( sub == "discover" && w.len() <= 2 ) return discover( w.len() == 2 ? w[ 2 ] : "", o, arguments.asJson );
 		if ( sub == "ask" && w.len() >= 2 ) return ask( w.slice( 2 ).toList( " " ), o.model ?: "", arguments.asJson );

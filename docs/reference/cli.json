@@ -2670,7 +2670,7 @@
 						"ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=N] [--json]",
 						"ai downloads [clear | cancel ID] [--json]",
 						"ai bench [ID] [--json]",
-						"ai agents [local opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]",
+						"ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]",
 						"ai ask TEXT [--model=ID] [--json]",
 						"ai list",
 						"ai default [ID] [--yes]",
