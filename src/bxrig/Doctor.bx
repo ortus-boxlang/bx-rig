@@ -6,7 +6,7 @@
 // A missing tool, a Java that is not 21, or a MatchBox that cannot compile BxRig (stable and snapshot builds have no terminal UI yet)
 // is `miss` with the command that fixes it (owner decision: the toolchain must be able to build BxRig).
 // Exit 0 when every tool is there, 4 when one is missing. `--json`: data { ok, tools: [ { id, group, name, ok, version, detail, fix } ] }.
-// `--dev` adds the developer group: git name and email, an SSH key, the SSH agent, commit signing, a container engine and an editor.
+// `--dev` adds the developer group: git name and email, an SSH key, the SSH agent, commit signing, a container engine, the scheduler and an editor.
 // They are advice (`warn`, with the command that sets them up) and never change the exit code; their rows have advice: true.
 // The Proc runner can be injected for tests, like the other commands.
 class Doctor {
@@ -125,6 +125,11 @@ class Doctor {
 		rows.append( advice( "git-signing", signs, "", signs ? "commits signed (" & ( len( gitGet( "gpg.format" ) ) ? gitGet( "gpg.format" ) : "openpgp" ) & ")" : "commits not signed", "bxrig git signing on --yes" ) );
 		var engines = [ "podman", "docker" ].filter( function( e ) { return variables.proc.has( e ); } );
 		rows.append( advice( "containers", engines.len() > 0, engines.len() ? versionOf( engines[ 1 ] ) : "", engines.len() ? engines[ 1 ] : "no podman or docker", installHint( "podman" ) ) );
+		// the scheduler: installed, and no task failing
+		var sc = new bxrig.Scheduler( variables.cli, variables.proc.runner() );
+		var failing = sc.load().filter( function( t ) { var h = sc.history( t.name, 1 ); return ( t.enabled ?: true ) && h.len() && ( h[ 1 ].status == "failed" || h[ 1 ].status == "timeout" ); } ).map( function( t ) { return t.name; } );
+		var inst = sc.isInstalled();
+		rows.append( advice( "scheduler", inst && !failing.len(), "", !inst ? "not installed" : ( failing.len() ? "failing: " & failing.toList( ", " ) : "running its tasks" ), !inst ? "bxrig scheduler install --yes" : "bxrig scheduler show " & failing[ 1 ] ) );
 		var ed = new bxrig.util.Env().get( "EDITOR", "" );
 		rows.append( advice( "editor", len( ed ) > 0, "", len( ed ) ? "EDITOR=" & ed : "EDITOR is not set", "bxrig default editor neovim" ) );
 		return rows;

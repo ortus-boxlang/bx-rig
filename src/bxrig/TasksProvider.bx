@@ -1,0 +1,100 @@
+// Tasks: the BxRig scheduler's task manager. Reads `bxrig scheduler list --json`.
+// Each row: whether the last run went well (✓ ok, ! needs attention, ✗ failed, · never ran, ‖ paused), the task, its group, when it runs,
+// the next run and the trend of its recent runs. Enter shows the task (stats, trend, recent runs and the last output), r runs it now,
+// p pauses or resumes it, g pauses or resumes its whole group, a adds a task (asks the name, when and command), x removes it.
+// When the scheduler is not installed the first row says so, and Enter installs it (its plan first).
+class TasksProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "tasks"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "tasks" ); }
+	function title() { return "Tasks"; }
+	function hint() { return "the scheduler: every timed job, how it went"; }
+	function emptyText() { return "No tasks yet. Press a to add one, or install the scheduler: bxrig scheduler install --yes"; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "task", w: 18 }, { key: "group", label: "group", w: 10 }, { key: "when", label: "when", w: 19 }, { key: "next", label: "next", w: 13 }, { key: "trend", label: "recent runs", w: 0 } ]; }
+	function style( r ) {
+		if ( r.kind == "service" ) return "warn";
+		if ( !r.enabled ) return "dim";
+		return r.last_status == "failed" || r.last_status == "timeout" ? "error" : ( r.last_status == "attention" ? "warn" : ( r.last_status == "ok" ? "ok" : "" ) );
+	}
+
+	function detail( r ) {
+		if ( r.kind == "service" ) return [ "The scheduler is " & r.service & ".", "Enter installs it: the BoxLang service, the update check, backups and the BoxLang check as tasks." ];
+		var s = r.stats;
+		var lines = [ r.name & ": " & r.command_text ];
+		lines.append( s.runs ? s.runs & " runs, " & s.failures & " failed, " & s.success_rate & "% ok, " & numberFormat( s.avg_ms / 1000, "0.0" ) & " s on average. Last: " & r.last_status & " " & replace( r.last_run, "T", " " ) & "." : "It has not run yet. r runs it now." );
+		return lines;
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "show", run: function( r ) {
+					if ( r.kind == "service" ) return { action: "cli", title: "Install the scheduler", args: [ "scheduler", "install" ] };
+					return { action: "show", title: r.name, args: [ "scheduler", "show", r.name ] };
+				} },
+			{ key: "r", label: "run now", run: function( r ) { return r.kind == "service" ? {} : { action: "show", title: "Run " & r.name, args: [ "scheduler", "run", r.name ] }; } },
+			{ key: "p", label: "pause", run: function( r ) { return r.kind == "service" ? {} : { action: "show", title: ( r.enabled ? "Pause " : "Resume " ) & r.name, args: [ "scheduler", r.enabled ? "disable" : "enable", r.name ] }; } },
+			{ key: "g", label: "group", run: function( r ) { return r.kind == "service" || !len( r.group ) ? {} : { action: "show", title: ( r.enabled ? "Pause the group " : "Resume the group " ) & r.group, args: [ "scheduler", r.enabled ? "pause" : "resume", r.group ] }; } },
+			{ key: "a", label: "add", run: function( r ) {
+					return { action: "ask", title: "Add a task (1 of 3)", prompt: "Name (lower case letters, digits and dashes)", make: function( name ) {
+							return { action: "ask", title: "Add " & name & " (2 of 3)", prompt: "When: every 15 minutes, hourly, daily 02:30, weekdays 09:00, weekly mon 09:00", make: function( when ) {
+									return { action: "ask", title: "Add " & name & " (3 of 3)", prompt: "Command (bxrig ... runs BxRig, anything else runs as it is)", make: function( cmd ) {
+											var argv = [ "scheduler", "add", name, "--when=" & when, "--" ];
+											for ( var w in listToArray( cmd, " " ) ) argv.append( w );
+											return { action: "show", title: "Add " & name, args: argv };
+										} };
+								} };
+						} };
+				} },
+			{ key: "x", label: "remove", run: function( r ) { return r.kind == "service" || ( r.builtin ?: false ) ? {} : { action: "cli", title: "Remove " & r.name, args: [ "scheduler", "remove", r.name ] }; } }
+		];
+	}
+
+	// "2026-11-23T02:30:00" -> "11-23 02:30" (today's date is left out: "today 10:13").
+	function shortTime( iso, today ) {
+		if ( !len( arguments.iso ) ) return "";
+		var d = left( arguments.iso, 10 );
+		return ( d == arguments.today ? "today " : mid( arguments.iso, 6, 5 ) & " " ) & mid( arguments.iso, 12, 5 );
+	}
+
+	// The rows from `scheduler list --json` data (pure, for tests): a service row first when the scheduler is not running.
+	function rowsFrom( data, today ) {
+		var rows = [];
+		var svc = arguments.data.service ?: "not installed";
+		if ( svc != "active" ) rows.append( { kind: "service", service: svc, mark: "!", name: "scheduler", group: "", when: svc == "not installed" ? "not installed" : svc, next: "", trend: "Enter installs it", enabled: true, last_status: "", builtin: true } );
+		var sc = new bxrig.Scheduler( new bxrig.util.Cli( "0" ) );
+		for ( var t in arguments.data.tasks ?: [] ) {
+			var r = duplicate( t );
+			r.kind = "task";
+			var ls = t.last_status ?: "never";
+			r.mark = !( t.enabled ?: true ) ? "‖" : ( ls == "ok" ? "✓" : ( ls == "attention" ? "!" : ( ls == "never" ? "·" : "✗" ) ) );
+			r.next = ( t.enabled ?: true ) ? shortTime( t.next_run ?: "", arguments.today ) : "paused";
+			r.trend = t.stats.runs ? sc.sparkline( t.stats.trend ).bars : "";
+			rows.append( r );
+		}
+		return rows;
+	}
+
+	function load( q = "" ) {
+		var today = dateTimeFormat( now(), "yyyy-MM-dd" );
+		if ( variables.demo ) return rowsFrom( demoData(), "2026-11-22" );
+		return rowsFrom( variables.proc.selfData( [ "scheduler", "list" ], 30 ), today );
+	}
+
+	function demoData() {
+		var runs = function( list ) { return list.map( function( x ) { return { ms: x[ 1 ], status: x[ 2 ] }; } ); };
+		var task = function( name, group, when, next, status, trend, builtin ) {
+			var fails = trend.filter( function( x ) { return x.status == "failed"; } ).len();
+			var total = 0; for ( var x in trend ) total += x.ms;
+			return { name: name, group: group, when: when, enabled: status != "paused", next_run: next, last_status: status == "paused" ? "ok" : status, last_run: "2026-11-22T09:40:00", builtin: builtin, command_text: "bxrig " & name,
+				stats: { runs: trend.len(), failures: fails, success_rate: trend.len() ? round( ( trend.len() - fails ) * 100 / trend.len() ) : 0, avg_ms: trend.len() ? round( total / trend.len() ) : 0, trend: trend } };
+		};
+		return { service: "active", tasks: [
+				task( "photos-to-nas", "sync", "daily 23:00", "2026-11-22T23:00:00", "failed", runs( [ [ 41000, "ok" ], [ 38000, "ok" ], [ 52000, "ok" ], [ 3000, "failed" ], [ 2000, "failed" ] ] ), false ),
+				task( "calendar-sync", "sync", "every 10 minutes", "2026-11-22T10:20:00", "ok", runs( [ [ 900, "ok" ], [ 1200, "ok" ], [ 800, "ok" ], [ 1500, "ok" ], [ 1100, "ok" ], [ 950, "ok" ], [ 1000, "ok" ], [ 1300, "ok" ] ] ), false ),
+				task( "backup-data", "backups", "daily 02:30", "2026-11-23T02:30:00", "ok", runs( [ [ 182000, "ok" ], [ 175000, "ok" ], [ 240000, "ok" ], [ 168000, "ok" ] ] ), true ),
+				task( "update-check", "system", "daily 11:47", "2026-11-22T11:47:00", "attention", runs( [ [ 4200, "ok" ], [ 3900, "ok" ], [ 5100, "attention" ] ] ), true ),
+				task( "boxlang-check", "boxlang", "daily 10:13", "2026-11-22T10:13:00", "ok", runs( [ [ 6800, "ok" ], [ 7100, "ok" ] ] ), true ),
+				task( "tidy-downloads", "mine", "weekly sun 10:00", "", "paused", runs( [ [ 300, "ok" ] ] ), false )
+			] };
+	}
+}

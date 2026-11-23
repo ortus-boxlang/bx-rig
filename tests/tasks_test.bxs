@@ -1,0 +1,31 @@
+// The task manager: the Tasks page's rows and keys, the sparkline, the System panel's Tasks tab, the bar badge, the doctor row and the init step.
+// Run from src/: (cd src && matchbox ../tests/tasks_test.bxs)
+testkit = new lib.Check( "tasks" );
+sc = new bxrig.Scheduler( new bxrig.util.Cli( "0.0.0" ) );
+sp = sc.sparkline( [ { ms: 1000, status: "ok" }, { ms: 4000, status: "ok" }, { ms: 8000, status: "failed" }, { ms: 2000, status: "attention" } ] );
+testkit.check( "sparkline: bars scaled to the slowest run, a mark per result", sp.bars == "▁▄█▂" && sp.marks == "✓✓✗!" );
+testkit.check( "sparkline: one run is a full bar", sc.sparkline( [ { ms: 50, status: "ok" } ] ).bars == "█" );
+
+pv = new bxrig.TasksProvider( true );
+rows = pv.load();
+testkit.check( "page: the demo tasks with their marks", rows.len() == 6 && rows[ 1 ].mark == "✗" && rows[ 2 ].mark == "✓" && rows[ 4 ].mark == "!" && rows[ 6 ].mark == "‖" );
+testkit.check( "page: next run today shows only the time, paused says so", rows[ 1 ].next == "today 23:00" && rows[ 3 ].next == "11-23 02:30" && rows[ 6 ].next == "paused" );
+testkit.check( "page: a trend sparkline per task that ran", len( rows[ 1 ].trend ) == 5 && len( rows[ 2 ].trend ) == 8 );
+testkit.check( "page: style by the last run", pv.style( rows[ 1 ] ) == "error" && pv.style( rows[ 2 ] ) == "ok" && pv.style( rows[ 4 ] ) == "warn" && pv.style( rows[ 6 ] ) == "dim" );
+svc = pv.rowsFrom( { service: "not installed", tasks: [] }, "2026-11-22" );
+testkit.check( "page: when the scheduler is not running, a first row says so", svc.len() == 1 && svc[ 1 ].kind == "service" && pv.style( svc[ 1 ] ) == "warn" );
+acts = {};
+for ( a in pv.actions() ) acts[ a.key ] = a;
+testkit.check( "page: Enter shows the task, or installs the scheduler on its row", acts.Enter.run( rows[ 1 ] ).args.toList( " " ) == "scheduler show photos-to-nas" && acts.Enter.run( svc[ 1 ] ).args.toList( " " ) == "scheduler install" );
+testkit.check( "page: r runs now, p pauses or resumes, g its group", acts.r.run( rows[ 1 ] ).args.toList( " " ) == "scheduler run photos-to-nas" && acts.p.run( rows[ 1 ] ).args.toList( " " ) == "scheduler disable photos-to-nas" && acts.p.run( rows[ 6 ] ).args.toList( " " ) == "scheduler enable tidy-downloads" && acts.g.run( rows[ 1 ] ).args.toList( " " ) == "scheduler pause sync" );
+testkit.check( "page: x removes your own task, never a built-in one", acts.x.run( rows[ 1 ] ).args.toList( " " ) == "scheduler remove photos-to-nas" && structIsEmpty( acts.x.run( rows[ 3 ] ) ) );
+step1 = acts.a.run( rows[ 1 ] ); step2 = step1.make( "nightly-db" ); step3 = step2.make( "daily 01:00" );
+testkit.check( "page: a asks the name, when and command, then adds", step3.make( "bxrig db dump postgres" ).args.toList( " " ) == "scheduler add nightly-db --when=daily 01:00 -- bxrig db dump postgres" );
+testkit.check( "page: registered after Servers, with its icon", new bxrig.ControlCenterPages().ids()[ 6 ] == "tasks" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "tasks" ) == chr( inputBaseN( "f0ae", 16 ) ) );
+
+pn = fileRead( expandPath( "../templates/noctalia-plugins/system/panel.luau" ) );
+bar = fileRead( expandPath( "../templates/noctalia-plugins/system/bar.luau" ) );
+testkit.check( "panel: a Tasks tab from scheduler --json, failing cards with Run again, Show and Pause, the next runs", find( 'key = "tab-tasks"', pn ) > 0 && find( '{ "scheduler", "--json" }', pn ) > 0 && find( '{ "scheduler", "run", name }', pn ) > 0 && find( '{ "scheduler", "disable", name }', pn ) > 0 && find( "Next up", pn ) > 0 && find( '" tui tasks"', pn ) > 0 );
+testkit.check( "panel and bar share the failure count (taskFailures), the bar draws a red dot", find( 'noctalia.state.set("taskFailures"', pn ) > 0 && find( 'noctalia.state.watch("taskFailures"', bar ) > 0 && find( 'fill = "error"', bar ) > 0 && find( '{ "scheduler", "--json" }', bar ) > 0 );
+testkit.check( "init: the scheduler step is optional and runs install --yes", new bxrig.InitPlan().plan( { scheduler: true } ).steps.filter( function( s ) { return s.id == "scheduler" && s.argv.toList( " " ) == "bxrig scheduler install --yes" && s.optional; } ).len() == 1 );
+testkit.done( "all passed" );

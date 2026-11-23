@@ -105,9 +105,9 @@ rm -f "$FAKE/n" "$FAKE/spawn.log"; printf '4\n2\n0\n0\n6\n15\n' > "$FAKE/answers
 # ---- Control Center (13): entry 0 opens the whole thing, entry 12 is Databases solo; both open in a terminal, detached ----
 play "$CC" 0 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'the Control Center entry did not open a terminal'
 grep -q "terminal -e $tmp/self tui$" "$FAKE/terminal.log" || fail "control center: $(cat "$FAKE/terminal.log")"
-play "$CC" 15 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'a page entry did not open a terminal'
+play "$CC" 16 "$EXIT"; wait_for "$FAKE/terminal.log" || fail 'a page entry did not open a terminal'
 grep -q "terminal -e $tmp/self tui databases$" "$FAKE/terminal.log" || fail "databases solo: $(cat "$FAKE/terminal.log")"
-run "$binary" menu items --json | jq -e '[.data.menu[] | select(.label == "Control Center") | .children[] | .argv[1]] | length == 23' >/dev/null || fail 'Control Center lists the top entry and the 22 pages'
+run "$binary" menu items --json | jq -e '[.data.menu[] | select(.label == "Control Center") | .children[] | .argv[1]] | length == 24' >/dev/null || fail 'Control Center lists the top entry and the 23 pages'
 
 # ---- a provider that cannot take typed text (Wofi) opens a terminal that asks the same questions ----
 printf '#!/usr/bin/env bash\ncat > /dev/null\nn=$(( $(cat "$FAKE/n" 2>/dev/null || echo 0) + 1 )); echo $n > "$FAKE/n"\nsed -n "${n}p" "$FAKE/answers"\n' > "$tmp/bin/wofi"; chmod +x "$tmp/bin/wofi"

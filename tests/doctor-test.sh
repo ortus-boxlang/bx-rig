@@ -51,7 +51,7 @@ out="$(run env MB_TUI=no "$binary" doctor)" && fail 'a MatchBox without the term
 stub cargo 'echo "cargo 1.100.0 (abc 2026-11-09)"'
 stub git '[[ "$1" == --version ]] && echo "git version 2.50.1" || exit 1'
 out="$(run "$binary" doctor --dev)" || fail "doctor --dev with nothing set up must still exit 0: $out"
-for l in 'Developer setup' 'warn git-identity' 'warn ssh-key (no SSH key; fix: bxrig ssh key --yes)' 'warn git-signing (commits not signed; fix: bxrig git signing on --yes)' 'warn containers' 'warn editor'; do
+for l in 'Developer setup' 'warn git-identity' 'warn ssh-key (no SSH key; fix: bxrig ssh key --yes)' 'warn git-signing (commits not signed; fix: bxrig git signing on --yes)' 'warn containers' 'warn editor' 'warn scheduler (not installed; fix: bxrig scheduler install --yes)'; do
 	[[ "$out" == *"$l"* ]] || fail "doctor --dev lacks '$l': $out"
 done
 stub git 'case "$*" in "--version") echo "git version 2.50.1";; *user.name) echo Ada;; *user.email) echo ada@example.com;; *commit.gpgsign) echo true;; *gpg.format) echo ssh;; *) exit 1;; esac'
@@ -62,7 +62,7 @@ out="$(run env EDITOR=nvim "$binary" doctor --dev)" || fail "doctor --dev all se
 for l in 'ok   git-identity (Ada <ada@example.com>)' 'ok   ssh-key (~/.ssh/id_ed25519)' 'ok   ssh-agent (has your key)' 'ok   git-signing (commits signed (ssh))' 'ok   containers 5.6.0 (podman)' 'ok   editor (EDITOR=nvim)'; do
 	[[ "$out" == *"$l"* ]] || fail "doctor --dev lacks '$l': $out"
 done
-run "$binary" doctor --dev --json | jq -e '[.data.tools[] | select(.group == "dev")] | length == 6 and all(.advice)' >/dev/null || fail 'doctor --dev --json'
+run "$binary" doctor --dev --json | jq -e '[.data.tools[] | select(.group == "dev")] | length == 7 and all(.advice)' >/dev/null || fail 'doctor --dev --json'
 [[ "$(run "$binary" doctor --json | jq '[.data.tools[] | select(.group == "dev")] | length')" == 0 ]] || fail 'doctor without --dev has no dev rows'
 rm -f "$tmp/bin"/{ssh-add,podman}
 

@@ -1099,3 +1099,10 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - The JVM only dispatches: every run is `bxrig scheduler exec NAME`, which runs the command, records it (history/NAME.jsonl, last 500) and notifies. The runner writes each task's getStats() (with next_local and last_local on this machine's clock) for the next run time.
 - install is a plan until --yes. It adds update-check, backup-data (when backups are scheduled) and boxlang-check, and turns off bxrig-update-check.timer and bxrig-backup.timer; from then on `update notifications` and `backup data schedule` change those tasks. Without BoxLang the timers stay as they were.
 - Exit 10 from a task is "needs attention" where the task lists 10 in ok_codes (update-check, boxlang-check); notify modes are failure (default), attention, always and never.
+
+## Task manager (decided with the owner 2026-11-22)
+
+- The Control Center Tasks page reads `scheduler list --json`: a mark per last result, next run, a sparkline of the recent runs. Enter is `scheduler show`, r run, p disable/enable, g pause/resume the group, a add (three questions), x remove (not for built-in tasks). A first row offers install when the scheduler is not running.
+- `scheduler show` adds the trend: a sparkline of the last 30 durations and a mark per result.
+- The System panel's Tasks tab and the bar share the failure count through noctalia.state (taskFailures); the bar reads `scheduler --json` with the updates every 10 minutes and draws a red dot while a task fails.
+- `doctor --dev` has a scheduler row (installed, no task failing); init has an optional scheduler step.

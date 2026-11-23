@@ -11,6 +11,7 @@ class PageFactory {
 			case "boxlang": return new bxrig.ListPage( new bxrig.BoxlangProvider( d ) );
 			case "modules": return new bxrig.ListPage( new bxrig.BoxlangModulesProvider( d ) );
 			case "servers": return new bxrig.ListPage( new bxrig.ServersProvider( d ) );
+			case "tasks": return new bxrig.ListPage( new bxrig.TasksProvider( d ) );
 			case "java": return new bxrig.ListPage( new bxrig.JavaProvider( d ) );
 			case "maven": return new bxrig.ListPage( new bxrig.SdkProvider( "maven", d ) );
 			case "gradle": return new bxrig.ListPage( new bxrig.SdkProvider( "gradle", d ) );
