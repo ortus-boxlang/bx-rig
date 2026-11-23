@@ -43,6 +43,11 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `wizard` | `--pages` | value |  |
 | `doctor` | `--dev` | bool |  |
 | `update` | `--notify` | bool |  |
+| `scheduler` | `--group` | value | `sync` |
+| `scheduler` | `--when` | value |  |
+| `scheduler` | `--notify` | value |  |
+| `scheduler` | `--timeout` | value |  |
+| `scheduler` | `--limit` | value |  |
 | `ascii` | `--font` | value | `dos` |
 | `ascii` | `--color` | value |  |
 | `ascii` | `--gradient` | value | `sunset` |
@@ -258,6 +263,9 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `boxlang` | `--yes` | bool |  |
 | `boxlang` | `--dry-run` | bool |  |
 | `boxlang` | `--open` | bool |  |
+| `boxlang` | `--name` | value |  |
+| `boxlang` | `--depth` | value |  |
+| `boxlang` | `--follow` | bool |  |
 | `db` | `--ask-password` | bool |  |
 | `db` | `--keep-data` | bool |  |
 | `db` | `--name` | bool |  |

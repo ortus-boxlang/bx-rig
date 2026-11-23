@@ -45,7 +45,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 ## All commands
 
-**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`ascii`](#bxrig-ascii), [`about`](#bxrig-about), [`banner`](#bxrig-banner), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
+**Start here**: [`init`](#bxrig-init), [`refresh`](#bxrig-refresh), [`reinstall`](#bxrig-reinstall), [`wizard`](#bxrig-wizard), [`status`](#bxrig-status), [`doctor`](#bxrig-doctor), [`update`](#bxrig-update), [`scheduler`](#bxrig-scheduler), [`ascii`](#bxrig-ascii), [`about`](#bxrig-about), [`banner`](#bxrig-banner), [`version`](#bxrig-version), [`menu`](#bxrig-menu), [`apps`](#bxrig-apps), [`help`](#bxrig-help)
 
 **Install and remove**: [`install`](#bxrig-install), [`remove`](#bxrig-remove), [`pkg`](#bxrig-pkg), [`catalog`](#bxrig-catalog), [`plan`](#bxrig-plan), [`install-plan`](#bxrig-install-plan), [`optional-plan`](#bxrig-optional-plan), [`profile-plan`](#bxrig-profile-plan), [`profile-install-plan`](#bxrig-profile-install-plan), [`profile-install`](#bxrig-profile-install), [`optional-install`](#bxrig-optional-install), [`profile-list`](#bxrig-profile-list), [`optional-list`](#bxrig-optional-list), [`desktop-list`](#bxrig-desktop-list), [`tui-list`](#bxrig-tui-list), [`web-list`](#bxrig-web-list), [`package-status`](#bxrig-package-status), [`package-source`](#bxrig-package-source), [`dev-plan`](#bxrig-dev-plan), [`prerequisites`](#bxrig-prerequisites), [`apps-doctor`](#bxrig-apps-doctor), [`web`](#bxrig-web), [`toolchain`](#bxrig-toolchain)
 
@@ -172,6 +172,31 @@ bxrig update notifications on
 ```
 
 > Exit 10 from `update check` means an update is available.
+
+### `bxrig scheduler` {#bxrig-scheduler}
+
+One scheduler on the BoxLang JVM: the update check, backups, BoxLang checks and your own tasks, with run history.
+
+```text
+bxrig scheduler [status|list] [--group=G] [--json]
+bxrig scheduler show NAME [--limit=N] | history NAME [--limit=N] [--json]
+bxrig scheduler add NAME --when=WHEN [--group=G] [--notify=failure|attention|always|never] [--timeout=SECONDS] -- COMMAND...
+bxrig scheduler remove NAME | enable NAME | disable NAME | pause GROUP | resume GROUP | run NAME [--json]
+bxrig scheduler install [--yes] [--dry-run] | uninstall [--yes] [--dry-run] | reload [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig scheduler
+bxrig scheduler install --yes
+bxrig scheduler show backup-data
+bxrig scheduler add photos-to-nas --when="daily 23:00" --group=sync -- rsync -a ~/Pictures nas:/photos
+bxrig scheduler add tidy-downloads --when="weekly sun 10:00" -- bxrig files tidy
+bxrig scheduler pause backups
+```
+
+> WHEN is every N minutes, every N hours, hourly, daily HH:MM, weekdays HH:MM, weekly DAY HH:MM or cron M H DOM MON DOW. install writes the runner (a BoxLang scheduler class) and bxrig-scheduler.service (`boxlang schedule` on it), adds the update check, the file backup and the BoxLang check as tasks, and turns off bxrig-update-check.timer and bxrig-backup.timer; it is a plan until --yes. Every run is recorded in ~/.local/state/bxrig/scheduler/history; a failure sends a notice. Exit 10 from a task counts as "needs attention" where the task lists it as ok.
 
 ### `bxrig ascii` {#bxrig-ascii}
 
@@ -1411,10 +1436,14 @@ BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code ex
 ```text
 bxrig boxlang status | check | update [--yes] [--dry-run] | home [--open] | run FILE [ARGS...] | repl | use VERSION [--json]
 bxrig boxlang modules list|search TEXT|installed|outdated [--json] | install SLUG... | update [SLUG...] | remove SLUG... [--yes] [--dry-run]
+bxrig boxlang servers [list] | status NAME | add PATH [--name=NAME] | scan DIR [--depth=N] [--yes] | remove NAME | start|stop|restart NAME [--dry-run] | log NAME [--follow] | open NAME | folder NAME [--json]
 bxrig boxlang matchbox use VERSION | matchbox status | matchbox log-level LEVEL [--yes] | matchbox env list|set KEY VALUE|unset KEY [--yes] | vscode | links | welcome [--json]
 ```
 
 ```bash
+bxrig boxlang servers scan ~/code --yes
+bxrig boxlang servers start shop-api
+bxrig boxlang servers open shop-api
 bxrig boxlang check
 bxrig boxlang update --yes
 bxrig boxlang home --open
@@ -1429,7 +1458,7 @@ bxrig boxlang matchbox log-level debug --yes
 bxrig boxlang matchbox env set OPENAI_API_KEY sk-... --yes
 ```
 
-> check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows.
+> check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows. servers registers BoxLang MiniServer apps (miniserver.json) and CommandBox apps (server.json) in ~/.config/bxrig/servers.json; a MiniServer runs detached with its log in ~/.local/state/bxrig/servers, a CommandBox app through `box server start|stop|log directory=PATH`; running means its port is listening.
 
 ### `bxrig editor` {#bxrig-editor}
 

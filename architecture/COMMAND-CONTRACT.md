@@ -1083,3 +1083,19 @@ ok   matchbox 0.14.0 (compiles BxRig)
 - `boxlang home`: BOXLANG_HOME, else ~/.boxlang. `run` and `repl` hand the terminal to `boxlang` and return its exit code.
 - No `new`, `test` or CommandBox commands here: those stay in CommandBox and bx-cli.
 - The scheduled checks (new BoxLang versions, module updates) arrive with the scheduler; until then the System panel's BoxLang tab checks while it is open.
+
+## BoxLang servers (decided with the owner 2026-11-22)
+
+- `boxlang servers`, not a new namespace: list, status, add, scan, remove, start, stop, restart, log, open, folder. No `new`, `test` or CommandBox server settings: those stay in CommandBox.
+- The registry holds only name, path and kind; port, host and web root are read from the app's own miniserver.json or server.json each time. A folder with both is a MiniServer app.
+- MiniServer apps run detached (`setsid boxlang-miniserver miniserver.json`), the pid and log under ~/.local/state/bxrig/servers. CommandBox apps go through `box server start|stop|log directory=PATH` (CommandBox or bx-cli).
+- Running means the port is listening (`ss -ltnpH`, else /proc/net/tcp). scan skips node_modules, boxlang_modules, modules and hidden folders and is a plan until --yes; add and remove act at once (BxRig's own file only); start and stop act at once and honour --dry-run.
+- The Developer panel gets two tabs: BoxLang (the servers) and Ports (`tui ports --json` without the system's own).
+
+## Scheduler (decided with the owner 2026-11-22)
+
+- One scheduler for everything BxRig runs on a timer: a BoxLang scheduler class run by `boxlang schedule` in the user service bxrig-scheduler.service. Groups, pause and resume per group, a history and stats per task.
+- The tasks live in ~/.config/bxrig/schedule.json. BxRig writes the runner (one fluent call per task: every, everyHour, everyDayAt, onWeekdays, on<Day>s, cron) on every change and restarts the service. A 5-field cron() did not fire on BoxLang 1.19, so `cron ...` is documented as needing 1.20.
+- The JVM only dispatches: every run is `bxrig scheduler exec NAME`, which runs the command, records it (history/NAME.jsonl, last 500) and notifies. The runner writes each task's getStats() (with next_local and last_local on this machine's clock) for the next run time.
+- install is a plan until --yes. It adds update-check, backup-data (when backups are scheduled) and boxlang-check, and turns off bxrig-update-check.timer and bxrig-backup.timer; from then on `update notifications` and `backup data schedule` change those tasks. Without BoxLang the timers stay as they were.
+- Exit 10 from a task is "needs attention" where the task lists 10 in ok_codes (update-check, boxlang-check); notify modes are failure (default), attention, always and never.
