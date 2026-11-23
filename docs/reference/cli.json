@@ -236,6 +236,49 @@
 					]
 				},
 				{
+					"name": "scheduler",
+					"summary": "One scheduler on the BoxLang JVM: the update check, backups, BoxLang checks and your own tasks, with run history.",
+					"usage": [
+						"scheduler [status|list] [--group=G] [--json]",
+						"scheduler show NAME [--limit=N] | history NAME [--limit=N] [--json]",
+						"scheduler add NAME --when=WHEN [--group=G] [--notify=failure|attention|always|never] [--timeout=SECONDS] -- COMMAND...",
+						"scheduler remove NAME | enable NAME | disable NAME | pause GROUP | resume GROUP | run NAME [--json]",
+						"scheduler install [--yes] [--dry-run] | uninstall [--yes] [--dry-run] | reload [--json]"
+					],
+					"examples": [
+						"bxrig scheduler",
+						"bxrig scheduler install --yes",
+						"bxrig scheduler show backup-data",
+						"bxrig scheduler add photos-to-nas --when=\"daily 23:00\" --group=sync -- rsync -a ~/Pictures nas:/photos",
+						"bxrig scheduler add tidy-downloads --when=\"weekly sun 10:00\" -- bxrig files tidy",
+						"bxrig scheduler pause backups"
+					],
+					"mutates": true,
+					"note": "WHEN is every N minutes, every N hours, hourly, daily HH:MM, weekdays HH:MM, weekly DAY HH:MM or cron M H DOM MON DOW. install writes the runner (a BoxLang scheduler class) and bxrig-scheduler.service (`boxlang schedule` on it), adds the update check, the file backup and the BoxLang check as tasks, and turns off bxrig-update-check.timer and bxrig-backup.timer; it is a plan until --yes. Every run is recorded in ~/.local/state/bxrig/scheduler/history; a failure sends a notice. Exit 10 from a task counts as \"needs attention\" where the task lists it as ok.",
+					"flags": [
+						{
+							"name": "group",
+							"type": "value"
+						},
+						{
+							"name": "when",
+							"type": "value"
+						},
+						{
+							"name": "notify",
+							"type": "value"
+						},
+						{
+							"name": "timeout",
+							"type": "value"
+						},
+						{
+							"name": "limit",
+							"type": "value"
+						}
+					]
+				},
+				{
 					"name": "ascii",
 					"summary": "Text in large letters (FIGlet fonts) or a picture as text art, painted with a colour or a gradient.",
 					"usage": [

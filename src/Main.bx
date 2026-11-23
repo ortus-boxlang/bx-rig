@@ -15,7 +15,7 @@ class {
 		// One flag check for every command, from the registry (docs/reference/cli.json): a flag the command does not list is a usage error and nothing runs.
 		// `secrets run` hands everything after its own flags to the program it starts, so it is not checked.
 		// (Only built when there are flags: the registry is parsed from JSON, and most runs have none.)
-		if ( !structIsEmpty( args.options ) && !( cmd == "secrets" && p.len() >= 2 && p[ 2 ] == "run" ) ) {
+		if ( !structIsEmpty( args.options ) && !( cmd == "secrets" && p.len() >= 2 && p[ 2 ] == "run" ) && !( cmd == "scheduler" && p.len() >= 2 && p[ 2 ] == "add" && arrayFind( rawArgs, "--" ) ) ) {
 			var spec = new bxrig.CommandSpec();
 			if ( spec.knows( cmd ) ) {
 				var badFlags = spec.unknownFlags( cmd, structKeyArray( args.options ) );
@@ -680,6 +680,10 @@ class {
 				if ( p.len() >= 3 && p[2] == "search" ) { mnWords = []; for ( mni = 3; mni <= p.len(); mni++ ) mnWords.append( p[ mni ] ); CLIExit( new bxrig.Menu( cli ).search( mnWords.toList( " " ), asJson ) ); }
 				println( new bxrig.CommandSpec().usage( "menu" ) );
 				CLIExit( xit.usage() );
+				break;
+			case "scheduler":
+				// One scheduler on the BoxLang JVM for every BxRig timer and your own tasks. See bxrig.Scheduler and COMMAND-CONTRACT.md (Scheduler).
+				CLIExit( new bxrig.Scheduler( cli ).run( p.slice( 2 ), args.options, rawArgs.len() ? rawArgs : [], asJson ) );
 				break;
 			case "git":
 				// SSH signing of commits and tags. See bxrig.GitSigning and COMMAND-CONTRACT.md (Developer tools).

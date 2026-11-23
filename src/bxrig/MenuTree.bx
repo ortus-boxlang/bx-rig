@@ -388,6 +388,11 @@ class MenuTree {
 							run( "On", [ "update", "notifications", "on" ] ),
 							run( "Off", [ "update", "notifications", "off" ] )
 						] ),
+					sub( "Scheduler", [
+							run( "Status", [ "scheduler", "status" ] ),
+							run( "Install (runs the timers on BoxLang)", [ "scheduler", "install", "--yes" ] ),
+							run( "Restart with the latest tasks", [ "scheduler", "reload" ] )
+						] ),
 					sub( "Refresh a config to the default", [
 							run( "Hyprland", [ "refresh", "hyprland", "--yes" ] ),
 							run( "Noctalia", [ "refresh", "noctalia", "--yes" ] ),

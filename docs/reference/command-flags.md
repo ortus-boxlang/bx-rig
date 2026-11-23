@@ -43,6 +43,11 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `wizard` | `--pages` | value |  |
 | `doctor` | `--dev` | bool |  |
 | `update` | `--notify` | bool |  |
+| `scheduler` | `--group` | value | `sync` |
+| `scheduler` | `--when` | value |  |
+| `scheduler` | `--notify` | value |  |
+| `scheduler` | `--timeout` | value |  |
+| `scheduler` | `--limit` | value |  |
 | `ascii` | `--font` | value | `dos` |
 | `ascii` | `--color` | value |  |
 | `ascii` | `--gradient` | value | `sunset` |

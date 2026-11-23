@@ -389,6 +389,16 @@ class BackupData {
 		var s = readAll();
 		if ( v == "status" ) return variables.out.say( "ok", { schedule: s.data.schedule }, arguments.asJson, [ "schedule: " & s.data.schedule ] );
 		if ( !arrayFind( [ "hourly", "daily", "off" ], v ) ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "backup data schedule" ), arguments.asJson );
+		var sched = new bxrig.Scheduler( variables.cli );
+		if ( sched.isInstalled() ) {
+			// the BoxLang scheduler runs the backup (its task backup-data) instead of a timer
+			var sp = plan( v == "off" ? "turn the automatic backup off" : "back up " & v & " (the scheduler's backup-data task)", [ v == "off" ? "pauses the task backup-data" : "sets the task backup-data to " & ( v == "hourly" ? "hourly" : "daily 02:30" ) ], arguments.yes, arguments.dry, arguments.asJson, { schedule: v } );
+			if ( !sp.done ) return sp.code;
+			sched.ensureBuiltin( "backup-data", v != "off", v == "hourly" ? "hourly" : ( v == "daily" ? "daily 02:30" : "" ) );
+			s.data.schedule = v;
+			writeAll( s );
+			return variables.out.say( "ok", { schedule: v, by: "scheduler" }, arguments.asJson, [ "schedule: " & v & " (the scheduler's backup-data task)" ] );
+		}
 		var svcFile = unitDir() & "/bxrig-backup.service";
 		var timFile = unitDir() & "/bxrig-backup.timer";
 		var cmds = v == "off" ? [ variables.systemd.disableArgv( "bxrig-backup.timer", true ) ] : [ variables.systemd.reloadArgv( true ), variables.systemd.enableArgv( "bxrig-backup.timer", true ) ];
