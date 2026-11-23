@@ -184,6 +184,22 @@
 			"use": "the AI page (local models)"
 		},
 		{
+			"name": "bxrig-ai-discover",
+			"glyph": "magnifying-glass",
+			"category": "develop",
+			"context": "apps",
+			"title": "Discover",
+			"use": "the Discover page (models on Hugging Face)"
+		},
+		{
+			"name": "bxrig-ai-agents",
+			"glyph": "robot",
+			"category": "develop",
+			"context": "apps",
+			"title": "Agents",
+			"use": "the Agents page (coding agents)"
+		},
+		{
 			"name": "bxrig-java",
 			"glyph": "coffee",
 			"category": "develop",

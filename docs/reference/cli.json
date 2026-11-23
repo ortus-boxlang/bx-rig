@@ -2659,8 +2659,18 @@
 						"ai hardware [--json]",
 						"ai setup [--models=ID,ID|--picks=all] [--tune] [--yes] [--dry-run]",
 						"ai engine [status|install|update] [--source=official|aur] [--yes] [--dry-run]",
-						"ai models [list] | recommend [--all] | pull ID... [--no-test] [--yes] | use ID | test [ID] | tune [ID] [--yes] | remove ID [--yes] [--dry-run] [--json]",
+						"ai models [list] [--json]",
+						"ai models recommend [--all] [--json]",
+						"ai models pull ID|hf:OWNER/REPO[/FILE]... [--no-test] [--background] [--yes]",
+						"ai models use ID",
+						"ai models test [ID]",
+						"ai models tune [ID] [--yes]",
+						"ai models remove ID [--yes] [--dry-run]",
 						"ai serve [status|start|stop|restart] [--listen=127.0.0.1|0.0.0.0] [--port=N] [--yes] [--json]",
+						"ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=N] [--json]",
+						"ai downloads [clear | cancel ID] [--json]",
+						"ai bench [ID] [--json]",
+						"ai agents [local opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]",
 						"ai ask TEXT [--model=ID] [--json]",
 						"ai list",
 						"ai default [ID] [--yes]",
@@ -2676,6 +2686,7 @@
 						"bxrig ai setup --yes",
 						"bxrig ai models recommend",
 						"bxrig ai models pull gemma-4-e4b --yes",
+						"bxrig ai discover qwen --fits",
 						"bxrig ai serve status",
 						"bxrig ai list",
 						"bxrig ai session start --name=work"
@@ -2691,7 +2702,27 @@
 							"type": "value"
 						},
 						{
+							"name": "background",
+							"type": "bool"
+						},
+						{
+							"name": "default",
+							"type": "bool"
+						},
+						{
 							"name": "dir",
+							"type": "value"
+						},
+						{
+							"name": "embeddings",
+							"type": "bool"
+						},
+						{
+							"name": "fits",
+							"type": "bool"
+						},
+						{
+							"name": "limit",
 							"type": "value"
 						},
 						{
@@ -2715,6 +2746,10 @@
 							"type": "bool"
 						},
 						{
+							"name": "off",
+							"type": "bool"
+						},
+						{
 							"name": "picks",
 							"type": "value"
 						},
@@ -2727,7 +2762,19 @@
 							"type": "value"
 						},
 						{
+							"name": "test",
+							"type": "bool"
+						},
+						{
+							"name": "tools",
+							"type": "bool"
+						},
+						{
 							"name": "tune",
+							"type": "bool"
+						},
+						{
+							"name": "vision",
 							"type": "bool"
 						}
 					]

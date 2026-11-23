@@ -8,6 +8,8 @@ class PageFactory {
 		switch ( arguments.id ) {
 			case "dashboard": return new bxrig.DashboardPage( arguments.dashboard );
 			case "ai": return new bxrig.ListPage( new bxrig.AiProvider( d ) );
+			case "ai-discover": return new bxrig.ListPage( new bxrig.AiDiscoverProvider( d ) );
+			case "ai-agents": return new bxrig.ListPage( new bxrig.AiAgentsProvider( d ) );
 			case "apps": return new bxrig.AppsPage( d );
 			case "boxlang": return new bxrig.ListPage( new bxrig.BoxlangProvider( d ) );
 			case "modules": return new bxrig.ListPage( new bxrig.BoxlangModulesProvider( d ) );

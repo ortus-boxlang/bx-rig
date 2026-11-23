@@ -1,0 +1,153 @@
+// Hugging Face for `bxrig ai discover` and `bxrig ai models pull hf:OWNER/REPO[/FILE]`: GGUF repositories, the one file BxRig picks in each
+// (a 4-bit quant first, the size and SHA-256 from the repository's file list) and an entry shaped like a catalog model, marked
+// `verified: false` (BxRig has not tested it) and `source: "hf"`.
+//   search    GET /api/models?search=Q&filter=gguf&sort=downloads&direction=-1&limit=N&full=true
+//   files     GET /api/models/OWNER/REPO/tree/main?recursive=true  (path, size, lfs.oid = the SHA-256)
+// BXRIG_HF_URL points at another server (the tests). The readers are pure: they take the JSON text.
+class AiHub {
+	function init( runner = "" ) {
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.base = new bxrig.util.Env().named( "hfUrl", "https://huggingface.co" );
+		return this;
+	}
+
+	function base() { return variables.base; }
+
+	// The quant BxRig prefers, best first: a 4-bit K-quant, then the other 4-bit ones, then 5, 6 and 8 bits.
+	array function quantOrder() { return [ "Q4_K_M", "Q4_K_S", "IQ4_XS", "IQ4_NL", "Q4_0", "Q5_K_M", "Q5_K_S", "Q6_K", "Q8_0" ]; }
+
+	// OWNER/REPO: letters, digits, dot, dash and underscore in each part.
+	boolean function validRepo( required string repo ) {
+		return reFind( "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}/[A-Za-z0-9][A-Za-z0-9._-]{0,95}$", arguments.repo ) > 0;
+	}
+
+	// hf:OWNER/REPO[/PATH/FILE.gguf] -> { repo, file } ("" when not given) or {} when it is not one.
+	struct function parseSpec( required string spec ) {
+		if ( lCase( left( arguments.spec, 3 ) ) != "hf:" ) return {};
+		var rest = mid( arguments.spec, 4, len( arguments.spec ) );
+		var parts = listToArray( rest, "/" );
+		if ( parts.len() < 2 ) return {};
+		var repo = parts[ 1 ] & "/" & parts[ 2 ];
+		if ( !validRepo( repo ) ) return {};
+		var file = "";
+		if ( parts.len() > 2 ) {
+			var p = [];
+			for ( var i = 3; i <= parts.len(); i++ ) p.append( parts[ i ] );
+			file = p.toList( "/" );
+			if ( find( "..", file ) || !reFindNoCase( "\.gguf$", file ) ) return {};
+		}
+		return { repo: repo, file: file };
+	}
+
+	// The search answer -> [ { repo, downloads, likes, license, vision, embeddings, pipeline } ] (pure). Language models only: a repository
+	// tagged for speech, music or images is left out.
+	array function parseSearch( required string json ) {
+		var out = [];
+		var rows = [];
+		try { rows = jsonDeserialize( arguments.json ); } catch ( any e ) { return []; }
+		if ( !isArray( rows ) ) return [];
+		for ( var r in rows ) {
+			if ( !isStruct( r ) || !len( r.id ?: "" ) ) continue;
+			var tags = isArray( r.tags ?: "" ) ? r.tags : [];
+			var licence = "";
+			for ( var t in tags ) if ( left( t, 8 ) == "license:" ) licence = mid( t, 9, 60 );
+			var pipe = r.pipeline_tag ?: "";
+			// language models only: text, text with images, embeddings (not speech, music or image generation)
+			if ( len( pipe ) && !arrayFind( [ "text-generation", "image-text-to-text", "feature-extraction", "sentence-similarity", "text2text-generation" ], pipe ) ) continue;
+			out.append( { repo: r.id, downloads: r.downloads ?: 0, likes: r.likes ?: 0, license: licence, pipeline: pipe,
+					vision: pipe == "image-text-to-text" || arrayFindNoCase( tags, "image-text-to-text" ) > 0,
+					embeddings: arrayFind( [ "feature-extraction", "sentence-similarity" ], pipe ) > 0,
+					gated: ( r.gated ?: false ) != false } );
+		}
+		return out;
+	}
+
+	// The file list -> [ { path, size, sha256 } ] for the model files: .gguf, not a vision projector (mmproj) and not a split part (pure).
+	array function parseTree( required string json ) {
+		var out = [];
+		var rows = [];
+		try { rows = jsonDeserialize( arguments.json ); } catch ( any e ) { return []; }
+		if ( !isArray( rows ) ) return [];
+		for ( var r in rows ) {
+			if ( !isStruct( r ) || ( r.type ?: "file" ) != "file" ) continue;
+			var p = r.path ?: "";
+			var name = listLast( p, "/" );
+			if ( !reFindNoCase( "\.gguf$", name ) || reFindNoCase( "mmproj", name ) || reFind( "-[0-9]{5}-of-[0-9]{5}\.gguf$", name ) ) continue;
+			out.append( { path: p, size: r.size ?: 0, sha256: lCase( ( r.lfs ?: {} ).oid ?: "" ) } );
+		}
+		return out;
+	}
+
+	// The quant of a file name ("Qwen3.5-0.8B-Q4_K_M.gguf" -> "Q4_K_M"), "" when there is none we know (pure).
+	string function quantOf( required string name ) {
+		var up = uCase( listLast( arguments.name, "/" ) );
+		for ( var q in quantOrder() ) if ( find( "-" & q & ".", up ) || find( "_" & q & ".", up ) || find( "." & q & ".", up ) ) return q;
+		return "";
+	}
+
+	// The file to download: the asked one, else the first quant of quantOrder that exists; {} when none (pure).
+	struct function pickFile( required array files, string wanted = "" ) {
+		if ( len( arguments.wanted ) ) {
+			for ( var f in arguments.files ) if ( f.path == arguments.wanted ) return f;
+			return {};
+		}
+		for ( var q in quantOrder() ) for ( var f in arguments.files ) if ( quantOf( f.path ) == q ) return f;
+		return {};
+	}
+
+	// The model id BxRig uses for a repository: the catalog's id when the catalog has that repository, else the repository name in lower
+	// case without "-GGUF", with the owner in front when that name is already a catalog id (pure).
+	string function idFor( required string repo, required any catalog ) {
+		for ( var m in arguments.catalog.models() ) if ( compareNoCase( m.repo, arguments.repo ) == 0 ) return m.id;
+		var name = reReplaceNoCase( lCase( listLast( arguments.repo, "/" ) ), "[-_.]gguf$", "" );
+		name = reReplace( name, "[^a-z0-9._-]", "-", "all" );
+		if ( !structIsEmpty( arguments.catalog.find( name ) ) ) name = lCase( listFirst( arguments.repo, "/" ) ) & "-" & name;
+		return name;
+	}
+
+	// An entry shaped like a catalog model (pure).
+	struct function entry( required string id, required struct hit, required struct file ) {
+		var name = listLast( arguments.file.path, "/" );
+		var label = reReplaceNoCase( listLast( arguments.hit.repo, "/" ), "[-_.]gguf$", "" );
+		var q = quantOf( name );
+		var size = int( arguments.file.size / 1000000 );
+		return {
+			id: arguments.id, label: label & ( len( q ) ? " " & q : "" ), repo: arguments.hit.repo, file: name, remote_file: arguments.file.path,
+			sha256: arguments.file.sha256, size_mb: size, mem_mb: int( size * 1.2 ), license: arguments.hit.license ?: "",
+			kind: ( arguments.hit.embeddings ?: false ) ? "embeddings" : "chat", vision: arguments.hit.vision ?: false,
+			verified: false, source: "hf", quant: q
+		};
+	}
+
+	// ---- the network ----
+
+	function getJson( required string path ) {
+		var r = new bxrig.util.Http( variables.proc ).get( variables.base & arguments.path, 30 );
+		return r.ok ? r.output : "";
+	}
+
+	array function search( string query = "", numeric limit = 12 ) {
+		var q = "/api/models?filter=gguf&sort=downloads&direction=-1&full=true&limit=" & int( arguments.limit );
+		if ( len( trim( arguments.query ) ) ) q &= "&search=" & urlEncodedFormat( trim( arguments.query ) );
+		return parseSearch( getJson( q ) );
+	}
+
+	array function files( required string repo ) {
+		return parseTree( getJson( "/api/models/" & arguments.repo & "/tree/main?recursive=true" ) );
+	}
+
+	// hf:OWNER/REPO[/FILE] -> the entry, or { error } (a message for people).
+	struct function resolve( required string spec, required any catalog ) {
+		var s = parseSpec( arguments.spec );
+		if ( structIsEmpty( s ) ) return { error: "not a Hugging Face model: use hf:OWNER/REPO or hf:OWNER/REPO/FILE.gguf" };
+		var found = files( s.repo );
+		if ( !found.len() ) return { error: "no GGUF files in huggingface.co/" & s.repo & " (or it could not be reached)" };
+		var f = pickFile( found, s.file );
+		if ( structIsEmpty( f ) ) return { error: len( s.file ) ? s.file & " is not in huggingface.co/" & s.repo : "no 4, 5, 6 or 8-bit quant in huggingface.co/" & s.repo & "; name the file: hf:" & s.repo & "/FILE.gguf" };
+		if ( len( f.sha256 ) != 64 ) return { error: "huggingface.co/" & s.repo & " gives no SHA-256 for " & f.path & ", so it cannot be checked" };
+		var hit = { repo: s.repo, license: "", vision: false, embeddings: false };
+		var meta = parseSearch( "[" & getJson( "/api/models/" & s.repo ) & "]" );
+		if ( meta.len() ) hit = meta[ 1 ];
+		return entry( idFor( s.repo, arguments.catalog ), hit, f );
+	}
+}

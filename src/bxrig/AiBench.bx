@@ -1,0 +1,65 @@
+// BxRig's tool-calling test for local models (catalog/ai-bench.json, `bxrig ai bench`): the cases, the request for each, reading the tool
+// calls out of the answer and checking them. Pure: AiLocal sends the requests. The catalog's scores were measured with the same cases.
+class AiBench {
+	function init( string json = "" ) {
+		var text = len( arguments.json ) ? arguments.json : new bxrig.util.Res().trimmed( "catalog/ai-bench.json" );
+		variables.data = jsonDeserialize( text );
+		return this;
+	}
+
+	array function cases() { return variables.data.cases; }
+	numeric function count() { return variables.data.cases.len(); }
+
+	// The chat request for one case: the system prompt, the tools, temperature 0, thinking off.
+	struct function request( required string model, required struct c ) {
+		return { model: arguments.model, messages: [ { role: "system", content: variables.data.system }, { role: "user", content: arguments.c.prompt } ],
+			tools: variables.data.tools, temperature: 0, max_tokens: 400, chat_template_kwargs: { enable_thinking: false } };
+	}
+
+	// The answer -> [ { name, args } ] in order; arguments that are not JSON count as none.
+	array function calls( required string body ) {
+		var out = [];
+		var j = {};
+		try { j = jsonDeserialize( arguments.body ); } catch ( any e ) { return []; }
+		var msg = ( isArray( j.choices ?: "" ) && j.choices.len() ) ? j.choices[ 1 ].message ?: {} : {};
+		for ( var tc in isArray( msg.tool_calls ?: "" ) ? msg.tool_calls : [] ) {
+			var fn = tc.function ?: {};
+			var a = fn.arguments ?: {};
+			if ( isSimpleValue( a ) ) { try { a = len( trim( a ) ) ? jsonDeserialize( a ) : {}; } catch ( any e ) { a = {}; } }
+			if ( !isStruct( a ) ) a = {};
+			out.append( { name: fn.name ?: "", args: a } );
+		}
+		return out;
+	}
+
+	// One expected call against one actual call: the name, and each argument pattern (case-insensitive) on the value as text.
+	boolean function matches( required struct want, required struct got ) {
+		if ( compare( arguments.want.name, arguments.got.name ) != 0 ) return false;
+		for ( var k in arguments.want.args ) {
+			var v = structKeyExists( arguments.got.args, k ) ? arguments.got.args[ k ] : "";
+			if ( !isSimpleValue( v ) ) v = serializeJSON( v );
+			if ( !reFindNoCase( arguments.want.args[ k ], v & "" ) ) return false;
+		}
+		return true;
+	}
+
+	// Whether the calls pass the case: one (the first call), both (each expected call somewhere), none (no call).
+	boolean function passes( required struct c, required array got ) {
+		if ( arguments.c.expect == "none" ) return arguments.got.len() == 0;
+		if ( arguments.c.expect == "one" ) return arguments.got.len() >= 1 && matches( arguments.c.calls[ 1 ], arguments.got[ 1 ] );
+		for ( var w in arguments.c.calls ) {
+			var hit = false;
+			for ( var g in arguments.got ) if ( matches( w, g ) ) hit = true;
+			if ( !hit ) return false;
+		}
+		return true;
+	}
+
+	numeric function median( required array values ) {
+		if ( !arguments.values.len() ) return 0;
+		var v = duplicate( arguments.values );
+		v.sort( "numeric" );
+		var n = v.len();
+		return n mod 2 ? v[ ( n + 1 ) / 2 ] : ( v[ n / 2 ] + v[ n / 2 + 1 ] ) / 2;
+	}
+}

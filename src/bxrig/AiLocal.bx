@@ -9,6 +9,12 @@
 //   setup [--models=ID,ID|--picks=all] [--tune] [--yes]
 //                                              the engine, the models (the balanced pick, or all three, and the embedding model),
 //                                              the answer check, the tune when asked, and the server
+//   discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=N]
+//                                              the staff picks for this machine, then GGUF models on Hugging Face (pull hf:OWNER/REPO)
+//   downloads [clear | cancel ID]               the download queue (pull --background): each model's share, queued, failed or done
+//   bench [ID]                                 BxRig's 20 tool-calling cases against a local model: score, median reply, misses
+//   agents [local opencode|crush [--off] [--default] [--yes]]
+//                                              point an agent at the local server (only BxRig's part of its config changes)
 //   ask TEXT [--model=ID]                      one question to a local model (the active one by default)
 //   status                                     everything above as one answer (the bar panel and the Control Center read it)
 // Files: models in ~/.local/share/bxrig/models; ~/.config/bxrig/ai.json (installed models, the active one, tuned settings, measured
@@ -34,6 +40,22 @@ class AiLocal {
 	function keyFile() { return variables.env.config( "ai-api-key" ); }
 	function unitFile() { return variables.env.xdgConfig( "systemd/user/" & variables.UNIT ); }
 	function catalog() { if ( isNull( variables.cat ) ) variables.cat = new bxrig.AiCatalog(); return variables.cat; }
+	// What BxRig knows about a model: the catalog's entry, else the one stored when it came from Hugging Face; {} when neither.
+	struct function modelInfo( required string id, struct state = {} ) {
+		var c = catalog().find( arguments.id );
+		if ( !structIsEmpty( c ) ) return c;
+		var st = structIsEmpty( arguments.state ) ? load() : arguments.state;
+		return ( st.models[ arguments.id ] ?: {} ).meta ?: {};
+	}
+	function hub() { return new bxrig.AiHub( variables.proc.runner() ); }
+
+	// A Hugging Face entry's id here: its own, or with the owner in front when another repository already has that id on this machine.
+	struct function ownId( required struct e, required struct state ) {
+		var have = arguments.state.models[ arguments.e.id ] ?: {};
+		var theirs = ( have.meta ?: {} ).repo ?: ( structIsEmpty( have ) ? "" : catalog().find( arguments.e.id ).repo ?: "" );
+		if ( len( theirs ) && compareNoCase( theirs, arguments.e.repo ) != 0 ) arguments.e.id = lCase( listFirst( arguments.e.repo, "/" ) ) & "-" & arguments.e.id;
+		return arguments.e;
+	}
 	function hardware() { return new bxrig.AiHardware( variables.proc.runner() ); }
 
 	struct function load() {
@@ -256,13 +278,13 @@ class AiLocal {
 		var rows = [];
 		for ( var id in structKeyArray( st.models ) ) {
 			var m = st.models[ id ];
-			var c = catalog().find( id );
-			rows.append( { id: id, label: c.label ?: id, kind: m.kind ?: "chat", active: st.active == id, size_mb: c.size_mb ?: 0, score: ( c.score ?: {} ).total ?: "", tuned: structKeyExists( m, "tuned" ), measured: m.measured ?: {}, state: live[ id ] ?: "" } );
+			var c = modelInfo( id, st );
+			rows.append( { id: id, label: c.label ?: id, kind: m.kind ?: "chat", active: st.active == id, size_mb: c.size_mb ?: 0, score: ( c.score ?: {} ).total ?: "", tuned: structKeyExists( m, "tuned" ), measured: m.measured ?: {}, bench: m.bench ?: {}, state: live[ id ] ?: "" } );
 		}
 		rows.sort( function( a, b ) { return a.active != b.active ? ( a.active ? -1 : 1 ) : compareNoCase( a.label, b.label ); } );
 		var lines = rows.map( function( r ) {
 				var meas = !structKeyExists( r.measured, "reply_s" ) ? "not tested here" : r.measured.reply_s & " s" & ( r.kind == "embeddings" ? ", " & ( r.measured.dimensions ?: 0 ) & " dimensions" : ", " & r.measured.tps & " tok/s" ) & " here";
-				return ( r.active ? "● " : "  " ) & r.label & repeatString( " ", max( 1, 24 - len( r.label ) ) ) & ( r.kind == "embeddings" ? "embeddings" : ( len( r.score ) ? r.score & "/20" : "untested" ) ) & "   " & meas & ( r.tuned ? ", tuned" : "" );
+				return ( r.active ? "● " : "  " ) & r.label & repeatString( " ", max( 1, 24 - len( r.label ) ) ) & ( r.kind == "embeddings" ? "embeddings" : ( len( r.score ) ? r.score & "/20" : "untested" ) ) & "   " & meas & ( r.tuned ? ", tuned" : "" ) & ( structKeyExists( r.bench, "score" ) ? ", bench " & r.bench.score & "/" & r.bench.of & " here" : "" );
 			} );
 		if ( !rows.len() ) lines = [ "No local models yet. bxrig ai models recommend, then bxrig ai models pull ID --yes (or bxrig ai setup)" ];
 		return variables.out.say( "ok", { active: st.active, models: rows }, arguments.asJson, lines );
@@ -292,37 +314,105 @@ class AiLocal {
 		return variables.out.say( "ok", { hardware: hw, picks: rows, all: more, embedding: emb.id }, arguments.asJson, lines );
 	}
 
+	// Discover: the staff picks for this machine (tested by BxRig), then GGUF models on Hugging Face (not tested by BxRig) with the file
+	// BxRig would download, its size and whether it fits. Filters: fits, vision, embeddings, tools (asks each repository for its chat template).
+	function discover( query, opts, asJson ) {
+		var o = arguments.opts;
+		var limit = min( 30, max( 1, int( val( o.limit ?: 8 ) ) ) );
+		var hw = hardware().detect( modelsDir() );
+		var st = load();
+		var me = this;
+		var staff = catalog().recommend( hw.budget_mb ).map( function( p ) {
+				var m = me.catalog().find( p.id );
+				return { id: p.id, role: p.role, label: m.label, repo: m.repo, size_mb: m.size_mb, score: m.score.total, license: m.license, tools: m.tools ?: false, vision: m.vision ?: false, installed: structKeyExists( st.models, p.id ), verified: true };
+			} );
+		var h = hub();
+		var found = [];
+		for ( var hit in h.search( arguments.query, limit * 2 ) ) {
+			if ( found.len() >= limit ) break;
+			if ( hit.gated ) continue;
+			if ( structKeyExists( o, "vision" ) && !hit.vision ) continue;
+			if ( structKeyExists( o, "embeddings" ) && !hit.embeddings ) continue;
+			var f = h.pickFile( h.files( hit.repo ) );
+			if ( structIsEmpty( f ) ) continue;
+			var e = ownId( h.entry( h.idFor( hit.repo, catalog() ), hit, f ), st );
+			e.fits = catalog().fits( e, hw.budget_mb );
+			if ( structKeyExists( o, "fits" ) && !e.fits ) continue;
+			if ( structKeyExists( o, "tools" ) ) {
+				var detail = h.getJson( "/api/models/" & hit.repo );
+				e.tools = findNoCase( "tools", detail ) > 0;
+				if ( !e.tools ) continue;
+			}
+			e.downloads = hit.downloads;
+			e.likes = hit.likes;
+			e.installed = structKeyExists( st.models, e.id );
+			var tested = catalog().find( e.id );
+			if ( !structIsEmpty( tested ) ) { e.verified = true; e.score = tested.score.total; }
+			found.append( e );
+		}
+		var lines = [ "Staff picks for this machine (tested by BxRig, budget " & mb( hw.budget_mb ) & ")" ];
+		for ( var p in staff ) lines.append( "  " & ( p.installed ? "✓ " : "  " ) & p.role & repeatString( " ", max( 1, 10 - len( p.role ) ) ) & p.label & repeatString( " ", max( 1, 22 - len( p.label ) ) ) & p.score & "/20   " & mb( p.size_mb ) & "   " & p.id );
+		lines.append( "" );
+		lines.append( "On Hugging Face" & ( len( arguments.query ) ? " for """ & arguments.query & """" : ", most downloaded" ) & " (not tested by BxRig unless scored)" );
+		for ( var x in found ) lines.append( "  " & ( x.installed ? "✓ " : ( x.fits ? "  " : "✗ " ) ) & left( x.repo & repeatString( " ", 52 ), 52 ) & " " & left( x.quant & "       ", 7 ) & " " & left( mb( x.size_mb ) & "        ", 8 ) & ( x.fits ? "" : " too big here" ) & ( structKeyExists( x, "score" ) ? " " & x.score & "/20" : "" ) );
+		if ( !found.len() ) lines.append( "  nothing found (or huggingface.co could not be reached)" );
+		lines.append( "" );
+		lines.append( "Download: bxrig ai models pull ID --yes (a staff pick) or bxrig ai models pull hf:OWNER/REPO --yes" );
+		return variables.out.say( "ok", { budget_mb: hw.budget_mb, staff: staff, results: found, query: arguments.query }, arguments.asJson, lines );
+	}
+
 	// Download models: up to three at once, resumable, checked against the catalog's SHA-256.
-	function pull( ids, yes, dry, noTest, asJson ) {
+	function pull( ids, yes, dry, noTest, asJson, background = false ) {
 		var wanted = [];
 		for ( var id in arguments.ids ) {
-			var m = catalog().find( id );
-			if ( structIsEmpty( m ) ) return variables.out.fail( "precondition", "no model " & id & " in the catalog (bxrig ai models recommend --all)", arguments.asJson );
+			if ( lCase( left( id, 3 ) ) == "hf:" ) {
+				var h = hub().resolve( id, catalog() );
+				if ( structKeyExists( h, "error" ) ) return variables.out.fail( "precondition", h.error, arguments.asJson );
+				h = ownId( h, load() );
+				wanted.append( h );
+				continue;
+			}
+			var m = modelInfo( id );
+			if ( structIsEmpty( m ) ) return variables.out.fail( "precondition", "no model " & id & " in the catalog (bxrig ai models recommend --all, or hf:OWNER/REPO for any GGUF on Hugging Face)", arguments.asJson );
 			wanted.append( m );
 		}
 		if ( !wanted.len() ) return variables.out.fail( "usage", "name one or more models: bxrig ai models pull ID [ID...]", arguments.asJson );
 		var total = 0;
 		for ( var w in wanted ) total += w.size_mb;
 		var free = hardware().diskFreeMb( modelsDir() );
-		var steps = wanted.map( function( m ) { return "download " & m.label & " (" & m.size_mb & " MB) from huggingface.co/" & m.repo; } );
+		var steps = wanted.map( function( m ) { return "download " & m.label & " (" & m.size_mb & " MB) from huggingface.co/" & m.repo & ( m.verified ? "" : ", not tested by BxRig" ); } );
 		steps.append( "check each file's SHA-256, then ask each model a test question" );
 		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "download " & wanted.len() & " model" & ( wanted.len() == 1 ? "" : "s" ) & " (" & mb( total ) & ", " & mb( free ) & " free)", { models: wanted.map( function( m ) { return m.id; } ), size_mb: total, free_mb: free }, arguments.asJson, arguments.dry, steps );
 		if ( free > 0 && total + 1024 > free ) return variables.out.fail( "precondition", "not enough disk: " & mb( total ) & " to download, " & mb( free ) & " free in " & modelsDir(), arguments.asJson );
 		directoryCreate( modelsDir(), true, true );
+		for ( var q in wanted ) note( q, "queued" );
+		if ( arguments.background ) {
+			// the same pull, detached: it outlives the terminal or the Control Center that started it; `ai downloads` shows it
+			var a = [ "sh", "-c", 'setsid "$0" ai models pull "$@" --yes > "' & dlDir() & '/pull.log" 2>&1 < /dev/null &', variables.proc.selfPath() ];
+			for ( var spec in arguments.ids ) a.append( spec );
+			if ( arguments.noTest ) a.append( "--no-test" );
+			variables.proc.exec( a, 10 );
+			return variables.out.say( "ok", { background: true, models: wanted.map( function( m ) { return m.id; } ) }, arguments.asJson, [ "Downloading " & wanted.len() & " model" & ( wanted.len() == 1 ? "" : "s" ) & " in the background (three at a time). See them: bxrig ai downloads" ] );
+		}
 		var results = [];
 		var batch = [];
 		for ( var i = 1; i <= wanted.len(); i++ ) {
-			batch.append( wanted[ i ] );
-			if ( batch.len() == 3 || i == wanted.len() ) { for ( var got in downloadBatch( batch, arguments.asJson ) ) results.append( got ); batch = []; }
+			// cancelled while it waited in the queue
+			if ( ( noteOf( wanted[ i ].id ).status ?: "" ) == "cancelled" ) { results.append( { id: wanted[ i ].id, label: wanted[ i ].label, ok: false, error: "cancelled" } ); }
+			else batch.append( wanted[ i ] );
+			if ( batch.len() && ( batch.len() == 3 || i == wanted.len() ) ) { for ( var got in downloadBatch( batch, arguments.asJson ) ) results.append( got ); batch = []; }
 		}
 		var st = load();
 		var lines = [];
+		var byId = {};
+		for ( var w2 in wanted ) byId[ w2.id ] = w2;
 		for ( var r in results ) {
 			if ( !r.ok ) { lines.append( "✗ " & r.label & ": " & r.error ); continue; }
-			var m = catalog().find( r.id );
+			var m = byId[ r.id ];
 			var kept = st.models[ r.id ] ?: {};
 			kept.file = m.file;
 			kept.kind = m.kind;
+			if ( ( m.source ?: "" ) == "hf" ) kept.meta = m;
 			kept.installed = kept.installed ?: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" );
 			st.models[ r.id ] = kept;
 			if ( m.kind == "chat" && !len( st.active ) ) st.active = r.id;
@@ -348,10 +438,13 @@ class AiLocal {
 			if ( fileExists( done ) ) fileDelete( done );
 			// curl in the background; the exit code lands in the .done file
 			variables.proc.exec( [ "sh", "-c", '( curl -fL -sS --retry 5 --retry-all-errors -C - -o "$1" "$2"; echo $? > "$3" ) >/dev/null 2>&1 &', "_", part, catalog().url( m ), done ], 10 );
+			note( m, "downloading", { part: part } );
 			jobs.append( { m: m, target: target, part: part, done: done, skip: false } );
 		}
 		var waiting = jobs.filter( function( j ) { return !j.skip; } );
-		while ( waiting.filter( function( j ) { return !fileExists( j.done ); } ).len() ) {
+		var me = this;
+		// finished: curl wrote its exit code, or the download was cancelled (its curl and the shell around it are gone, so no code comes)
+		while ( waiting.filter( function( j ) { return !fileExists( j.done ) && ( me.noteOf( j.m.id ).status ?: "" ) != "cancelled"; } ).len() ) {
 			sleep( 2000 );
 			if ( !arguments.quiet ) {
 				var bits = waiting.map( function( j ) {
@@ -364,16 +457,83 @@ class AiLocal {
 		var out = [];
 		for ( var j in jobs ) {
 			if ( !j.skip ) {
-				var code = trim( fileRead( j.done ) );
-				fileDelete( j.done );
-				if ( code != "0" ) { out.append( { id: j.m.id, label: j.m.label, ok: false, error: "download failed (curl " & code & "); run the same pull again to resume" } ); continue; }
+				var code = fileExists( j.done ) ? trim( fileRead( j.done ) ) : "cancelled";
+				if ( fileExists( j.done ) ) fileDelete( j.done );
+				if ( ( noteOf( j.m.id ).status ?: "" ) == "cancelled" ) { out.append( { id: j.m.id, label: j.m.label, ok: false, error: "cancelled" } ); continue; }
+				if ( code != "0" ) { note( j.m, "failed", { error: "curl " & code } ); out.append( { id: j.m.id, label: j.m.label, ok: false, error: "download failed (curl " & code & "); run the same pull again to resume" } ); continue; }
 			}
+			note( j.m, "checking" );
 			var check = sha256( j.skip ? j.target : j.part );
-			if ( len( j.m.sha256 ) && check != j.m.sha256 ) { out.append( { id: j.m.id, label: j.m.label, ok: false, error: "checksum mismatch, the file was kept as " & j.part & " for a retry" } ); continue; }
+			if ( len( j.m.sha256 ) && check != j.m.sha256 ) { note( j.m, "failed", { error: "checksum mismatch" } ); out.append( { id: j.m.id, label: j.m.label, ok: false, error: "checksum mismatch, the file was kept as " & j.part & " for a retry" } ); continue; }
 			if ( !j.skip ) fileMove( j.part, j.target );
+			note( j.m, "done" );
 			out.append( { id: j.m.id, label: j.m.label, ok: true, error: "", already: j.skip } );
 		}
 		return out;
+	}
+
+	// ---- the download queue: one record per model in ~/.local/state/bxrig/ai-downloads/ID.json ----
+
+	function dlDir() { var d = variables.env.state( "ai-downloads" ); directoryCreate( d, true, true ); return d; }
+
+	function note( required struct m, required string status, struct extra = {} ) {
+		var f = dlDir() & "/" & arguments.m.id & ".json";
+		var r = new bxrig.util.Json().read( f, {} );
+		if ( !isStruct( r ) ) r = {};
+		r.id = arguments.m.id;
+		r.label = arguments.m.label;
+		r.size_mb = arguments.m.size_mb;
+		r.part = r.part ?: modelsDir() & "/" & arguments.m.file & ".part";
+		r.status = arguments.status;
+		r.updated = dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" );
+		if ( arguments.status == "queued" ) structDelete( r, "error" );
+		for ( var k in arguments.extra ) r[ k ] = arguments.extra[ k ];
+		fileWrite( f, serializeJSON( r ) );
+	}
+
+	struct function noteOf( required string id ) {
+		var r = new bxrig.util.Json().read( dlDir() & "/" & arguments.id & ".json", {} );
+		return isStruct( r ) ? r : {};
+	}
+
+	// The records with the live share of each download (from the size of its .part file).
+	array function queue() {
+		var out = [];
+		for ( var f in directoryList( dlDir(), false, "path", "*.json" ) ) {
+			var r = new bxrig.util.Json().read( f, {} );
+			if ( !isStruct( r ) || !len( r.id ?: "" ) ) continue;
+			var have = r.status == "downloading" && fileExists( r.part ) ? getFileInfo( r.part ).size / 1000000 : ( r.status == "done" || r.status == "checking" ? r.size_mb : 0 );
+			r.done_mb = int( have );
+			r.percent = min( 100, int( have * 100 / max( 1, r.size_mb ) ) );
+			out.append( r );
+		}
+		var order = { downloading: 1, checking: 2, queued: 3, failed: 4, cancelled: 5, done: 6 };
+		out.sort( function( a, b ) { return ( order[ a.status ] ?: 9 ) - ( order[ b.status ] ?: 9 ); } );
+		return out;
+	}
+
+	function downloads( sub, id, asJson ) {
+		if ( arguments.sub == "clear" ) {
+			var n = 0;
+			for ( var r in queue() ) if ( arrayFind( [ "done", "failed", "cancelled" ], r.status ) ) { fileDelete( dlDir() & "/" & r.id & ".json" ); n++; }
+			return variables.out.say( "ok", { cleared: n }, arguments.asJson, [ "Cleared " & n & " finished download" & ( n == 1 ? "" : "s" ) & "." ] );
+		}
+		if ( arguments.sub == "cancel" ) {
+			var c = noteOf( arguments.id );
+			if ( structIsEmpty( c ) || !arrayFind( [ "queued", "downloading" ], c.status ) ) return variables.out.fail( "precondition", arguments.id & " is not downloading or queued (bxrig ai downloads)", arguments.asJson );
+			note( { id: c.id, label: c.label, size_mb: c.size_mb, file: listLast( c.part, "/" ) }, "cancelled" );
+			// stop its curl (matched by the .part path, which is only on that command line), then drop the partial file
+			variables.proc.exec( [ "pkill", "-f", "--", c.part ], 10 );
+			if ( fileExists( c.part ) ) fileDelete( c.part );
+			return variables.out.say( "ok", { cancelled: c.id }, arguments.asJson, [ "Cancelled " & c.label & "." ] );
+		}
+		var rows = queue();
+		var lines = rows.map( function( r ) {
+				var what = r.status == "downloading" ? r.percent & "% (" & r.done_mb & " of " & r.size_mb & " MB)" : r.status & ( len( r.error ?: "" ) ? ": " & r.error : "" );
+				return left( r.label & repeatString( " ", 34 ), 34 ) & " " & what;
+			} );
+		if ( !rows.len() ) lines = [ "No downloads. Start one: bxrig ai models pull ID --background --yes" ];
+		return variables.out.say( "ok", { downloads: rows, active: rows.filter( function( r ) { return arrayFind( [ "queued", "downloading", "checking" ], r.status ); } ).len() }, arguments.asJson, lines );
 	}
 
 	string function sha256( required string path ) {
@@ -389,7 +549,7 @@ class AiLocal {
 		st.active = arguments.id;
 		save( st );
 		if ( len( old ) && old != arguments.id ) call( st, "POST", "/models/unload", serializeJSON( { model: old } ), 10 );
-		return variables.out.say( "ok", { active: arguments.id }, arguments.asJson, [ "Active model: " & ( catalog().find( arguments.id ).label ?: arguments.id ) ] );
+		return variables.out.say( "ok", { active: arguments.id }, arguments.asJson, [ "Active model: " & ( modelInfo( arguments.id, st ).label ?: arguments.id ) ] );
 	}
 
 	// The answer check: one question (or one embedding), timed. Stores what it measured.
@@ -462,6 +622,86 @@ class AiLocal {
 		lines.append( "" );
 		lines.append( id & " · " & secs & " s · " & tps & " tok/s" );
 		return variables.out.say( "ok", { model: id, answer: answer, reply_s: secs, tps: tps }, arguments.asJson, lines );
+	}
+
+	// BxRig's 20 tool-calling cases against a local chat model (the active one unless named): the score, the median reply and the cases
+	// that failed. The result is kept with the model (bench in ai.json) and shown next to the catalog's own score.
+	function bench( id, asJson ) {
+		var st = load();
+		var mdl = len( arguments.id ) ? arguments.id : st.active;
+		if ( !len( mdl ) || !structKeyExists( st.models, mdl ) ) return variables.out.fail( "precondition", len( mdl ) ? mdl & " is not downloaded" : "no active model (bxrig ai setup)", arguments.asJson );
+		if ( ( st.models[ mdl ].kind ?: "chat" ) != "chat" ) return variables.out.fail( "usage", mdl & " is an embedding model; bench tests chat models", arguments.asJson );
+		if ( !call( st, "GET", "/health", "", 3 ).ok ) return variables.out.fail( "precondition", "the AI server is not running (bxrig ai serve start)", arguments.asJson );
+		var b = new bxrig.AiBench();
+		var rows = [];
+		var secs = [];
+		var passed = 0;
+		var i = 0;
+		for ( var c in b.cases() ) {
+			i++;
+			if ( !arguments.asJson ) println( "  " & i & "/" & b.count() & "  " & c.prompt );
+			var t0 = getTickCount();
+			var r = call( st, "POST", "/v1/chat/completions", serializeJSON( b.request( mdl, c ) ), 600 );
+			var took = ( getTickCount() - t0 ) / 1000;
+			secs.append( took );
+			var got = r.ok ? b.calls( r.body ) : [];
+			var ok = r.ok && b.passes( c, got );
+			if ( ok ) passed++;
+			rows.append( { prompt: c.prompt, set: c.set, ok: ok, seconds: val( numberFormat( took, "0.00" ) ), calls: got, error: r.ok ? "" : "HTTP " & r.status } );
+		}
+		var med = val( numberFormat( b.median( secs ), "0.00" ) );
+		var basic = rows.filter( function( x ) { return x.set == "basic" && x.ok; } ).len();
+		var hard = rows.filter( function( x ) { return x.set == "hard" && x.ok; } ).len();
+		st = load();
+		if ( structKeyExists( st.models, mdl ) ) {
+			st.models[ mdl ].bench = { score: passed, of: b.count(), basic: basic, hard: hard, median_s: med, at: dateTimeFormat( now(), "yyyy-MM-dd'T'HH:mm:ss" ), engine: engineVersion( engine() ) };
+			fileWrite( stateFile(), jsonPrettify( serializeJSON( st ) ) & chr( 10 ) );
+		}
+		var ref = modelInfo( mdl, st );
+		var lines = [ "", mdl & ": " & passed & "/" & b.count() & " (basic " & basic & "/12, harder " & hard & "/8) · median reply " & med & " s here"
+			& ( structKeyExists( ref.score ?: {}, "total" ) ? " · BxRig measured " & ref.score.total & "/20" : "" ) ];
+		var failed = rows.filter( function( x ) { return !x.ok; } );
+		if ( failed.len() ) {
+			lines.append( "Missed:" );
+			for ( var f in failed ) lines.append( "  ✗ " & f.prompt & ( f.calls.len() ? "  (called " & f.calls.map( function( x ) { return x.name & serializeJSON( x.args ); } ).toList( ", " ) & ")" : ( len( f.error ) ? "  (" & f.error & ")" : "  (no tool call)" ) ) );
+		}
+		return variables.out.say( "ok", { model: mdl, score: passed, of: b.count(), basic: basic, hard: hard, median_s: med, cases: rows }, arguments.asJson, lines );
+	}
+
+	// Coding agents and the local server: which ones are pointed at it, and pointing one at it or back (OpenCode, Crush). See AiAgentLink.
+	function agentsCmd( words, opts, asJson ) {
+		var link = new bxrig.AiAgentLink();
+		var w = arguments.words;
+		var o = arguments.opts;
+		var st = load();
+		if ( w.len() == 1 ) {
+			var rows = link.agents().map( function( a ) { return { id: a, file: link.file( a ), linked: link.linked( a ), installed: variables.proc.has( a ) }; } );
+			var lines = rows.map( function( r ) { return left( r.id & "          ", 10 ) & ( r.linked ? "uses the local server" : "not linked" ) & ( r.installed ? "" : " (not installed)" ) & "   " & r.file; } );
+			lines.append( "" );
+			lines.append( "Link one: bxrig ai agents local opencode --yes (add --default to make the active model its default)" );
+			return variables.out.say( "ok", { agents: rows, base_url: baseUrl( st ) & "/v1" }, arguments.asJson, lines );
+		}
+		if ( w.len() != 3 || w[ 2 ] != "local" || !arrayFind( link.agents(), w[ 3 ] ) ) return variables.out.fail( "usage", "bxrig ai agents [local opencode|crush [--off] [--default] [--yes]]", arguments.asJson );
+		var agent = w[ 3 ];
+		var off = structKeyExists( o, "off" );
+		var f = link.file( agent );
+		var text = link.read( agent );
+		if ( !off && st.serve.listen != "127.0.0.1" ) return variables.out.fail( "precondition", "the AI server needs an API key while it listens on your network, and BxRig does not write keys into agent configs; listen on 127.0.0.1 first (bxrig ai serve --listen=127.0.0.1 --yes)", arguments.asJson );
+		var chats = structKeyArray( st.models ).filter( function( x ) { return ( st.models[ x ].kind ?: "chat" ) == "chat"; } );
+		if ( !off && !chats.len() ) return variables.out.fail( "precondition", "no local chat models yet (bxrig ai setup)", arguments.asJson );
+		chats.sort( "textnocase" );
+		var next = {};
+		if ( agent == "opencode" ) next = off ? ( len( text ) ? link.opencodeRemove( text ) : { text: "" } ) : link.opencodeAdd( text, baseUrl( st ) & "/v1", chats, structKeyExists( o, "default" ) ? st.active : "" );
+		else next = { text: off ? link.crushRemove( text ) : link.crushAdd( text, baseUrl( st ) ) };
+		if ( structKeyExists( next, "error" ) ) return variables.out.fail( "precondition", next.error & " (" & f & ")", arguments.asJson );
+		var steps = off ? [ "remove BxRig's local server from " & f ] : [ "add BxRig's local server (" & baseUrl( st ) & ") to " & f, agent == "opencode" ? "models: " & chats.toList( ", " ) & ( structKeyExists( o, "default" ) ? "; default model bxrig/" & st.active : "" ) : "Crush finds the server's models itself" ];
+		steps.append( "nothing else in the file changes" );
+		if ( !structKeyExists( o, "yes" ) || structKeyExists( o, "dry-run" ) ) return variables.out.plan( ( off ? "unlink " : "link " ) & agent, { agent: agent, file: f, text: next.text }, arguments.asJson, structKeyExists( o, "dry-run" ), steps );
+		if ( off && !len( text ) ) return variables.out.say( "ok", { agent: agent, linked: false }, arguments.asJson, [ agent & " was not linked." ] );
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		if ( len( text ) ) fileCopy( f, f & ".bxrig-backup" );
+		fileWrite( f, next.text );
+		return variables.out.say( "ok", { agent: agent, linked: !off, file: f }, arguments.asJson, [ off ? agent & " no longer uses the local server." : agent & " can use your local models now (provider bxrig). The old file is kept as " & f & ".bxrig-backup." ] );
 	}
 
 	// Words into lines of at most `width` characters (a longer word gets its own line) (pure).
@@ -542,7 +782,14 @@ class AiLocal {
 		if ( fileExists( file ) ) fileDelete( file );
 		structDelete( st.models, arguments.id );
 		if ( st.active == arguments.id ) {
+			// the next active model: one BxRig tested first, then by name
+			var me = this;
 			var chats = structKeyArray( st.models ).filter( function( x ) { return ( st.models[ x ].kind ?: "chat" ) == "chat"; } );
+			chats.sort( function( x, y ) {
+					var tx = !structIsEmpty( me.catalog().find( x ) );
+					var ty = !structIsEmpty( me.catalog().find( y ) );
+					return tx != ty ? ( tx ? -1 : 1 ) : compareNoCase( x, y );
+				} );
 			st.active = chats.len() ? chats[ 1 ] : "";
 		}
 		save( st );
@@ -565,7 +812,7 @@ class AiLocal {
 		var missing = ids.filter( function( x ) { return !structKeyExists( st.models, x ); } );
 		var steps = [];
 		if ( !len( engine().path ) ) steps.append( "install llama.cpp with the official installer (it picks CUDA, ROCm, Vulkan or CPU for this machine)" );
-		for ( var x in missing ) steps.append( "download " & ( catalog().find( x ).label ?: x ) );
+		for ( var x in missing ) steps.append( "download " & ( modelInfo( x, st ).label ?: x ) );
 		steps.append( "start the AI server (" & variables.UNIT & ") on 127.0.0.1:" & st.serve.port );
 		steps.append( "ask each model a test question" );
 		if ( structKeyExists( o, "tune" ) ) steps.append( "tune each chat model for this machine (about a minute each)" );
@@ -626,12 +873,16 @@ class AiLocal {
 		if ( sub == "engine" && w.len() <= 2 ) return engineCmd( w.len() == 2 ? w[ 2 ] : "status", o.source ?: "", yes, dry, arguments.asJson );
 		if ( sub == "serve" && w.len() <= 2 ) return serve( w.len() == 2 ? w[ 2 ] : "status", o, arguments.asJson );
 		if ( sub == "setup" && w.len() == 1 ) return setup( o, arguments.asJson );
+		if ( sub == "downloads" && w.len() <= 3 ) return downloads( w.len() >= 2 ? w[ 2 ] : "list", w.len() == 3 ? w[ 3 ] : "", arguments.asJson );
+		if ( sub == "agents" ) return agentsCmd( w, o, arguments.asJson );
+		if ( sub == "bench" && w.len() <= 2 ) return bench( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
+		if ( sub == "discover" && w.len() <= 2 ) return discover( w.len() == 2 ? w[ 2 ] : "", o, arguments.asJson );
 		if ( sub == "ask" && w.len() >= 2 ) return ask( w.slice( 2 ).toList( " " ), o.model ?: "", arguments.asJson );
 		if ( sub == "models" ) {
 			var act = w.len() >= 2 ? w[ 2 ] : "list";
 			if ( act == "list" && w.len() <= 2 ) return list( arguments.asJson );
 			if ( act == "recommend" && w.len() == 2 ) return recommend( structKeyExists( o, "all" ), arguments.asJson );
-			if ( act == "pull" && w.len() >= 3 ) return pull( w.slice( 3 ), yes, dry, structKeyExists( o, "no-test" ), arguments.asJson );
+			if ( act == "pull" && w.len() >= 3 ) return pull( w.slice( 3 ), yes, dry, structKeyExists( o, "no-test" ) || ( structKeyExists( o, "test" ) && o.test == false ), arguments.asJson, structKeyExists( o, "background" ) );
 			if ( act == "use" && w.len() == 3 ) return use( w[ 3 ], arguments.asJson );
 			if ( act == "test" && w.len() <= 3 ) return test( w.len() == 3 ? w[ 3 ] : "", arguments.asJson );
 			if ( act == "tune" && w.len() <= 3 ) return tune( w.len() == 3 ? w[ 3 ] : "", yes, dry, arguments.asJson );

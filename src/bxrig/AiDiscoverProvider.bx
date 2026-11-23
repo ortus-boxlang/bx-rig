@@ -1,0 +1,102 @@
+// Discover: models to download. Downloads in progress first (refreshed every 2 seconds), then the staff picks for this machine (tested by
+// BxRig), then GGUF models on Hugging Face (/ searches it; not tested by BxRig). Enter queues a download in the background (its plan first),
+// c cancels a download, x clears finished ones, h opens the model on Hugging Face. Reads `bxrig ai discover [QUERY] --json` and
+// `bxrig ai downloads --json`.
+class AiDiscoverProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "ai-discover"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "ai-discover" ); }
+	function title() { return "Discover"; }
+	function hint() { return "models for this machine: staff picks tested by BxRig, and GGUF models on Hugging Face (/ searches)"; }
+	function emptyText() { return "Nothing found. / searches Hugging Face."; }
+	function live() { return true; }
+	// the queue changes quickly; the search itself is only asked again when the query changes
+	function refreshSeconds() { var seconds = 2; return seconds; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "", w: 40 }, { key: "role", label: "", w: 11 }, { key: "score", label: "score", w: 7 }, { key: "size", label: "size", w: 9 }, { key: "info", label: "", w: 0 } ]; }
+
+	function style( r ) {
+		if ( r.kind == "download" ) return r.status == "failed" ? "error" : ( r.status == "done" ? "ok" : ( r.status == "cancelled" ? "dim" : "warn" ) );
+		if ( r.kind == "heading" ) return "dim";
+		if ( r.installed ?: false ) return "ok";
+		return ( r.fits ?: true ) ? "" : "dim";
+	}
+
+	function detail( r ) {
+		if ( r.kind == "heading" ) return [ r.info ];
+		if ( r.kind == "download" ) return [ r.name & ": " & r.info, r.status == "downloading" || r.status == "queued" ? "c cancels it." : "x clears finished downloads." ];
+		var lines = [ r.name & " · " & r.repo & ( len( r.license ?: "" ) ? " · " & r.license : "" ) ];
+		lines.append( r.kind == "staff" ? "Tested by BxRig: " & r.score & " on 20 tasks. Enter downloads it." : ( r.fits ? "Not tested by BxRig. Enter downloads " & r.file & " (" & r.size & "), checked against Hugging Face's SHA-256." : "Too big for this machine's budget." ) );
+		return lines;
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "download", run: function( r ) {
+					if ( r.kind != "staff" && r.kind != "hf" ) return {};
+					if ( r.installed ?: false ) return {};
+					return { action: "cli", title: "Download " & r.name, args: [ "ai", "models", "pull", r.spec, "--background" ] };
+				} },
+			{ key: "c", label: "cancel", run: function( r ) { return r.kind == "download" && arrayFind( [ "queued", "downloading" ], r.status ) ? { action: "show", title: "Cancel " & r.name, args: [ "ai", "downloads", "cancel", r.id ] } : {}; } },
+			{ key: "x", label: "clear done", run: function( r ) { return { action: "show", title: "Clear finished downloads", args: [ "ai", "downloads", "clear" ] }; } },
+			{ key: "h", label: "hugging face", run: function( r ) {
+					if ( !len( r.repo ?: "" ) ) return {};
+					var url = "https://huggingface.co/" & r.repo;
+					return { action: "exec", title: "Open " & url, argv: [ "xdg-open", url ], plan: [ "Open " & url & " in your browser." ] };
+				} }
+		];
+	}
+
+	function mb( n ) { return arguments.n >= 1000 ? numberFormat( arguments.n / 1000, "0.0" ) & " GB" : arguments.n & " MB"; }
+
+	// The rows from the downloads and discover data (pure, for tests).
+	function rowsFrom( downloads, found ) {
+		var rows = [];
+		var dl = arguments.downloads.downloads ?: [];
+		if ( dl.len() ) {
+			rows.append( { kind: "heading", mark: "", name: "Downloads (three at a time)", role: "", score: "", size: "", info: "downloads resume after a restart; each one is checked when it lands" } );
+			for ( var d in dl ) rows.append( { kind: "download", id: d.id, status: d.status, mark: d.status == "done" ? "✓" : ( d.status == "failed" ? "✗" : ( d.status == "cancelled" ? "·" : "↓" ) ), name: d.label, role: d.status, score: "",
+					size: mb( d.size_mb ), info: d.status == "downloading" ? d.percent & "% (" & d.done_mb & " of " & d.size_mb & " MB)" : ( d.status & ( len( d.error ?: "" ) ? ": " & d.error : "" ) ) } );
+		}
+		var f = arguments.found;
+		if ( isArray( f.staff ?: "" ) && f.staff.len() ) {
+			rows.append( { kind: "heading", mark: "", name: "Staff picks for this machine", role: "", score: "", size: "", info: "tested by BxRig, fit " & mb( f.budget_mb ?: 0 ) } );
+			for ( var s in f.staff ) rows.append( { kind: "staff", id: s.id, spec: s.id, repo: s.repo, license: s.license, installed: s.installed, mark: s.installed ? "✓" : "*", name: s.label, role: s.role,
+					score: s.score & "/20", size: mb( s.size_mb ), info: s.installed ? "installed" : "tested by BxRig, Enter downloads it" } );
+		}
+		rows.append( { kind: "heading", mark: "", name: "On Hugging Face" & ( len( f.query ?: "" ) ? ": " & f.query : ", most downloaded" ), role: "", score: "", size: "", info: "not tested by BxRig unless scored" } );
+		for ( var h in f.results ?: [] ) rows.append( { kind: "hf", id: h.id, spec: "hf:" & h.repo & "/" & h.remote_file, repo: h.repo, file: h.file, license: h.license, installed: h.installed, fits: h.fits,
+				mark: h.installed ? "✓" : ( h.fits ? "+" : "✗" ), name: h.repo, role: h.quant, score: structKeyExists( h, "score" ) ? h.score & "/20" : "", size: mb( h.size_mb ),
+				info: h.installed ? "installed" : ( h.fits ? "fits" : "too big here" ) & ( h.vision ? " · vision" : "" ) & ( h.kind == "embeddings" ? " · embeddings" : "" ) & " · " & numberFormat( h.downloads ) & " downloads" } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoDownloads(), demoFound( arguments.q ) );
+		var a = [ "ai", "discover" ];
+		if ( len( trim( arguments.q ) ) ) a.append( trim( arguments.q ) );
+		// the search is slow (Hugging Face); the 2-second refresh only reads the queue again
+		if ( arguments.q != ( variables.lastQ ?: "~" ) ) { variables.found = variables.proc.selfData( a, 60 ); variables.lastQ = arguments.q; }
+		return rowsFrom( variables.proc.selfData( [ "ai", "downloads" ], 10 ), variables.found );
+	}
+
+	function demoDownloads() {
+		return { downloads: [
+				{ id: "qwen3.5-4b", label: "Qwen3.5 4B", status: "downloading", percent: 70, done_mb: 1900, size_mb: 2740 },
+				{ id: "gemma-4-12b", label: "Gemma 4 12B", status: "downloading", percent: 30, done_mb: 2100, size_mb: 7000 },
+				{ id: "lfm3-1.7b", label: "LFM3 1.7B", status: "checking", percent: 100, done_mb: 1100, size_mb: 1100 },
+				{ id: "granite-4.2-3b", label: "Granite 4.2 3B", status: "queued", percent: 0, done_mb: 0, size_mb: 2100 }
+			] };
+	}
+
+	function demoFound( q ) {
+		return { budget_mb: 16000, query: arguments.q, staff: [
+				{ id: "gemma-4-e4b", role: "balanced", label: "Gemma 4 E4B", repo: "unsloth/gemma-4-E4B-it-GGUF", size_mb: 4980, score: 20, license: "apache-2.0", installed: true },
+				{ id: "qwen3.5-0.8b", role: "fastest", label: "Qwen3.5 0.8B", repo: "unsloth/Qwen3.5-0.8B-GGUF", size_mb: 533, score: 17, license: "apache-2.0", installed: false },
+				{ id: "gemma-4-12b", role: "capable", label: "Gemma 4 12B", repo: "unsloth/gemma-4-12b-it-GGUF", size_mb: 7300, score: 20, license: "apache-2.0", installed: false }
+			], results: [
+				{ id: "smollm2-1.7b-instruct", repo: "bartowski/SmolLM2-1.7B-Instruct-GGUF", remote_file: "SmolLM2-1.7B-Instruct-Q4_K_M.gguf", file: "SmolLM2-1.7B-Instruct-Q4_K_M.gguf", quant: "Q4_K_M", size_mb: 1055, license: "apache-2.0", installed: false, fits: true, vision: false, kind: "chat", downloads: 48210 },
+				{ id: "lfm3-1.7b", repo: "LiquidAI/LFM3-1.7B-GGUF", remote_file: "LFM3-1.7B-Q4_K_M.gguf", file: "LFM3-1.7B-Q4_K_M.gguf", quant: "Q4_K_M", size_mb: 1100, license: "other", installed: false, fits: true, vision: false, kind: "chat", downloads: 91022, score: 17 },
+				{ id: "flint", repo: "flint-ai/Flint-40B-A2.5B-GGUF", remote_file: "Flint-40B-A2.5B-Q4_K_M.gguf", file: "Flint-40B-A2.5B-Q4_K_M.gguf", quant: "Q4_K_M", size_mb: 23400, license: "apache-2.0", installed: false, fits: false, vision: false, kind: "chat", downloads: 12044 }
+			] };
+	}
+}

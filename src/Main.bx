@@ -753,7 +753,7 @@ class {
 				CLIExit( xit.usage() );
 			}
 				// Local AI on llama.cpp: hardware, engine, models, the server, setup. See COMMAND-CONTRACT.md "Local AI".
-				if ( arrayFind( [ "hardware", "engine", "models", "serve", "setup", "status", "ask" ], aiSub ) ) CLIExit( new bxrig.AiLocal( cli ).run( p.slice( 2 ), args.options, asJson ) );
+				if ( arrayFind( [ "hardware", "engine", "models", "serve", "setup", "status", "ask", "discover", "downloads", "bench", "agents" ], aiSub ) ) CLIExit( new bxrig.AiLocal( cli ).run( p.slice( 2 ), args.options, asJson ) );
 				println( new bxrig.CommandSpec().usage( "ai" ) );
 				CLIExit( xit.usage() );
 				break;

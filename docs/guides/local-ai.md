@@ -77,6 +77,51 @@ Downloads run up to three at a time, continue where they stopped after an interr
 
 **Tune** runs llama.cpp's benchmark on each model (about a minute) with different thread counts, batch sizes and flash attention, and keeps the fastest settings for your machine. You can skip it at setup and run it any time.
 
+## Discover more models
+
+```bash
+bxrig ai discover                  # staff picks for this machine, then the most downloaded GGUF models
+bxrig ai discover qwen --fits      # search Hugging Face; only what fits here
+bxrig ai models pull hf:bartowski/SmolLM2-1.7B-Instruct-GGUF --yes
+bxrig ai models pull hf:OWNER/REPO/FILE.gguf --yes     # a quant of your choice
+```
+
+**Staff picks** are the models BxRig tested, picked for your hardware. The rest come from Hugging Face and are marked as not tested by BxRig. For each repository BxRig picks one file (a 4-bit quant first), shows its size and whether it fits, and checks the download against the SHA-256 that Hugging Face publishes. Only language models are listed (text, text with images, embeddings).
+
+<video src="../assets/clips/ai-discover-tui.webm" poster="../assets/screenshots/ai-page-search.webp" autoplay loop muted playsinline width="100%"></video>
+
+## Downloads in the background
+
+```bash
+bxrig ai models pull gemma-4-e4b qwen3.5-4b --background --yes
+bxrig ai downloads                 # each one's share, queued, checking, done or failed
+bxrig ai downloads cancel qwen3.5-4b
+bxrig ai downloads clear           # forget the finished ones
+```
+
+Three download at a time; the rest wait in the queue. A background pull keeps going when you close the terminal or the Control Center.
+
+## How well a model does here
+
+```bash
+bxrig ai bench                     # the active model
+bxrig ai bench qwen3.5-0.8b
+```
+
+`bench` runs BxRig's 20 tool-calling tasks (setting a theme, a reminder, an agenda, installing an app, two actions at once, and requests that need no tool) against your own server and reports the score, the median reply time and the tasks it missed. These are the same tasks behind the scores in BxRig's catalog, so you can compare a model you found on Hugging Face with the tested ones. The result is kept with the model and shown in `bxrig ai models`.
+
+## Coding agents on local models
+
+```bash
+bxrig ai agents                            # which agents use the local server
+bxrig ai agents local opencode --yes       # add BxRig's server to OpenCode
+bxrig ai agents local opencode --default --yes   # and make the active model its default
+bxrig ai agents local crush --yes
+bxrig ai agents local opencode --off --yes
+```
+
+Only BxRig's own part of each agent's config is written (a provider called `bxrig`); everything else stays, and the old file is kept as `.bxrig-backup`. OpenCode gets a provider in `~/.config/opencode/opencode.json` with your chat models; Crush gets a `llamacpp` provider block in `~/.config/crush/crushrc` and finds the models itself. A config with comments (JSONC) is not rewritten. While the server listens on your network it needs an API key, so agents are linked only while it listens on 127.0.0.1.
+
 ## The server
 
 ```bash
@@ -92,7 +137,9 @@ The server is a user service (`bxrig-ai.service`) running llama.cpp in router mo
 
 The **AI** page of the Control Center (`bxrig tui ai`) shows your machine, the engine, the server, your models and the picks you do not have yet. Enter downloads a pick or makes a model active, `t` tests, `u` tunes, `h` opens the model on Hugging Face, `x` removes it, `p` asks a question and `s` sets everything up.
 
-The bar's Agents panel has a **Local** tab: the server with Start and Stop, your models with Use, and a box to try a question.
+**Discover** (`bxrig tui ai-discover`) shows downloads in progress, the staff picks and Hugging Face: `/` searches, Enter queues a download, `c` cancels one, `h` opens the model on Hugging Face. **Agents** (`bxrig tui ai-agents`) lists your coding agents: the default one, which use the local server (`l` switches), their sessions; Enter starts a session and `d` makes one the default. On the AI page, `b` runs the bench on the model under the cursor.
+
+The bar's Agents panel has a **Local** tab: the server with Start and Stop, your models with Use, downloads in progress, and a box to try a question.
 
 ## Files
 
@@ -102,5 +149,6 @@ The bar's Agents panel has a **Local** tab: the server with Start and Stop, your
 | `~/.config/bxrig/ai.json` | your models, the active one, tuned settings, measured speed, where the server listens |
 | `~/.config/bxrig/ai-models.ini` | the server's model list, written from `ai.json` |
 | `~/.config/systemd/user/bxrig-ai.service` | the server |
+| `~/.local/state/bxrig/ai-downloads/` | the download queue, one record per model |
 
 Other local AI apps (LM Studio, Jan, Ollama and others) are still in the app catalog if you prefer them.
