@@ -3,6 +3,9 @@
 -- with its date, big time, abbreviation + offset from local, and a day bar
 -- whose sun/moon marker shows where in its day that zone is.
 --
+-- Below the zones: the agenda of today and tomorrow (`bxrig calendar agenda --days=2 --json`) and the reminders still to come
+-- (`bxrig remind list --json`), each with a check button that marks it done. Each section is left out when there is nothing in it.
+--
 -- Data: `bxrig time world --json`, fetched on open and every 30 s while open. The Calendar button opens the Noctalia calendar
 -- (`noctalia msg panel-toggle control-center calendar`, the same route as right click on the bar clock).
 -- Colors are palette roles only, so the panel follows the active theme.
@@ -16,6 +19,8 @@ local errorText = nil
 local loading = false
 local lastFetchMs = -REFRESH_MS
 local closeButton = true
+local agenda = nil -- `calendar agenda` data
+local reminders = nil -- `remind list` data
 
 local function str(v)
 	if v == nil then
@@ -96,6 +101,86 @@ local function zoneCard(zone, index)
 	})
 end
 
+
+local function sectionTitle(text, glyph, key)
+	return ui.row({ key = key, align = "center", gap = 6, paddingH = 4 }, {
+		ui.glyph({ name = glyph, size = 14, color = "primary" }),
+		ui.label({ text = text, fontSize = 12, fontWeight = "bold", color = "on_surface_variant" }),
+	})
+end
+
+-- "2026-11-23T09:30" -> "09:30"
+local function hm(iso)
+	return string.sub(str(iso), 12, 16)
+end
+
+local function eventRow(e, i)
+	local when = e.all_day == true and "all day" or `{hm(e.start)}-{hm(e["end"])}`
+	local lines = {
+		ui.label({ text = str(e.summary), fontSize = 13, maxLines = 1 }),
+	}
+	if str(e.location) ~= "" then
+		table.insert(lines, ui.label({ text = str(e.location), fontSize = 10, color = "on_surface_variant", maxLines = 1 }))
+	end
+	return ui.row({ key = "event-" .. i, align = "center", gap = 10, paddingH = 12, paddingV = 8, radius = 10, fill = "surface_container" }, {
+		ui.box({ width = 3, height = 28, radius = 2, fill = e.all_day == true and "tertiary" or "primary" }),
+		ui.label({ text = when, fontSize = 12, fontWeight = "bold", color = "on_surface", width = 82 }),
+		ui.column({ flexGrow = 1, gap = 1 }, lines),
+	})
+end
+
+local function agendaCards()
+	local out = {}
+	local events = agenda and agenda.events or nil
+	if type(events) ~= "table" or #events == 0 then
+		return out
+	end
+	local shown = ""
+	for i, e in ipairs(events) do
+		if type(e) == "table" then
+			if str(e.day) ~= shown then
+				shown = str(e.day)
+				table.insert(out, sectionTitle(shown == str(agenda.today) and "Today" or "Tomorrow", "calendar", "day-" .. shown))
+			end
+			table.insert(out, eventRow(e, i))
+		end
+	end
+	return out
+end
+
+local function reminderCards()
+	local out = {}
+	local list = reminders and reminders.reminders or nil
+	if type(list) ~= "table" or #list == 0 then
+		return out
+	end
+	table.insert(out, sectionTitle("Reminders", "bell", "reminders-title"))
+	for _, r in ipairs(list) do
+		if type(r) == "table" then
+			local id = str(r.id)
+			local today = agenda ~= nil and string.sub(str(r.at), 1, 10) == str(agenda.today)
+			local when = today and hm(r.at) or `{string.sub(str(r.at), 6, 10)} {hm(r.at)}`
+			table.insert(out, ui.row({ key = "reminder-" .. id, align = "center", gap = 10, paddingH = 12, paddingV = 6, radius = 10, fill = r.due == true and "error_container" or "surface_container" }, {
+				ui.glyph({ name = r.due == true and "bell-ringing" or "bell", size = 16, color = r.due == true and "error" or "secondary" }),
+				ui.label({ text = when, fontSize = 12, fontWeight = "bold", width = 82 }),
+				ui.label({ text = str(r.text), fontSize = 13, flexGrow = 1, maxLines = 1 }),
+				ui.button({
+					glyph = "check",
+					variant = "ghost",
+					controlSize = "sm",
+					tooltip = "Done",
+					onClick = function()
+						bxrig.run({ "remind", "done", id }, function()
+							fetchExtras()
+						end)
+					end,
+				}),
+			}))
+		end
+	end
+	return out
+end
+
 local function render()
 	local sections = {}
 
@@ -146,12 +231,25 @@ local function render()
 			color = "on_surface_variant",
 			textAlign = "center",
 		}))
+		local extras = agendaCards()
+		for _, c in ipairs(reminderCards()) do
+			table.insert(extras, c)
+		end
+		if #extras > 0 then
+			table.insert(sections, ui.scroll({ flexGrow = 1, gap = 8 }, extras))
+		end
 	else
 		local cards = {}
 		for i, zone in ipairs(zones) do
 			if type(zone) == "table" then
 				table.insert(cards, zoneCard(zone, i))
 			end
+		end
+		for _, c in ipairs(agendaCards()) do
+			table.insert(cards, c)
+		end
+		for _, c in ipairs(reminderCards()) do
+			table.insert(cards, c)
 		end
 		table.insert(sections, ui.scroll({ flexGrow = 1, gap = 8 }, cards))
 		if errorText ~= nil then
@@ -170,12 +268,25 @@ local function render()
 	panel.render(ui.column({ flexGrow = 1, gap = 10, padding = 10 }, sections))
 end
 
+-- The agenda and the reminders: a failure leaves the section out (no calendars, an older bxrig).
+function fetchExtras()
+	bxrig.json({ "calendar", "agenda", "--days=2", "--json" }, function(result, err)
+		agenda = err == nil and result or nil
+		render()
+	end)
+	bxrig.json({ "remind", "list", "--json" }, function(result, err)
+		reminders = err == nil and result or nil
+		render()
+	end)
+end
+
 local function fetch()
 	if loading then
 		return
 	end
 	loading = true
 	lastFetchMs = noctalia.nowMs()
+	fetchExtras()
 	bxrig.json({ "time", "world", "--json" }, function(result, err)
 		loading = false
 		if err ~= nil then

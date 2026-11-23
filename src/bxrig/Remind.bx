@@ -1,0 +1,154 @@
+// `bxrig remind`: a note that pops up at a time you choose, shown by the desktop's notifications.
+//   TEXT --at="HH:MM" | --at="YYYY-MM-DD HH:MM" | --in=30m|2h|1d|1h30m   add one (an HH:MM that has passed today means tomorrow)
+//   list                                                               what is still to come, and what is due and not yet done
+//   done ID / remove ID                                                mark it done / forget it
+//   due                                                                pop up the reminders whose time has come (the scheduler runs it every minute)
+// Kept in ~/.config/bxrig/reminders.json. Adding the first one adds the scheduler task "reminders" when the scheduler is installed.
+class Remind {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "remind" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	function file() { return variables.env.config( "reminders.json" ); }
+
+	function load() {
+		var j = new bxrig.util.Json().read( file(), {} );
+		return isStruct( j ) && isArray( j.reminders ?: "" ) ? j.reminders : [];
+	}
+
+	function save( list ) {
+		directoryCreate( getDirectoryFromPath( file() ), true, true );
+		fileWrite( file(), jsonPrettify( serializeJSON( { reminders: arguments.list } ) ) & chr( 10 ) );
+	}
+
+	function stamp( d ) { return dateTimeFormat( arguments.d, "yyyy-MM-dd'T'HH:mm" ); }
+
+	// "--in" text -> minutes: 30m, 2h, 1d, 1h30m, 90 (minutes). 0 when it is not one.
+	function inMinutes( s ) {
+		var t = lCase( trim( arguments.s ) );
+		if ( reFind( "^[0-9]+$", t ) ) return int( t );
+		if ( !reFind( "^([0-9]+[dhm])+$", t ) ) return 0;
+		var m = 0;
+		for ( var part in reMatch( "[0-9]+[dhm]", t ) ) {
+			var n = int( left( part, len( part ) - 1 ) );
+			var u = right( part, 1 );
+			m += u == "d" ? n * 1440 : ( u == "h" ? n * 60 : n );
+		}
+		return m;
+	}
+
+	// "--at" text -> the date and time it means, from `now` ("" when it is not one). A bare HH:MM that has passed means tomorrow.
+	function atTime( s, nowDt ) {
+		var t = trim( arguments.s );
+		if ( reFind( "^[0-9]{1,2}:[0-9]{2}$", t ) ) {
+			var h = int( listFirst( t, ":" ) ); var mi = int( listLast( t, ":" ) );
+			if ( h > 23 || mi > 59 ) return "";
+			var d = createDateTime( year( arguments.nowDt ), month( arguments.nowDt ), day( arguments.nowDt ), h, mi, 0 );
+			return dateCompare( d, arguments.nowDt ) <= 0 ? dateAdd( "d", 1, d ) : d;
+		}
+		if ( reFind( "^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{1,2}:[0-9]{2}$", t ) ) {
+			var dp = listToArray( left( t, 10 ), "-" ); var tp = listToArray( mid( t, 12, 5 ), ":" );
+			if ( int( dp[ 2 ] ) < 1 || int( dp[ 2 ] ) > 12 || int( dp[ 3 ] ) < 1 || int( dp[ 3 ] ) > 31 || int( tp[ 1 ] ) > 23 || int( tp[ 2 ] ) > 59 ) return "";
+			return createDateTime( int( dp[ 1 ] ), int( dp[ 2 ] ), int( dp[ 3 ] ), int( tp[ 1 ] ), int( tp[ 2 ] ), 0 );
+		}
+		return "";
+	}
+
+	function nextId( list ) {
+		var n = 0;
+		for ( var r in arguments.list ) n = max( n, int( r.id ) );
+		return n + 1;
+	}
+
+	// The reminders still to do, soonest first, each with `due` (its time has come).
+	function pending( nowDt ) {
+		var n = stamp( arguments.nowDt );
+		var out = load().filter( function( r ) { return !( r.done ?: false ); } ).map( function( r ) { var c = duplicate( r ); c.due = c.at <= n; return c; } );
+		out.sort( function( a, b ) { return compare( a.at, b.at ); } );
+		return out;
+	}
+
+	function when( at, nowDt ) {
+		var d = left( arguments.at, 10 );
+		var today = dateTimeFormat( arguments.nowDt, "yyyy-MM-dd" );
+		var tomorrow = dateTimeFormat( dateAdd( "d", 1, arguments.nowDt ), "yyyy-MM-dd" );
+		return ( d == today ? "today" : ( d == tomorrow ? "tomorrow" : d ) ) & " " & mid( arguments.at, 12, 5 );
+	}
+
+	function add( text, opts, asJson, nowDt = now() ) {
+		if ( !len( trim( arguments.text ) ) ) return variables.out.fail( "usage", "what to remind you of: bxrig remind ""Call Ana"" --in=30m", arguments.asJson );
+		var at = "";
+		if ( len( arguments.opts.at ?: "" ) ) at = atTime( arguments.opts.at, arguments.nowDt );
+		else if ( len( arguments.opts.in ?: "" ) ) { var m = inMinutes( arguments.opts.in ); if ( m > 0 ) at = dateAdd( "n", m, arguments.nowDt ); }
+		else return variables.out.fail( "usage", "when: --at=HH:MM, --at=""YYYY-MM-DD HH:MM"" or --in=30m", arguments.asJson );
+		if ( !isDate( at ) ) return variables.out.fail( "usage", "not a time: use --at=HH:MM, --at=""YYYY-MM-DD HH:MM"" or --in=30m, 2h, 1d", arguments.asJson );
+		var list = load();
+		var r = { id: nextId( list ), text: trim( arguments.text ), at: stamp( at ), created: stamp( arguments.nowDt ), done: false, notified: false };
+		list.append( r );
+		save( list );
+		var lines = [ "Reminder " & r.id & ": " & r.text & ", " & when( r.at, arguments.nowDt ) & "." ];
+		var sched = new bxrig.Scheduler( variables.cli, variables.proc.runner() );
+		if ( sched.isInstalled() ) sched.upsert( task() );
+		else lines.append( "It pops up once the scheduler runs: bxrig scheduler install --yes" );
+		return variables.out.say( "ok", r, arguments.asJson, lines );
+	}
+
+	// The scheduler task that pops reminders up.
+	function task() { return new bxrig.Scheduler( variables.cli, variables.proc.runner() ).reminderTask(); }
+
+	function list( asJson, nowDt = now() ) {
+		var rows = pending( arguments.nowDt );
+		var lines = rows.map( function( r ) { return numberFormat( r.id, "00" ) & "  " & when( r.at, nowDt ) & "  " & r.text & ( r.due ? "  (due)" : "" ); } );
+		if ( !rows.len() ) lines = [ "No reminders. bxrig remind ""Call Ana"" --in=30m" ];
+		return variables.out.say( "ok", { reminders: rows }, arguments.asJson, lines );
+	}
+
+	function setDone( id, asJson ) {
+		var list = load();
+		var hit = false;
+		for ( var r in list ) if ( r.id & "" == arguments.id & "" ) { r.done = true; hit = true; }
+		if ( !hit ) return variables.out.fail( "precondition", "no reminder " & arguments.id & " (bxrig remind list)", arguments.asJson );
+		save( list );
+		return variables.out.say( "ok", { done: int( arguments.id ) }, arguments.asJson, [ "Done: reminder " & arguments.id ] );
+	}
+
+	function remove( id, asJson ) {
+		var list = load();
+		var keep = list.filter( function( r ) { return r.id & "" != id & ""; } );
+		if ( keep.len() == list.len() ) return variables.out.fail( "precondition", "no reminder " & arguments.id & " (bxrig remind list)", arguments.asJson );
+		save( keep );
+		return variables.out.say( "ok", { removed: int( arguments.id ) }, arguments.asJson, [ "Removed reminder " & arguments.id ] );
+	}
+
+	// Pops up each reminder whose time has come, once. Done ones older than a week are tidied away.
+	function due( asJson, nowDt = now() ) {
+		var n = stamp( arguments.nowDt );
+		var weekAgo = stamp( dateAdd( "d", -7, arguments.nowDt ) );
+		var list = load();
+		var shown = [];
+		for ( var r in list ) {
+			if ( ( r.done ?: false ) || ( r.notified ?: false ) || r.at > n ) continue;
+			if ( variables.proc.has( "notify-send" ) ) variables.proc.exec( [ "notify-send", "--app-name=bxrig", "--urgency=critical", "--icon=alarm-symbolic", "Reminder", r.text ], 10 );
+			r.notified = true;
+			shown.append( r.id );
+		}
+		var keep = list.filter( function( r ) { return !( ( r.done ?: false ) && r.at < weekAgo ); } );
+		if ( shown.len() || keep.len() != list.len() ) save( keep );
+		return variables.out.say( "ok", { shown: shown }, arguments.asJson, [ shown.len() ? "Showed " & shown.len() & " reminder" & ( shown.len() == 1 ? "" : "s" ) : "Nothing due" ] );
+	}
+
+	function run( words, opts, asJson ) {
+		var w = arguments.words;
+		var sub = w.len() ? w[ 1 ] : "list";
+		if ( sub == "list" && w.len() <= 1 ) return list( arguments.asJson );
+		if ( sub == "due" && w.len() == 1 ) return due( arguments.asJson );
+		if ( sub == "done" && w.len() == 2 ) return setDone( w[ 2 ], arguments.asJson );
+		if ( sub == "remove" && w.len() == 2 ) return remove( w[ 2 ], arguments.asJson );
+		if ( w.len() && !arrayFind( [ "list", "due", "done", "remove" ], sub ) ) return add( w.toList( " " ), arguments.opts, arguments.asJson );
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "remind" ), arguments.asJson );
+	}
+}

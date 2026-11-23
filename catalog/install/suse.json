@@ -1267,6 +1267,12 @@
 				"python3-uv"
 			]
 		},
+		"vdirsyncer": {
+			"source": "zypper",
+			"targets": [
+				"python313-vdirsyncer"
+			]
+		},
 		"vim": {
 			"source": "zypper",
 			"targets": [

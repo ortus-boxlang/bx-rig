@@ -1234,6 +1234,13 @@
 				"uxplay"
 			]
 		},
+		"vdirsyncer": {
+			"source": "apt",
+			"targets": [
+				"vdirsyncer",
+				"python3-aiohttp-oauthlib"
+			]
+		},
 		"vim": {
 			"source": "apt",
 			"targets": [

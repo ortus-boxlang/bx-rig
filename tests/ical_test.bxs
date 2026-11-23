@@ -1,0 +1,63 @@
+// The iCalendar reader, the vdirsyncer config BxRig writes, and the reminder times.
+// Run from src/: (cd src && matchbox ../tests/ical_test.bxs)
+testkit = new lib.Check( "calendar" );
+ic = new bxrig.Ical();
+nl = chr( 13 ) & chr( 10 );
+work = fileRead( expandPath( "../tests/fixtures/calendar/work.ics" ) );
+
+// lines and values
+testkit.check( "unfold: a line starting with a space continues the one before", ic.unfold( "SUMMARY:A long" & nl & "  title" & nl & "UID:1" )[ 1 ] == "SUMMARY:A long title" );
+testkit.check( "unescape: \n \, \; and \\", ic.unescape( "a" & chr( 92 ) & ", b" & chr( 92 ) & "; c" & chr( 92 ) & chr( 92 ) & "d" ) == "a, b; c" & chr( 92 ) & "d" );
+p = ic.prop( "DTSTART;TZID=Europe/Madrid:20261123T093000" );
+testkit.check( "prop: name, params and value", p.name == "DTSTART" && p.params.TZID == "Europe/Madrid" && p.value == "20261123T093000" );
+testkit.check( "a DATE is all day", ic.parseTime( "20261126", { VALUE: "DATE" }, 0 ).allDay );
+z = ic.parseTime( "20261123T150000Z", {}, 60 );
+testkit.check( "a time ending in Z moves by the offset", !z.allDay && hour( z.date ) == 16 );
+testkit.check( "a TZID time is taken as local", hour( ic.parseTime( "20261123T093000", { TZID: "Europe/Madrid" }, 60 ).date ) == 9 );
+testkit.check( "DURATION in minutes", ic.durationMinutes( "PT1H30M" ) == 90 && ic.durationMinutes( "P1D" ) == 1440 && ic.durationMinutes( "PT15M" ) == 15 );
+r = ic.rrule( "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;COUNT=4" );
+testkit.check( "rrule: freq, interval, count, byday", r.freq == "WEEKLY" && r.interval == 2 && r.count == 4 && r.byday.toList() == "1,3" );
+
+// the fixture, 23 to 30 November with UTC+1
+evs = ic.events( work, 60 );
+testkit.check( "events: the VEVENTs (a VALARM inside one is not an event)", evs.len() == 5 );
+ag = ic.agenda( [ { calendar: "work", text: work } ], createDate( 2026, 11, 23 ), createDate( 2026, 11, 30 ), 60 );
+titles = ag.map( function( o ) { return dateTimeFormat( o.start, "EEE HH:mm" ) & " " & left( o.summary, 14 ); } );
+testkit.check( "agenda: soonest first", dateCompare( ag[ 1 ].start, ag[ ag.len() ].start ) < 0 );
+standups = ag.filter( function( o ) { return o.summary == "Standup"; } ).map( function( o ) { return dateTimeFormat( o.start, "EEE" ); } );
+testkit.check( "weekly MO,WE,FR with Wednesday excluded by EXDATE", standups.toList() == "Mon,Fri" );
+design = ag.filter( function( o ) { return left( o.summary, 6 ) == "Design"; } );
+testkit.check( "a UTC event with DURATION, and the escapes undone", design.len() == 1 && dateTimeFormat( design[ 1 ].start, "HH:mm" ) == "16:00" && dateTimeFormat( design[ 1 ].end, "HH:mm" ) == "17:30" && design[ 1 ].summary == "Design review, BoxLang 1.20" && design[ 1 ].location == "Room 4; second floor" );
+testkit.check( "an all-day event", ag.filter( function( o ) { return o.summary == "Thanksgiving" && o.allDay; } ).len() == 1 );
+testkit.check( "a cancelled event is left out", !ag.filter( function( o ) { return o.summary == "Old sync"; } ).len() );
+testkit.check( "DAILY with COUNT=3 and a folded title", ag.filter( function( o ) { return left( o.summary, 6 ) == "A very"; } ).len() == 3 );
+testkit.check( "the calendar name is kept", ag[ 1 ].calendar == "work" );
+testkit.check( "a window before the events is empty", !ic.agenda( [ { calendar: "w", text: work } ], createDate( 2026, 1, 1 ), createDate( 2026, 1, 8 ), 0 ).len() );
+monthly = "BEGIN:VCALENDAR" & nl & "BEGIN:VEVENT" & nl & "DTSTART:20260115T100000" & nl & "DTEND:20260115T110000" & nl & "RRULE:FREQ=MONTHLY;UNTIL=20260415T000000Z" & nl & "SUMMARY:Rent" & nl & "END:VEVENT" & nl & "END:VCALENDAR";
+testkit.check( "MONTHLY with UNTIL", ic.agenda( [ { calendar: "m", text: monthly } ], createDate( 2026, 1, 1 ), createDate( 2026, 12, 31 ), 0 ).len() == 3 );
+
+// the vdirsyncer config
+tmp = testkit.tmp();
+cal = new bxrig.Calendar( new bxrig.util.Cli( "0" ) );
+t = cal.configText( [ { name: "holidays", kind: "ical", url: "https://example.org/h.ics" }, { name: "work-mail", kind: "google", client_id: "id.apps", client_secret: "s3" } ] );
+testkit.check( "config: a status path", find( "[general]", t ) && find( "status_path = ", t ) );
+testkit.check( "config: an iCal address is an http storage with collections = null", find( "[pair holidays]", t ) && find( "collections = null", t ) && find( 'type = "http"', t ) && find( 'url = "https://example.org/h.ics"', t ) );
+testkit.check( "config: Google is a google_calendar storage, collections discovered, names with underscores", find( "[pair work_mail]", t ) && find( 'collections = ["from b"]', t ) && find( 'type = "google_calendar"', t ) && find( 'client_id = "id.apps"', t ) && find( 'client_secret = "s3"', t ) && find( "work-mail.token", t ) );
+testkit.check( "config: a filesystem storage of .ics files on this side", find( 'type = "filesystem"', t ) && find( 'fileext = ".ics"', t ) && find( "/calendars/holidays/", t ) );
+testkit.check( "webcal:// is https://", cal.normalizeUrl( " webcal://x.org/a.ics " ) == "https://x.org/a.ics" && cal.normalizeUrl( "https://y" ) == "https://y" );
+testkit.check( "the sync task every 15 minutes", cal.task().name == "calendar-sync" && cal.task().when == "every 15 minutes" && cal.task().run.toList( " " ) == "calendar sync" );
+
+// reminders
+rm = new bxrig.Remind( new bxrig.util.Cli( "0" ) );
+testkit.check( "--in: 30m, 2h, 1d, 1h30m and bare minutes", rm.inMinutes( "30m" ) == 30 && rm.inMinutes( "2h" ) == 120 && rm.inMinutes( "1d" ) == 1440 && rm.inMinutes( "1h30m" ) == 90 && rm.inMinutes( "45" ) == 45 );
+testkit.check( "--in: not a time is 0", rm.inMinutes( "soon" ) == 0 && rm.inMinutes( "" ) == 0 );
+n = createDateTime( 2026, 11, 22, 10, 0, 0 );
+testkit.check( "--at HH:MM later today", rm.stamp( rm.atTime( "14:30", n ) ) == "2026-11-22T14:30" );
+testkit.check( "--at HH:MM that has passed is tomorrow", rm.stamp( rm.atTime( "09:15", n ) ) == "2026-11-23T09:15" );
+testkit.check( "--at a date and a time", rm.stamp( rm.atTime( "2026-12-01 08:05", n ) ) == "2026-12-01T08:05" );
+testkit.check( "--at: not a time", !isDate( rm.atTime( "25:00", n ) ) && !isDate( rm.atTime( "tomorrow", n ) ) && !isDate( rm.atTime( "2026-13-01 10:00", n ) ) );
+testkit.check( "when: today, tomorrow or the date", rm.when( "2026-11-22T14:30", n ) == "today 14:30" && rm.when( "2026-11-23T09:15", n ) == "tomorrow 09:15" && rm.when( "2026-12-01T08:05", n ) == "2026-12-01 08:05" );
+testkit.check( "the reminders task every minute", rm.task().name == "reminders" && rm.task().when == "every 1 minutes" && rm.task().run.toList( " " ) == "remind due" );
+sc = new bxrig.Scheduler( new bxrig.util.Cli( "0" ) );
+testkit.check( "the scheduler can run every minute", sc.fluent( "every 1 minutes" ) == '.every( 1, "minutes" )' );
+testkit.done();

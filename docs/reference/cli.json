@@ -1559,6 +1559,77 @@
 					]
 				},
 				{
+					"name": "calendar",
+					"summary": "Your calendars on this machine (iCal addresses and Google Calendar), kept in sync by vdirsyncer, and the agenda read from them.",
+					"usage": [
+						"calendar [list] [--json]",
+						"calendar add ical NAME URL [--json]",
+						"calendar add google NAME --client-id=ID --client-secret-file=FILE [--json]",
+						"calendar remove NAME [--yes] [--dry-run]",
+						"calendar sync [NAME] [--json]",
+						"calendar agenda [--days=N] [--json]"
+					],
+					"examples": [
+						"bxrig calendar add ical holidays webcal://example.org/holidays.ics",
+						"bxrig calendar add google work --client-id=123.apps.googleusercontent.com --client-secret-file=~/Downloads/secret.txt",
+						"bxrig calendar sync",
+						"bxrig calendar agenda --days=3"
+					],
+					"mutates": true,
+					"note": "BxRig writes its own vdirsyncer config (~/.config/bxrig/vdirsyncer/config, mode 600, passed as VDIRSYNCER_CONFIG), so a vdirsyncer setup of your own is never touched. An iCal address is read only; webcal:// is fetched as https://. Google needs the CalDAV API on and an OAuth client of type Desktop app; the first sync, in a terminal, opens Google's sign-in. With the scheduler installed, adding a calendar adds the task calendar-sync (every 15 minutes). remove deletes only the local copy.",
+					"flags": [
+						{
+							"name": "client-id",
+							"type": "value"
+						},
+						{
+							"name": "client-secret-file",
+							"type": "value"
+						},
+						{
+							"name": "days",
+							"type": "value"
+						},
+						{
+							"name": "yes",
+							"type": "bool"
+						},
+						{
+							"name": "dry-run",
+							"type": "bool"
+						}
+					]
+				},
+				{
+					"name": "remind",
+					"summary": "A reminder that pops up at a time you choose.",
+					"usage": [
+						"remind TEXT --at=HH:MM | --at=\"YYYY-MM-DD HH:MM\" | --in=30m|2h|1d [--json]",
+						"remind [list] [--json]",
+						"remind done ID | remove ID [--json]",
+						"remind due [--json]"
+					],
+					"examples": [
+						"bxrig remind \"Call Ana\" --in=30m",
+						"bxrig remind \"Stand up\" --at=09:25",
+						"bxrig remind \"Renew the domain\" --at=\"2026-12-01 10:00\"",
+						"bxrig remind list",
+						"bxrig remind done 3"
+					],
+					"mutates": true,
+					"note": "Reminders are kept in ~/.config/bxrig/reminders.json. An HH:MM that has passed today means tomorrow. `due` shows the reminders whose time has come as notices; the scheduler task reminders runs it every minute (added with the first reminder when the scheduler is installed).",
+					"flags": [
+						{
+							"name": "at",
+							"type": "value"
+						},
+						{
+							"name": "in",
+							"type": "value"
+						}
+					]
+				},
+				{
 					"name": "accessibility",
 					"summary": "Zoom like a Mac, reduce motion, and three high-contrast themes. All off until you turn them on.",
 					"usage": [

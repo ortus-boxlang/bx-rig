@@ -178,8 +178,18 @@ class Scheduler {
 		if ( arguments.updateNotify ) out.append( { name: "update-check", group: "system", when: "daily 11:47", run: [ "update", "check", "--notify" ], ok_codes: [ 0, 10 ], notify: "failure", builtin: true, enabled: true } );
 		if ( arguments.backupSchedule == "hourly" || arguments.backupSchedule == "daily" ) out.append( { name: "backup-data", group: "backups", when: arguments.backupSchedule == "hourly" ? "hourly" : "daily 02:30", run: [ "backup", "data", "run", "--all", "--yes", "--scheduled" ], ok_codes: [ 0 ], notify: "failure", timeout: 14400, builtin: true, enabled: true } );
 		out.append( { name: "boxlang-check", group: "boxlang", when: "daily 10:13", run: [ "boxlang", "check" ], ok_codes: [ 0, 10 ], notify: "attention", builtin: true, enabled: true } );
+		// calendars and reminders added before the scheduler was installed
+		var json = new bxrig.util.Json();
+		var cals = json.read( variables.env.config( "calendars.json" ), {} );
+		if ( isStruct( cals ) && isArray( cals.calendars ?: "" ) && cals.calendars.len() ) out.append( calendarTask() );
+		var rem = json.read( variables.env.config( "reminders.json" ), {} );
+		if ( isStruct( rem ) && isArray( rem.reminders ?: "" ) && rem.reminders.len() ) out.append( reminderTask() );
 		return out;
 	}
+
+	// The tasks `bxrig calendar` and `bxrig remind` own: the calendar sync every 15 minutes, the reminders every minute.
+	function calendarTask() { return { name: "calendar-sync", group: "calendar", when: "every 15 minutes", run: [ "calendar", "sync" ], ok_codes: [ 0 ], notify: "failure", timeout: 600, builtin: true, enabled: true }; }
+	function reminderTask() { return { name: "reminders", group: "calendar", when: "every 1 minutes", run: [ "remind", "due" ], ok_codes: [ 0 ], notify: "failure", timeout: 60, builtin: true, enabled: true }; }
 
 	// ---- running a task ----
 
@@ -495,6 +505,16 @@ class Scheduler {
 			var b = builtins( arguments.name == "backup-data" ? ( arguments.when == "hourly" ? "hourly" : "daily" ) : "off", arguments.name == "update-check" ).filter( function( x ) { return x.name == name; } );
 			if ( b.len() ) { if ( len( arguments.when ) ) b[ 1 ].when = arguments.when; all.append( b[ 1 ] ); }
 		}
+		save( all );
+		reloadIfRunning();
+	}
+
+	// Used by other commands (calendar, remind) to own a task: added when missing, its when and command kept current, never duplicated.
+	function upsert( task ) {
+		var all = load();
+		var found = false;
+		for ( var t in all ) if ( t.name == arguments.task.name ) { t.when = arguments.task.when; t.run = arguments.task.run; t.group = arguments.task.group ?: ""; found = true; }
+		if ( !found ) all.append( arguments.task );
 		save( all );
 		reloadIfRunning();
 	}

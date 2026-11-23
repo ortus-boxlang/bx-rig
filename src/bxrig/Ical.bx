@@ -1,0 +1,158 @@
+// iCalendar (RFC 5545) reading for the agenda: the VEVENTs of .ics text, and their occurrences in a window, repeats included.
+// What is read: SUMMARY, LOCATION, DTSTART and DTEND (a DATE is all day; a time ending in Z is UTC and moved to this machine's clock by
+// the offset given; a TZID or a floating time is taken as local), DURATION when there is no DTEND, RRULE (FREQ DAILY, WEEKLY, MONTHLY or
+// YEARLY, INTERVAL, COUNT, UNTIL, and BYDAY for weekly rules), EXDATE, and STATUS:CANCELLED (left out).
+// Lines are unfolded and the text escapes (\n \, \; \\) are undone. Pure: no files, no clock; the caller gives the window and the offset.
+class Ical {
+
+	// The content lines with folding undone: a line that starts with a space or a tab continues the one before.
+	function unfold( text ) {
+		var t = replace( replace( arguments.text, chr( 13 ) & chr( 10 ), chr( 10 ), "all" ), chr( 13 ), chr( 10 ), "all" );
+		var out = [];
+		for ( var line in listToArray( t, chr( 10 ), true ) ) {
+			if ( len( line ) && ( left( line, 1 ) == " " || left( line, 1 ) == chr( 9 ) ) && out.len() ) out[ out.len() ] &= mid( line, 2, len( line ) );
+			else if ( len( line ) ) out.append( line );
+		}
+		return out;
+	}
+
+	function unescape( v ) {
+		var bs = chr( 92 );
+		var s = replace( arguments.v, bs & bs, chr( 1 ), "all" );
+		s = replace( replace( replace( replace( s, bs & "n", chr( 10 ), "all" ), bs & "N", chr( 10 ), "all" ), bs & ",", ",", "all" ), bs & ";", ";", "all" );
+		return replace( s, chr( 1 ), bs, "all" );
+	}
+
+	// "DTSTART;TZID=Europe/Madrid:20261123T090000" -> { name: "DTSTART", params: { TZID: "Europe/Madrid" }, value: "20261123T090000" }
+	function prop( line ) {
+		var colon = find( ":", arguments.line );
+		if ( !colon ) return { name: "", params: {}, value: "" };
+		var head = left( arguments.line, colon - 1 );
+		var parts = listToArray( head, ";" );
+		var params = {};
+		for ( var i = 2; i <= parts.len(); i++ ) if ( find( "=", parts[ i ] ) ) params[ uCase( listFirst( parts[ i ], "=" ) ) ] = replace( listRest( parts[ i ], "=" ), '"', "", "all" );
+		return { name: uCase( parts.len() ? parts[ 1 ] : "" ), params: params, value: mid( arguments.line, colon + 1, len( arguments.line ) ) };
+	}
+
+	// A DATE or DATE-TIME value -> { date, allDay } on this machine's clock (offsetMinutes is local minus UTC, for the values ending in Z).
+	function parseTime( value, params, offsetMinutes ) {
+		var v = trim( arguments.value );
+		if ( ( arguments.params.VALUE ?: "" ) == "DATE" || reFind( "^[0-9]{8}$", v ) ) {
+			if ( !reFind( "^[0-9]{8}$", v ) ) return {};
+			return { date: createDate( int( left( v, 4 ) ), int( mid( v, 5, 2 ) ), int( mid( v, 7, 2 ) ) ), allDay: true };
+		}
+		if ( !reFind( "^[0-9]{8}T[0-9]{6}Z?$", v ) ) return {};
+		var d = createDateTime( int( left( v, 4 ) ), int( mid( v, 5, 2 ) ), int( mid( v, 7, 2 ) ), int( mid( v, 10, 2 ) ), int( mid( v, 12, 2 ) ), int( mid( v, 14, 2 ) ) );
+		if ( right( v, 1 ) == "Z" ) d = dateAdd( "n", arguments.offsetMinutes, d );
+		return { date: d, allDay: false };
+	}
+
+	// "PT1H30M", "P1D" -> minutes.
+	function durationMinutes( v ) {
+		var m = 0;
+		var s = uCase( arguments.v );
+		var parts = [ [ "W", 10080 ], [ "D", 1440 ], [ "H", 60 ], [ "M", 1 ] ];
+		for ( var p in parts ) {
+			var r = reFind( "([0-9]+)" & p[ 1 ], ( p[ 1 ] == "M" || p[ 1 ] == "H" ) ? listLast( s, "T" ) : listFirst( s, "T" ), 1, true );
+			if ( r.pos[ 1 ] ) m += int( mid( ( p[ 1 ] == "M" || p[ 1 ] == "H" ) ? listLast( s, "T" ) : listFirst( s, "T" ), r.pos[ 2 ], r.len[ 2 ] ) ) * p[ 2 ];
+		}
+		return m;
+	}
+
+	// The VEVENTs of a calendar text: [ { uid, summary, location, start, end, allDay, rrule, exdates, cancelled } ]
+	function events( text, offsetMinutes = 0 ) {
+		var out = [];
+		var cur = {};
+		var depth = 0;
+		for ( var line in unfold( arguments.text ) ) {
+			var p = prop( line );
+			if ( p.name == "BEGIN" && uCase( p.value ) == "VEVENT" ) { cur = { uid: "", summary: "", location: "", start: "", end: "", allDay: false, rrule: {}, exdates: [], cancelled: false, minutes: -1 }; depth = 1; continue; }
+			if ( p.name == "BEGIN" && depth ) { depth++; continue; }
+			if ( p.name == "END" && depth > 1 ) { depth--; continue; }
+			if ( p.name == "END" && uCase( p.value ) == "VEVENT" && depth == 1 ) {
+				depth = 0;
+				if ( isDate( cur.start ) ) {
+					if ( !isDate( cur.end ) ) cur.end = cur.minutes >= 0 ? dateAdd( "n", cur.minutes, cur.start ) : ( cur.allDay ? dateAdd( "d", 1, cur.start ) : cur.start );
+					out.append( cur );
+				}
+				continue;
+			}
+			if ( depth != 1 ) continue;
+			if ( p.name == "UID" ) cur.uid = p.value;
+			else if ( p.name == "SUMMARY" ) cur.summary = unescape( p.value );
+			else if ( p.name == "LOCATION" ) cur.location = unescape( p.value );
+			else if ( p.name == "STATUS" ) cur.cancelled = uCase( p.value ) == "CANCELLED";
+			else if ( p.name == "DTSTART" ) { var t = parseTime( p.value, p.params, arguments.offsetMinutes ); if ( !structIsEmpty( t ) ) { cur.start = t.date; cur.allDay = t.allDay; } }
+			else if ( p.name == "DTEND" ) { var t2 = parseTime( p.value, p.params, arguments.offsetMinutes ); if ( !structIsEmpty( t2 ) ) cur.end = t2.date; }
+			else if ( p.name == "DURATION" ) cur.minutes = durationMinutes( p.value );
+			else if ( p.name == "RRULE" ) cur.rrule = rrule( p.value );
+			else if ( p.name == "EXDATE" ) for ( var x in listToArray( p.value, "," ) ) { var t3 = parseTime( x, p.params, arguments.offsetMinutes ); if ( !structIsEmpty( t3 ) ) cur.exdates.append( dateTimeFormat( t3.date, "yyyyMMddHHmm" ) ); }
+		}
+		return out;
+	}
+
+	// "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;UNTIL=20261231T000000Z" -> { freq, interval, count, until, byday: [ 1, 3 ] }
+	function rrule( v ) {
+		var r = { freq: "", interval: 1, count: 0, until: "", byday: [] };
+		var days = [ "SU", "MO", "TU", "WE", "TH", "FR", "SA" ];
+		for ( var part in listToArray( arguments.v, ";" ) ) {
+			var k = uCase( listFirst( part, "=" ) ); var pv = listRest( part, "=" );
+			if ( k == "FREQ" ) r.freq = uCase( pv );
+			else if ( k == "INTERVAL" ) r.interval = max( 1, int( val( pv ) ) );
+			else if ( k == "COUNT" ) r.count = int( val( pv ) );
+			else if ( k == "UNTIL" ) { var u = parseTime( pv, {}, 0 ); if ( !structIsEmpty( u ) ) r.until = u.date; }
+			else if ( k == "BYDAY" ) for ( var d in listToArray( pv, "," ) ) { var i = arrayFind( days, right( uCase( d ), 2 ) ); if ( i ) r.byday.append( i - 1 ); }
+		}
+		return r;
+	}
+
+	// Adds the occurrence starting at s when it is not excluded and overlaps [from, to).
+	function take( out, ev, s, minutes, from, to ) {
+		var e = dateAdd( "n", arguments.minutes, arguments.s );
+		if ( arrayFind( arguments.ev.exdates, dateTimeFormat( arguments.s, "yyyyMMddHHmm" ) ) ) return;
+		if ( dateCompare( e, arguments.from ) > 0 && dateCompare( arguments.s, arguments.to ) < 0 ) arguments.out.append( { summary: arguments.ev.summary, location: arguments.ev.location, start: arguments.s, end: e, allDay: arguments.ev.allDay } );
+	}
+
+	// The occurrences of one event that overlap [from, to): [ { summary, location, start, end, allDay } ], at most 500 per event.
+	function occurrences( ev, from, to ) {
+		var out = [];
+		var len0 = dateDiff( "n", arguments.ev.start, arguments.ev.end );
+		var r = arguments.ev.rrule;
+		if ( !len( r.freq ?: "" ) ) { take( out, arguments.ev, arguments.ev.start, len0, arguments.from, arguments.to ); return out; }
+		var n = 0;
+		var i = 0;
+		while ( i < 5000 && out.len() < 500 ) {
+			var base = r.freq == "DAILY" ? dateAdd( "d", i * r.interval, arguments.ev.start ) : ( r.freq == "WEEKLY" ? dateAdd( "ww", i * r.interval, arguments.ev.start ) : ( r.freq == "MONTHLY" ? dateAdd( "m", i * r.interval, arguments.ev.start ) : ( r.freq == "YEARLY" ? dateAdd( "yyyy", i * r.interval, arguments.ev.start ) : "" ) ) );
+			if ( !isDate( base ) ) break;
+			var starts = [ base ];
+			// a weekly rule with BYDAY: every listed day of that week (the week starting on the event's own weekday)
+			if ( r.freq == "WEEKLY" && r.byday.len() ) {
+				starts = [];
+				for ( var k = 0; k < 7; k++ ) { var dd = dateAdd( "d", k, base ); if ( arrayFind( r.byday, dayOfWeek( dd ) - 1 ) ) starts.append( dd ); }
+			}
+			for ( var s2 in starts ) {
+				if ( dateCompare( s2, arguments.ev.start ) < 0 ) continue;
+				if ( isDate( r.until ) && dateCompare( s2, r.until ) > 0 ) return out;
+				n++;
+				if ( r.count && n > r.count ) return out;
+				if ( dateCompare( s2, arguments.to ) >= 0 ) return out;
+				take( out, arguments.ev, s2, len0, arguments.from, arguments.to );
+			}
+			i++;
+		}
+		return out;
+	}
+
+	// The agenda of several calendar texts: every occurrence in [from, to), soonest first, cancelled events left out.
+	function agenda( texts, from, to, offsetMinutes = 0 ) {
+		var out = [];
+		for ( var t in arguments.texts ) {
+			for ( var ev in events( t.text, arguments.offsetMinutes ) ) {
+				if ( ev.cancelled ) continue;
+				for ( var o in occurrences( ev, arguments.from, arguments.to ) ) { o.calendar = t.calendar; out.append( o ); }
+			}
+		}
+		out.sort( function( a, b ) { return dateCompare( a.start, b.start ); } );
+		return out;
+	}
+}

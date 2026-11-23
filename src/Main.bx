@@ -685,6 +685,14 @@ class {
 				// One scheduler on the BoxLang JVM for every BxRig timer and your own tasks. See bxrig.Scheduler and COMMAND-CONTRACT.md (Scheduler).
 				CLIExit( new bxrig.Scheduler( cli ).run( p.slice( 2 ), args.options, rawArgs.len() ? rawArgs : [], asJson ) );
 				break;
+			case "calendar":
+				// Calendars kept in sync by vdirsyncer, and the agenda. See bxrig.Calendar and COMMAND-CONTRACT.md (Calendar).
+				CLIExit( new bxrig.Calendar( cli ).run( p.slice( 2 ), args.options, asJson ) );
+				break;
+			case "remind":
+				// Reminders shown as notices by the scheduler. See bxrig.Remind and COMMAND-CONTRACT.md (Calendar).
+				CLIExit( new bxrig.Remind( cli ).run( p.slice( 2 ), args.options, asJson ) );
+				break;
 			case "git":
 				// SSH signing of commits and tags. See bxrig.GitSigning and COMMAND-CONTRACT.md (Developer tools).
 				if ( p.len() >= 2 && p[2] == "signing" ) {
