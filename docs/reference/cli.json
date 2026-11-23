@@ -2649,18 +2649,19 @@
 				},
 				{
 					"name": "ai",
-					"summary": "AI agents: list, default, launch, tmux sessions, local models, the pull-down AI shell.",
+					"summary": "AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), coding agents, tmux sessions, the pull-down AI shell.",
 					"usage": [
 						"ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]",
 						"ai session list",
 						"ai session attach NAME",
 						"ai session stop NAME --yes [--json]",
-						"ai models list",
-						"ai models ps",
-						"ai models pull NAME",
-						"ai models rm NAME --yes",
-						"ai models status",
-						"ai models enable [--yes] [--json]",
+						"ai status [--json]",
+						"ai hardware [--json]",
+						"ai setup [--models=ID,ID|--picks=all] [--tune] [--yes] [--dry-run]",
+						"ai engine [status|install|update] [--source=official|aur] [--yes] [--dry-run]",
+						"ai models [list] | recommend [--all] | pull ID... [--no-test] [--yes] | use ID | test [ID] | tune [ID] [--yes] | remove ID [--yes] [--dry-run] [--json]",
+						"ai serve [status|start|stop|restart] [--listen=127.0.0.1|0.0.0.0] [--port=N] [--yes] [--json]",
+						"ai ask TEXT [--model=ID] [--json]",
 						"ai list",
 						"ai default [ID] [--yes]",
 						"ai launch [ID] [--dry-run]",
@@ -2672,13 +2673,19 @@
 						"ai shell [toggle|status] [--backend=hyprland|yakuake] [--dry-run] [--json]"
 					],
 					"examples": [
+						"bxrig ai setup --yes",
+						"bxrig ai models recommend",
+						"bxrig ai models pull gemma-4-e4b --yes",
+						"bxrig ai serve status",
 						"bxrig ai list",
-						"bxrig ai launch",
-						"bxrig ai models pull llama3.2",
 						"bxrig ai session start --name=work"
 					],
 					"mutates": true,
 					"flags": [
+						{
+							"name": "all",
+							"type": "bool"
+						},
 						{
 							"name": "backend",
 							"type": "value"
@@ -2688,8 +2695,40 @@
 							"type": "value"
 						},
 						{
+							"name": "listen",
+							"type": "value"
+						},
+						{
+							"name": "model",
+							"type": "value"
+						},
+						{
+							"name": "models",
+							"type": "value"
+						},
+						{
 							"name": "name",
 							"type": "value"
+						},
+						{
+							"name": "no-test",
+							"type": "bool"
+						},
+						{
+							"name": "picks",
+							"type": "value"
+						},
+						{
+							"name": "port",
+							"type": "value"
+						},
+						{
+							"name": "source",
+							"type": "value"
+						},
+						{
+							"name": "tune",
+							"type": "bool"
 						}
 					]
 				},

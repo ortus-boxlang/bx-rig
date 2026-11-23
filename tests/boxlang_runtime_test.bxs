@@ -31,7 +31,7 @@ testkit.check( "page: u on a module updates it, on the first row updates all", a
 testkit.check( "page: x removes a module, never a nested one or the all row", acts.x.run( img ).args.toList( " " ) == "boxlang modules remove bx-image" && structIsEmpty( acts.x.run( rows[ 3 ] ) ) && structIsEmpty( acts.x.run( rows[ 1 ] ) ) );
 testkit.check( "page: i asks for a module and installs it", acts.i.run( img ).make( "bx-ai" ).args.toList( " " ) == "boxlang modules install bx-ai" );
 testkit.check( "page: nothing outdated, no all row", pv.rowsFrom( mods, [] ).len() == 7 );
-testkit.check( "page: registered after BoxLang, with its icon", new bxrig.ControlCenterPages().ids()[ 4 ] == "modules" && new bxrig.ControlCenterPages().icon( "modules" ) == "cubes" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "cubes" ) == chr( inputBaseN( "f1b3", 16 ) ) );
+testkit.check( "page: registered after BoxLang, with its icon", new bxrig.ControlCenterPages().ids()[ 5 ] == "modules" && new bxrig.ControlCenterPages().icon( "modules" ) == "cubes" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "cubes" ) == chr( inputBaseN( "f1b3", 16 ) ) );
 testkit.check( "page: the demo has an outdated module", pv.load().filter( function( r ) { return r.outdated; } ).len() > 0 );
 
 // ---- the System panel's BoxLang tab ----

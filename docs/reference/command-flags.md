@@ -295,9 +295,18 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `vm` | `--tag` | value | `ubuntu-xfce` |
 | `vm` | `--version` | value |  |
 | `vm` | `--web` | bool |  |
+| `ai` | `--all` | bool |  |
 | `ai` | `--backend` | value |  |
 | `ai` | `--dir` | value |  |
+| `ai` | `--listen` | value | `127.0.0.` |
+| `ai` | `--model` | value |  |
+| `ai` | `--models` | value |  |
 | `ai` | `--name` | value | `work` |
+| `ai` | `--no-test` | bool |  |
+| `ai` | `--picks` | value |  |
+| `ai` | `--port` | value |  |
+| `ai` | `--source` | value |  |
+| `ai` | `--tune` | bool |  |
 | `skills` | `--tag` | value |  |
 | `screenshot` | `--edit` | bool |  |
 | `qr` | `--out` | value | `wifi.png` |

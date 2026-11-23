@@ -1,0 +1,496 @@
+{
+	"schema": 1,
+	"tested_with": {
+		"llama_cpp": "b12627",
+		"suite": "bxrig-tools-20",
+		"date": "2026-11-22",
+		"machine": "4-core x86 CPU, no GPU"
+	},
+	"models": [
+		{
+			"id": "granite-4.0-350m",
+			"label": "Granite 4.0 350M",
+			"family": "IBM Granite",
+			"params": "350M",
+			"kind": "chat",
+			"tier": "tiny",
+			"repo": "ibm-granite/granite-4.0-350m-GGUF",
+			"file": "granite-4.0-350m-Q8_0.gguf",
+			"sha256": "9595dafb4ed15aa02512c8ea26188744192a6f09530eae0a2747bd3ada96cd36",
+			"size_mb": 378,
+			"mem_mb": 1061,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 16,
+				"basic": 11,
+				"hard": 5,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 0.51,
+				"tps": 49.1,
+				"quant": ""
+			}
+		},
+		{
+			"id": "lfm2.5-350m",
+			"label": "LFM2.5 350M",
+			"family": "Liquid LFM",
+			"params": "350M",
+			"kind": "chat",
+			"tier": "tiny",
+			"repo": "LiquidAI/LFM2.5-350M-GGUF",
+			"file": "LFM2.5-350M-Q8_0.gguf",
+			"sha256": "be036a757295e550098b85e13f6af2735d0fa73b41e1156a40c7d8e8e32a5766",
+			"size_mb": 379,
+			"mem_mb": 934,
+			"license": "lfm-open",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 15,
+				"basic": 11,
+				"hard": 4,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 0.66,
+				"tps": 75.9,
+				"quant": ""
+			}
+		},
+		{
+			"id": "qwen3.5-0.8b",
+			"label": "Qwen3.5 0.8B",
+			"family": "Qwen",
+			"params": "0.8B",
+			"kind": "chat",
+			"tier": "tiny",
+			"repo": "unsloth/Qwen3.5-0.8B-GGUF",
+			"file": "Qwen3.5-0.8B-Q4_K_M.gguf",
+			"sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",
+			"size_mb": 533,
+			"mem_mb": 807,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 17,
+				"basic": 12,
+				"hard": 5,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 1.21,
+				"tps": 24.7,
+				"quant": ""
+			}
+		},
+		{
+			"id": "granite-4.0-1b",
+			"label": "Granite 4.0 1B",
+			"family": "IBM Granite",
+			"params": "1B",
+			"kind": "chat",
+			"tier": "tiny",
+			"repo": "ibm-granite/granite-4.0-1b-GGUF",
+			"file": "granite-4.0-1b-Q4_K_M.gguf",
+			"sha256": "22ec0f9cc99a90185312de3c882c84e7bd6789bdd050389844380a01a831d7f1",
+			"size_mb": 1024,
+			"mem_mb": 2707,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 18,
+				"basic": 11,
+				"hard": 7,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 1.73,
+				"tps": 13.3,
+				"quant": ""
+			}
+		},
+		{
+			"id": "lfm3-1.7b",
+			"label": "LFM3 1.7B",
+			"family": "Liquid LFM",
+			"params": "1.7B",
+			"kind": "chat",
+			"tier": "tiny",
+			"repo": "LiquidAI/LFM3-1.7B-GGUF",
+			"file": "LFM3-1.7B-Q4_K_M.gguf",
+			"sha256": "3793e1e6e2266919d6e015287221b41100175a98eddaba92e111aed3b05c93c4",
+			"size_mb": 1100,
+			"mem_mb": 1311,
+			"license": "lfm-open",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 17,
+				"basic": 11,
+				"hard": 6,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 1.27,
+				"tps": 16.4,
+				"quant": ""
+			}
+		},
+		{
+			"id": "lfm2.5-2.6b",
+			"label": "LFM2.5 2.6B",
+			"family": "Liquid LFM",
+			"params": "2.6B",
+			"kind": "chat",
+			"tier": "medium",
+			"repo": "LiquidAI/LFM2.5-2.6B-GGUF",
+			"file": "LFM2.5-2.6B-Q4_K_M.gguf",
+			"sha256": "02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed",
+			"size_mb": 1674,
+			"mem_mb": 1913,
+			"license": "lfm-open",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 19,
+				"basic": 12,
+				"hard": 7,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 11.07,
+				"tps": 11.1,
+				"quant": ""
+			},
+			"notes": "Re-reads the whole prompt on every request on a CPU (hybrid design), so replies are slow without a GPU."
+		},
+		{
+			"id": "granite-4.2-3b",
+			"label": "Granite 4.2 3B",
+			"family": "IBM Granite",
+			"params": "3B",
+			"kind": "chat",
+			"tier": "medium",
+			"repo": "ibm-granite/granite-4.2-3b-GGUF",
+			"file": "granite-4.2-3b-Q4_K_M.gguf",
+			"sha256": "e0406663965846ae22a403456eb826ccce5f450840491f71952f18a7cb78e7d5",
+			"size_mb": 2244,
+			"mem_mb": 2798,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 17,
+				"basic": 11,
+				"hard": 6,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 4.82,
+				"tps": 8.5,
+				"quant": ""
+			}
+		},
+		{
+			"id": "qwen3.5-4b",
+			"label": "Qwen3.5 4B",
+			"family": "Qwen",
+			"params": "4B",
+			"kind": "chat",
+			"tier": "medium",
+			"repo": "unsloth/Qwen3.5-4B-GGUF",
+			"file": "Qwen3.5-4B-Q4_K_M.gguf",
+			"sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+			"size_mb": 2741,
+			"mem_mb": 3284,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": true,
+			"verified": true,
+			"score": {
+				"total": 20,
+				"basic": 12,
+				"hard": 8,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 5.72,
+				"tps": 5.4,
+				"quant": ""
+			}
+		},
+		{
+			"id": "gemma-4-e4b",
+			"label": "Gemma 4 E4B",
+			"family": "Google Gemma",
+			"params": "4B effective",
+			"kind": "chat",
+			"tier": "medium",
+			"repo": "google/gemma-4-E4B-it-qat-q4_0-gguf",
+			"file": "gemma-4-E4B_q4_0-it.gguf",
+			"sha256": "676c35070db6dbe52f93e9c864ee0fba4eddea94b9c875d9cb10daff453fbaee",
+			"size_mb": 5155,
+			"mem_mb": 3177,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": true,
+			"verified": true,
+			"score": {
+				"total": 20,
+				"basic": 12,
+				"hard": 8,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 2.18,
+				"tps": 7.8,
+				"quant": ""
+			},
+			"notes": "The file includes image and audio parts, so the download is larger than the model."
+		},
+		{
+			"id": "lfm2.5-8b-a1b",
+			"label": "LFM2.5 8B-A1B",
+			"family": "Liquid LFM",
+			"params": "8B MoE, 1B active",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "LiquidAI/LFM2.5-8B-A1B-GGUF",
+			"file": "LFM2.5-8B-A1B-Q4_K_M.gguf",
+			"sha256": "4923ec14f06b968b74d663e5949867d2d9c3bf13a20b8be1a9f9af39989b2bb0",
+			"size_mb": 5156,
+			"mem_mb": 4240,
+			"license": "lfm-open",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 19,
+				"basic": 12,
+				"hard": 7,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 12.27,
+				"tps": 17.8,
+				"quant": ""
+			},
+			"notes": "Re-reads the whole prompt on every request on a CPU (hybrid design)."
+		},
+		{
+			"id": "granite-4.2-8b",
+			"label": "Granite 4.2 8B",
+			"family": "IBM Granite",
+			"params": "8B",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "ibm-granite/granite-4.2-8b-GGUF",
+			"file": "granite-4.2-8b-Q4_K_M.gguf",
+			"sha256": "16a9369d0805f80b7377d25d87f937a90c05dc04ad79173a52001e42c9aab311",
+			"size_mb": 5348,
+			"mem_mb": 6428,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": true,
+			"score": {
+				"total": 19,
+				"basic": 12,
+				"hard": 7,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 8.47,
+				"tps": 3.9,
+				"quant": ""
+			}
+		},
+		{
+			"id": "qwen3.5-9b",
+			"label": "Qwen3.5 9B",
+			"family": "Qwen",
+			"params": "9B",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "unsloth/Qwen3.5-9B-GGUF",
+			"file": "Qwen3.5-9B-Q4_K_M.gguf",
+			"sha256": "03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8",
+			"size_mb": 5681,
+			"mem_mb": 5623,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": true,
+			"verified": true,
+			"score": {
+				"total": 20,
+				"basic": 12,
+				"hard": 8,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 9.54,
+				"tps": 3.1,
+				"quant": ""
+			}
+		},
+		{
+			"id": "gemma-4-12b",
+			"label": "Gemma 4 12B",
+			"family": "Google Gemma",
+			"params": "12B",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "google/gemma-4-12B-it-qat-q4_0-gguf",
+			"file": "gemma-4-12b-it-qat-q4_0.gguf",
+			"sha256": "93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b",
+			"size_mb": 6976,
+			"mem_mb": 7972,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": true,
+			"verified": true,
+			"score": {
+				"total": 20,
+				"basic": 12,
+				"hard": 8,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 5.5,
+				"tps": 4.2,
+				"quant": ""
+			}
+		},
+		{
+			"id": "inkling-2-mini",
+			"label": "Inkling-2-Mini",
+			"family": "Thinking Machines",
+			"params": "26B MoE, 3.4B active",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "unsloth/Inkling-2-Mini-GGUF",
+			"file": "Inkling-2-Mini-UD-Q4_K_M.gguf",
+			"sha256": "78fcedcf93c5d1bfe83e225513b71392bb52259be0eaa5f8899c856a2e5834ae",
+			"size_mb": 16611,
+			"mem_mb": 19502,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": true,
+			"verified": false,
+			"remote_file": "Mainline_Support/Inkling-2-Mini-UD-Q4_K_M.gguf_file",
+			"score": {
+				"total": 19,
+				"basic": 12,
+				"hard": 7,
+				"of": 20
+			},
+			"reference": {
+				"reply_s": 17.18,
+				"tps": 3.4,
+				"quant": "Q2_K_XL"
+			},
+			"notes": "Tested at 2-bit only (19/20); this 4-bit file is untested. Reasons before answering, so it is slow on a CPU."
+		},
+		{
+			"id": "gemma-4-26b-a4b",
+			"label": "Gemma 4 26B-A4B",
+			"family": "Google Gemma",
+			"params": "26B MoE, 4B active",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+			"file": "gemma-4-26B_q4_0-it.gguf",
+			"sha256": "3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d",
+			"size_mb": 14439,
+			"mem_mb": 17005,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": true,
+			"verified": false,
+			"notes": "Not tested by BxRig."
+		},
+		{
+			"id": "gpt-oss-20b",
+			"label": "gpt-oss-20b",
+			"family": "OpenAI",
+			"params": "21B MoE, 3.6B active",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "ggml-org/gpt-oss-20b-GGUF",
+			"file": "gpt-oss-20b-MXFP4.gguf",
+			"sha256": "27cd6c432c7672cb812a92f611cf3ba7bbc35928262bb1e1253ff4ee6ae35901",
+			"size_mb": 12110,
+			"mem_mb": 14326,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": false,
+			"notes": "Not tested by BxRig."
+		},
+		{
+			"id": "flint",
+			"label": "Flint",
+			"family": "RecursiveSI",
+			"params": "40B MoE, 2.5B active",
+			"kind": "chat",
+			"tier": "high",
+			"repo": "ggml-org/Flint-GGUF",
+			"file": "Flint-Q4_K_M.gguf",
+			"sha256": "c3c4d93f9db92627a2fc47ea8fe8c64a094cabd3549db544bcdd2c00e9a9a347",
+			"size_mb": 23388,
+			"mem_mb": 27296,
+			"license": "apache-2.0",
+			"tools": true,
+			"vision": false,
+			"verified": false,
+			"notes": "Not tested by BxRig."
+		},
+		{
+			"id": "embeddinggemma-300m",
+			"label": "EmbeddingGemma 300M",
+			"family": "Google Gemma",
+			"params": "300M",
+			"kind": "embeddings",
+			"tier": "tiny",
+			"repo": "ggml-org/embeddinggemma-300M-GGUF",
+			"file": "embeddinggemma-300M-Q8_0.gguf",
+			"sha256": "b5ce9d77a3fc4b3b39ccb5643c36777911cc4eb46a66962eadfa3f5f60490d63",
+			"size_mb": 334,
+			"mem_mb": 600,
+			"license": "gemma",
+			"dimensions": 768,
+			"default": true,
+			"verified": true
+		},
+		{
+			"id": "qwen3-embedding-0.6b",
+			"label": "Qwen3 Embedding 0.6B",
+			"family": "Qwen",
+			"params": "0.6B",
+			"kind": "embeddings",
+			"tier": "tiny",
+			"repo": "Qwen/Qwen3-Embedding-0.6B-GGUF",
+			"file": "Qwen3-Embedding-0.6B-Q8_0.gguf",
+			"sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
+			"size_mb": 639,
+			"mem_mb": 967,
+			"license": "apache-2.0",
+			"dimensions": 1024,
+			"default": false,
+			"verified": true
+		}
+	]
+}

@@ -1,0 +1,122 @@
+// AI: local models on llama.cpp. Reads `bxrig ai status --json` and `bxrig ai models recommend --json`.
+// The first rows are this machine, the engine and the server; then the installed models (● the active one), then the picks for this
+// machine that are not downloaded yet. Enter on a model makes it the active one, Enter on a pick downloads it, Enter on the engine installs
+// it, Enter on the server starts or stops it. t tests a model (or all), u tunes it, h opens its Hugging Face page, x removes it,
+// p asks a question (the active model, or the one under the cursor), s sets up everything at once.
+class AiProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "ai"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "ai" ); }
+	function title() { return "AI"; }
+	function hint() { return "local models on llama.cpp, with OpenAI and Anthropic APIs on this machine"; }
+	function emptyText() { return "Press s to set up local AI: llama.cpp and models picked for this machine."; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "", w: 22 }, { key: "role", label: "", w: 11 }, { key: "score", label: "score", w: 7 }, { key: "size", label: "size", w: 9 }, { key: "info", label: "", w: 0 } ]; }
+
+	function style( r ) {
+		if ( r.kind == "engine" ) return r.ok ? "dim" : "warn";
+		if ( r.kind == "server" ) return r.ok ? "ok" : "warn";
+		if ( r.kind == "hardware" ) return "dim";
+		if ( r.kind == "pick" ) return "";
+		return r.active ? "ok" : "";
+	}
+
+	function detail( r ) {
+		if ( r.kind == "hardware" ) return [ r.info, "Picks follow the budget: models that fit in it, fastest, balanced and most capable." ];
+		if ( r.kind == "engine" ) return r.ok ? [ "llama.cpp " & r.info & ". u updates it (official installs)." ] : [ "llama.cpp is not installed. Enter installs it with the official installer, which picks CUDA, ROCm, Vulkan or CPU for this machine." ];
+		if ( r.kind == "server" ) return r.ok ? [ "OpenAI     " & r.base_url, "Anthropic  " & replace( r.base_url, "/v1", "" ) & "/v1/messages", "Embeddings " & r.base_url & "/embeddings", "Enter stops it." ] : [ "Not running. Enter starts it (bxrig-ai.service)." ];
+		if ( r.kind == "pick" ) return [ r.label & ", " & r.role & " for this machine: " & r.score & " on BxRig's 20 tests, " & r.size & ". Enter downloads it.", r.license & " · huggingface.co/" & r.repo ];
+		return [ r.label & ( r.active ? " (active)" : "" ) & ": " & r.info, "Enter makes it active, t tests it, u tunes it, h opens huggingface.co/" & r.repo & ", x removes it." ];
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "use", run: function( r ) {
+					if ( r.kind == "engine" ) return r.ok ? {} : { action: "cli", title: "Install llama.cpp", args: [ "ai", "engine", "install" ] };
+					if ( r.kind == "server" ) return r.ok ? { action: "show", title: "Stop the AI server", args: [ "ai", "serve", "stop" ] } : { action: "show", title: "Start the AI server", args: [ "ai", "serve", "start" ] };
+					if ( r.kind == "pick" ) return { action: "cli", title: "Download " & r.label, args: [ "ai", "models", "pull", r.id ] };
+					if ( r.kind == "model" && r.model_kind == "chat" ) return { action: "show", title: "Use " & r.label, args: [ "ai", "models", "use", r.id ] };
+					return {};
+				} },
+			{ key: "p", label: "ask", run: function( r ) {
+					var model = r.kind == "model" && r.model_kind == "chat" ? r.id : "";
+					return { action: "ask", title: "Try it" & ( len( model ) ? " with " & r.label : "" ), prompt: "Ask your local model anything", make: function( text ) {
+							var a = [ "ai", "ask", text ];
+							if ( len( model ) ) a.append( "--model=" & model );
+							return { action: "show", title: "Local AI", args: a };
+						} };
+				} },
+			{ key: "t", label: "test", run: function( r ) { return { action: "show", title: "Test", args: r.kind == "model" ? [ "ai", "models", "test", r.id ] : [ "ai", "models", "test" ] }; } },
+			{ key: "u", label: "tune", run: function( r ) {
+					if ( r.kind == "engine" && r.ok ) return { action: "cli", title: "Update llama.cpp", args: [ "ai", "engine", "update" ] };
+					return r.kind == "model" && r.model_kind == "chat" ? { action: "cli", title: "Tune " & r.label, args: [ "ai", "models", "tune", r.id ] } : {};
+				} },
+			{ key: "h", label: "hugging face", run: function( r ) {
+					if ( !len( r.repo ?: "" ) ) return {};
+					var url = "https://huggingface.co/" & r.repo;
+					return { action: "exec", title: "Open " & url, argv: [ "xdg-open", url ], plan: [ "Open " & url & " in your browser." ] };
+				} },
+			{ key: "x", label: "remove", run: function( r ) { return r.kind == "model" ? { action: "cli", title: "Remove " & r.label, args: [ "ai", "models", "remove", r.id ] } : {}; } },
+			{ key: "s", label: "set up", run: function( r ) { return { action: "cli", title: "Set up local AI", args: [ "ai", "setup" ] }; } }
+		];
+	}
+
+	function mb( n ) { return arguments.n >= 1000 ? numberFormat( arguments.n / 1000, "0.0" ) & " GB" : arguments.n & " MB"; }
+
+	// The rows from the status and recommend data (pure, for tests).
+	function rowsFrom( status, rec ) {
+		var cat = new bxrig.AiCatalog();
+		var s = arguments.status;
+		var rows = [];
+		if ( !structKeyExists( s, "hardware" ) ) return [ { kind: "hardware", mark: "!", name: "Local AI", role: "", score: "", size: "", info: "bxrig ai status did not answer", ok: false } ];
+		rows.append( { kind: "hardware", mark: "", name: "This machine", role: s.hardware.class, score: "", size: mb( s.hardware.budget_mb ), info: s.hardware.summary, ok: true } );
+		rows.append( { kind: "engine", mark: s.engine.installed ? "✓" : "!", name: "llama.cpp", role: s.engine.source, score: "", size: "", info: s.engine.installed ? s.engine.version : "not installed, Enter installs it", ok: s.engine.installed } );
+		rows.append( { kind: "server", mark: s.server.running ? "●" : "○", name: "AI server", role: s.server.listen == "127.0.0.1" ? "local" : "network", score: "", size: "", info: s.server.running ? s.server.base_url : "not running, Enter starts it", ok: s.server.running, base_url: s.server.base_url } );
+		var ids = structKeyArray( s.models );
+		ids.sort( "textnocase" );
+		for ( var id in ids ) {
+			var m = s.models[ id ];
+			var c = cat.find( id );
+			var meas = m.measured ?: {};
+			var loaded = ( s.loaded ?: {} )[ id ] ?: "";
+			var info = structKeyExists( meas, "reply_s" ) ? meas.reply_s & " s here" & ( ( m.kind ?: "chat" ) == "embeddings" ? "" : ", " & meas.tps & " tok/s" ) : "not tested here";
+			if ( structKeyExists( m, "tuned" ) ) info &= ", tuned";
+			if ( loaded == "loaded" ) info &= ", in memory";
+			rows.append( { kind: "model", id: id, model_kind: m.kind ?: "chat", active: s.active == id, mark: s.active == id ? "●" : "", name: c.label ?: id, label: c.label ?: id, role: ( m.kind ?: "chat" ) == "embeddings" ? "embeddings" : "",
+					score: structKeyExists( c.score ?: {}, "total" ) ? c.score.total & "/20" : "", size: mb( c.size_mb ?: 0 ), info: info, repo: c.repo ?: "" } );
+		}
+		for ( var p in arguments.rec.picks ?: [] ) {
+			if ( structKeyExists( s.models, p.id ) ) continue;
+			var pc = cat.find( p.id );
+			rows.append( { kind: "pick", id: p.id, mark: p.default ? "*" : "+", name: p.label, label: p.label, role: p.role, score: p.score & "/20", size: mb( p.size_mb ), info: "picked for this machine, Enter downloads it", repo: pc.repo ?: "", license: p.license } );
+		}
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoStatus(), demoRecommend() );
+		return rowsFrom( variables.proc.selfData( [ "ai", "status" ], 30 ), variables.proc.selfData( [ "ai", "models", "recommend" ], 30 ) );
+	}
+
+	function demoStatus() {
+		return {
+			hardware: { summary: "AMD Ryzen 7 7840U, 8 cores · 32 GB RAM · Radeon 780M (shared)", budget_mb: 16000, class: "high", backend: "vulkan" },
+			engine: { installed: true, version: "b12627", source: "official" },
+			server: { running: true, listen: "127.0.0.1", port: 8089, base_url: "http://127.0.0.1:8089/v1" },
+			active: "gemma-4-e4b",
+			models: {
+				"gemma-4-e4b": { kind: "chat", measured: { reply_s: 1.9, tps: 24.6 }, tuned: { threads: 8, ubatch: 512, flash_attn: true } },
+				"qwen3.5-0.8b": { kind: "chat", measured: { reply_s: 0.7, tps: 61.2 } },
+				"embeddinggemma-300m": { kind: "embeddings", measured: { reply_s: 0.2, tps: 0, dimensions: 768 } }
+			},
+			loaded: { "gemma-4-e4b": "loaded", "embeddinggemma-300m": "loaded" }
+		};
+	}
+
+	function demoRecommend() {
+		return { picks: [
+				{ id: "gemma-4-e4b", role: "balanced", default: true, label: "Gemma 4 E4B", size_mb: 4980, score: 20, license: "Gemma" },
+				{ id: "qwen3.5-0.8b", role: "fastest", default: false, label: "Qwen3.5 0.8B", size_mb: 533, score: 17, license: "Apache-2.0" },
+				{ id: "gemma-4-12b", role: "capable", default: false, label: "Gemma 4 12B", size_mb: 7300, score: 20, license: "Gemma" }
+			] };
+	}
+}

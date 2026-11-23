@@ -176,6 +176,14 @@
 			"use": "the Tasks page"
 		},
 		{
+			"name": "bxrig-ai",
+			"glyph": "cpu",
+			"category": "develop",
+			"context": "apps",
+			"title": "AI",
+			"use": "the AI page (local models)"
+		},
+		{
 			"name": "bxrig-java",
 			"glyph": "coffee",
 			"category": "develop",

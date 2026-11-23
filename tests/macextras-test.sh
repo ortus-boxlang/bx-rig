@@ -54,7 +54,7 @@ run "$binary" nightshift off >/dev/null; grep -q 'disable --now bxrig-wlsunset.s
 
 # GPU: vendors and missing packages
 { run "$binary" gpu doctor --json || true; } | jq -e '(.data.vendors | index("nvidia") != null) and (.data.vendors | index("intel") != null) and (.data.missing | index("libva-nvidia-driver") != null)' >/dev/null || fail "gpu: $(run "$binary" gpu doctor --json)"
-{ run "$binary" gpu doctor || true; } | grep -q 'ollama-cuda' || fail 'gpu note for local AI'
+{ run "$binary" gpu doctor || true; } | grep -q 'CUDA build of llama.cpp' || fail 'gpu note for local AI'
 [[ "$(code "$binary" gpu doctor)" == 4 ]] || fail 'missing packages exit 4'
 
 # input: doctor and gestures

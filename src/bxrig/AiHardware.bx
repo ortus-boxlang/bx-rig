@@ -1,0 +1,136 @@
+// What this machine can run: the processor, its cores and instruction sets, the memory, the graphics chips and their memory,
+// and the free disk where models go. From that, the budget a model may use and the class (tiny, medium, high) that picks the
+// models offered (`bxrig ai models recommend`).
+//   budget   a dedicated graphics card: its memory minus 1 GB; otherwise (integrated graphics or none) half of the RAM
+//   class    tiny under 6 GB of budget, medium up to 14 GB, high above
+//   backends cpu always; vulkan with any graphics chip; cuda with an NVIDIA card; rocm with a dedicated AMD card
+// The readers are pure (they take the text of /proc/cpuinfo, /proc/meminfo, lspci and nvidia-smi) so the tests feed them saved samples.
+class AiHardware {
+	function init( runner = "" ) {
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	// ---- pure readers ----
+
+	// /proc/cpuinfo -> { model, threads, cores, features }. Cores are the distinct (physical id, core id) pairs; without them, the threads.
+	struct function parseCpu( required string text ) {
+		var model = "";
+		var threads = 0;
+		var pairs = {};
+		var physical = "0";
+		var flags = "";
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var key = trim( listFirst( line, ":" ) );
+			var value = find( ":", line ) ? trim( listRest( line, ":" ) ) : "";
+			if ( key == "processor" ) threads++;
+			// BoxLang's == ignores case: "model" (a number on x86) must not match "Model" (the name on ARM)
+			else if ( ( key == "model name" || compare( key, "Model" ) == 0 ) && !len( model ) ) model = value;
+			else if ( key == "physical id" ) physical = value;
+			else if ( key == "core id" ) pairs[ physical & "-" & value ] = true;
+			else if ( ( key == "flags" || key == "Features" ) && !len( flags ) ) flags = " " & value & " ";
+		}
+		var features = [];
+		for ( var f in [ "avx2", "avx512f", "avx_vnni", "asimd", "sve" ] ) if ( find( " " & f & " ", flags ) ) features.append( f == "asimd" ? "neon" : f );
+		return { model: model, threads: threads, cores: pairs.count() ? pairs.count() : threads, features: features };
+	}
+
+	// /proc/meminfo -> MB of RAM
+	numeric function parseRamMb( required string text ) {
+		var m = reFind( "MemTotal:\s+([0-9]+)\s*kB", arguments.text, 1, true );
+		return m.pos[ 1 ] ? int( mid( arguments.text, m.pos[ 2 ], m.len[ 2 ] ) / 1024 ) : 0;
+	}
+
+	// `lspci -mm` display controllers -> [ { vendor, name } ] (nvidia, amd, intel or other)
+	array function parseLspci( required string text ) {
+		var out = [];
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var parts = reMatch( '"[^"]*"', line ).map( function( s ) { return replace( s, '"', "", "all" ); } );
+			if ( parts.len() < 3 || !reFindNoCase( "VGA|3D|Display", parts[ 1 ] ) ) continue;
+			var vendorName = parts[ 2 ];
+			var vendor = reFindNoCase( "nvidia", vendorName ) ? "nvidia" : ( reFindNoCase( "\bAMD\b|\bATI\b|Advanced Micro", vendorName ) ? "amd" : ( reFindNoCase( "intel", vendorName ) ? "intel" : "other" ) );
+			out.append( { vendor: vendor, name: parts[ 3 ] } );
+		}
+		return out;
+	}
+
+	// `nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits` -> [ { name, vram_mb } ]
+	array function parseNvidiaSmi( required string text ) {
+		var out = [];
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			if ( listLen( line ) < 2 ) continue;
+			out.append( { name: trim( listFirst( line ) ), vram_mb: int( val( trim( listLast( line ) ) ) ) } );
+		}
+		return out;
+	}
+
+	// The budget, the class and the backends from what was found (pure).
+	struct function summarize( required numeric ramMb, required array gpus ) {
+		var dedicated = arguments.gpus.filter( function( g ) { return !g.shared && g.vram_mb > 0; } );
+		var vram = 0;
+		for ( var g in dedicated ) vram = max( vram, g.vram_mb );
+		var budget = vram > 0 ? max( 0, vram - 1024 ) : int( arguments.ramMb / 2 );
+		var backends = [ "cpu" ];
+		if ( arguments.gpus.len() ) backends.append( "vulkan" );
+		if ( arguments.gpus.filter( function( g ) { return g.vendor == "nvidia"; } ).len() ) backends.append( "cuda" );
+		if ( dedicated.filter( function( g ) { return g.vendor == "amd"; } ).len() ) backends.append( "rocm" );
+		return {
+			budget_mb: budget,
+			class: budget < 6000 ? "tiny" : ( budget <= 14000 ? "medium" : "high" ),
+			backends: backends,
+			backend: arrayFind( backends, "cuda" ) ? "cuda" : ( arrayFind( backends, "vulkan" ) ? "vulkan" : "cpu" )
+		};
+	}
+
+	// ---- this machine ----
+
+	function readText( path ) { return fileExists( arguments.path ) ? fileRead( arguments.path ) : ""; }
+
+	// The graphics chips with their memory: NVIDIA from nvidia-smi, AMD from the driver's mem_info_vram_total (an integrated AMD chip
+	// has a small carve-out and shares the RAM), Intel as shared.
+	array function gpus() {
+		var found = parseLspci( variables.proc.has( "lspci" ) ? variables.proc.exec( [ "lspci", "-mm" ], 10 ).output : "" );
+		var nv = variables.proc.has( "nvidia-smi" ) ? parseNvidiaSmi( variables.proc.exec( [ "nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits" ], 10 ).output ) : [];
+		var amdVram = 0;
+		for ( var f in directoryExists( "/sys/class/drm" ) ? directoryList( "/sys/class/drm", false, "path", "card*" ) : [] ) {
+			var t = trim( readText( f & "/device/mem_info_vram_total" ) );
+			if ( isNumeric( t ) ) amdVram = max( amdVram, int( t / 1048576 ) );
+		}
+		var nvIndex = 0;
+		var out = [];
+		for ( var g in found ) {
+			var r = { vendor: g.vendor, name: g.name, vram_mb: 0, shared: true };
+			if ( g.vendor == "nvidia" ) {
+				nvIndex++;
+				if ( nv.len() >= nvIndex ) { r.vram_mb = nv[ nvIndex ].vram_mb; r.shared = false; r.name = nv[ nvIndex ].name; }
+			} else if ( g.vendor == "amd" && amdVram >= 4096 ) { r.vram_mb = amdVram; r.shared = false; }
+			out.append( r );
+		}
+		return out;
+	}
+
+	numeric function diskFreeMb( required string path ) {
+		var p = arguments.path;
+		while ( len( p ) > 1 && !directoryExists( p ) ) p = getDirectoryFromPath( reReplace( p, "/+$", "" ) );
+		var r = variables.proc.exec( [ "df", "-Pm", len( p ) ? p : "/" ], 10 );
+		var lines = listToArray( r.output, chr( 10 ) );
+		return lines.len() >= 2 ? int( val( listGetAt( reReplace( lines[ 2 ], "\s+", " ", "all" ), 4, " " ) ) ) : 0;
+	}
+
+	struct function detect( string modelsDir = "" ) {
+		var cpu = parseCpu( readText( "/proc/cpuinfo" ) );
+		cpu.arch = trim( variables.proc.exec( [ "uname", "-m" ], 5 ).output );
+		var ram = parseRamMb( readText( "/proc/meminfo" ) );
+		var g = gpus();
+		var out = { cpu: cpu, ram_mb: ram, gpus: g, disk_free_mb: len( arguments.modelsDir ) ? diskFreeMb( arguments.modelsDir ) : 0 };
+		out.append( summarize( ram, g ) );
+		return out;
+	}
+
+	// One line for people: "AMD Ryzen 7 7840U, 8 cores · 32 GB RAM · Radeon 780M (shared)"
+	string function describe( required struct hw ) {
+		var g = arguments.hw.gpus.map( function( x ) { return x.name & ( x.shared ? " (shared)" : " (" & round( x.vram_mb / 1024 ) & " GB)" ); } );
+		return arguments.hw.cpu.model & ", " & arguments.hw.cpu.cores & " cores · " & round( arguments.hw.ram_mb / 1024 ) & " GB RAM"
+		& ( g.len() ? " · " & g.toList( ", " ) : " · no graphics card" );
+	}
+}

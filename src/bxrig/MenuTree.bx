@@ -460,7 +460,7 @@ class MenuTree {
 					run( "Agent session: start", [ "ai", "session", "start" ] ),
 					run( "Agent sessions: list", [ "ai", "session", "list" ] ),
 					run( "Local models: list", [ "ai", "models", "list" ] ),
-					run( "Local models: running", [ "ai", "models", "ps" ] ),
+					run( "Local AI: server and APIs", [ "ai", "serve", "status" ] ),
 					run( "API keys: list", [ "secrets", "list" ] ),
 					run( "Agent skills: status", [ "skills", "status" ] )
 				] ),
