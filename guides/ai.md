@@ -32,7 +32,7 @@ Each key is marked as an AI key or another kind, and agents declare which provid
 
 ## Local models
 
-`bxrig ai models list|ps|pull MODEL|rm|enable` drives Ollama. `bxrig gpu doctor` shows what your GPU needs (`ollama-cuda` or `ollama-rocm`).
+BxRig runs models on your machine with llama.cpp, picked for your hardware, with OpenAI and Anthropic compatible APIs on `127.0.0.1:8089`. Start with `bxrig ai setup`. See [Local AI](local-ai.md).
 
 ## Skills for every agent
 
