@@ -124,7 +124,7 @@ def draw_frame(path):
 				box = (x0, y0, x1, y1) if c.data == '█' else (x0, y0, x1, ym) if c.data == '▀' else (x0, ym, x1, y1)
 				d.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], fill=fgc)
 				continue
-			if c.data != ' ':
+			if c.data and c.data != ' ':  # a wide character leaves an empty cell after it
 				f = f_bold if c.bold else f_reg
 				if f_sym and 0xe000 <= ord(c.data[0]) <= 0xf8ff: f = f_sym
 				elif not has_glyph(f, c.data):

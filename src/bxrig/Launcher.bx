@@ -1,0 +1,164 @@
+// `bxrig launcher`: Vicinae as BxRig's launcher, in the theme's colours, with BxRig's actions in its search.
+//   [status]                     the launcher BxRig uses, whether Vicinae is installed and running, its theme and the script commands
+//   setup [--yes] [--dry-run]    Vicinae as the launcher and the menu, the BxRig theme selected, the script commands written, the server started
+//   scripts [--yes] [--dry-run]  (re)write the script commands only; `scripts remove [--yes]` deletes them
+//   files [QUERY]                Vicinae's file search, with QUERY typed in
+// The theme is ~/.local/share/vicinae/themes/bxrig.toml, written by `bxrig theme set` like the other generated files; Vicinae watches that
+// folder. The script commands are ~/.local/share/vicinae/scripts/bxrig/*.sh (Vicinae reads that folder at start, every 15 minutes and on
+// "Reload Script Directories"). Vicinae's own settings.json is never edited: the theme is selected with `vicinae theme set bxrig`.
+class Launcher {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "launcher" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	function themeFile() { return variables.env.xdgData( "vicinae/themes/bxrig.toml" ); }
+	function scriptsDir() { return variables.env.xdgData( "vicinae/scripts/bxrig" ); }
+	function fileSearchUrl() { return "vicinae://launch/files/search"; }
+
+	function isLauncher() {
+		try { return new bxrig.Runner( variables.cli ).load().provider == "vicinae"; } catch ( any e ) { return false; }
+	}
+
+	function installed() { return variables.proc.has( "vicinae" ); }
+	function running() { return installed() && variables.proc.exec( [ "vicinae", "ping" ], 5 ).exitCode == 0; }
+
+	// The BxRig actions offered as Vicinae script commands: { id, title, mode, icon, description, keywords, args, run }.
+	// `run` is the bash after the header; `$BXRIG` is this BxRig. Modes are Vicinae's: fullOutput, compact (a toast), silent, inline.
+	function scripts() {
+		return [
+			{ id: "control-center", title: "BxRig Control Center", mode: "silent", icon: "🧰", description: "Every BxRig command as one menu", keywords: [ "bxrig", "menu", "settings" ], args: [], run: 'exec "$BXRIG" menu' },
+			{ id: "agenda", title: "Agenda", mode: "fullOutput", icon: "📅", description: "Your calendars for the next 7 days", keywords: [ "calendar", "events", "today" ], args: [], run: 'exec "$BXRIG" calendar agenda --days=7' },
+			{ id: "next-event", title: "Next event", mode: "inline", icon: "🕘", description: "Your next event today", keywords: [ "calendar", "meeting" ], args: [], run: 'next="$("$BXRIG" calendar agenda --days=1 | grep -m1 "^  " | sed "s/^ *//")"; echo "${next:-Nothing else today}"' },
+			{ id: "remind", title: "Remind me", mode: "compact", icon: "⏰", description: "A reminder in 30m, 2h, or at 09:25", keywords: [ "reminder", "timer", "alarm" ],
+				args: [ { type: "text", placeholder: "what" }, { type: "text", placeholder: "30m, 2h or 09:25" } ],
+				run: 'case "$2" in *:*) exec "$BXRIG" remind "$1" --at="$2" ;; *) exec "$BXRIG" remind "$1" --in="$2" ;; esac' },
+			{ id: "reminders", title: "Reminders", mode: "fullOutput", icon: "🔔", description: "The reminders still to come", keywords: [ "reminder" ], args: [], run: 'exec "$BXRIG" remind list' },
+			{ id: "world-clock", title: "World clock", mode: "fullOutput", icon: "🌍", description: "The time in your world clock zones", keywords: [ "time", "zones", "clock" ], args: [], run: 'exec "$BXRIG" time world' },
+			{ id: "next-theme", title: "Next theme", mode: "compact", icon: "🎨", description: "Switch to the next BxRig theme", keywords: [ "theme", "colors", "appearance" ], args: [], run: 'exec "$BXRIG" theme next' },
+			{ id: "updates", title: "Check for updates", mode: "fullOutput", icon: "⬆️", description: "Whether a BxRig update is waiting", keywords: [ "update", "upgrade" ], args: [], run: 'exec "$BXRIG" update check' },
+			{ id: "tasks", title: "Scheduled tasks", mode: "fullOutput", icon: "🗓️", description: "The scheduler's tasks and how they ran", keywords: [ "scheduler", "jobs", "cron" ], args: [], run: 'exec "$BXRIG" scheduler' },
+			{ id: "servers", title: "BoxLang servers", mode: "fullOutput", icon: "🖥️", description: "Your BoxLang apps and their ports", keywords: [ "boxlang", "server", "miniserver", "commandbox" ], args: [], run: 'exec "$BXRIG" boxlang servers' },
+			{ id: "lock", title: "Lock screen", mode: "silent", icon: "🔒", description: "Lock the screen", keywords: [ "lock", "away" ], args: [], run: 'exec "$BXRIG" system lock' }
+		];
+	}
+
+	// One script command file (pure): the Vicinae header, then BXRIG set to this BxRig, then the action.
+	function scriptText( s, self ) {
+		var nl = chr( 10 );
+		var t = "##!/usr/bin/env bash" & nl & "## @vicinae.schemaVersion 1" & nl & "## @vicinae.title " & arguments.s.title & nl & "## @vicinae.mode " & arguments.s.mode & nl & "## @vicinae.icon " & arguments.s.icon & nl;
+		t &= "## @vicinae.description " & arguments.s.description & nl & "## @vicinae.keywords " & serializeJSON( arguments.s.keywords ) & nl;
+		var i = 0;
+		for ( var a in arguments.s.args ) { i++; t &= "## @vicinae.argument" & i & " " & serializeJSON( a ) & nl; }
+		t &= "## @vicinae.author BxRig" & nl & "## Written by `bxrig launcher scripts`; it is rewritten there, so change it there." & nl;
+		return t & "BXRIG=" & serializeJSON( arguments.self ) & nl & arguments.s.run & nl;
+	}
+
+	function scriptFiles() {
+		var dir = scriptsDir();
+		if ( !directoryExists( dir ) ) return [];
+		return directoryList( dir, false, "name", "*.sh" );
+	}
+
+	function status( asJson ) {
+		var provider = "";
+		try { provider = new bxrig.Runner( variables.cli ).load().provider; } catch ( any e ) { provider = "unknown"; }
+		var inst = installed();
+		var ver = inst ? trim( listFirst( variables.proc.exec( [ "vicinae", "version" ], 5 ).output, chr( 10 ) ) ) : "";
+		var d = { provider: provider, vicinae: { installed: inst, version: ver, running: inst && running() }, theme: { file: themeFile(), written: fileExists( themeFile() ) }, scripts: { dir: scriptsDir(), count: scriptFiles().len() }, file_search: fileSearchUrl() };
+		var lines = [
+			"Launcher      " & provider & ( provider == "vicinae" ? "" : " (bxrig launcher setup --yes makes it Vicinae)" ),
+			"Vicinae       " & ( inst ? ( len( ver ) ? ver : "installed" ) & ( d.vicinae.running ? ", running" : ", not running" ) : "not installed (bxrig pkg install vicinae)" ),
+			"Theme         " & ( d.theme.written ? "BxRig, follows bxrig theme set" : "not written yet (bxrig launcher setup)" ),
+			"Commands      " & d.scripts.count & " BxRig script commands" & ( d.scripts.count ? "" : " (bxrig launcher scripts --yes)" ),
+			"File search   bxrig launcher files [QUERY]"
+		];
+		return variables.out.say( "ok", d, arguments.asJson, lines );
+	}
+
+	function writeScripts() {
+		var dir = scriptsDir();
+		directoryCreate( dir, true, true );
+		var self = variables.proc.selfPath();
+		var keep = [];
+		for ( var s in scripts() ) {
+			var f = dir & "/" & s.id & ".sh";
+			fileWrite( f, scriptText( s, self ) );
+			variables.proc.exec( [ "chmod", "755", f ], 5 );
+			keep.append( s.id & ".sh" );
+		}
+		// a command BxRig no longer offers goes away
+		for ( var old in scriptFiles() ) if ( !arrayFind( keep, old ) ) fileDelete( dir & "/" & old );
+		return keep.len();
+	}
+
+	function scriptsCmd( remove, yes, dry, asJson ) {
+		if ( arguments.remove ) {
+			var n = scriptFiles().len();
+			if ( !arguments.yes || arguments.dry ) return variables.out.plan( "delete the " & n & " BxRig script commands", { dir: scriptsDir(), count: n }, arguments.asJson, arguments.dry, [ "delete " & scriptsDir() ] );
+			if ( directoryExists( scriptsDir() ) ) directoryDelete( scriptsDir(), true );
+			return variables.out.say( "ok", { removed: n }, arguments.asJson, [ "Removed " & n & " script commands" ] );
+		}
+		var titles = scripts().map( function( s ) { return s.icon & " " & s.title; } );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "write " & titles.len() & " BxRig script commands for Vicinae", { dir: scriptsDir(), commands: scripts().map( function( s ) { return s.id; } ) }, arguments.asJson, arguments.dry, [ "into " & scriptsDir() & ": " & titles.toList( ", " ) ] );
+		var n = writeScripts();
+		return variables.out.say( "ok", { written: n, dir: scriptsDir() }, arguments.asJson, [ "Wrote " & n & " script commands to " & scriptsDir(), "Vicinae lists them after it reloads its script folders (at start, every 15 minutes, or Reload Script Directories)." ] );
+	}
+
+	// The plan of `setup`, step by step (pure apart from what is installed).
+	function setupSteps() {
+		var steps = [];
+		if ( !isLauncher() ) steps.append( "make Vicinae BxRig's launcher and menu (bxrig runner set vicinae, runner menu-set vicinae)" );
+		steps.append( "write the BxRig theme for Vicinae (" & themeFile() & ") and select it" );
+		steps.append( "write " & scripts().len() & " BxRig script commands (" & scriptsDir() & ")" );
+		if ( !running() ) steps.append( "start the Vicinae server (vicinae server)" );
+		return steps;
+	}
+
+	function setup( yes, dry, asJson ) {
+		if ( !installed() ) return variables.out.fail( "precondition", "Vicinae is not installed (bxrig pkg install vicinae)", arguments.asJson );
+		var steps = setupSteps();
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "set up Vicinae as the launcher", { steps: steps }, arguments.asJson, arguments.dry, steps );
+		var done = [];
+		var runner = new bxrig.Runner( variables.cli, variables.proc.runner() );
+		if ( !isLauncher() ) {
+			var e1 = runner.set( "provider", "vicinae" );
+			var e2 = runner.set( "menu", "vicinae" );
+			if ( len( e1 & e2 ) ) return variables.out.fail( "failed", trim( e1 & " " & e2 ), arguments.asJson );
+			done.append( "Vicinae is the launcher and the menu" );
+		}
+		if ( !running() ) { variables.proc.detach( [ "vicinae", "server" ] ); done.append( "started the Vicinae server" ); }
+		new bxrig.Theme( variables.cli, variables.proc.runner() ).ensure();
+		if ( !fileExists( themeFile() ) ) return variables.out.fail( "failed", "could not write " & themeFile(), arguments.asJson );
+		var sel = variables.proc.exec( [ "vicinae", "theme", "set", "bxrig" ], 15 );
+		done.append( sel.exitCode == 0 ? "selected the BxRig theme" : "wrote the BxRig theme (select it in Vicinae: Set Theme, BxRig)" );
+		done.append( "wrote " & writeScripts() & " script commands" );
+		return variables.out.say( "ok", { done: done }, arguments.asJson, done );
+	}
+
+	// "a b&c" -> "a%20b%26c"
+	function urlPart( s ) { return replace( urlEncodedFormat( arguments.s ), "+", "%20", "all" ); }
+
+	function files( query, asJson ) {
+		if ( !installed() ) return variables.out.fail( "precondition", "Vicinae is not installed (bxrig pkg install vicinae)", arguments.asJson );
+		var url = fileSearchUrl() & ( len( arguments.query ) ? "?fallbackText=" & urlPart( arguments.query ) : "" );
+		var r = variables.proc.exec( [ "vicinae", "deeplink", url ], 10 );
+		if ( r.exitCode != 0 ) return variables.out.fail( "failed", "Vicinae did not answer (is its server running? bxrig launcher setup)", arguments.asJson );
+		return variables.out.say( "ok", { url: url }, arguments.asJson, [] );
+	}
+
+	function run( words, opts, asJson ) {
+		var w = arguments.words;
+		var sub = w.len() ? w[ 1 ] : "status";
+		var yes = structKeyExists( arguments.opts, "yes" ); var dry = structKeyExists( arguments.opts, "dry-run" );
+		if ( sub == "status" && w.len() <= 1 ) return status( arguments.asJson );
+		if ( sub == "setup" && w.len() == 1 ) return setup( yes, dry, arguments.asJson );
+		if ( sub == "scripts" && w.len() == 1 ) return scriptsCmd( false, yes, dry, arguments.asJson );
+		if ( sub == "scripts" && w.len() == 2 && w[ 2 ] == "remove" ) return scriptsCmd( true, yes, dry, arguments.asJson );
+		if ( sub == "files" ) return files( w.len() > 1 ? w.slice( 2 ).toList( " " ) : "", arguments.asJson );
+		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "launcher" ), arguments.asJson );
+	}
+}

@@ -21,7 +21,7 @@ class RunnerProviders {
 			{ id: "fuzzel", title: "Fuzzel", package: "fuzzel", launch: [ "fuzzel" ], menu: { argv: [ "fuzzel", "--dmenu", "--index", "--prompt", "{prompt}" ], icons: true, returns: "index" } },
 			{ id: "wofi", title: "Wofi", package: "wofi", launch: [ "wofi", "--show", "drun" ], menu: { argv: [ "wofi", "--dmenu", "--insensitive", "--prompt", "{prompt}" ], icons: false, returns: "text" } },
 			{ id: "krunner", title: "KRunner", package: "", launch: [ "krunner" ], menu: {} },
-			{ id: "vicinae", title: "Vicinae", package: "vicinae", launch: [ "vicinae", "toggle" ], menu: { argv: [ "vicinae", "dmenu", "--prompt", "{prompt}" ], icons: false, returns: "text" } },
+			{ id: "vicinae", title: "Vicinae", package: "vicinae", launch: [ "vicinae", "toggle" ], menu: { argv: [ "vicinae", "dmenu", "--placeholder", "{prompt}" ], icons: false, returns: "text" } },
 			{ id: "custom", title: "Custom command", package: "", launch: [], menu: {} }
 		];
 	}

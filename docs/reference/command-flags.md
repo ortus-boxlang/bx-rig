@@ -161,6 +161,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `keys` | `--keyboard` | value | `pc` |
 | `keys` | `--swap` | value |  |
 | `runner` | `--prompt` | value |  |
+| `launcher` | `--yes` | bool |  |
+| `launcher` | `--dry-run` | bool |  |
 | `config` | `--theme` | any |  |
 | `config` | `--wallpaper` | any |  |
 | `theme` | `--keep-wallpaper` | bool |  |
