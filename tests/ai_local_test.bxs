@@ -168,6 +168,13 @@ testkit.check( "agents page: d makes it the default (plan first); Enter starts a
 crushRows = ap.rowsFrom( { agents: [] }, { agents: [ { id: "crush", linked: true, installed: true } ] }, {} );
 testkit.check( "agents page: Crush shows when it is installed or linked", crushRows.len() == 1 && crushRows[ 1 ].link == "crush" && crushRows[ 1 ].linked );
 
+// ---- text actions ----
+tx = new bxrig.AiText( ai, new bxrig.util.Cli( "test" ) );
+testkit.check( "text: six actions in menu order", tx.actions().map( function( a ) { return a.id; } ).toList( "," ) == "summarize,rewrite,fix,explain,translate,reply" );
+msgs = tx.messages( tx.action( "translate" ), "hola", "German" );
+testkit.check( "text: the instruction with the language, result only, then the text", find( "into German", msgs[ 1 ].content ) > 0 && find( "Reply with the result only", msgs[ 1 ].content ) > 0 && msgs[ 2 ].content == "hola" );
+testkit.check( "text: English when no language is given; an unknown action is none", find( "into English", tx.messages( tx.action( "translate" ), "x" )[ 1 ].content ) > 0 && structIsEmpty( tx.action( "nope" ) ) );
+
 // ---- the bar's Local tab ----
 root = "../templates/noctalia-plugins/agents/";
 panelSrc = fileRead( root & "panel.luau" );

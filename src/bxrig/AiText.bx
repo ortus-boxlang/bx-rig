@@ -1,0 +1,91 @@
+// `bxrig ai text`: a local model works on the text you selected (or copied). Super+Alt+E opens the menu.
+//   text summarize|rewrite|fix|explain|translate|reply [--lang=LANGUAGE] [--from=selection|clipboard] [--text=TEXT] [--to=clipboard|notify|stdout]
+//   text menu                     pick the action in your menu (the runner's menu), then as above
+// The text comes from the selection (wl-paste --primary), else the clipboard; --text gives it directly. The result goes to the
+// clipboard and a notification by default (and is printed). Everything runs on the local AI server; nothing leaves this machine.
+class AiText {
+	function init( required any ai, required any cli ) {
+		variables.ai = arguments.ai;
+		variables.cli = arguments.cli;
+		variables.out = arguments.cli.scoped( "ai text" );
+		return this;
+	}
+
+	// The actions in menu order: { id, label, instruction } (pure). {lang} is replaced by the language.
+	array function actions() {
+		return [
+			{ id: "summarize", label: "Summarize", instruction: "Summarize the text in two to four sentences." },
+			{ id: "rewrite", label: "Rewrite clearly", instruction: "Rewrite the text so it is clear and concise. Keep its meaning and its language." },
+			{ id: "fix", label: "Fix spelling and grammar", instruction: "Fix the spelling and grammar of the text. Change nothing else." },
+			{ id: "explain", label: "Explain", instruction: "Explain the text in simple words, briefly." },
+			{ id: "translate", label: "Translate", instruction: "Translate the text into {lang}." },
+			{ id: "reply", label: "Draft a reply", instruction: "Write a short, polite reply to this message, in its language." }
+		];
+	}
+
+	struct function action( required string id ) {
+		for ( var a in actions() ) if ( a.id == arguments.id ) return a;
+		return {};
+	}
+
+	// The chat messages for an action (pure): the instruction, "only the result", then the text.
+	array function messages( required struct act, required string text, string lang = "English" ) {
+		var how = replace( arguments.act.instruction, "{lang}", len( trim( arguments.lang ) ) ? trim( arguments.lang ) : "English" );
+		return [
+			{ role: "system", content: how & " Reply with the result only: no introduction, no quotes around it, no notes." },
+			{ role: "user", content: arguments.text }
+		];
+	}
+
+	// The selection, else the clipboard (or only the one asked for): { text, from }.
+	struct function input( string from = "" ) {
+		var p = variables.ai.proc();
+		if ( !p.has( "wl-paste" ) ) return { text: "", from: "" };
+		if ( arguments.from != "clipboard" ) {
+			var sel = p.exec( [ "wl-paste", "--primary", "--no-newline", "--type", "text" ], 10 );
+			if ( sel.exitCode == 0 && len( trim( sel.output ) ) ) return { text: sel.output, from: "selection" };
+			if ( arguments.from == "selection" ) return { text: "", from: "" };
+		}
+		var clip = p.exec( [ "wl-paste", "--no-newline", "--type", "text" ], 10 );
+		return clip.exitCode == 0 && len( trim( clip.output ) ) ? { text: clip.output, from: "clipboard" } : { text: "", from: "" };
+	}
+
+	function run( id, opts, asJson ) {
+		var o = arguments.opts;
+		var act = action( arguments.id );
+		if ( structIsEmpty( act ) ) return variables.out.fail( "usage", "bxrig ai text " & actions().map( function( a ) { return a.id; } ).toList( "|" ) & " | menu", arguments.asJson );
+		var got = len( o.text ?: "" ) ? { text: o.text, from: "text" } : input( o.from ?: "" );
+		if ( !len( trim( got.text ) ) ) return variables.out.fail( "precondition", "no text: select some text (or copy it) first" & ( variables.ai.proc().has( "wl-paste" ) ? "" : "; wl-paste is missing (bxrig install wl-clipboard)" ), arguments.asJson );
+		if ( len( got.text ) > 24000 ) return variables.out.fail( "usage", "the text is too long for a local model (" & len( got.text ) & " characters, at most 24000)", arguments.asJson );
+		var st = variables.ai.load();
+		var model = len( o.model ?: "" ) ? o.model : st.active;
+		if ( !len( model ) ) return variables.out.fail( "precondition", "no active chat model (bxrig ai setup)", arguments.asJson );
+		if ( !variables.ai.call( st, "GET", "/health", "", 3 ).ok ) return variables.out.fail( "precondition", "the AI server is not running (bxrig ai serve start)", arguments.asJson );
+		var t0 = getTickCount();
+		var r = variables.ai.call( st, "POST", "/v1/chat/completions", serializeJSON( { model: model, messages: messages( act, got.text, o.lang ?: "" ), max_tokens: 1200, temperature: 0.3, chat_template_kwargs: { enable_thinking: false } } ), 600 );
+		if ( !r.ok ) return variables.out.fail( "failed", "the model did not answer (HTTP " & r.status & ")", arguments.asJson );
+		var result = "";
+		try { result = trim( jsonDeserialize( r.body ).choices[ 1 ].message.content ?: "" ); } catch ( any e ) {}
+		var secs = val( numberFormat( ( getTickCount() - t0 ) / 1000, "0.00" ) );
+		var to = o.to ?: "clipboard";
+		var p = variables.ai.proc();
+		var copied = false;
+		if ( to == "clipboard" && p.has( "wl-copy" ) ) copied = systemExecute( "wl-copy", [], 30, true, ".", "", "", true, {}, false, result ).exitCode == 0;
+		if ( ( to == "clipboard" || to == "notify" ) && p.has( "notify-send" ) ) p.exec( [ "notify-send", "--app-name=bxrig", act.label & ( copied ? " · copied" : "" ), left( result, 400 ) ], 15 );
+		var lines = listToArray( result, chr( 10 ), true );
+		lines.append( "" );
+		lines.append( act.label & " (" & got.from & ") · " & model & " · " & secs & " s" & ( copied ? " · copied to the clipboard" : "" ) );
+		return variables.out.say( "ok", { action: act.id, from: got.from, result: result, copied: copied, model: model, reply_s: secs }, arguments.asJson, lines );
+	}
+
+	// The menu: pick an action, then run it on the selection.
+	function menu( opts, asJson ) {
+		var list = actions();
+		var labels = list.map( function( a ) { return a.label; } );
+		var chosen = 0;
+		try { chosen = new bxrig.Runner( variables.cli, variables.ai.proc().runner() ).select( "AI on the selection", labels ); }
+		catch ( any err ) { return variables.out.fail( "precondition", err.message, arguments.asJson ); }
+		if ( chosen == 0 ) return variables.out.say( "ok", { action: "" }, arguments.asJson, [ "Cancelled." ] );
+		return run( list[ chosen ].id, arguments.opts, arguments.asJson );
+	}
+}

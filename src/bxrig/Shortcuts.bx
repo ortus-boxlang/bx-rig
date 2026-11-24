@@ -164,6 +164,7 @@ class Shortcuts {
 			row( "file-manager", G.apps, "File manager", "Super+Shift+F", "Super+E", "hypr-bind", "hl.dsp.exec_cmd(fileManager)" ),
 			bx( "files-here", G.apps, "File manager in the current folder (of the focused window)", "Super+Alt+Shift+F", "Super+Alt+Shift+F", "files here" ),
 			bx( "ai-shell", G.apps, "Pull-down AI shell", "Super+Grave", "Super+Grave", "ai shell" ),
+			bx( "ai-text", G.apps, "AI on the selected text: summarize, rewrite, fix, explain, translate", "Super+Alt+E", "Super+Alt+E", "ai text menu" ),
 			// capture and recording
 			bx( "emoji", G.cap, "Emoji picker", "Super+Ctrl+E", "Super+Ctrl+E", "emoji" ),
 			bx( "clipboard-history", G.cap, "Clipboard history", "Super+Ctrl+V", "Super+Ctrl+V", "clipboard pick" ),

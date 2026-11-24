@@ -15,6 +15,7 @@
 //   bench [ID]                                 BxRig's 20 tool-calling cases against a local model: score, median reply, misses
 //   link [opencode|crush [--off] [--default] [--yes]]
 //                                              point an agent at the local server (only BxRig's part of its config changes)
+//   text summarize|rewrite|fix|explain|translate|reply | menu   on the selected text (AiText); Super+Alt+E opens the menu
 //   ask TEXT [--model=ID]                      one question to a local model (the active one by default)
 //   status                                     everything above as one answer (the bar panel and the Control Center read it)
 // Files: models in ~/.local/share/bxrig/models; ~/.config/bxrig/ai.json (installed models, the active one, tuned settings, measured
@@ -48,6 +49,7 @@ class AiLocal {
 		return ( st.models[ arguments.id ] ?: {} ).meta ?: {};
 	}
 	function hub() { return new bxrig.AiHub( variables.proc.runner() ); }
+	function proc() { return variables.proc; }
 
 	// A Hugging Face entry's id here: its own, or with the owner in front when another repository already has that id on this machine.
 	struct function ownId( required struct e, required struct state ) {
@@ -875,6 +877,8 @@ class AiLocal {
 		if ( sub == "setup" && w.len() == 1 ) return setup( o, arguments.asJson );
 		if ( sub == "downloads" && w.len() <= 3 ) return downloads( w.len() >= 2 ? w[ 2 ] : "list", w.len() == 3 ? w[ 3 ] : "", arguments.asJson );
 		if ( sub == "link" ) return linkCmd( w, o, arguments.asJson );
+		if ( sub == "text" && w.len() == 2 && w[ 2 ] == "menu" ) return new bxrig.AiText( this, variables.cli ).menu( o, arguments.asJson );
+		if ( sub == "text" && w.len() == 2 ) return new bxrig.AiText( this, variables.cli ).run( w[ 2 ], o, arguments.asJson );
 		if ( sub == "bench" && w.len() <= 2 ) return bench( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
 		if ( sub == "discover" && w.len() <= 2 ) return discover( w.len() == 2 ? w[ 2 ] : "", o, arguments.asJson );
 		if ( sub == "ask" && w.len() >= 2 ) return ask( w.slice( 2 ).toList( " " ), o.model ?: "", arguments.asJson );

@@ -43,7 +43,7 @@ case "$url" in
   */v1/chat/completions)
     if [[ "$body" == *'"tools"'* && "$body" == *"dawn theme"* ]]; then printf "{\"choices\":[{\"message\":{\"content\":\"\",\"tool_calls\":[{\"type\":\"function\",\"function\":{\"name\":\"set_theme\",\"arguments\":\"{\\\\\"name\\\\\":\\\\\"dawn\\\\\"}\"}}]}}]}\n200"
     else printf "{\"choices\":[{\"message\":{\"content\":\"I am a tiny model.\"}}],\"timings\":{\"predicted_per_second\":42.5}}\n200"; fi ;;
-  */v1/embeddings) printf "{\"data\":[{\"embedding\":[0.1,0.2,0.3]}]}\n200" ;;
+  */v1/embeddings) jq -c '\''{data: ((.input | if type == "array" then . else [.] end) | to_entries | map({index: .key, embedding: [(if (.value | test("backup"; "i")) then 1 else 0 end), (if (.value | test("theme"; "i")) then 1 else 0 end), 0.1]}))}'\'' <<<"$body" | tr -d "\n"; printf "\n200" ;;
   */models/unload) printf "{\"success\":true}\n200" ;;
   *) printf "{}\n404" ;;
 esac'
@@ -179,6 +179,21 @@ run "$binary" ai link crush --off --yes >/dev/null; ! grep -q 'provider add bxri
 run "$binary" ai serve --listen=0.0.0.0 --yes >/dev/null; [[ "$(code "$binary" ai link crush --yes)" == 4 ]] || fail 'no link while the server needs a key'; run "$binary" ai serve --listen=127.0.0.1 --yes >/dev/null
 run "$binary" tui ai-discover --json | jq -e '[.data.items[].kind] | index("staff") != null' >/dev/null || fail 'the Discover page'
 run "$binary" tui ai-agents --json | jq -e '.data.items | length > 0' >/dev/null || fail 'the Agents page'
+
+# ---- text actions ----
+stub wl-paste 'if [[ "$*" == *--primary* ]]; then printf "%s" "${SEL:-}"; else printf "copied text"; fi'
+stub wl-copy 'cat > "$SRV/copied"'
+stub notify-send 'echo "notify $*" >> "$LOG"'
+SEL="the selected words" run "$binary" ai text summarize --json > "$tmp/text.json" || fail "text: $(cat "$tmp/text.json")"
+jq -e '.data.from == "selection" and .data.copied and .data.result == "I am a tiny model."' "$tmp/text.json" >/dev/null || fail "text result: $(cat "$tmp/text.json")"
+[[ "$(cat "$SRV/copied")" == "I am a tiny model." ]] || fail 'the result is copied'
+grep -q 'notify --app-name=bxrig Summarize · copied' "$LOG" || fail 'a notification shows it'
+tail -1 "$SRV/requests" | grep -q 'the selected words' || fail 'the selection is sent'
+run "$binary" ai text translate --lang=German --json | jq -e '.data.from == "clipboard"' >/dev/null || fail 'no selection: the clipboard'
+tail -1 "$SRV/requests" | grep -q 'into German' || fail 'translate names the language'
+run "$binary" ai text fix --text="teh cat" --to=stdout --json | jq -e '.data.from == "text" and (.data.copied | not)' >/dev/null || fail '--text and --to=stdout'
+[[ "$(code "$binary" ai text nope)" == 2 ]] || fail 'an unknown action exits 2'
+stub wl-paste 'exit 1'; [[ "$(code "$binary" ai text summarize)" == 4 ]] || fail 'no text exits 4'
 
 # ---- remove, status, stop ----
 [[ "$(code "$binary" ai models remove tiny-b)" == 2 ]] || fail 'remove without --yes is a plan'
