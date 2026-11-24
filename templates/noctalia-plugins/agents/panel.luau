@@ -8,11 +8,12 @@
 -- Launch: `bxrig ai launch <id>` (detached; the panel closes).
 -- "Edit agents" (footer) lists every known agent (`bxrig ai panel list --json`) with a
 -- Show/Hide button: `bxrig ai panel add|remove <id> --yes`.
--- Two tabs: Agents (the above) and Local (BxRig's local AI on llama.cpp, local.luau).
+-- Three tabs: Agents (the above), Local (BxRig's local AI on llama.cpp, local.luau) and BoxLang (the bx-agents agents, boxlang.luau).
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
 local localAi = require("./local.luau")
+local boxlang = require("./boxlang.luau")
 
 local REFRESH_MS = 60000
 
@@ -24,7 +25,7 @@ local closeButton = true
 local editing = false
 local choices = nil -- `ai panel list` rows while editing
 local busyId = nil
-local tab = "agents" -- "agents" | "local"
+local tab = "agents" -- "agents" | "local" | "boxlang"
 
 -- Leading glyph per agent id; anything else gets the robot.
 local AGENT_GLYPHS = {
@@ -218,7 +219,7 @@ end
 
 local function tabBar()
 	local buttons = {}
-	for _, t in ipairs({ { id = "agents", label = "Agents", glyph = "robot" }, { id = "local", label = "Local", glyph = "cpu" } }) do
+	for _, t in ipairs({ { id = "agents", label = "Agents", glyph = "robot" }, { id = "local", label = "Local", glyph = "cpu" }, { id = "boxlang", label = "BoxLang", glyph = "message-chatbot" } }) do
 		table.insert(buttons, ui.button({
 			key = "tab-" .. t.id,
 			text = t.label,
@@ -232,6 +233,8 @@ local function tabBar()
 				editing = false
 				if tab == "local" then
 					localAi.fetch(render)
+				elseif tab == "boxlang" then
+					boxlang.fetch(render)
 				end
 				render()
 			end,
@@ -246,6 +249,14 @@ local function footer()
 			ui.spacer({ flexGrow = 1 }),
 			ui.button({ text = "AI page", glyph = "external-link", variant = "ghost", controlSize = "sm", onClick = function()
 				localAi.openPage()
+			end }),
+		})
+	end
+	if tab == "boxlang" then
+		return ui.row({ align = "center", gap = 8 }, {
+			ui.spacer({ flexGrow = 1 }),
+			ui.button({ text = "BoxLang agents page", glyph = "external-link", variant = "ghost", controlSize = "sm", onClick = function()
+				boxlang.openPage()
 			end }),
 		})
 	end
@@ -285,6 +296,8 @@ function render()
 	local agents = data and data.agents or nil
 	if tab == "local" then
 		table.insert(sections, localAi.view(render))
+	elseif tab == "boxlang" then
+		table.insert(sections, boxlang.view(render))
 	elseif editing then
 		table.insert(sections, editSection())
 	elseif data == nil then
@@ -360,6 +373,8 @@ end
 function onRefresh()
 	if tab == "local" then
 		localAi.fetch(render)
+	elseif tab == "boxlang" then
+		boxlang.fetch(render)
 	else
 		fetch()
 	end

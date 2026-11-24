@@ -313,7 +313,9 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `ai` | `--off` | bool |  |
 | `ai` | `--picks` | value |  |
 | `ai` | `--port` | value |  |
+| `ai` | `--snapshot` | bool |  |
 | `ai` | `--source` | value |  |
+| `ai` | `--stable` | bool |  |
 | `ai` | `--test` | bool |  |
 | `ai` | `--text` | value |  |
 | `ai` | `--to` | value |  |

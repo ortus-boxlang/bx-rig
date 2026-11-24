@@ -1,0 +1,398 @@
+// BoxLang agents (bx-agents projects such as Boxy) on this machine: `bxrig ai agents ...`. bx-agents has a full CLI (`bxAgents`), and
+// BxRig does not repeat it. It adds what bx-agents leaves to the machine:
+//   install|update [--snapshot|--stable]  the module at the OS level (bx-module), the jar cache cleared, BxRig's local model offered
+//   list | dir [PATH] | add PATH | forget NAME   where the projects are: ~/Agents (BXRIG_AGENTS_DIR, or `dir`) plus projects added by path
+//   start|stop|status NAME                 a user service per agent (build, then `bxAgents serve` on its own port, 127.0.0.1)
+//   open NAME | default NAME               its web page; the agent the keyboard shortcut opens
+//   new NAME [flags]                       `bxAgents new` inside the projects folder (its own wizard)
+//   NAME VERB [args]                       `bxAgents VERB --projectRoot=PROJECT [args]`, with the terminal handed over
+// Where things live is bx-agents' own convention: an agent's data in ~/.bxagents/<name>, the person's settings in ~/.bxagents/Agent.yml.
+// BxRig keeps only its list (ports, the default, added projects) in ~/.config/bxrig/agents.json.
+class AiAgentHub {
+	function init( cli, runner = "" ) {
+		variables.FIRST_PORT = 8790;
+		variables.MODULE = "bx-agents";
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( arguments.cli, "ai agents" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		variables.systemd = new bxrig.util.Systemd( variables.proc );
+		variables.store = new bxrig.util.JsonStore();
+		return this;
+	}
+
+	// ---- where things are ----
+
+	function stateFile() { return variables.env.config( "agents.json" ); }
+	struct function load() { return variables.store.read( stateFile(), { root: "", default: "", entries: [] } ); }
+	function save( required struct state ) { return variables.store.write( "ai agents", stateFile(), arguments.state ); }
+
+	// The projects folder: BXRIG_AGENTS_DIR, else the one set with `dir`, else ~/Agents.
+	string function projectsDir( struct state = {} ) {
+		var st = structIsEmpty( arguments.state ) ? load() : arguments.state;
+		var r = variables.env.named( "agentsDir", "" );
+		if ( !len( r ) ) r = st.root ?: "";
+		if ( !len( r ) ) r = variables.env.home() & "/Agents";
+		return reReplace( r, "/+$", "" );
+	}
+
+	string function boxlangHome() { return reReplace( variables.env.named( "boxlangHome", variables.env.home() & "/.boxlang" ), "/+$", "" ); }
+	string function moduleDir() { return boxlangHome() & "/modules/" & variables.MODULE; }
+	string function launcher() {
+		var own = variables.env.named( "bxAgents", "" );
+		if ( len( own ) ) return own;
+		return fileExists( boxlangHome() & "/bin/bxAgents" ) ? boxlangHome() & "/bin/bxAgents" : "bxAgents";
+	}
+	// BoxLang copies module jars here before loading them (DynamicClassLoader, BL-2629) and reuses a copy with the same path and
+	// time. bx-module install keeps the zip's 1980 dates, so a reinstalled jar would load the old copy: it is cleared after every install.
+	string function jarCache() { return variables.env.named( "boxlangJars", "/tmp/boxlang-jars" ); }
+
+	// { installed, version }
+	struct function installed() {
+		var bj = moduleDir() & "/box.json";
+		if ( !fileExists( moduleDir() & "/ModuleConfig.bx" ) || !fileExists( bj ) ) return { installed: false, version: "" };
+		var j = variables.store.load( bj, {} );
+		return { installed: true, version: isStruct( j ) ? j.version ?: "" : "" };
+	}
+
+	// ---- projects ----
+
+	boolean function isProject( required string path ) { return fileExists( arguments.path & "/Agent.yml" ) || fileExists( arguments.path & "/Agent.bx" ); }
+
+	// The agent's name: the top-level `name:` of its Agent.yml, else the folder name (pure).
+	string function nameFrom( required string yaml, required string folder ) {
+		for ( var line in listToArray( arguments.yaml, chr( 10 ) ) ) {
+			var m = reFind( "^name:\s*[""']?([^""'##]+?)[""']?\s*(##.*)?$", line, 1, true );
+			if ( m.pos[ 1 ] && m.len.len() >= 2 && m.len[ 2 ] ) return trim( mid( line, m.pos[ 2 ], m.len[ 2 ] ) );
+		}
+		return arguments.folder;
+	}
+
+	string function nameOf( required string path ) {
+		var folder = listLast( arguments.path, "/" );
+		return fileExists( arguments.path & "/Agent.yml" ) ? nameFrom( fileRead( arguments.path & "/Agent.yml" ), folder ) : folder;
+	}
+
+	string function unitOf( required string name ) { return "bxrig-agent-" & lCase( reReplace( arguments.name, "[^A-Za-z0-9_-]", "-", "all" ) ) & ".service"; }
+
+	// The entry for a path, made (with the next free port) when there is none. Changes `state`.
+	struct function entryFor( required struct state, required string path, boolean added = false ) {
+		for ( var e in arguments.state.entries ) if ( e.path == arguments.path ) { if ( arguments.added ) e.added = true; return e; }
+		var used = [];
+		for ( var e in arguments.state.entries ) used.append( e.port );
+		var port = variables.FIRST_PORT;
+		while ( arrayFind( used, port ) ) port++;
+		var made = { path: arguments.path, port: port, added: arguments.added };
+		arguments.state.entries.append( made );
+		return made;
+	}
+
+	// Every project: the folders of the projects folder that hold an Agent.yml or Agent.bx, then the ones added by path.
+	// [ { name, path, port, added, unit, default } ], by name. Changes `state` (ports for new projects).
+	array function projects( required struct state ) {
+		var r = projectsDir( arguments.state );
+		var paths = [];
+		// (MatchBox's directoryList gives nothing with type "dir", so folders are kept by hand)
+		if ( directoryExists( r ) ) for ( var d in directoryList( r, false, "path" ) ) if ( directoryExists( d ) && isProject( d ) ) paths.append( d );
+		for ( var e in arguments.state.entries ) if ( ( e.added ?: false ) && !arrayFind( paths, e.path ) && isProject( e.path ) ) paths.append( e.path );
+		var out = [];
+		for ( var p in paths ) {
+			var e = entryFor( arguments.state, p );
+			var n = nameOf( p );
+			out.append( { name: n, path: p, port: e.port, added: e.added ?: false, unit: unitOf( n ), default: compareNoCase( n, arguments.state.default ?: "" ) == 0 } );
+		}
+		out.sort( function( a, b ) { return compareNoCase( a.name, b.name ); } );
+		return out;
+	}
+
+	// The project called `name` (its agent name or folder name), or {}.
+	struct function byName( required array list, required string name ) {
+		for ( var p in arguments.list ) if ( compareNoCase( p.name, arguments.name ) == 0 || compareNoCase( listLast( p.path, "/" ), arguments.name ) == 0 ) return p;
+		return {};
+	}
+
+	// Words that are commands here, so they can not be agent names on the command line.
+	array function reserved() { return [ "list", "install", "update", "dir", "add", "forget", "new", "start", "stop", "status", "open", "default", "profile" ]; }
+
+	// ---- BxRig's local model, offered to every agent ----
+
+	function profile() { return new bxrig.AiAgentProfile(); }
+	string function userConfig() { return profile().file(); }
+
+	// Writes the profile for the active local model: { ok, model, url, note }.
+	struct function writeProfile() {
+		var ail = new bxrig.AiLocal( variables.cli, variables.proc.runner() );
+		var st = ail.load();
+		return profile().write( st.active ?: "", ail.baseUrl( st ) & "/v1" );
+	}
+
+	// ---- the service ----
+
+	function unitFile( required string unit ) { return variables.env.xdgConfig( "systemd/user/" & arguments.unit ); }
+
+	// The miniserver BoxLang installs (with bvm), or "boxlang-miniserver" for the PATH.
+	string function miniserver() {
+		var own = variables.env.named( "miniserver", "" );
+		if ( len( own ) ) return own;
+		var r = variables.proc.exec( [ "sh", "-c", "command -v boxlang-miniserver" ], 10 );
+		return r.exitCode == 0 && len( trim( r.output ) ) ? trim( r.output ) : "boxlang-miniserver";
+	}
+
+	// Build, then run the built app in the foreground: `bxAgents serve` starts the miniserver and exits, which systemd would take for
+	// the service ending (and stop the server with it). So the service runs the miniserver itself, in .build where the build wrote
+	// miniserver.json (what bx-agents' deploy targets do too), with the agent's port and host on the command line, which win over the
+	// file, and the build's own BoxLang home, as `serve` sets it. A miniserver path with a space would break the sh line, so it is
+	// refused by start (pure).
+	string function unitText( required struct project ) {
+		var q = function( x ) { return find( " ", x ) ? '"' & x & '"' : x; };
+		var path = arguments.project.path;
+		return new bxrig.util.SystemdUnit().render( [
+				{ name: "Unit", lines: [ "Description=BoxLang agent " & arguments.project.name & " (bx-agents)", "After=network.target bxrig-ai.service" ] },
+				{ name: "Service", lines: [ "WorkingDirectory=" & path, "Environment=" & q( "BOXLANG_HOME=" & path & "/.build/runtime" ),
+						"ExecStartPre=" & q( launcher() ) & " build " & q( "--projectRoot=" & path ) & " --no-banner",
+						// the paths in miniserver.json are relative to .build, which only exists once the build ran (WorkingDirectory is checked first)
+						"ExecStart=/bin/sh -c " & q( "cd .build && exec " & miniserver() & " --port " & arguments.project.port & " --host 127.0.0.1" ),
+						"Restart=on-failure", "RestartSec=5" ] },
+				{ name: "Install", lines: [ "WantedBy=default.target" ] }
+			], "Written by bxrig ai agents start" );
+	}
+
+	boolean function running( required struct project ) { return variables.systemd.isActive( arguments.project.unit, true ); }
+	string function webUrl( required struct project ) { return "http://127.0.0.1:" & arguments.project.port & "/"; }
+
+	// ---- commands ----
+
+	function list( asJson ) {
+		var st = load();
+		var all = projects( st );
+		save( st );
+		var inst = installed();
+		var rows = [];
+		var lines = [];
+		if ( !inst.installed ) lines.append( "bx-agents is not installed. Install it: bxrig ai agents install --yes" );
+		for ( var p in all ) {
+			var up = running( p );
+			rows.append( { name: p.name, path: p.path, port: p.port, running: up, default: p.default, added: p.added, unit: p.unit, url: webUrl( p ) } );
+			lines.append( ( p.default ? "● " : "  " ) & p.name & repeatString( " ", max( 1, 16 - len( p.name ) ) ) & ( up ? "running  " & webUrl( p ) : "stopped  :" & p.port ) & "  " & p.path );
+		}
+		if ( !all.len() ) lines.append( "No agents in " & projectsDir( st ) & ". Make one: bxrig ai agents new Boxy" );
+		return variables.out.say( "ok", { root: projectsDir( st ), installed: inst.installed, version: inst.version, default: st.default, agents: rows }, arguments.asJson, lines );
+	}
+
+	function dirCmd( path, asJson ) {
+		var st = load();
+		if ( !len( arguments.path ) ) return variables.out.say( "ok", { root: projectsDir( st ), overridden: len( variables.env.named( "agentsDir", "" ) ) > 0 }, arguments.asJson, [ projectsDir( st ) ] );
+		var p = reReplace( replace( arguments.path, "~", variables.env.home() ), "/+$", "" );
+		if ( left( p, 1 ) != "/" ) return variables.out.usage( "give the folder as a full path", arguments.asJson );
+		st.root = p;
+		save( st );
+		var lines = [ "Agent projects folder: " & p ];
+		if ( len( variables.env.named( "agentsDir", "" ) ) ) lines.append( "BXRIG_AGENTS_DIR is set and wins over this." );
+		return variables.out.say( "ok", { root: p }, arguments.asJson, lines );
+	}
+
+	function add( path, asJson ) {
+		var p = reReplace( replace( arguments.path, "~", variables.env.home() ), "/+$", "" );
+		if ( left( p, 1 ) != "/" ) p = variables.env.named( "pwd", "." ) & "/" & p;
+		if ( !isProject( p ) ) return variables.out.precondition( p & " is not a bx-agents project (no Agent.yml or Agent.bx)", arguments.asJson );
+		var st = load();
+		var n = nameOf( p );
+		var clash = byName( projects( st ), n );
+		if ( !structIsEmpty( clash ) && clash.path != p ) return variables.out.precondition( "an agent called " & n & " is already at " & clash.path & "; agents keep their data by name (~/.bxagents/" & n & "), so names must differ", arguments.asJson );
+		var e = entryFor( st, p, true );
+		save( st );
+		return variables.out.say( "ok", { name: n, path: p, port: e.port }, arguments.asJson, [ "Added " & n & " (" & p & ") on port " & e.port ] );
+	}
+
+	function forget( name, yes, asJson ) {
+		var st = load();
+		var p = byName( projects( st ), arguments.name );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( "no agent " & arguments.name & " (see: bxrig ai agents)", arguments.asJson );
+		var plan = [ "Stop " & p.unit & " and remove it", "Forget " & p.name & " in BxRig's list", "Keep the project " & p.path & " and its data (~/.bxagents/" & p.name & ")" ];
+		if ( !arguments.yes ) return variables.out.plan( "Forget " & p.name, { name: p.name, path: p.path }, arguments.asJson, false, plan );
+		if ( fileExists( unitFile( p.unit ) ) ) {
+			variables.systemd.disable( p.unit, true );
+			fileDelete( unitFile( p.unit ) );
+			variables.systemd.reload( true );
+		}
+		st.entries = st.entries.filter( function( e ) { return e.path != p.path; } );
+		if ( compareNoCase( st.default, p.name ) == 0 ) st.default = "";
+		save( st );
+		var lines = [ "Forgot " & p.name & ". The project and its data are still there." ];
+		if ( left( p.path, len( projectsDir( st ) ) + 1 ) == projectsDir( st ) & "/" ) lines.append( "It is in the projects folder, so it is listed again until you move it." );
+		return variables.out.say( "ok", { name: p.name }, arguments.asJson, lines );
+	}
+
+	// install and update: the same steps, update also restarts the agents that run.
+	function installCmd( channel, isUpdate, yes, dry, asJson ) {
+		var cmd = arguments.isUpdate ? "update" : "install";
+		if ( !variables.proc.has( "bx-module" ) ) return variables.out.precondition( "bx-module is not installed: it comes with BoxLang (bxrig boxlang install)", arguments.asJson );
+		var spec = variables.MODULE & "@snapshot";
+		if ( arguments.channel == "stable" ) {
+			var v = stableVersion();
+			if ( !len( v ) ) return variables.out.precondition( "bx-agents has no stable release on ForgeBox yet; use --snapshot", arguments.asJson );
+			spec = variables.MODULE & "@" & v;
+		}
+		var inst = installed();
+		var st = load();
+		var up = projects( st ).filter( function( p ) { return running( p ); } );
+		var plan = [ "bx-module install " & spec & " (into " & boxlangHome() & "/modules)", "Clear " & jarCache() & " (BoxLang's copies of module jars)", "Offer BxRig's local model to every agent: the bxrig profile in " & userConfig() ];
+		if ( arguments.isUpdate && up.len() ) plan.append( "Restart the agents that run: " & up.map( function( p ) { return p.name; } ).toList( ", " ) );
+		var data = { spec: spec, channel: arguments.channel, was: inst.version };
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( ( arguments.isUpdate ? "Update" : "Install" ) & " bx-agents", data, arguments.asJson, arguments.dry, plan );
+		var r = variables.proc.exec( [ "bx-module", "install", spec ], 1200 );
+		if ( r.exitCode != 0 || !installed().installed ) return variables.out.say( "failed", { error: "bx-module install failed", output: variables.proc.why( r ) }, arguments.asJson, [ "error: bx-module install " & spec & " failed", variables.proc.why( r ) ] );
+		if ( directoryExists( jarCache() ) ) directoryDelete( jarCache(), true );
+		var prof = writeProfile();
+		var restarted = [];
+		if ( arguments.isUpdate ) for ( var p in up ) { variables.proc.exec( [ "systemctl", "--user", "restart", p.unit ], 60 ); restarted.append( p.name ); }
+		var now = installed();
+		data.version = now.version;
+		data.profile = prof;
+		data.restarted = restarted;
+		var lines = [ "bx-agents " & now.version & " installed in " & moduleDir() ];
+		lines.append( prof.ok ? "Local model offered to every agent: profile bxrig (" & prof.model & " at " & prof.url & ")" : "Profile: " & prof.note );
+		if ( restarted.len() ) lines.append( "Restarted " & restarted.toList( ", " ) );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	// The newest version on ForgeBox without -snapshot, or "".
+	string function stableVersion() {
+		var r = new bxrig.util.Http( variables.proc ).get( variables.env.named( "forgeboxApi", "https://forgebox.io/api/v1" ) & "/entry/" & variables.MODULE, 30 );
+		if ( !( r.ok ?: false ) ) return "";
+		try {
+			for ( var v in jsonDeserialize( r.output ).data.versions ) if ( !findNoCase( "snapshot", v.version ) ) return v.version;
+		} catch ( any e ) {}
+		return "";
+	}
+
+	function profileCmd( off, asJson ) {
+		var file = userConfig();
+		if ( arguments.off ) {
+			if ( !fileExists( file ) ) return variables.out.say( "ok", { removed: false }, arguments.asJson, [ "There is no " & file ] );
+			new bxrig.ConfigService().writeText( "bx-agents user settings", file, profile().remove( fileRead( file ) ) );
+			return variables.out.say( "ok", { removed: true }, arguments.asJson, [ "Removed BxRig's profile from " & file ] );
+		}
+		var r = writeProfile();
+		if ( !r.ok ) return variables.out.precondition( r.note, arguments.asJson );
+		return variables.out.say( "ok", r, arguments.asJson, [ "profile bxrig: " & r.model & " at " & r.url, "An agent uses it with `profile: bxrig` in its Agent.yml." ] );
+	}
+
+	function serviceCmd( verb, name, asJson ) {
+		var st = load();
+		var p = byName( projects( st ), arguments.name );
+		save( st );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( "no agent " & arguments.name & " (see: bxrig ai agents)", arguments.asJson );
+		if ( arguments.verb == "status" ) {
+			var up = running( p );
+			return variables.out.say( "ok", { name: p.name, running: up, port: p.port, url: webUrl( p ), unit: p.unit, path: p.path }, arguments.asJson, [ p.name & ( up ? " is running at " & webUrl( p ) : " is stopped (port " & p.port & ")" ) ] );
+		}
+		if ( arguments.verb == "start" ) {
+			if ( !installed().installed ) return variables.out.precondition( "bx-agents is not installed: bxrig ai agents install --yes", arguments.asJson );
+			if ( find( " ", miniserver() ) ) return variables.out.precondition( "the path of boxlang-miniserver has a space (" & miniserver() & "); set BXRIG_MINISERVER to one without", arguments.asJson );
+			directoryCreate( getDirectoryFromPath( unitFile( p.unit ) ), true, true );
+			fileWrite( unitFile( p.unit ), unitText( p ) );
+			variables.systemd.reload( true );
+			var r = variables.systemd.enable( p.unit, true, 120 );
+			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "systemctl start failed", output: variables.proc.why( r ) }, arguments.asJson, [ "error: could not start " & p.unit, variables.proc.why( r ) ] );
+			return variables.out.say( "ok", { name: p.name, url: webUrl( p ), unit: p.unit }, arguments.asJson, [ "Started " & p.name & ": it builds, then answers at " & webUrl( p ), "Its log: journalctl --user -u " & p.unit ] );
+		}
+		var r = variables.systemd.disable( p.unit, true );
+		return variables.out.say( r.exitCode == 0 ? "ok" : "failed", { name: p.name, unit: p.unit }, arguments.asJson, [ r.exitCode == 0 ? "Stopped " & p.name : "error: could not stop " & p.unit ] );
+	}
+
+	function openCmd( name, asJson ) {
+		var p = byName( projects( load() ), arguments.name );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( "no agent " & arguments.name & " (see: bxrig ai agents)", arguments.asJson );
+		if ( !running( p ) ) return variables.out.precondition( p.name & " is not running. Start it: bxrig ai agents start " & p.name, arguments.asJson );
+		variables.proc.detach( [ "xdg-open", webUrl( p ) ] );
+		return variables.out.say( "ok", { name: p.name, url: webUrl( p ) }, arguments.asJson, [ "Opened " & webUrl( p ) ] );
+	}
+
+	function defaultCmd( name, asJson ) {
+		var st = load();
+		if ( !len( arguments.name ) ) return variables.out.say( "ok", { default: st.default }, arguments.asJson, [ len( st.default ) ? st.default : "No default agent. Set one: bxrig ai agents default NAME" ] );
+		var p = byName( projects( st ), arguments.name );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( "no agent " & arguments.name & " (see: bxrig ai agents)", arguments.asJson );
+		st.default = p.name;
+		save( st );
+		return variables.out.say( "ok", { default: p.name }, arguments.asJson, [ "Default agent: " & p.name ] );
+	}
+
+	// What was typed after `agents` and the words given (`agents Boxy`, `agents new Boxy`): the exact flags and values (pure).
+	array function after( required array raw, required array lead ) {
+		var at = 0;
+		for ( var i = 1; i <= arguments.raw.len(); i++ ) if ( arguments.raw[ i ] == "agents" ) { at = i; break; }
+		if ( !at ) return [];
+		var need = 1;
+		var i = at + 1;
+		while ( i <= arguments.raw.len() && need <= arguments.lead.len() ) {
+			if ( arguments.raw[ i ] == arguments.lead[ need ] ) need++;
+			i++;
+		}
+		var out = [];
+		for ( ; i <= arguments.raw.len(); i++ ) out.append( arguments.raw[ i ] );
+		return out;
+	}
+
+	// The argv for `bxAgents VERB --projectRoot=PATH args` (pure).
+	array function passArgv( required string path, required array typed ) {
+		var a = [ launcher() ];
+		if ( arguments.typed.len() ) a.append( arguments.typed[ 1 ] );
+		a.append( "--projectRoot=" & arguments.path );
+		for ( var i = 2; i <= arguments.typed.len(); i++ ) a.append( arguments.typed[ i ] );
+		return a;
+	}
+
+	// Runs bxAgents with this terminal: its own output, its own exit code.
+	function handOver( required array argv, required string dir ) {
+		var rest = [];
+		for ( var i = 2; i <= arguments.argv.len(); i++ ) rest.append( arguments.argv[ i ] );
+		var r = systemExecute( arguments.argv[ 1 ], rest, 0, false, arguments.dir, "", "", true, {}, true );
+		return r.exitCode;
+	}
+
+	function newCmd( name, typed, asJson ) {
+		if ( !new bxrig.util.Names().valid( "label", arguments.name ) ) return variables.out.usage( "an agent name is " & new bxrig.util.Names().rule( "label" ), arguments.asJson );
+		if ( arrayFind( reserved(), lCase( arguments.name ) ) ) return variables.out.usage( arguments.name & " is a command here; pick another name", arguments.asJson );
+		if ( !installed().installed ) return variables.out.precondition( "bx-agents is not installed: bxrig ai agents install --yes", arguments.asJson );
+		var st = load();
+		if ( !structIsEmpty( byName( projects( st ), arguments.name ) ) ) return variables.out.precondition( "there is already an agent called " & arguments.name, arguments.asJson );
+		var r = projectsDir( st );
+		directoryCreate( r, true, true );
+		var argv = [ launcher(), "new", arguments.name ];
+		for ( var t in arguments.typed ) argv.append( t );
+		return handOver( argv, r );
+	}
+
+	function passCmd( name, typed, asJson ) {
+		var p = byName( projects( load() ), arguments.name );
+		if ( structIsEmpty( p ) ) return variables.out.usage( "no agent or command " & arguments.name & " (see: bxrig ai agents)", arguments.asJson );
+		if ( !installed().installed ) return variables.out.precondition( "bx-agents is not installed: bxrig ai agents install --yes", arguments.asJson );
+		if ( !arguments.typed.len() ) return serviceCmd( "status", p.name, arguments.asJson );
+		return handOver( passArgv( p.path, arguments.typed ), p.path );
+	}
+
+	// `bxrig ai agents WORDS` (words after "agents").
+	function run( words, opts, asJson, raw = [] ) {
+		var w = arguments.words;
+		var o = duplicate( arguments.opts );
+		var yes = structKeyExists( o, "yes" );
+		var dry = structKeyExists( o, "dry-run" );
+		var sub = w.len() ? w[ 1 ] : "list";
+		var channel = structKeyExists( o, "stable" ) ? "stable" : "snapshot";
+		if ( sub == "list" && w.len() <= 1 ) return list( arguments.asJson );
+		if ( ( sub == "install" || sub == "update" ) && w.len() == 1 ) return installCmd( channel, sub == "update", yes, dry, arguments.asJson );
+		if ( sub == "dir" && w.len() <= 2 ) return dirCmd( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
+		if ( sub == "add" && w.len() == 2 ) return add( w[ 2 ], arguments.asJson );
+		if ( sub == "forget" && w.len() == 2 ) return forget( w[ 2 ], yes, arguments.asJson );
+		if ( sub == "profile" && w.len() == 1 ) return profileCmd( structKeyExists( o, "off" ), arguments.asJson );
+		if ( arrayFind( [ "start", "stop", "status" ], sub ) && w.len() == 2 ) return serviceCmd( sub, w[ 2 ], arguments.asJson );
+		if ( sub == "status" && w.len() == 1 ) return list( arguments.asJson );
+		if ( sub == "open" && w.len() == 2 ) return openCmd( w[ 2 ], arguments.asJson );
+		if ( sub == "default" && w.len() <= 2 ) return defaultCmd( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
+		if ( sub == "new" && w.len() == 2 ) return newCmd( w[ 2 ], after( arguments.raw, [ "new", w[ 2 ] ] ), arguments.asJson );
+		if ( !arrayFind( reserved(), sub ) ) return passCmd( sub, after( arguments.raw, [ sub ] ), arguments.asJson );
+		return variables.out.usage( new bxrig.CommandSpec().usage( "ai" ), arguments.asJson );
+	}
+}

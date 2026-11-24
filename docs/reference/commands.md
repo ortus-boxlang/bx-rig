@@ -1597,7 +1597,7 @@ bxrig vm open dev
 
 ### `bxrig ai` {#bxrig-ai}
 
-AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), coding agents, tmux sessions, the pull-down AI shell.
+AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), BoxLang agents (bx-agents), coding agents, tmux sessions, the pull-down AI shell.
 
 ```text
 bxrig ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]
@@ -1622,6 +1622,17 @@ bxrig ai bench [ID] [--json]
 bxrig ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
 bxrig ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]
 bxrig ai ask TEXT [--model=ID] [--json]
+bxrig ai agents [list] [--json]
+bxrig ai agents install|update [--snapshot|--stable] [--yes] [--dry-run]
+bxrig ai agents new NAME [bxAgents new flags]
+bxrig ai agents NAME VERB [bxAgents flags]
+bxrig ai agents start|stop|status NAME [--json]
+bxrig ai agents open NAME
+bxrig ai agents default [NAME]
+bxrig ai agents dir [PATH]
+bxrig ai agents add PATH
+bxrig ai agents forget NAME [--yes]
+bxrig ai agents profile [--off]
 bxrig ai list
 bxrig ai default [ID] [--yes]
 bxrig ai launch [ID] [--dry-run]
@@ -1640,6 +1651,8 @@ bxrig ai setup --yes
 bxrig ai models recommend
 bxrig ai models pull gemma-4-e4b --yes
 bxrig ai discover qwen --fits
+bxrig ai agents install --yes
+bxrig ai agents Boxy chat
 bxrig ai serve status
 bxrig ai list
 bxrig ai session start --name=work

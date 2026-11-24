@@ -551,6 +551,7 @@ class AiLocal {
 		st.active = arguments.id;
 		save( st );
 		if ( len( old ) && old != arguments.id ) call( st, "POST", "/models/unload", serializeJSON( { model: old } ), 10 );
+		new bxrig.AiAgentProfile().refresh( arguments.id, baseUrl( st ) & "/v1" );
 		return variables.out.say( "ok", { active: arguments.id }, arguments.asJson, [ "Active model: " & ( modelInfo( arguments.id, st ).label ?: arguments.id ) ] );
 	}
 

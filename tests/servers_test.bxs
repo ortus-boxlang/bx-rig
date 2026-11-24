@@ -43,7 +43,7 @@ for ( a in pv.actions() ) acts[ a.key ] = a;
 testkit.check( "page: s stops a running app and starts a stopped one", acts.s.run( rows[ 1 ] ).args.toList( " " ) == "boxlang servers stop shop-api" && acts.s.run( rows[ 2 ] ).args.toList( " " ) == "boxlang servers start docs-site" );
 testkit.check( "page: r restarts, o opens, f the folder, l the log, x forgets", acts.r.run( rows[ 1 ] ).args[ 3 ] == "restart" && acts.o.run( rows[ 1 ] ).args[ 3 ] == "open" && acts.f.run( rows[ 1 ] ).args[ 3 ] == "folder" && acts.l.run( rows[ 1 ] ).args[ 3 ] == "log" && acts.x.run( rows[ 1 ] ).args[ 3 ] == "remove" );
 testkit.check( "page: a asks for a folder and registers it", acts.a.run( rows[ 1 ] ).make( "~/code/new" ).args.toList( " " ) == "boxlang servers add ~/code/new" );
-testkit.check( "page: registered after Modules, with its icon", new bxrig.ControlCenterPages().ids()[ 8 ] == "servers" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "server" ) == chr( inputBaseN( "f233", 16 ) ) );
+testkit.check( "page: registered after Modules, with its icon", new bxrig.ControlCenterPages().ids()[ 9 ] == "servers" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "server" ) == chr( inputBaseN( "f233", 16 ) ) );
 
 // ---- the Developer panel ----
 pn = fileRead( expandPath( "../templates/noctalia-plugins/dev/panel.luau" ) );

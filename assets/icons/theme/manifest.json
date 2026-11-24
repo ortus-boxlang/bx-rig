@@ -200,6 +200,14 @@
 			"use": "the Agents page (coding agents)"
 		},
 		{
+			"name": "bxrig-ai-boxlang",
+			"glyph": "chats-circle",
+			"category": "develop",
+			"context": "apps",
+			"title": "BoxLang agents",
+			"use": "the BoxLang agents page (bx-agents)"
+		},
+		{
 			"name": "bxrig-java",
 			"glyph": "coffee",
 			"category": "develop",
