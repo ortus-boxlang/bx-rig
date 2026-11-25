@@ -24,7 +24,7 @@ list = [ { name: "Boxy", path: "/h/Agents/Boxy" }, { name: "Inbox", path: "/h/wo
 testkit.check( "find: by agent name, any case", hub.byName( list, "boxy" ).path == "/h/Agents/Boxy" );
 testkit.check( "find: by folder name too", hub.byName( list, "inbox-agent" ).name == "Inbox" );
 testkit.check( "find: nothing for an unknown one", structIsEmpty( hub.byName( list, "nope" ) ) );
-testkit.check( "reserved: command words are not agent names", arrayFind( hub.reserved(), "start" ) && arrayFind( hub.reserved(), "install" ) && !arrayFind( hub.reserved(), "boxy" ) );
+testkit.check( "reserved: command words are not agent names", arrayFind( hub.reserved(), "start" ) && arrayFind( hub.reserved(), "install" ) && !arrayFind( hub.reserved(), "helper" ) );
 
 // ---- what is handed to bxAgents ----
 raw = [ "ai", "agents", "Boxy", "invoke", "--message=Where is my order", "--json" ];
@@ -51,8 +51,9 @@ testkit.check( "profile: no local model, no profile", !prof.write( "", "u" ).ok 
 // ---- the service ----
 unit = hub.unitText( { name: "Boxy", path: "/h/Agents/Boxy", port: 8790 } );
 testkit.check( "unit: builds first", reFind( "ExecStartPre=\S*bxAgents build --projectRoot=/h/Agents/Boxy --no-banner", unit ) );
-testkit.check( "unit: runs the miniserver in .build in the foreground, on its port and loopback", find( "ExecStart=/bin/sh -c ""cd .build && exec ", unit ) && find( "boxlang-miniserver --port 8790 --host 127.0.0.1""", unit ) );
-testkit.check( "unit: the build's own BoxLang home", find( "Environment=BOXLANG_HOME=/h/Agents/Boxy/.build/runtime", unit ) );
+testkit.check( "unit: runs the miniserver in .build in the foreground, on its port and loopback", find( "ExecStart=/bin/sh -c ""cd .build && ", unit ) && find( "boxlang-miniserver --port 8790 --host 127.0.0.1""", unit ) );
+testkit.check( "unit: the build's own BoxLang home for the server only, not the build before it", find( "BOXLANG_HOME=/h/Agents/Boxy/.build/runtime exec ", unit ) && !find( "Environment=BOXLANG_HOME", unit ) );
+testkit.check( "unit: BxRig's path for the agent's tools", find( "Environment=BXRIG_SELF=", unit ) > 0 );
 testkit.check( "unit: restarts after a crash, starts with the session", find( "Restart=on-failure", unit ) && find( "WantedBy=default.target", unit ) );
 
 // ---- the Control Center ----
@@ -79,4 +80,43 @@ blSrc = fileRead( root & "boxlang.luau" );
 testkit.check( "bar: the panel has a BoxLang tab and loads boxlang.luau", find( 'require("./boxlang.luau")', panelSrc ) > 0 && find( 'label = "BoxLang"', panelSrc ) > 0 );
 testkit.check( "bar: the BoxLang tab runs the commands it documents", find( '"ai", "agents", "--json"', blSrc ) && find( '"ai", "agents", running and "stop" or "start", str(a.name)', blSrc ) && find( '" ai agents " .. shq(a.name) .. " chat"', blSrc ) && find( '"ai", "agents", "install", "--yes"', blSrc ) && find( 'tui ai-boxlang', blSrc ) );
 testkit.check( "bar: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), panelSrc & blSrc ) );
+// ---- 11b: Boxy, chat, the skill review, asking a running agent ----
+testkit.check( "boxy: the template is three files", hub.boxyFiles().toList( "," ) == "Agent.bx,instructions.md,tools/BxRig.bx" );
+boxyAgent = new bxrig.util.Res().text( "templates/agents/boxy/Agent.bx" );
+boxyTools = new bxrig.util.Res().text( "templates/agents/boxy/tools/BxRig.bx" );
+testkit.check( "boxy: the local model, a checkpointer and the approval step", find( "profile : ""bxrig""", boxyAgent ) && find( "withCheckpointer(", boxyAgent ) && find( "HumanInTheLoopMiddleware(", boxyAgent ) );
+needs = reMatch( """[a-z_]+""", mid( boxyAgent, find( "NEEDS_OK", boxyAgent ), find( "];", boxyAgent, find( "NEEDS_OK", boxyAgent ) ) - find( "NEEDS_OK", boxyAgent ) ) );
+tools = reMatch( "function [a-z_]+\(", boxyTools ).map( function( t ) { return mid( t, 10, len( t ) - 10 ); } );
+missing = needs.filter( function( n ) { return !arrayFind( tools, replace( n, """", "", "all" ) ); } );
+testkit.check( "boxy: every tool that waits for an OK is a real tool", needs.len() == 19 && missing.len() == 0 );
+testkit.check( "boxy: tools that change something pass --yes where BxRig asks for it", find( """install"", arguments.id, ""--yes""", boxyTools ) && find( """system"", ""update"", ""--yes""", boxyTools ) );
+testkit.check( "boxy: each tool runs bxrig with --json", find( "argv.append( ""--json"" )", boxyTools ) && find( "getSystemSetting( ""BXRIG_SELF"", ""bxrig"" )", boxyTools ) );
+proj = { name: "Boxy", path: "/h/Agents/Boxy", port: 8790 };
+c1 = hub.chatArgv( proj, false );
+c2 = hub.chatArgv( proj, true );
+testkit.check( "chat: run here when stopped, connected to the server when it runs", c1.toList( " " ) contains "chat --projectRoot=/h/Agents/Boxy" && c1.len() == 3 && c2[ 4 ] == "--connect=http://127.0.0.1:8790" );
+testkit.check( "chat: no name means the default agent", hub.pick( [ proj ], "", { default: "boxy" } ).path == "/h/Agents/Boxy" && structIsEmpty( hub.pick( [ proj ], "", { default: "" } ) ) );
+m = hub.skillMeta( "---" & nl & "name: morning-check" & nl & "description: ""Check the machine each morning""" & nl & "---" & nl & "Body", "folder" );
+testkit.check( "skills: name and description from the front matter", m.name == "morning-check" && m.description == "Check the machine each morning" );
+testkit.check( "skills: no front matter, the folder name", hub.skillMeta( "just text", "f" ).name == "f" );
+inv = hub.invokeSummary( '{"output":{"data":{"pendingActions":[{"toolName":"theme_set","toolArgs":{"theme":"dawn"}}],"assistantMessage":{"content":""}}},"threadId":"t","success":true}' );
+testkit.check( "ask: a run that waits names the tool and its arguments", inv.pending.len() == 1 && inv.pending[ 1 ].tool == "theme_set" && inv.pending[ 1 ].args.theme == "dawn" );
+testkit.check( "ask: a plain answer", hub.invokeSummary( '{"output":"Hello","threadId":"t"}' ).answer == "Hello" );
+sse = "event: thread" & nl & "data: {""threadId"":""t""}" & nl & nl
+& "event: tool" & nl & "data: {""name"":""theme_set"",""status"":""running""}" & nl & nl
+& "event: tool" & nl & "data: {""name"":""theme_set"",""status"":""ok""}" & nl & nl
+& "event: chunk" & nl & "data: {""choices"":[{""delta"":{""content"":""Theme ""}}]}" & nl & nl
+& "event: chunk" & nl & "data: {""choices"":[]}" & nl & nl
+& "event: chunk" & nl & "data: {""choices"":[{""delta"":{""content"":""changed.""}}]}" & nl & nl
+& "event: suspended" & nl & "data: {""pendingActions"":[{""toolName"":""screen_lock"",""toolArgs"":{}}]}" & nl & nl
+& "event: done" & nl & "data: [DONE]" & nl & nl;
+rs = hub.resumeSummary( sse );
+testkit.check( "approve: the tools that ran, the answer, and what it waits for next", rs.tools.toList( "," ) == "theme_set" && rs.answer == "Theme changed." && rs.pending.len() == 1 && rs.pending[ 1 ].tool == "screen_lock" );
+testkit.check( "reserved: the new commands", arrayFind( hub.reserved(), "setup" ) && !arrayFind( hub.reserved(), "boxy" ) && arrayFind( hub.reserved(), "ask" ) && arrayFind( hub.reserved(), "skills" ) && arrayFind( hub.reserved(), "chat" ) );
+keyRows = new bxrig.Shortcuts( {} ).table().filter( function( r ) { return r.id == "agent-chat" || r.id == "agent-web"; } );
+testkit.check( "keys: Super+Period chats, Super+Shift+Period opens the web page", keyRows.len() == 2 && keyRows[ 1 ].words == "ai agents chat --window" && keyRows[ 2 ].words == "ai agents open" );
+boxySrc = fileRead( root & "boxy.luau" );
+testkit.check( "bar: a Boxy tab that asks, approves and rejects, and flags new skills", find( 'require("./boxy.luau")', panelSrc ) && find( 'label = "Boxy"', panelSrc ) && find( '"ai", "agents", "ask", question, "--json"', boxySrc ) && find( '"ai", "agents", verb, thread, "--json"', boxySrc ) && find( 'ai agents skills', boxySrc ) && find( '"ai", "agents", "setup", "--yes"', boxySrc ) );
+testkit.check( "bar: no em or en dashes in the Boxy tab", !reFind( chr( 8212 ) & "|" & chr( 8211 ), boxySrc ) );
+
 testkit.done( "all passed" );

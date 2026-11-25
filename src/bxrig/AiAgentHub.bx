@@ -3,7 +3,11 @@
 //   install|update [--snapshot|--stable]  the module at the OS level (bx-module), the jar cache cleared, BxRig's local model offered
 //   list | dir [PATH] | add PATH | forget NAME   where the projects are: ~/Agents (BXRIG_AGENTS_DIR, or `dir`) plus projects added by path
 //   start|stop|status NAME                 a user service per agent (build, then `bxAgents serve` on its own port, 127.0.0.1)
-//   open NAME | default NAME               its web page; the agent the keyboard shortcut opens
+//   open [NAME] | chat [NAME] | default NAME   its web page, its chat in this terminal (the default agent when no NAME); the default
+//   setup [--yes]                          Boxy, BxRig's desktop assistant, from templates/agents/boxy: made, started, the default
+//   skills [NAME] [show|approve|remove S]  the skills an agent saved for itself, flagged until you review them
+//   ask TEXT [--agent=N] [--thread=T]      one question to a running agent (the default one): its answer, or what it waits to do
+//   approve|reject THREAD [--session]      answer what a run waits for (the bar's Boxy tab uses these)
 //   new NAME [flags]                       `bxAgents new` inside the projects folder (its own wizard)
 //   NAME VERB [args]                       `bxAgents VERB --projectRoot=PROJECT [args]`, with the terminal handed over
 // Where things live is bx-agents' own convention: an agent's data in ~/.bxagents/<name>, the person's settings in ~/.bxagents/Agent.yml.
@@ -112,7 +116,17 @@ class AiAgentHub {
 	}
 
 	// Words that are commands here, so they can not be agent names on the command line.
-	array function reserved() { return [ "list", "install", "update", "dir", "add", "forget", "new", "start", "stop", "status", "open", "default", "profile" ]; }
+	array function reserved() { return [ "list", "install", "update", "dir", "add", "forget", "new", "start", "stop", "status", "open", "default", "profile", "setup", "chat", "skills", "ask", "approve", "reject" ]; }
+
+	// The project for NAME, or the default agent's when NAME is "" ({} when there is none).
+	struct function pick( required array list, required string name, required struct state ) {
+		var n = len( arguments.name ) ? arguments.name : ( arguments.state.default ?: "" );
+		return len( n ) ? byName( arguments.list, n ) : {};
+	}
+
+	string function noAgent( required string name ) {
+		return len( arguments.name ) ? "no agent " & arguments.name & " (see: bxrig ai agents)" : "no default agent. Set one: bxrig ai agents default NAME, or make Boxy: bxrig ai agents setup --yes";
+	}
 
 	// ---- BxRig's local model, offered to every agent ----
 
@@ -129,6 +143,14 @@ class AiAgentHub {
 	// ---- the service ----
 
 	function unitFile( required string unit ) { return variables.env.xdgConfig( "systemd/user/" & arguments.unit ); }
+
+	// BxRig itself, by its full path: an agent's tools run it, and a user service's PATH may not have ~/.local/bin.
+	string function bxrigPath() {
+		var own = variables.proc.selfPath();
+		if ( left( own, 1 ) == "/" ) return own;
+		var r = variables.proc.exec( [ "sh", "-c", 'command -v "$1"', "_", own ], 10 );
+		return r.exitCode == 0 && len( trim( r.output ) ) ? trim( r.output ) : own;
+	}
 
 	// The miniserver BoxLang installs (with bvm), or "boxlang-miniserver" for the PATH.
 	string function miniserver() {
@@ -148,10 +170,11 @@ class AiAgentHub {
 		var path = arguments.project.path;
 		return new bxrig.util.SystemdUnit().render( [
 				{ name: "Unit", lines: [ "Description=BoxLang agent " & arguments.project.name & " (bx-agents)", "After=network.target bxrig-ai.service" ] },
-				{ name: "Service", lines: [ "WorkingDirectory=" & path, "Environment=" & q( "BOXLANG_HOME=" & path & "/.build/runtime" ),
+				{ name: "Service", lines: [ "WorkingDirectory=" & path, "Environment=" & q( "BXRIG_SELF=" & bxrigPath() ),
 						"ExecStartPre=" & q( launcher() ) & " build " & q( "--projectRoot=" & path ) & " --no-banner",
 						// the paths in miniserver.json are relative to .build, which only exists once the build ran (WorkingDirectory is checked first)
-						"ExecStart=/bin/sh -c " & q( "cd .build && exec " & miniserver() & " --port " & arguments.project.port & " --host 127.0.0.1" ),
+						// the build's own BoxLang home for the server only: the build step before it needs the one bx-agents is installed in
+						"ExecStart=/bin/sh -c " & q( "cd .build && BOXLANG_HOME=" & path & "/.build/runtime exec " & miniserver() & " --port " & arguments.project.port & " --host 127.0.0.1" ),
 						"Restart=on-failure", "RestartSec=5" ] },
 				{ name: "Install", lines: [ "WantedBy=default.target" ] }
 			], "Written by bxrig ai agents start" );
@@ -172,10 +195,11 @@ class AiAgentHub {
 		if ( !inst.installed ) lines.append( "bx-agents is not installed. Install it: bxrig ai agents install --yes" );
 		for ( var p in all ) {
 			var up = running( p );
-			rows.append( { name: p.name, path: p.path, port: p.port, running: up, default: p.default, added: p.added, unit: p.unit, url: webUrl( p ) } );
-			lines.append( ( p.default ? "● " : "  " ) & p.name & repeatString( " ", max( 1, 16 - len( p.name ) ) ) & ( up ? "running  " & webUrl( p ) : "stopped  :" & p.port ) & "  " & p.path );
+			var fresh = skills( p, st ).filter( function( k ) { return !k.reviewed; } ).len();
+			rows.append( { name: p.name, path: p.path, port: p.port, running: up, default: p.default, added: p.added, unit: p.unit, url: webUrl( p ), unreviewed: fresh } );
+			lines.append( ( p.default ? "● " : "  " ) & p.name & repeatString( " ", max( 1, 16 - len( p.name ) ) ) & ( up ? "running  " & webUrl( p ) : "stopped  :" & p.port ) & "  " & p.path & ( fresh ? "  (" & fresh & " new skill" & ( fresh == 1 ? "" : "s" ) & " to review)" : "" ) );
 		}
-		if ( !all.len() ) lines.append( "No agents in " & projectsDir( st ) & ". Make one: bxrig ai agents new Boxy" );
+		if ( !all.len() ) lines.append( "No agents in " & projectsDir( st ) & ". Make Boxy, BxRig's assistant: bxrig ai agents setup --yes" );
 		return variables.out.say( "ok", { root: projectsDir( st ), installed: inst.installed, version: inst.version, default: st.default, agents: rows }, arguments.asJson, lines );
 	}
 
@@ -290,11 +314,8 @@ class AiAgentHub {
 		if ( arguments.verb == "start" ) {
 			if ( !installed().installed ) return variables.out.precondition( "bx-agents is not installed: bxrig ai agents install --yes", arguments.asJson );
 			if ( find( " ", miniserver() ) ) return variables.out.precondition( "the path of boxlang-miniserver has a space (" & miniserver() & "); set BXRIG_MINISERVER to one without", arguments.asJson );
-			directoryCreate( getDirectoryFromPath( unitFile( p.unit ) ), true, true );
-			fileWrite( unitFile( p.unit ), unitText( p ) );
-			variables.systemd.reload( true );
-			var r = variables.systemd.enable( p.unit, true, 120 );
-			if ( r.exitCode != 0 ) return variables.out.say( "failed", { error: "systemctl start failed", output: variables.proc.why( r ) }, arguments.asJson, [ "error: could not start " & p.unit, variables.proc.why( r ) ] );
+			var started = serviceCmdData( p.name );
+			if ( !started.ok ) return variables.out.say( "failed", { error: "systemctl start failed", output: started.error }, arguments.asJson, [ "error: could not start " & p.unit, started.error ] );
 			return variables.out.say( "ok", { name: p.name, url: webUrl( p ), unit: p.unit }, arguments.asJson, [ "Started " & p.name & ": it builds, then answers at " & webUrl( p ), "Its log: journalctl --user -u " & p.unit ] );
 		}
 		var r = variables.systemd.disable( p.unit, true );
@@ -302,8 +323,9 @@ class AiAgentHub {
 	}
 
 	function openCmd( name, asJson ) {
-		var p = byName( projects( load() ), arguments.name );
-		if ( structIsEmpty( p ) ) return variables.out.precondition( "no agent " & arguments.name & " (see: bxrig ai agents)", arguments.asJson );
+		var st = load();
+		var p = pick( projects( st ), arguments.name, st );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( noAgent( arguments.name ), arguments.asJson );
 		if ( !running( p ) ) return variables.out.precondition( p.name & " is not running. Start it: bxrig ai agents start " & p.name, arguments.asJson );
 		variables.proc.detach( [ "xdg-open", webUrl( p ) ] );
 		return variables.out.say( "ok", { name: p.name, url: webUrl( p ) }, arguments.asJson, [ "Opened " & webUrl( p ) ] );
@@ -317,6 +339,254 @@ class AiAgentHub {
 		st.default = p.name;
 		save( st );
 		return variables.out.say( "ok", { default: p.name }, arguments.asJson, [ "Default agent: " & p.name ] );
+	}
+
+	// The chat of an agent in this terminal (the default agent when no NAME). A running agent is reached at its address, so the
+	// chat, the web page and the bar share one agent; a stopped one is run here for the chat.
+	function chatCmd( name, window, asJson ) {
+		var st = load();
+		var p = pick( projects( st ), arguments.name, st );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( noAgent( arguments.name ), arguments.asJson );
+		if ( !installed().installed ) return variables.out.precondition( "bx-agents is not installed: bxrig ai agents install --yes", arguments.asJson );
+		if ( !arguments.window ) return handOver( chatArgv( p, running( p ) ), p.path );
+		// a keyboard shortcut has no terminal: open one that runs this same command for the agent
+		var term = new bxrig.Ai( variables.cli ).terminal();
+		if ( structIsEmpty( term ) ) return variables.out.precondition( "no terminal is installed (ghostty, kitty, alacritty, foot, konsole)", arguments.asJson );
+		var argv = duplicate( term.argv );
+		for ( var x in [ bxrigPath(), "ai", "agents", "chat", p.name ] ) argv.append( x );
+		variables.proc.detach( argv );
+		return variables.out.say( "ok", { agent: p.name, terminal: term.id }, arguments.asJson, [ "Opened the chat of " & p.name & " in " & term.id ] );
+	}
+
+	// `bxAgents chat` for a project: connected to its server when it runs (pure).
+	array function chatArgv( required struct project, required boolean up ) {
+		var a = [ launcher(), "chat", "--projectRoot=" & arguments.project.path ];
+		if ( arguments.up ) a.append( "--connect=" & reReplace( webUrl( arguments.project ), "/$", "" ) );
+		return a;
+	}
+
+	// ---- asking a running agent (its own API, /__bxagents) ----
+
+	struct function api( required struct project, required string route, required struct body, numeric maxTime = 300 ) {
+		return new bxrig.util.Http( variables.proc ).request( "POST", webUrl( arguments.project ) & "__bxagents/" & arguments.route, jsonSerialize( arguments.body ), arguments.maxTime );
+	}
+
+	// What /invoke answered: { answer, pending: [ { tool, args } ] } (pure).
+	struct function invokeSummary( required string body ) {
+		var out = { answer: "", pending: [] };
+		var j = {};
+		try { j = jsonDeserialize( arguments.body ); } catch ( any e ) { out.answer = arguments.body; return out; }
+		var o = j.output ?: "";
+		if ( isSimpleValue( o ) ) { out.answer = o; return out; }
+		for ( var a in ( ( o.data ?: {} ).pendingActions ?: [] ) ) out.pending.append( { tool: a.toolName ?: "", args: a.toolArgs ?: {} } );
+		out.answer = ( ( o.data ?: {} ).assistantMessage ?: {} ).content ?: "";
+		return out;
+	}
+
+	// The frames of a server-sent event stream: [ { event, data } ] (pure).
+	array function frames( required string text ) {
+		var out = [];
+		for ( var block in listToArray( replace( arguments.text, chr( 13 ), "", "all" ), chr( 10 ) & chr( 10 ), false, true ) ) {
+			var ev = "";
+			var data = [];
+			for ( var line in listToArray( block, chr( 10 ) ) ) {
+				if ( left( line, 6 ) == "event:" ) ev = trim( mid( line, 7, len( line ) ) );
+				else if ( left( line, 5 ) == "data:" ) data.append( left( line, 6 ) == "data: " ? mid( line, 7, len( line ) ) : mid( line, 6, len( line ) ) );
+			}
+			if ( len( ev ) ) out.append( { event: ev, data: data.toList( chr( 10 ) ) } );
+		}
+		return out;
+	}
+
+	// What /resume streamed: { answer, tools: [ name ], pending: [ { tool, args } ] } (pure).
+	struct function resumeSummary( required string text ) {
+		var out = { answer: "", tools: [], pending: [] };
+		for ( var f in frames( arguments.text ) ) {
+			var d = {};
+			try { d = jsonDeserialize( f.data ); } catch ( any e ) { continue; }
+			if ( !isStruct( d ) ) continue;
+			if ( f.event == "tool" && ( d.status ?: "" ) == "ok" ) out.tools.append( d.name ?: "" );
+			if ( f.event == "suspended" ) for ( var a in d.pendingActions ?: [] ) out.pending.append( { tool: a.toolName ?: "", args: a.toolArgs ?: {} } );
+			if ( f.event == "chunk" ) {
+				var ch = isArray( d.choices ?: "" ) ? d.choices : [];
+				if ( !ch.len() || !isStruct( ch[ 1 ] ) ) continue;
+				var piece = ( ch[ 1 ].delta ?: {} ).content ?: "";
+				if ( !isNull( piece ) && isSimpleValue( piece ) ) out.answer &= piece;
+			}
+		}
+		return out;
+	}
+
+	array function pendingLines( required array pending, required string agent, required string thread ) {
+		var lines = [];
+		for ( var a in arguments.pending ) lines.append( arguments.agent & " wants to run " & a.tool & " " & jsonSerialize( a.args ) );
+		if ( arguments.pending.len() ) lines.append( "Approve: bxrig ai agents approve " & arguments.thread & "   Reject: bxrig ai agents reject " & arguments.thread );
+		return lines;
+	}
+
+	function askCmd( text, agent, thread, asJson ) {
+		if ( !len( trim( arguments.text ) ) ) return variables.out.usage( "ai agents ask TEXT [--agent=NAME] [--thread=ID]", arguments.asJson );
+		var st = load();
+		var p = pick( projects( st ), arguments.agent, st );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( noAgent( arguments.agent ), arguments.asJson );
+		if ( !running( p ) ) return variables.out.precondition( p.name & " is not running. Start it: bxrig ai agents start " & p.name, arguments.asJson );
+		var t = len( arguments.thread ) ? arguments.thread : "bxrig-" & lCase( left( replace( createUUID(), "-", "", "all" ), 12 ) );
+		var r = api( p, "invoke", { input: arguments.text, threadId: t }, 600 );
+		if ( !r.ok ) return variables.out.say( "failed", { agent: p.name, error: "HTTP " & r.status, output: left( r.body, 500 ) }, arguments.asJson, [ "error: " & p.name & " did not answer (HTTP " & r.status & ")" ] );
+		var s = invokeSummary( r.body );
+		var lines = len( s.answer ) ? [ s.answer ] : [];
+		for ( var l in pendingLines( s.pending, p.name, t ) ) lines.append( l );
+		return variables.out.say( "ok", { agent: p.name, thread: t, answer: s.answer, pending: s.pending }, arguments.asJson, lines );
+	}
+
+	function decideCmd( thread, decision, agent, asJson ) {
+		if ( !len( arguments.thread ) ) return variables.out.usage( "ai agents approve|reject THREAD [--agent=NAME] [--session]", arguments.asJson );
+		var st = load();
+		var p = pick( projects( st ), arguments.agent, st );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( noAgent( arguments.agent ), arguments.asJson );
+		if ( !running( p ) ) return variables.out.precondition( p.name & " is not running", arguments.asJson );
+		var r = api( p, "resume", { threadId: arguments.thread, decision: arguments.decision }, 900 );
+		if ( !r.ok ) return variables.out.say( "failed", { agent: p.name, error: "HTTP " & r.status, output: left( r.body, 500 ) }, arguments.asJson, [ "error: " & p.name & " did not take the answer (HTTP " & r.status & ")" ] );
+		var s = resumeSummary( r.body );
+		var lines = [ ( arguments.decision == "reject" ? "Rejected." : "Approved." ) & ( s.tools.len() ? " Ran: " & s.tools.toList( ", " ) : "" ) ];
+		if ( len( s.answer ) ) lines.append( s.answer );
+		for ( var l in pendingLines( s.pending, p.name, arguments.thread ) ) lines.append( l );
+		return variables.out.say( "ok", { agent: p.name, thread: arguments.thread, decision: arguments.decision, ran: s.tools, answer: s.answer, pending: s.pending }, arguments.asJson, lines );
+	}
+
+	// ---- Boxy ----
+
+	// Boxy's files, from templates/agents/boxy (packed with BxRig): [ path relative to the project ].
+	array function boxyFiles() { return new bxrig.util.Res().list( "templates/agents/boxy" ); }
+
+	function boxyCmd( yes, dry, noStart, asJson ) {
+		if ( !installed().installed ) return variables.out.precondition( "bx-agents is not installed: bxrig ai agents install --yes", arguments.asJson );
+		var st = load();
+		var dir = projectsDir( st ) & "/Boxy";
+		var have = byName( projects( st ), "Boxy" );
+		if ( !structIsEmpty( have ) ) return variables.out.precondition( "Boxy is already at " & have.path & ". Start it: bxrig ai agents start Boxy", arguments.asJson );
+		if ( directoryExists( dir ) ) return variables.out.precondition( dir & " is there already and is not an agent project; move it away first", arguments.asJson );
+		var files = boxyFiles();
+		var plan = [ "Make " & dir & " from BxRig's Boxy template (" & files.len() & " files: Agent.bx, instructions.md, tools/BxRig.bx)",
+			"Boxy uses your local model (the bxrig profile); its tools run bxrig, and the ones that change something wait for your OK",
+			"Make Boxy your default agent (Super+Period opens its chat)" ];
+		if ( !arguments.noStart ) plan.append( "Start it: it builds, then answers on 127.0.0.1" );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "Make Boxy", { path: dir, files: files }, arguments.asJson, arguments.dry, plan );
+		var res = new bxrig.util.Res();
+		for ( var f in files ) {
+			var target = dir & "/" & f;
+			directoryCreate( getDirectoryFromPath( target ), true, true );
+			fileWrite( target, res.text( "templates/agents/boxy/" & f ) );
+		}
+		if ( !profile().present() ) writeProfile();
+		st = load();
+		entryFor( st, dir );
+		st.default = "Boxy";
+		save( st );
+		var lines = [ "Made Boxy in " & dir & ", your default agent." ];
+		var data = { path: dir, default: true, started: false };
+		if ( !arguments.noStart ) {
+			var started = serviceCmdData( "Boxy" );
+			data.started = started.ok;
+			lines.append( started.ok ? "Started: it answers at " & started.url & " in a minute (it builds first). Chat: bxrig ai agents chat" : "Not started: " & started.error );
+		}
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
+	// Starts an agent's service without printing: { ok, url, error }.
+	struct function serviceCmdData( required string name ) {
+		var st = load();
+		var p = byName( projects( st ), arguments.name );
+		save( st );
+		if ( structIsEmpty( p ) ) return { ok: false, url: "", error: "no agent " & arguments.name };
+		if ( find( " ", miniserver() ) ) return { ok: false, url: "", error: "the path of boxlang-miniserver has a space" };
+		directoryCreate( getDirectoryFromPath( unitFile( p.unit ) ), true, true );
+		fileWrite( unitFile( p.unit ), unitText( p ) );
+		variables.systemd.reload( true );
+		var r = variables.systemd.enable( p.unit, true, 120 );
+		return { ok: r.exitCode == 0, url: webUrl( p ), error: r.exitCode == 0 ? "" : variables.proc.why( r ) };
+	}
+
+	// ---- the skills an agent saved for itself ----
+
+	// Where bx-agents keeps an agent's data by default: ~/.bxagents/NAME (an Agent.yml with data.home, or BXAGENTS_HOME, moves it).
+	string function agentDataHome( required struct project ) { return variables.env.home() & "/.bxagents/" & arguments.project.name; }
+
+	// The skill's name and description from its SKILL.md front matter (pure).
+	struct function skillMeta( required string text, required string folder ) {
+		var out = { name: arguments.folder, description: "" };
+		var lines = listToArray( arguments.text, chr( 10 ) );
+		if ( !lines.len() || trim( lines[ 1 ] ) != "---" ) return out;
+		for ( var i = 2; i <= lines.len(); i++ ) {
+			var l = lines[ i ];
+			if ( trim( l ) == "---" ) break;
+			var m = reFind( "^(name|description):\s*[""']?(.*?)[""']?\s*$", l, 1, true );
+			if ( m.pos[ 1 ] && m.len.len() >= 3 ) out[ mid( l, m.pos[ 2 ], m.len[ 2 ] ) ] = mid( l, m.pos[ 3 ], m.len[ 3 ] );
+		}
+		return out;
+	}
+
+	string function reviewKey( required struct project, required string skill ) { return lCase( arguments.project.name & "/" & arguments.skill ); }
+
+	// [ { folder, name, description, file, reviewed } ], by folder. A skill counts as reviewed while its SKILL.md is what you approved:
+	// the agent saving over it flags it again.
+	array function skills( required struct project, required struct state ) {
+		var base = agentDataHome( arguments.project ) & "/skills";
+		var out = [];
+		if ( !directoryExists( base ) ) return out;
+		var seen = isStruct( arguments.state.reviewed ?: "" ) ? arguments.state.reviewed : {};
+		for ( var d in directoryList( base, false, "path" ) ) {
+			var f = d & "/SKILL.md";
+			if ( !fileExists( f ) ) continue;
+			var text = fileRead( f );
+			var folder = listLast( d, "/" );
+			var meta = skillMeta( text, folder );
+			out.append( { folder: folder, name: meta.name, description: meta.description, file: f, reviewed: ( seen[ reviewKey( arguments.project, folder ) ] ?: "" ) == hash( text ) } );
+		}
+		out.sort( function( a, b ) { return compareNoCase( a.folder, b.folder ); } );
+		return out;
+	}
+
+	function skillsCmd( words, yes, asJson ) {
+		var w = arguments.words;
+		var verbs = [ "show", "approve", "remove" ];
+		var name = "";
+		var verb = "list";
+		var skill = "";
+		if ( w.len() >= 1 && arrayFind( verbs, w[ 1 ] ) ) { verb = w[ 1 ]; skill = w.len() >= 2 ? w[ 2 ] : ""; }
+		else if ( w.len() >= 1 ) { name = w[ 1 ]; if ( w.len() >= 2 ) { verb = w[ 2 ]; skill = w.len() >= 3 ? w[ 3 ] : ""; } }
+		if ( !arrayFind( [ "list", "show", "approve", "remove" ], verb ) ) return variables.out.usage( "ai agents skills [NAME] [show|approve|remove SKILL|--all]", arguments.asJson );
+		var st = load();
+		var p = pick( projects( st ), name, st );
+		if ( structIsEmpty( p ) ) return variables.out.precondition( noAgent( name ), arguments.asJson );
+		var all = skills( p, st );
+		if ( verb == "list" ) {
+			var lines = [];
+			for ( var k in all ) lines.append( ( k.reviewed ? "  " : "● " ) & k.folder & repeatString( " ", max( 1, 24 - len( k.folder ) ) ) & ( k.reviewed ? "reviewed  " : "new       " ) & left( k.description, 70 ) );
+			if ( !all.len() ) lines.append( p.name & " has saved no skills of its own yet." );
+			else lines.append( "Read one: bxrig ai agents skills " & p.name & " show SKILL. Mark it reviewed: ... approve SKILL (or --all)." );
+			var fresh = all.filter( function( k ) { return !k.reviewed; } ).len();
+			return variables.out.say( "ok", { agent: p.name, home: agentDataHome( p ) & "/skills", skills: all, unreviewed: fresh }, arguments.asJson, lines );
+		}
+		var targets = all;
+		if ( !( verb == "approve" && structKeyExists( variables, "allFlag" ) && variables.allFlag ) ) {
+			if ( !len( skill ) ) return variables.out.usage( "name the skill: bxrig ai agents skills " & p.name & " " & verb & " SKILL", arguments.asJson );
+			targets = all.filter( function( k ) { return compareNoCase( k.folder, skill ) == 0; } );
+			if ( !targets.len() ) return variables.out.precondition( p.name & " has no skill " & skill & " (see: bxrig ai agents skills " & p.name & ")", arguments.asJson );
+		}
+		if ( verb == "show" ) return variables.out.say( "ok", { agent: p.name, skill: targets[ 1 ], text: fileRead( targets[ 1 ].file ) }, arguments.asJson, listToArray( fileRead( targets[ 1 ].file ), chr( 10 ), true ) );
+		if ( verb == "approve" ) {
+			if ( !isStruct( st.reviewed ?: "" ) ) st.reviewed = {};
+			for ( var k in targets ) st.reviewed[ reviewKey( p, k.folder ) ] = hash( fileRead( k.file ) );
+			save( st );
+			return variables.out.say( "ok", { agent: p.name, approved: targets.map( function( k ) { return k.folder; } ) }, arguments.asJson, [ "Reviewed: " & targets.map( function( k ) { return k.folder; } ).toList( ", " ) ] );
+		}
+		var t = targets[ 1 ];
+		if ( !arguments.yes ) return variables.out.plan( "Remove the skill " & t.folder & " of " & p.name, { agent: p.name, skill: t.folder }, arguments.asJson, false, [ "Delete " & getDirectoryFromPath( t.file ), p.name & " stops using it from its next start" ] );
+		directoryDelete( getDirectoryFromPath( t.file ), true );
+		if ( isStruct( st.reviewed ?: "" ) ) structDelete( st.reviewed, reviewKey( p, t.folder ) );
+		save( st );
+		return variables.out.say( "ok", { agent: p.name, removed: t.folder }, arguments.asJson, [ "Removed " & t.folder & ". " & p.name & " stops using it from its next start." ] );
 	}
 
 	// What was typed after `agents` and the words given (`agents Boxy`, `agents new Boxy`): the exact flags and values (pure).
@@ -389,7 +659,21 @@ class AiAgentHub {
 		if ( sub == "profile" && w.len() == 1 ) return profileCmd( structKeyExists( o, "off" ), arguments.asJson );
 		if ( arrayFind( [ "start", "stop", "status" ], sub ) && w.len() == 2 ) return serviceCmd( sub, w[ 2 ], arguments.asJson );
 		if ( sub == "status" && w.len() == 1 ) return list( arguments.asJson );
-		if ( sub == "open" && w.len() == 2 ) return openCmd( w[ 2 ], arguments.asJson );
+		if ( sub == "open" && w.len() <= 2 ) return openCmd( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
+		if ( sub == "chat" && w.len() <= 2 ) return chatCmd( w.len() == 2 ? w[ 2 ] : "", structKeyExists( o, "window" ), arguments.asJson );
+		if ( sub == "ask" && w.len() >= 2 ) {
+			var words = [];
+			for ( var i = 2; i <= w.len(); i++ ) words.append( w[ i ] );
+			return askCmd( words.toList( " " ), o.agent ?: "", o.thread ?: "", arguments.asJson );
+		}
+		if ( ( sub == "approve" || sub == "reject" ) && w.len() == 2 ) return decideCmd( w[ 2 ], sub == "reject" ? "reject" : ( structKeyExists( o, "session" ) ? "approve_session" : "approve" ), o.agent ?: "", arguments.asJson );
+		if ( sub == "setup" && w.len() == 1 ) return boxyCmd( yes, dry, structKeyExists( o, "no-start" ) || ( structKeyExists( o, "start" ) && o.start == false ), arguments.asJson );
+		if ( sub == "skills" ) {
+			variables.allFlag = structKeyExists( o, "all" );
+			var rest = [];
+			for ( var i = 2; i <= w.len(); i++ ) rest.append( w[ i ] );
+			return skillsCmd( rest, yes, arguments.asJson );
+		}
 		if ( sub == "default" && w.len() <= 2 ) return defaultCmd( w.len() == 2 ? w[ 2 ] : "", arguments.asJson );
 		if ( sub == "new" && w.len() == 2 ) return newCmd( w[ 2 ], after( arguments.raw, [ "new", w[ 2 ] ] ), arguments.asJson );
 		if ( !arrayFind( reserved(), sub ) ) return passCmd( sub, after( arguments.raw, [ sub ] ), arguments.asJson );

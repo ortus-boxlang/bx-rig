@@ -1,0 +1,244 @@
+// Boxy's tools: each one runs a BxRig command with --json and gives the model its answer. BxRig is found as BXRIG_SELF (set by
+// the agent's service) or `bxrig` on the PATH. The tools that change something are listed in Agent.bx and wait for a person's OK
+// before they run, so they pass --yes to BxRig: the plan was the approval.
+class {
+
+	// ---- this machine ----
+
+	@AITool( "What is installed and set up on this machine, compared with what BxRig would do." )
+	function machine_status() { return bxrig( [ "status" ] ); }
+
+	@AITool( "The system updates waiting to be installed (repositories and AUR)." )
+	function updates_waiting() { return bxrig( [ "system", "updates" ] ); }
+
+	@AITool( "The battery: charge, state, time left, and the power profile." )
+	function battery_status() { return bxrig( [ "power", "status" ] ); }
+
+	@AITool( "Wi-Fi: the radio, the devices and the network this machine is on." )
+	function wifi_status() { return bxrig( [ "wifi", "status" ] ); }
+
+	@AITool( "Bluetooth: the service, the adapter and the paired devices." )
+	function bluetooth_status() { return bxrig( [ "bluetooth", "status" ] ); }
+
+	@AITool( "Sound: outputs, inputs, volumes and the defaults." )
+	function sound_status() { return bxrig( [ "audio", "status" ] ); }
+
+	@AITool( "The monitors: names, resolution, scale and position." )
+	function displays_status() { return bxrig( [ "display", "status" ] ); }
+
+	@AITool( "The backups: the last setup backup, system snapshots and file backups, and whether they are healthy." )
+	function backup_status() { return bxrig( [ "backup", "status" ] ); }
+
+	// ---- the look ----
+
+	@AITool( "The color themes this machine has, and the one in use." )
+	function theme_list() { return bxrig( [ "theme", "list" ] ); }
+
+	/**
+	 * @theme The theme, as theme_list shows it (for example tokyo-night)
+	 */
+	@AITool( "Switch the color theme of the whole desktop." )
+	function theme_set( required string theme ) { return bxrig( [ "theme", "set", arguments.theme ] ); }
+
+	/**
+	 * @mode One of: theme, dark, light, auto
+	 */
+	@AITool( "Light or dark: dark, light, auto (follows the time of day) or theme (the theme's own)." )
+	function theme_mode( required string mode ) { return bxrig( [ "theme", "mode", arguments.mode ] ); }
+
+	/**
+	 * @state on or off
+	 */
+	@AITool( "Turn the night light (warmer colors in the evening) on or off." )
+	function night_light_set( required string state ) { return bxrig( [ "nightshift", arguments.state ] ); }
+
+	/**
+	 * @state on or off
+	 */
+	@AITool( "Turn do not disturb (no notification popups) on or off." )
+	function do_not_disturb_set( required string state ) { return bxrig( [ "notify", "dnd", arguments.state ] ); }
+
+	/**
+	 * @state on or off
+	 */
+	@AITool( "Keep the screen awake (no sleep, no screensaver) on or off." )
+	function stay_awake_set( required string state ) { return bxrig( [ "toggle", "stay-awake", arguments.state ] ); }
+
+	/**
+	 * @level up, down, or a number from 0 to 100
+	 */
+	@AITool( "Change the screen brightness." )
+	function brightness_set( required string level ) {
+		var l = trim( arguments.level );
+		return bxrig( arrayFind( [ "up", "down" ], lCase( l ) ) ? [ "display", "brightness", lCase( l ) ] : [ "display", "brightness", "set", l ] );
+	}
+
+	/**
+	 * @profile performance, balanced or saver
+	 */
+	@AITool( "Set the power profile." )
+	function power_profile_set( required string profile ) { return bxrig( [ "power", "profile", arguments.profile ] ); }
+
+	// ---- plans ----
+
+	/**
+	 * @days How many days ahead, 1 for today only (default 1)
+	 */
+	@AITool( "The agenda: events from the calendars on this machine." )
+	function agenda( numeric days = 1 ) { return bxrig( [ "calendar", "agenda", "--days=" & int( arguments.days ) ] ); }
+
+	@AITool( "The reminders that are set." )
+	function reminders_list() { return bxrig( [ "remind", "list" ] ); }
+
+	/**
+	 * @text What to remind about
+	 * @when A clock time (HH:MM), a date and time (YYYY-MM-DD HH:MM), or a delay (30m, 2h, 1d, "30 minutes")
+	 */
+	@AITool( "Set a reminder that pops up at a time." )
+	function reminder_add( required string text, required string when ) {
+		var w = trim( arguments.when );
+		var delay = delayOf( w );
+		return bxrig( [ "remind", arguments.text, len( delay ) ? "--in=" & delay : "--at=" & w ] );
+	}
+
+	// "30m", "30 min", "30 minutes", "2 hours", "in 1 day" as BxRig's delay (30m, 2h, 1d), or "" for a time.
+	private string function delayOf( required string when ) {
+		var w = trim( arguments.when );
+		var m = reFindNoCase( "^(in\s+)?([0-9]+)\s*(s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)$", w, 1, true );
+		if ( !m.pos[ 1 ] ) return "";
+		return mid( w, m.pos[ 3 ], m.len[ 3 ] ) & lCase( left( mid( w, m.pos[ 4 ], m.len[ 4 ] ), 1 ) );
+	}
+
+	@AITool( "The time zone, the time and whether the clock is in sync." )
+	function time_status() { return bxrig( [ "time", "status" ] ); }
+
+	// ---- apps ----
+
+	/**
+	 * @query Words to look for in the app's name, id or description
+	 */
+	@AITool( "Search BxRig's app catalog. Gives each match's id, name, category and what it is." )
+	function app_search( required string query ) {
+		var r = run( [ "catalog", "list" ] );
+		if ( !r.ok ) return r.text;
+		var words = listToArray( lCase( arguments.query ), " " );
+		var found = [];
+		for ( var a in ( isArray( r.data ) ? r.data : [] ) ) {
+			var hay = lCase( ( a.id ?: "" ) & " " & ( a.name ?: "" ) & " " & ( a.description ?: "" ) & " " & ( a.category ?: "" ) );
+			var all = true;
+			for ( var w in words ) if ( !find( w, hay ) ) all = false;
+			if ( all ) found.append( { id : a.id ?: "", name : a.name ?: "", category : a.category ?: "", description : a.description ?: "" } );
+			if ( found.len() >= 15 ) break;
+		}
+		return found.len() ? jsonSerialize( found ) : "No app in the catalog matches " & arguments.query & ".";
+	}
+
+	/**
+	 * @id The app id from app_search
+	 */
+	@AITool( "Install an app from BxRig's catalog." )
+	function app_install( required string id ) { return bxrig( [ "install", arguments.id, "--yes" ], 1800 ); }
+
+	/**
+	 * @id The app id from app_search
+	 */
+	@AITool( "Remove an app that BxRig installed." )
+	function app_remove( required string id ) { return bxrig( [ "remove", arguments.id, "--yes" ], 900 ); }
+
+	/**
+	 * @text Words or keys to look for, for example screenshot or Super+Space
+	 */
+	@AITool( "Find a keyboard shortcut by what it does or by its keys." )
+	function shortcut_search( required string text ) { return bxrig( [ "keys", "search", arguments.text ] ); }
+
+	// ---- capture ----
+
+	/**
+	 * @kind screen, region or window
+	 */
+	@AITool( "Take a screenshot: the whole screen, a region the person draws, or the focused window." )
+	function screenshot_take( string kind = "screen" ) { return bxrig( [ "screenshot", arguments.kind ] ); }
+
+	/**
+	 * @action start or stop
+	 */
+	@AITool( "Start or stop a screen recording." )
+	function recording_set( required string action ) { return bxrig( [ "record", arguments.action ] ); }
+
+	// ---- development ----
+
+	@AITool( "The databases BxRig runs in containers, and whether each one is running." )
+	function database_list() { return bxrig( [ "db", "list" ] ); }
+
+	/**
+	 * @engine The engine, for example postgres, mysql, redis or mongodb
+	 */
+	@AITool( "Start a database in a container." )
+	function database_start( required string engine ) { return bxrig( [ "db", "start", arguments.engine, "--yes" ], 600 ); }
+
+	/**
+	 * @engine The engine, as database_list shows it
+	 */
+	@AITool( "Stop a database." )
+	function database_stop( required string engine ) { return bxrig( [ "db", "stop", arguments.engine ] ); }
+
+	@AITool( "The virtual machines BxRig runs, and whether each one is running." )
+	function vm_list() { return bxrig( [ "vm", "list" ] ); }
+
+	/**
+	 * @vm The virtual machine, as vm_list shows it
+	 */
+	@AITool( "Start a virtual machine." )
+	function vm_start( required string vm ) { return bxrig( [ "vm", "start", arguments.vm ], 600 ); }
+
+	/**
+	 * @vm The virtual machine, as vm_list shows it
+	 */
+	@AITool( "Stop a virtual machine." )
+	function vm_stop( required string vm ) { return bxrig( [ "vm", "stop", arguments.vm ] ); }
+
+	@AITool( "The local AI models on this machine and the active one." )
+	function ai_models() { return bxrig( [ "ai", "models" ] ); }
+
+	// ---- system ----
+
+	@AITool( "Update the system: a snapshot first, then every package from the repositories." )
+	function system_update() { return bxrig( [ "system", "update", "--yes" ], 3600 ); }
+
+	@AITool( "Lock the screen." )
+	function screen_lock() { return bxrig( [ "system", "lock" ] ); }
+
+	@AITool( "Back up the person's files now to the backup target they set up." )
+	function backup_now() { return bxrig( [ "backup", "data", "run", "--yes" ], 3600 ); }
+
+	// ---- running BxRig ----
+
+	// The command's answer for the model: its data as JSON, or what went wrong.
+	private string function bxrig( required array args, numeric timeout = 120 ) {
+		return run( arguments.args, arguments.timeout ).text;
+	}
+
+	// { ok, data, text }
+	private struct function run( required array args, numeric timeout = 120 ) {
+		var argv = duplicate( arguments.args );
+		argv.append( "--json" );
+		var r = {};
+		try {
+			r = systemExecute( name : getSystemSetting( "BXRIG_SELF", "bxrig" ), arguments : argv, timeout : arguments.timeout );
+		} catch ( any e ) {
+			return { ok : false, data : {}, text : "BxRig could not be run: " & e.message };
+		}
+		var out = trim( r.output ?: "" );
+		var envelope = {};
+		try { envelope = jsonDeserialize( out ); } catch ( any e ) {}
+		if ( !isStruct( envelope ) || !structKeyExists( envelope, "data" ) ) {
+			var said = len( out ) ? out : trim( r.error ?: "" );
+			return { ok : false, data : {}, text : "bxrig " & arguments.args.toList( " " ) & " answered: " & left( said, 1500 ) };
+		}
+		var text = jsonSerialize( envelope.data );
+		if ( len( text ) > 6000 ) text = left( text, 6000 ) & " (cut)";
+		if ( !( envelope.ok ?: false ) ) text = "bxrig " & arguments.args.toList( " " ) & " failed (exit " & ( envelope.exit ?: "?" ) & "): " & text;
+		return { ok : envelope.ok ?: false, data : envelope.data, text : text };
+	}
+
+}

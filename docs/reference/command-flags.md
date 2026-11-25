@@ -295,6 +295,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `vm` | `--tag` | value | `ubuntu-xfce` |
 | `vm` | `--version` | value |  |
 | `vm` | `--web` | bool |  |
+| `ai` | `--agent` | value |  |
 | `ai` | `--all` | bool |  |
 | `ai` | `--backend` | value |  |
 | `ai` | `--background` | bool |  |
@@ -309,19 +310,24 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `ai` | `--model` | value |  |
 | `ai` | `--models` | value |  |
 | `ai` | `--name` | value | `work` |
+| `ai` | `--no-start` | bool |  |
 | `ai` | `--no-test` | bool |  |
 | `ai` | `--off` | bool |  |
 | `ai` | `--picks` | value |  |
 | `ai` | `--port` | value |  |
+| `ai` | `--session` | bool |  |
 | `ai` | `--snapshot` | bool |  |
 | `ai` | `--source` | value |  |
 | `ai` | `--stable` | bool |  |
+| `ai` | `--start` | bool |  |
 | `ai` | `--test` | bool |  |
 | `ai` | `--text` | value |  |
+| `ai` | `--thread` | value |  |
 | `ai` | `--to` | value |  |
 | `ai` | `--tools` | bool |  |
 | `ai` | `--tune` | bool |  |
 | `ai` | `--vision` | bool |  |
+| `ai` | `--window` | bool |  |
 | `skills` | `--tag` | value |  |
 | `screenshot` | `--edit` | bool |  |
 | `qr` | `--out` | value | `wifi.png` |

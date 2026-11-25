@@ -2678,7 +2678,12 @@
 						"ai agents new NAME [bxAgents new flags]",
 						"ai agents NAME VERB [bxAgents flags]",
 						"ai agents start|stop|status NAME [--json]",
-						"ai agents open NAME",
+						"ai agents open [NAME]",
+						"ai agents chat [NAME] [--window]",
+						"ai agents ask TEXT [--agent=NAME] [--thread=ID] [--json]",
+						"ai agents approve|reject THREAD [--agent=NAME] [--session] [--json]",
+						"ai agents setup [--no-start] [--yes] [--dry-run]",
+						"ai agents skills [NAME] [show|approve|remove SKILL] [--all] [--yes] [--json]",
 						"ai agents default [NAME]",
 						"ai agents dir [PATH]",
 						"ai agents add PATH",
@@ -2701,12 +2706,17 @@
 						"bxrig ai discover qwen --fits",
 						"bxrig ai agents install --yes",
 						"bxrig ai agents Boxy chat",
+						"bxrig ai agents setup --yes",
 						"bxrig ai serve status",
 						"bxrig ai list",
 						"bxrig ai session start --name=work"
 					],
 					"mutates": true,
 					"flags": [
+						{
+							"name": "agent",
+							"type": "value"
+						},
 						{
 							"name": "all",
 							"type": "bool"
@@ -2764,6 +2774,10 @@
 							"type": "value"
 						},
 						{
+							"name": "no-start",
+							"type": "bool"
+						},
+						{
 							"name": "no-test",
 							"type": "bool"
 						},
@@ -2780,6 +2794,10 @@
 							"type": "value"
 						},
 						{
+							"name": "session",
+							"type": "bool"
+						},
+						{
 							"name": "snapshot",
 							"type": "bool"
 						},
@@ -2792,11 +2810,19 @@
 							"type": "bool"
 						},
 						{
+							"name": "start",
+							"type": "bool"
+						},
+						{
 							"name": "test",
 							"type": "bool"
 						},
 						{
 							"name": "text",
+							"type": "value"
+						},
+						{
+							"name": "thread",
 							"type": "value"
 						},
 						{
@@ -2813,6 +2839,10 @@
 						},
 						{
 							"name": "vision",
+							"type": "bool"
+						},
+						{
+							"name": "window",
 							"type": "bool"
 						}
 					]
