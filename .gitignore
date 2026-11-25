@@ -11,3 +11,6 @@ __pycache__/
 .agents/skills/**
 .claude/**
 .pi/**
+
+# MatchBox native libraries unpacked by a local build
+/matchbox/
