@@ -1,0 +1,15 @@
+// BxRig's MCP server, run by `bxrig mcp serve` on BoxLang with bx-ai (installed with bx-agents). Its tools are Boxy's own
+// (BxRig.bx next to this file, the same file Boxy uses): each runs a BxRig command with --json. The tools that change something
+// (changing.json, from Boxy's Agent.bx) are left out unless BXRIG_MCP_WRITE is 1; the agent that starts this server then asks
+// you before each call, as it does for its own tools. This file is written by `bxrig mcp serve`; changes to it are replaced.
+changing = jsonDeserialize( fileRead( expandPath( "./changing.json" ) ) );
+write = getSystemSetting( "BXRIG_MCP_WRITE", "" ) == "1";
+tools = aiToolRegistry()
+.scanClass( new BxRig(), "bxrig-mcp" )
+.filter( ( t ) => write || !changing.findNoCase( t.getName() ) );
+mcpServer(
+	"bxrig",
+	"BxRig: this machine, its look, your plans, apps, captures and dev services" & ( write ? "" : " (read-only)" ),
+	"1.0.0"
+).registerTools( tools );
+bxModules.bxai.models.mcp.MCPRequestProcessor::processStdio( "bxrig" );

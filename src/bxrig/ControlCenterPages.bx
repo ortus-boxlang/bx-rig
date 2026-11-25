@@ -27,6 +27,7 @@ class ControlCenterPages {
 			{ id: "mail", title: "Mail", icon: "envelope" },
 			{ id: "storage", title: "Storage", icon: "hdd" },
 			{ id: "secrets", title: "Secrets", icon: "key" },
+			{ id: "privacy", title: "Privacy", icon: "shield" },
 			{ id: "look", title: "Look", icon: "eye" },
 			{ id: "themes", title: "Themes", icon: "brush" },
 			{ id: "accessibility", title: "Accessibility", icon: "access" },

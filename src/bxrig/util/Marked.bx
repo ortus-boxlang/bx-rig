@@ -1,0 +1,108 @@
+// BxRig's own part of a file someone else owns: a block between a begin line and an end line that BxRig writes and later takes
+// out again, leaving the rest of the file as it was. Used for agents' and editors' configs (`bxrig mcp link`, `bxrig privacy`).
+// All pure: text in, text out.
+class Marked {
+
+	// The text without the block that starts at `begin` and ends at `end` (lines compared trimmed, so an indented block counts).
+	// Trailing blank lines go; an otherwise empty file becomes "".
+	string function cut( required string text, required string begin, required string end ) {
+		var out = [];
+		var inside = false;
+		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
+			var t = trim( line );
+			if ( t == arguments.begin ) { inside = true; continue; }
+			if ( inside ) { if ( t == arguments.end ) inside = false; continue; }
+			out.append( line );
+		}
+		var joined = out.toList( chr( 10 ) );
+		return len( trim( joined ) ) ? reReplace( joined, "\n+$", "" ) & chr( 10 ) : "";
+	}
+
+	// The block's lines between begin and end, or "" when the text has no such block.
+	string function inside( required string text, required string begin, required string end ) {
+		var at = find( arguments.begin, arguments.text );
+		if ( !at ) return "";
+		var after = mid( arguments.text, at + len( arguments.begin ), len( arguments.text ) );
+		var stop = find( arguments.end, after );
+		return stop ? left( after, stop - 1 ) : after;
+	}
+
+	boolean function holds( required string text, required string begin ) { return find( arguments.begin, arguments.text ) > 0; }
+
+	// The text without // and /* */ comments, for checking only. A // that starts a line or follows a space, comma or bracket
+	// begins a comment; a URL's // follows a colon and stays.
+	string function uncomment( required string text ) {
+		var out = [];
+		for ( var line in listToArray( reReplace( arguments.text, "/\*.*?\*/", "", "all" ), chr( 10 ), true ) ) {
+			var m = reFind( "(^|[\s,{\[])//", line, 1, true );
+			var keep = m.pos[ 1 ] ? m.pos[ 1 ] + m.len[ 1 ] - 3 : -1;
+			out.append( keep < 0 ? line : ( keep > 0 ? left( line, keep ) : "" ) );
+		}
+		return out.toList( chr( 10 ) );
+	}
+
+	// A JSON file with comments keeps them: `"key": VALUE` goes in as a marked block after the line with the first `{`, so a
+	// comment on that line stays on it. { text }, or { error } when the file already has the key outside the block.
+	struct function jsoncInsert( required string text, required string begin, required string end, required string key, required string valueJson ) {
+		var keep = cut( arguments.text, arguments.begin, arguments.end );
+		if ( find( """" & arguments.key & """", uncomment( keep ) ) ) return { error: "the file has comments and already has " & arguments.key & "; change it by hand" };
+		var brace = find( "{", keep );
+		if ( !brace ) return { error: "the file is not a JSON object" };
+		var lineEnd = find( chr( 10 ), keep, brace );
+		if ( !lineEnd ) lineEnd = len( keep );
+		var members = trim( reReplace( uncomment( keep ), "^\s*\{|\}\s*$", "", "all" ) );
+		var nl = chr( 10 );
+		var block = "  " & arguments.begin & nl & "  """ & arguments.key & """: " & arguments.valueJson & ( len( members ) ? "," : "" ) & nl & "  " & arguments.end & nl;
+		var head = left( keep, lineEnd );
+		if ( right( head, 1 ) != nl ) head &= nl;
+		return { text: head & block & mid( keep, lineEnd + 1, len( keep ) ) };
+	}
+
+	// A plain JSON object with `value` at path (the keys made when missing): { text } or { error }.
+	struct function jsonSet( required string text, required array path, required any value ) {
+		var j = {};
+		if ( len( trim( arguments.text ) ) ) {
+			try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the file is not plain JSON (it may have comments)" }; }
+			if ( !isStruct( j ) ) return { error: "the file is not a JSON object" };
+		}
+		var at = j;
+		for ( var i = 1; i < arguments.path.len(); i++ ) {
+			var k = arguments.path[ i ];
+			if ( !isStruct( at[ k ] ?: "" ) ) at[ k ] = {};
+			at = at[ k ];
+		}
+		at[ arguments.path[ arguments.path.len() ] ] = arguments.value;
+		return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+	}
+
+	// The JSON object without the last key of path (nothing else changes): { text } or { error }.
+	struct function jsonUnset( required string text, required array path ) {
+		if ( !len( trim( arguments.text ) ) ) return { text: "" };
+		var j = {};
+		try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the file is not plain JSON (it may have comments)" }; }
+		if ( !isStruct( j ) ) return { error: "the file is not a JSON object" };
+		var at = j;
+		for ( var i = 1; i < arguments.path.len(); i++ ) {
+			if ( !isStruct( at[ arguments.path[ i ] ] ?: "" ) ) return { text: arguments.text };
+			at = at[ arguments.path[ i ] ];
+		}
+		structDelete( at, arguments.path[ arguments.path.len() ] );
+		return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+	}
+
+	// The value at path in a JSON text, or the fallback (also for text that is not JSON).
+	any function jsonGet( required string text, required array path, any fallback = "" ) {
+		var at = {};
+		try { at = jsonDeserialize( arguments.text ); } catch ( any e ) { return arguments.fallback; }
+		for ( var k in arguments.path ) {
+			if ( !isStruct( at ) || !structKeyExists( at, k ) ) return arguments.fallback;
+			at = at[ k ];
+		}
+		return at;
+	}
+
+	boolean function plainJson( required string text ) {
+		if ( !len( trim( arguments.text ) ) ) return true;
+		try { jsonDeserialize( arguments.text ); return true; } catch ( any e ) { return false; }
+	}
+}

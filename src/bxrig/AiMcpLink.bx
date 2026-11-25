@@ -1,0 +1,229 @@
+// Adds BxRig's MCP server (`bxrig mcp serve`) to coding agents and editors, and takes it out again. Each agent keeps its MCP
+// servers in its own place; only BxRig's own entry is written or removed, everything else stays as it was. Formats from each
+// agent's official docs (read 2026-11-25):
+//   Claude Code, Codex   their own commands: `claude mcp add|get|remove`, `codex mcp add|get|remove`
+//   JSON files            mcpServers.bxrig (Gemini CLI, Qwen Code, Pi, Antigravity, Cursor, Kiro), "amp.mcpServers" (Amp),
+//                         mcpServers with type local (Copilot), mcp with type local (OpenCode), context_servers (Zed),
+//                         servers with type stdio (VS Code)
+//   Grok Build            ~/.grok/config.toml, a marked [mcp_servers.bxrig] table
+//   Crush                 ~/.config/crush/crushrc, a marked `mcp add bxrig ...` line
+//   Goose                 ~/.config/goose/config.yaml, a marked entry under `extensions:`
+// A JSON file with comments is refused, not rewritten. The text changes are pure (tests feed them samples).
+class AiMcpLink {
+	function init() {
+		variables.env = new bxrig.util.Env();
+		variables.marked = new bxrig.util.Marked();
+		return this;
+	}
+
+	// Every agent and editor, in the order `bxrig mcp` shows them. kind: cli, json, toml, crushrc or yaml. commands: the
+	// programs that mean it is installed. path: where in a JSON file the servers live.
+	array function agents() {
+		var h = variables.env.home();
+		// the agents' own config folder: XDG_CONFIG_HOME or ~/.config (BXRIG_CONFIG_HOME is BxRig's, not theirs)
+		var cfg = reReplace( variables.env.get( "XDG_CONFIG_HOME", h & "/.config" ), "/+$", "" );
+		return [
+			{ id: "claude-code", name: "Claude Code", kind: "cli", commands: [ "claude" ], file: h & "/.claude.json" },
+			{ id: "codex-cli", name: "Codex", kind: "cli", commands: [ "codex" ], file: h & "/.codex/config.toml" },
+			{ id: "gemini-cli", name: "Gemini CLI", kind: "json", commands: [ "gemini" ], file: h & "/.gemini/settings.json", path: [ "mcpServers" ], shape: "plain" },
+			{ id: "opencode-cli", name: "OpenCode", kind: "json", commands: [ "opencode" ], file: cfg & "/opencode/opencode.json", path: [ "mcp" ], shape: "opencode" },
+			{ id: "pi-agent", name: "Pi", kind: "json", commands: [ "pi" ], file: h & "/.pi/agent/mcp.json", path: [ "mcpServers" ], shape: "plain" },
+			{ id: "copilot-cli", name: "GitHub Copilot", kind: "json", commands: [ "copilot" ], file: h & "/.copilot/mcp-config.json", path: [ "mcpServers" ], shape: "copilot" },
+			{ id: "cursor-agent", name: "Cursor and Cursor Agent", kind: "json", commands: [ "cursor-agent", "cursor" ], file: h & "/.cursor/mcp.json", path: [ "mcpServers" ], shape: "stdio" },
+			{ id: "amp", name: "Amp", kind: "json", commands: [ "amp" ], file: cfg & "/amp/settings.json", path: [ "amp.mcpServers" ], shape: "plain" },
+			{ id: "crush", name: "Crush", kind: "crushrc", commands: [ "crush" ], file: cfg & "/crush/crushrc" },
+			{ id: "goose", name: "Goose", kind: "yaml", commands: [ "goose" ], file: cfg & "/goose/config.yaml" },
+			{ id: "kiro-cli", name: "Kiro", kind: "json", commands: [ "kiro-cli" ], file: h & "/.kiro/settings/mcp.json", path: [ "mcpServers" ], shape: "kiro" },
+			{ id: "qwen-code", name: "Qwen Code", kind: "json", commands: [ "qwen" ], file: h & "/.qwen/settings.json", path: [ "mcpServers" ], shape: "plain" },
+			{ id: "grok-build", name: "Grok Build", kind: "toml", commands: [ "grok" ], file: h & "/.grok/config.toml" },
+			{ id: "antigravity", name: "Antigravity", kind: "json", commands: [ "antigravity", "agy" ], file: h & "/.gemini/config/mcp_config.json", path: [ "mcpServers" ], shape: "plain" },
+			{ id: "zed", name: "Zed", kind: "json", commands: [ "zeditor", "zed" ], file: cfg & "/zed/settings.json", path: [ "context_servers" ], shape: "zed", jsonc: true },
+			{ id: "vscode", name: "VS Code", kind: "json", commands: [ "code" ], file: cfg & "/Code/User/mcp.json", path: [ "servers" ], shape: "stdio", jsonc: true }
+		];
+	}
+
+	array function ids() { return agents().map( function( a ) { return a.id; } ); }
+
+	struct function byId( required string id ) {
+		for ( var a in agents() ) if ( a.id == arguments.id ) return a;
+		return {};
+	}
+
+	// The arguments after the program: `mcp serve`, and `--write` when the agent may change things.
+	array function serveArgs( required boolean write ) { return arguments.write ? [ "mcp", "serve", "--write" ] : [ "mcp", "serve" ]; }
+
+	// ---- the agents' own commands ----
+
+	array function cliAdd( required string id, required string self, required boolean write ) {
+		var a = arguments.id == "claude-code" ? [ "claude", "mcp", "add", "--transport", "stdio", "--scope", "user", "bxrig", "--", arguments.self ] : [ "codex", "mcp", "add", "bxrig", "--", arguments.self ];
+		for ( var x in serveArgs( arguments.write ) ) a.append( x );
+		return a;
+	}
+
+	array function cliRemove( required string id ) {
+		return arguments.id == "claude-code" ? [ "claude", "mcp", "remove", "bxrig", "--scope", "user" ] : [ "codex", "mcp", "remove", "bxrig" ];
+	}
+
+	array function cliGet( required string id ) {
+		return arguments.id == "claude-code" ? [ "claude", "mcp", "get", "bxrig" ] : [ "codex", "mcp", "get", "bxrig" ];
+	}
+
+	// ---- JSON files ----
+
+	// BxRig's entry in the agent's own shape.
+	struct function entry( required string shape, required string self, required boolean write ) {
+		var args = serveArgs( arguments.write );
+		switch ( arguments.shape ) {
+			case "opencode":
+				var cmd = [ arguments.self ];
+				for ( var x in args ) cmd.append( x );
+				return { type: "local", command: cmd, enabled: true };
+				case "copilot": return { type: "local", command: arguments.self, args: args, tools: [ "*" ] };
+				case "stdio": return { type: "stdio", command: arguments.self, args: args };
+				case "kiro": return { command: arguments.self, args: args, disabled: false };
+				case "zed": return { command: arguments.self, args: args, env: {} };
+				default: return { command: arguments.self, args: args };
+		}
+	}
+
+	// The config with BxRig's entry: { text } or { error }.
+	struct function jsonAdd( required string text, required array path, required struct value ) {
+		var j = {};
+		if ( len( trim( arguments.text ) ) ) {
+			try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the file is not plain JSON (it may have comments); add BxRig by hand" }; }
+			if ( !isStruct( j ) ) return { error: "the file is not a JSON object" };
+		}
+		var at = j;
+		for ( var k in arguments.path ) {
+			if ( !isStruct( at[ k ] ?: "" ) ) at[ k ] = {};
+			at = at[ k ];
+		}
+		at[ "bxrig" ] = arguments.value;
+		return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+	}
+
+	// The config without BxRig's entry: { text } or { error }.
+	struct function jsonRemove( required string text, required array path ) {
+		if ( !len( trim( arguments.text ) ) ) return { text: "" };
+		var j = {};
+		try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the file is not plain JSON (it may have comments); remove BxRig by hand" }; }
+		if ( !isStruct( j ) ) return { error: "the file is not a JSON object" };
+		var at = j;
+		for ( var k in arguments.path ) {
+			if ( !isStruct( at[ k ] ?: "" ) ) return { text: arguments.text };
+			at = at[ k ];
+		}
+		structDelete( at, "bxrig" );
+		return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+	}
+
+	// "write", "read-only" or "" (pure).
+	string function jsonState( required string text, required array path ) {
+		var j = {};
+		try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return ""; }
+		var at = j;
+		for ( var k in arguments.path ) {
+			if ( !isStruct( at ) || !isStruct( at[ k ] ?: "" ) ) return "";
+			at = at[ k ];
+		}
+		if ( !isStruct( at ) || !structKeyExists( at, "bxrig" ) ) return "";
+		return writes( serializeJSON( at.bxrig ) ) ? "write" : "read-only";
+	}
+
+	// ---- JSON with comments (Zed, VS Code) ----
+
+	// A file with comments keeps them: BxRig's key goes in as a marked block (util.Marked). { text } or { error }.
+	struct function jsoncAdd( required string text, required string id, required string key, required struct value ) {
+		var r = variables.marked.jsoncInsert( blockRemove( arguments.text, arguments.id ), beginMark( arguments.id, "//" ), endMark( "//" ), arguments.key, "{ ""bxrig"": " & serializeJSON( arguments.value ) & " }" );
+		return structKeyExists( r, "error" ) ? { error: r.error & " (add BxRig there by hand)" } : r;
+	}
+
+	// ---- marked blocks: Grok Build (TOML), Crush (crushrc), Goose (YAML) ----
+
+	string function beginMark( required string id, string c = "##" ) { return left( arguments.c, 1 ) == "/" ? "// BxRig MCP server (bxrig mcp unlink " & arguments.id & " removes this block)" : "## BxRig MCP server (bxrig mcp unlink " & arguments.id & " removes this block)"; }
+	string function endMark( string c = "##" ) { return left( arguments.c, 1 ) == "/" ? "// end of BxRig MCP server" : "## end of BxRig MCP server"; }
+
+	// The text without BxRig's block (pure), in either comment style. Indented marks count too (YAML).
+	string function blockRemove( required string text, required string id ) {
+		return variables.marked.cut( variables.marked.cut( arguments.text, beginMark( arguments.id ), endMark() ), beginMark( arguments.id, "//" ), endMark( "//" ) );
+	}
+
+	string function blockState( required string text, required string id ) {
+		var c = variables.marked.holds( arguments.text, beginMark( arguments.id ) ) ? "##" : "//";
+		if ( !variables.marked.holds( arguments.text, beginMark( arguments.id, c ) ) ) return "";
+		return writes( variables.marked.inside( arguments.text, beginMark( arguments.id, c ), endMark( c ) ) ) ? "write" : "read-only";
+	}
+
+	boolean function writes( required string s ) { return find( "--write", arguments.s ) > 0; }
+
+	// Grok Build's config.toml with a [mcp_servers.bxrig] table at the end (a table can come last in TOML).
+	string function tomlAdd( required string text, required string self, required boolean write ) {
+		var keep = blockRemove( arguments.text, "grok-build" );
+		var nl = chr( 10 );
+		var args = serveArgs( arguments.write ).map( function( x ) { return """" & x & """"; } ).toList( ", " );
+		var block = beginMark( "grok-build" ) & nl & "[mcp_servers.bxrig]" & nl & "command = """ & tomlEscape( arguments.self ) & """" & nl & "args = [" & args & "]" & nl & endMark() & nl;
+		return ( len( keep ) ? keep & nl : "" ) & block;
+	}
+
+	string function tomlEscape( required string s ) { return replace( replace( arguments.s, "\", "\\", "all" ), """", "\""", "all" ); }
+
+	// Crush's crushrc with a `mcp add bxrig` line (--args once per argument).
+	string function crushAdd( required string text, required string self, required boolean write ) {
+		var keep = blockRemove( arguments.text, "crush" );
+		var nl = chr( 10 );
+		var line = "mcp add bxrig --command """ & arguments.self & """";
+		for ( var x in serveArgs( arguments.write ) ) line &= " --args " & x;
+		return ( len( keep ) ? keep & nl : "" ) & beginMark( "crush" ) & nl & line & nl & endMark() & nl;
+	}
+
+	// Goose's config.yaml with BxRig's extension: under the top-level `extensions:`, made if it is missing (pure). An inline
+	// `extensions: {}` becomes a block. Any other inline form is refused: { text } or { error }.
+	struct function yamlAdd( required string text, required string self, required boolean write ) {
+		var lines = listToArray( blockRemove( arguments.text, "goose" ), chr( 10 ), true );
+		if ( lines.len() && lines[ lines.len() ] == "" ) lines.deleteAt( lines.len() );
+		var args = "[" & serveArgs( arguments.write ).map( function( x ) { return """" & x & """"; } ).toList( ", " ) & "]";
+		var block = [ "  " & beginMark( "goose" ), "  bxrig:", "    type: stdio", "    name: bxrig", "    enabled: true", "    cmd: """ & arguments.self & """", "    args: " & args, "    envs: {}", "    env_keys: []", "    timeout: 300", "  " & endMark() ];
+		var at = 0;
+		for ( var i = 1; i <= lines.len(); i++ ) {
+			if ( reFind( "^extensions:\s*(\{\s*\})?\s*(##.*)?$", lines[ i ] ) ) { at = i; lines[ i ] = "extensions:"; break; }
+			if ( reFind( "^extensions:\s*\S", lines[ i ] ) ) return { error: "Goose's extensions are written inline; add BxRig with goose configure" };
+		}
+		if ( !at ) {
+			lines.append( "extensions:" );
+			at = lines.len();
+		}
+		var out = [];
+		for ( var j = 1; j <= lines.len(); j++ ) {
+			out.append( lines[ j ] );
+			if ( j == at ) for ( var b in block ) out.append( b );
+		}
+		return { text: out.toList( chr( 10 ) ) & chr( 10 ) };
+	}
+
+	// ---- on disk ----
+
+	string function read( required string path ) { return fileExists( arguments.path ) ? fileRead( arguments.path ) : ""; }
+
+	// The new text for a file agent: { text } or { error } (pure but for reading the file).
+	struct function change( required struct agent, required string text, required string self, required boolean write, required boolean off ) {
+		var a = arguments.agent;
+		switch ( a.kind ) {
+			case "json":
+				if ( ( a.jsonc ?: false ) && ( find( beginMark( a.id, "//" ), arguments.text ) || !variables.marked.plainJson( arguments.text ) ) ) {
+				return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : jsoncAdd( arguments.text, a.id, a.path[ 1 ], entry( a.shape, arguments.self, arguments.write ) );
+			}
+				return arguments.off ? jsonRemove( arguments.text, a.path ) : jsonAdd( arguments.text, a.path, entry( a.shape, arguments.self, arguments.write ) );
+				case "toml": return { text: arguments.off ? blockRemove( arguments.text, a.id ) : tomlAdd( arguments.text, arguments.self, arguments.write ) };
+				case "crushrc": return { text: arguments.off ? blockRemove( arguments.text, a.id ) : crushAdd( arguments.text, arguments.self, arguments.write ) };
+				case "yaml": return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : yamlAdd( arguments.text, arguments.self, arguments.write );
+		}
+		return { error: "not a file agent" };
+	}
+
+	// "write", "read-only" or "" for a file agent (pure).
+
+	string function state( required struct agent, required string text ) {
+		if ( find( beginMark( arguments.agent.id, "//" ), arguments.text ) ) return blockState( arguments.text, arguments.agent.id );
+		return arguments.agent.kind == "json" ? jsonState( arguments.text, arguments.agent.path ) : blockState( arguments.text, arguments.agent.id );
+	}
+}

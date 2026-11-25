@@ -264,6 +264,14 @@
 			"use": "the Machines page"
 		},
 		{
+			"name": "bxrig-privacy",
+			"glyph": "shield-check",
+			"category": "system",
+			"context": "apps",
+			"title": "Privacy",
+			"use": "the Privacy page (what leaves this machine)"
+		},
+		{
 			"name": "bxrig-storage",
 			"glyph": "hard-drives",
 			"category": "system",

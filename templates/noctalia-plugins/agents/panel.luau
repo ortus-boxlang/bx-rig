@@ -44,7 +44,13 @@ local AGENT_GLYPHS = {
 	["gemini-cli"] = "sparkles",
 	["copilot-cli"] = "brand-github-copilot",
 	["cursor-agent"] = "cube",
-	["grok-cli"] = "brand-x",
+	["grok-build"] = "brand-x",
+	["pi-agent"] = "math-pi",
+	["crush"] = "sparkles",
+	["goose"] = "feather",
+	["amp"] = "bolt",
+	["qwen-code"] = "code",
+	["kiro-cli"] = "ghost",
 }
 
 local function str(v)
@@ -273,6 +279,11 @@ local function footer()
 		})
 	end
 	return ui.row({ align = "center", gap = 8 }, {
+		-- what leaves this machine: which agents use the cloud, keys, MCP servers, telemetry (`bxrig tui privacy`)
+		ui.button({ text = "Privacy", glyph = "shield-check", variant = "ghost", controlSize = "sm", onClick = function()
+			noctalia.runInTerminal("'" .. string.gsub(bxrig.command(), "'", "'\\''") .. "' tui privacy")
+			panel.close()
+		end }),
 		ui.spacer({ flexGrow = 1 }),
 		ui.button({
 			text = editing and "Done" or "Edit agents",

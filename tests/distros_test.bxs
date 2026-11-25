@@ -65,13 +65,13 @@ testkit.check( "factory: the backend carries the distribution's names", p.native
 // ---- the catalog per distribution ----
 cat = new bxrig.Catalog();
 arch = cat.load( "arch" );
-testkit.check( "arch: every app, none unavailable", arch.apps.len() == 364 && !arch.unavailable.len() && arch.distro == "arch" );
+testkit.check( "arch: every app, none unavailable", arch.apps.len() == 372 && !arch.unavailable.len() && arch.distro == "arch" );
 vs = cat.find( arch, "vscode" );
 testkit.check( "arch: the install entry is merged in", vs.source == "aur" && vs.targets.toList() == "visual-studio-code-bin" );
 web = arch.apps.filter( function( x ) { return x.source == "web"; } ).len();
 for ( dist in [ "suse", "debian", "ubuntu" ] ) {
 	c = cat.load( dist );
-	testkit.check( dist & ": web apps everywhere, the rest only when the install file has them", c.apps.len() + c.unavailable.len() == 364 && c.apps.filter( function( x ) { return x.source == "web"; } ).len() == web );
+	testkit.check( dist & ": web apps everywhere, the rest only when the install file has them", c.apps.len() + c.unavailable.len() == 372 && c.apps.filter( function( x ) { return x.source == "web"; } ).len() == web );
 	testkit.check( dist & ": only this distribution's sources", c.apps.every( function( x ) { return arrayFind( [ "web", "flatpak", "script", dist == "suse" ? "zypper" : "apt" ], x.source ) > 0; } ) );
 }
 ub = cat.install( "ubuntu" );
@@ -81,7 +81,7 @@ testkit.check( "ubuntu has its own repos (Ubuntu's Noctalia suite, no Debian bac
 testkit.check( "defaults: kitty on Debian (no ghostty package), ghostty on Ubuntu", deb.defaults.terminal == "kitty" && ub.defaults.terminal == "ghostty" );
 all = cat.checkAll();
 testkit.check( "check: no errors on any distribution", all.errors.len() == 0 );
-testkit.check( "check: coverage for all four", all.coverage.arch.offered == 364 && all.coverage.suse.offered > 200 && all.coverage.debian.offered > 150 && all.coverage.ubuntu.offered > 150 );
+testkit.check( "check: coverage for all four", all.coverage.arch.offered == 372 && all.coverage.suse.offered > 200 && all.coverage.debian.offered > 150 && all.coverage.ubuntu.offered > 150 );
 
 // ---- repos ----
 work = home & "/work";

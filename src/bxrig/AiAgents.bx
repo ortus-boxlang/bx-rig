@@ -9,10 +9,13 @@ class AiAgents {
 			{ id: "codex-cli", name: "Codex", command: "codex", providers: [ "openai" ] },
 			{ id: "gemini-cli", name: "Gemini CLI", command: "gemini", providers: [ "google" ] },
 			{ id: "opencode-cli", name: "OpenCode", command: "opencode", providers: many },
+			{ id: "pi-agent", name: "Pi", command: "pi", providers: many },
 			{ id: "copilot-cli", name: "GitHub Copilot", command: "copilot", providers: [] },
-			{ id: "cursor-agent", name: "Cursor", command: "cursor-agent", providers: [] },
+			{ id: "cursor-agent", name: "Cursor Agent", command: "cursor-agent", providers: [] },
 			{ id: "amp", name: "Amp", command: "amp", providers: [] },
-			{ id: "grok-cli", name: "Grok", command: "grok", providers: [ "xai" ] },
+			{ id: "crush", name: "Crush", command: "crush", providers: many },
+			{ id: "goose", name: "Goose", command: "goose", providers: many },
+			{ id: "grok-build", name: "Grok Build", command: "grok", providers: [ "xai" ] },
 			{ id: "qwen-code", name: "Qwen Code", command: "qwen", providers: [] },
 			{ id: "kiro-cli", name: "Kiro", command: "kiro-cli", providers: [] }
 		];

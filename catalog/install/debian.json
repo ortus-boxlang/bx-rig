@@ -142,6 +142,14 @@
 				"alacritty"
 			]
 		},
+		"amp": {
+			"source": "script",
+			"script": {
+				"url": "https://ampcode.com/install.sh",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
+		},
 		"ark": {
 			"source": "apt",
 			"targets": [
@@ -262,6 +270,14 @@
 				"composer"
 			]
 		},
+		"copilot-cli": {
+			"source": "script",
+			"script": {
+				"url": "https://gh.io/copilot-install",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
+		},
 		"cups": {
 			"source": "apt",
 			"targets": [
@@ -279,6 +295,14 @@
 			"targets": [
 				"curl"
 			]
+		},
+		"cursor-agent": {
+			"source": "script",
+			"script": {
+				"url": "https://cursor.com/install",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
 		},
 		"datagrip": {
 			"source": "flatpak",
@@ -480,6 +504,14 @@
 				"com.google.Chrome"
 			]
 		},
+		"goose": {
+			"source": "script",
+			"script": {
+				"url": "https://github.com/aaif-goose/goose/releases/download/stable/download_cli.sh",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
+		},
 		"gpt4all": {
 			"source": "flatpak",
 			"targets": [
@@ -503,6 +535,14 @@
 			"targets": [
 				"grim"
 			]
+		},
+		"grok-build": {
+			"source": "script",
+			"script": {
+				"url": "https://x.ai/cli/install.sh",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
 		},
 		"gwenview": {
 			"source": "apt",
@@ -668,6 +708,14 @@
 			"targets": [
 				"kio-gdrive"
 			]
+		},
+		"kiro-cli": {
+			"source": "script",
+			"script": {
+				"url": "https://cli.kiro.dev/install",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
 		},
 		"kitty": {
 			"source": "apt",
@@ -886,10 +934,12 @@
 			]
 		},
 		"pi-agent": {
-			"source": "apt",
-			"targets": [
-				"pi"
-			]
+			"source": "script",
+			"script": {
+				"url": "https://pi.dev/install.sh",
+				"shell": "sh"
+			},
+			"verified_on": "2026-11-25"
 		},
 		"pika-backup": {
 			"source": "flatpak",
@@ -980,6 +1030,14 @@
 			"targets": [
 				"qrencode"
 			]
+		},
+		"qwen-code": {
+			"source": "script",
+			"script": {
+				"url": "https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.sh",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-25"
 		},
 		"rclone": {
 			"source": "apt",

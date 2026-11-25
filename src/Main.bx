@@ -729,6 +729,32 @@ class {
 				println( new bxrig.CommandSpec().usage( "default" ) );
 				CLIExit( xit.usage() );
 				break;
+			case "privacy":
+				// What leaves this machine, and the switches for a local model and telemetry. See COMMAND-CONTRACT.md 13.70.
+				pvSub = p.len() >= 2 ? p[2] : "";
+				pv = new bxrig.AiPrivacy( cli );
+				if ( pvSub == "" ) CLIExit( pv.reportCmd( asJson ) );
+				if ( pvSub == "local-only" && p.len() == 2 ) CLIExit( pv.localCmd( structKeyExists( args.options, "off" ), structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				if ( pvSub == "telemetry" && p.len() >= 3 ) {
+				pvIds = [];
+				for ( pvI = 4; pvI <= p.len(); pvI++ ) pvIds.append( p[ pvI ] );
+				CLIExit( pv.telemetryCmd( p[3], pvIds, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+			}
+				println( new bxrig.CommandSpec().usage( "privacy" ) );
+				CLIExit( xit.usage() );
+				break;
+			case "mcp":
+				// BxRig's tools for any coding agent or editor (MCP). See COMMAND-CONTRACT.md 13.69.
+				mcpSub = p.len() >= 2 ? p[2] : "";
+				mcpIds = [];
+				for ( mcpI = 3; mcpI <= p.len(); mcpI++ ) mcpIds.append( p[ mcpI ] );
+				if ( mcpSub == "" ) CLIExit( new bxrig.AiMcp( cli ).statusCmd( asJson ) );
+				if ( mcpSub == "tools" && p.len() == 2 ) CLIExit( new bxrig.AiMcp( cli ).toolsCmd( asJson ) );
+				if ( mcpSub == "serve" && p.len() == 2 ) CLIExit( new bxrig.AiMcp( cli ).serve( structKeyExists( args.options, "write" ) ) );
+				if ( mcpSub == "link" || mcpSub == "unlink" ) CLIExit( new bxrig.AiMcp( cli ).linkCmd( mcpIds, mcpSub == "unlink", structKeyExists( args.options, "write" ), structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				println( new bxrig.CommandSpec().usage( "mcp" ) );
+				CLIExit( xit.usage() );
+				break;
 			case "ai":
 				// Your coding agents: list, the default one, and launching it. See COMMAND-CONTRACT.md 13.14.
 				aiSub = p.len() >= 2 ? p[2] : "";

@@ -9,7 +9,7 @@ function seek( n ) { app.goto( "look" ); while ( app.page().state().cursor > n )
 function shot( w = 120, h = 40 ) { view.paint( app, 10, w, h ); return tui.render_to_string( w, h ); }
 
 reg = new bxrig.ControlCenterPages();
-testkit.check( "registry: Look sits before Themes, which stays its own page", find( "secrets,look,themes,accessibility,logs", reg.ids().toList( "," ) ) > 0 && reg.find( "look" ).title == "Look" && reg.find( "themes" ).title == "Themes" );
+testkit.check( "registry: Look sits before Themes, which stays its own page", find( "secrets,privacy,look,themes,accessibility,logs", reg.ids().toList( "," ) ) > 0 && reg.find( "look" ).title == "Look" && reg.find( "themes" ).title == "Themes" );
 testkit.check( "the page builds, for the real run and for --demo", new bxrig.PageFactory().make( "look", true, {} ).id() == "look" && new bxrig.PageFactory().make( "themes", false, {} ).id() == "themes" );
 
 s = page.state();

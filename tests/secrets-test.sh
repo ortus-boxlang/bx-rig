@@ -42,7 +42,7 @@ printf 'oa-key2\n' > "$tmp/valfile"
 s set OPENAI_API_KEY --from-file="$tmp/valfile" | grep -q 'was replaced' || fail 'a second set replaces'
 
 # list, get
-s list | grep -q 'ANTHROPIC_API_KEY .*ai .*(claude-code, opencode-cli)' || fail "list shows names, type and the agents that use them: $(s list)"
+s list | grep -q 'ANTHROPIC_API_KEY .*ai .*(claude-code, opencode-cli, pi-agent, crush, goose)' || fail "list shows names, type and the agents that use them: $(s list)"
 [[ "$(s list)" != *sk-test-123* ]] || fail 'list must never print values'
 s get ANTHROPIC_API_KEY | grep -q 'is set (11 characters)' || fail 'get hides the value'
 [[ "$(s get ANTHROPIC_API_KEY)" != *sk-test-123* ]] || fail 'get printed the value without --show'
@@ -177,7 +177,7 @@ printf 'file-secret\n' > "$tmp/valfile"
 runfile "$binary" secrets set GEMINI_API_KEY --from-file="$tmp/valfile" | grep -q 'was saved (file)' || fail 'set (file)'
 [[ "$(stat -c %a "$tmp/data2/secrets/GEMINI_API_KEY")" == 600 && "$(stat -c %a "$tmp/data2/secrets")" == 700 ]] || fail 'file modes'
 [[ "$(runfile "$binary" secrets get GEMINI_API_KEY --show)" == 'file-secret' ]] || fail 'get (file)'
-runfile "$binary" secrets list | grep -q 'GEMINI_API_KEY .*ai .*(gemini-cli, opencode-cli)' || fail 'list (file)'
+runfile "$binary" secrets list | grep -q 'GEMINI_API_KEY .*ai .*(gemini-cli, opencode-cli, pi-agent, crush, goose)' || fail 'list (file)'
 r="$(runfile "$binary" secrets run GEMINI_API_KEY -- sh -c 'echo "$GEMINI_API_KEY"')"; [[ "$r" == 'file-secret' ]] || fail "run (file): $r"
 runfile "$binary" secrets unset GEMINI_API_KEY --yes >/dev/null; [[ ! -e "$tmp/data2/secrets/GEMINI_API_KEY" ]] || fail 'unset (file)'
 echo "secrets-test: ok"

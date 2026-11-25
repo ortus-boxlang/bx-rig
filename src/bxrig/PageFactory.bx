@@ -30,6 +30,7 @@ class PageFactory {
 			case "mail": return new bxrig.ListPage( new bxrig.MailProvider( d ) );
 			case "storage": return new bxrig.ListPage( new bxrig.StorageProvider( d ) );
 			case "secrets": return new bxrig.ListPage( new bxrig.SecretsProvider( d ) );
+			case "privacy": return new bxrig.ListPage( new bxrig.PrivacyProvider( d ) );
 			case "look": return new bxrig.LookPage( d );
 			case "themes": return new bxrig.ThemesPage( d );
 			case "logs": return new bxrig.ListPage( new bxrig.LogsProvider( d ) );

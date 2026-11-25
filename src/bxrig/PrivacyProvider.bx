@@ -1,0 +1,75 @@
+// Privacy: what leaves this machine. One row per AI (where its model runs), stored key (names only), MCP server, telemetry switch
+// and data folder. l turns local-only on (L off), t turns telemetry off (T back on), Enter shows the full report. Reads
+// `bxrig privacy --json`.
+class PrivacyProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "privacy"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "privacy" ); }
+	function title() { return "Privacy"; }
+	function hint() { return "what leaves this machine: models, keys, MCP servers, telemetry"; }
+	function emptyText() { return "Nothing to show yet."; }
+	function columns() { return [ { key: "group", label: "", w: 11 }, { key: "name", label: "what", w: 24 }, { key: "state", label: "", w: 16 }, { key: "where", label: "where", w: 0 } ]; }
+
+	function style( r ) {
+		if ( r.kind == "note" ) return "dim";
+		return r.warn ? "warn" : ( r.good ? "ok" : "" );
+	}
+
+	function detail( r ) {
+		if ( r.kind == "note" ) return [ r.text ];
+		return r.lines;
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "report", run: function( r ) { return { action: "show", title: "What leaves this machine", args: [ "privacy" ] }; } },
+			{ key: "l", label: "local only", run: function( r ) { return { action: "cli", title: "Point the agents that can at your local model", args: [ "privacy", "local-only" ] }; } },
+			{ key: "L", label: "local only off", run: function( r ) { return { action: "cli", title: "Take your local model out of the agents", args: [ "privacy", "local-only", "--off" ] }; } },
+			{ key: "t", label: "telemetry off", run: function( r ) { return { action: "cli", title: "Turn off the telemetry each agent lets you turn off", args: [ "privacy", "telemetry", "off" ] }; } },
+			{ key: "T", label: "telemetry on", run: function( r ) { return { action: "cli", title: "Telemetry back to each agent's own default", args: [ "privacy", "telemetry", "on" ] }; } }
+		];
+	}
+
+	// The rows from `privacy --json` (pure, for tests).
+	function rowsFrom( data ) {
+		var d = isStruct( arguments.data ) ? arguments.data : {};
+		var rows = [];
+		if ( !structKeyExists( d, "server" ) ) return [ { kind: "note", group: "", name: "", state: "", where: "", text: "BxRig could not read the privacy report (bxrig privacy)." } ];
+		var sv = isStruct( d.server ) ? d.server : {};
+		var ready = sv.ready ?: false;
+		rows.append( { kind: "row", group: "AI", name: "BxRig's AI server", state: ready ? "this machine" : "not set up", where: ready ? sv.address : ( sv.note ?: "" ), good: ready, warn: false, lines: [ ready ? "Your local models run here, at " & sv.address & ": " & sv.models.toList( ", " ) & "." : ( sv.note ?: "" ) ] } );
+		for ( var a in d.agents ?: [] ) {
+			rows.append( { kind: "row", group: "AI", name: a.name, state: a.local == "on" ? "local model in" : ( a.cloud ? "cloud" : "this machine" ), where: a.runs, good: !a.cloud, warn: a.cloud && a.local == "possible",
+					lines: [ a.name & ": " & ( a.cloud ? "your prompts go to " & a.runs & "." : "it can use your local model." ), a.local == "possible" ? "l points it at your local model." : ( a.local == "no" ? "It can not use a local model: " & a.why & "." : "" ) ] } );
+		}
+		for ( var k in d.keys ?: [] ) rows.append( { kind: "row", group: "Keys", name: k.name, state: k.where == "your environment" ? "set" : "stored", where: k.where, good: false, warn: false, lines: [ k.name & " is kept in " & k.where & ". BxRig never shows a key's value here." ] } );
+		for ( var m in d.mcp ?: [] ) rows.append( { kind: "row", group: "MCP", name: m.server, state: m.agent, where: m.where, good: m.where == "this machine", warn: m.where != "this machine", lines: [ m.agent & " can reach the MCP server " & m.server & " (" & m.where & ")." ] } );
+		for ( var t in d.telemetry ?: [] ) rows.append( { kind: "row", group: "Telemetry", name: t.name, state: t.can ? t.state : "no switch", where: t.can ? "" : t.how, good: t.state == "off", warn: t.state == "on",
+				lines: [ t.can ? t.name & "'s telemetry is " & t.state & "; t turns it off for every agent." : t.name & ": BxRig can not turn it off (" & t.how & ")." ] } );
+		var env = new bxrig.util.Env();
+		for ( var x in d.data ?: [] ) rows.append( { kind: "row", group: "Data", name: x.what, state: "", where: env.tilde( x.path ), good: false, warn: false, lines: [ x.what & ": " & x.path & "." ] } );
+		if ( ( d.cloud_agents ?: 0 ) > 0 ) rows.append( { kind: "note", group: "", name: "", state: "", where: "", text: d.cloud_agents & " of your agents send prompts to the cloud. l points the ones that can at your local model." } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoData() );
+		return rowsFrom( variables.proc.selfData( [ "privacy" ], 60 ) );
+	}
+
+	function demoData() {
+		return {
+			server: { ready: true, address: "http://127.0.0.1:8089", models: [ "qwen3.5-4b" ] },
+			agents: [
+				{ id: "pi-agent", name: "Pi", runs: "this machine and the providers you pick", local: "on", why: "", cloud: false },
+				{ id: "opencode-cli", name: "OpenCode", runs: "the providers you pick", local: "possible", why: "", cloud: true },
+				{ id: "claude-code", name: "Claude Code", runs: "api.anthropic.com", local: "no", why: "it only talks to Anthropic's API", cloud: true }
+			],
+			keys: [ { name: "ANTHROPIC_API_KEY", where: "your system keyring" } ],
+			mcp: [ { agent: "Claude Code", server: "bxrig", where: "this machine" }, { agent: "Claude Code", server: "github", where: "web: api.githubcopilot.com" } ],
+			telemetry: [ { id: "claude-code", name: "Claude Code", state: "off", can: true, how: "" }, { id: "pi-agent", name: "Pi", state: "on", can: true, how: "" }, { id: "opencode-cli", name: "OpenCode", state: "", can: false, how: "OpenCode documents no telemetry switch" } ],
+			data: [ { what: "Claude Code: its chats and history", path: "/home/you/.claude" }, { what: "BoxLang agents (Boxy and yours): chats, notes, files, skills", path: "/home/you/.bxagents" } ],
+			cloud_agents: 2
+		};
+	}
+}

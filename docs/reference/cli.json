@@ -2435,6 +2435,25 @@
 							"type": "any"
 						}
 					]
+				},
+				{
+					"name": "privacy",
+					"summary": "What leaves this machine: which AI runs where, your keys, agent data, MCP servers, telemetry; and switches for local only and telemetry.",
+					"usage": [
+						"privacy [--json] | local-only [--off] [--yes] | telemetry off|on [AGENT...] [--yes] [--json]"
+					],
+					"examples": [
+						"bxrig privacy",
+						"bxrig privacy local-only --yes",
+						"bxrig privacy telemetry off --yes"
+					],
+					"mutates": true,
+					"flags": [
+						{
+							"name": "off",
+							"type": "bool"
+						}
+					]
 				}
 			]
 		},
@@ -2843,6 +2862,26 @@
 						},
 						{
 							"name": "window",
+							"type": "bool"
+						}
+					]
+				},
+				{
+					"name": "mcp",
+					"summary": "BxRig's own tools for any coding agent or editor, as an MCP server (Boxy's tools, read-only unless --write).",
+					"usage": [
+						"mcp [--json] | tools | serve [--write] | link [AGENT...] [--write] [--yes] | unlink [AGENT...] [--yes] [--json]"
+					],
+					"examples": [
+						"bxrig mcp",
+						"bxrig mcp link --yes",
+						"bxrig mcp link pi-agent claude-code --write --yes",
+						"bxrig mcp tools"
+					],
+					"mutates": true,
+					"flags": [
+						{
+							"name": "write",
 							"type": "bool"
 						}
 					]
