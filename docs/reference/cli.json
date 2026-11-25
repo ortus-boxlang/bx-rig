@@ -2667,6 +2667,35 @@
 					]
 				},
 				{
+					"name": "android",
+					"summary": "Android apps on your desktop with Waydroid. Off until you set it up; Google Play by default.",
+					"usage": [
+						"android [--json] | setup [--vanilla] [--yes] | start | stop | apps | open [APP] | install FILE.apk [--yes] | register [--open] | remove [--data] [--yes] [--json]"
+					],
+					"examples": [
+						"bxrig android",
+						"bxrig android setup --yes",
+						"bxrig android apps",
+						"bxrig android open Firefox",
+						"bxrig android install ~/Downloads/app.apk --yes"
+					],
+					"mutates": true,
+					"flags": [
+						{
+							"name": "data",
+							"type": "bool"
+						},
+						{
+							"name": "open",
+							"type": "bool"
+						},
+						{
+							"name": "vanilla",
+							"type": "bool"
+						}
+					]
+				},
+				{
 					"name": "ai",
 					"summary": "AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), BoxLang agents (bx-agents), coding agents, tmux sessions, the pull-down AI shell.",
 					"usage": [

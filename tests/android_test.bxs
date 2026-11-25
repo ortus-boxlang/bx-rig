@@ -1,0 +1,92 @@
+// `bxrig android` (Waydroid): the parsers for Waydroid's own output, the binder check, the setup plan for each distribution, picking an app by
+// what you typed, the Control Center page, and the opt-in wizard question and init step. Pure: nothing is run or installed.
+// Run from src/: (cd src && matchbox ../tests/android_test.bxs)
+testkit = new lib.Check( "android" );
+nl = chr( 10 );
+tab = chr( 9 );
+an = new bxrig.Android( new bxrig.util.Cli( "test" ) );
+
+// ---- waydroid status ----
+running = an.statusFrom( "Session:" & tab & "RUNNING" & nl & "Container:" & tab & "RUNNING" & nl & "Vendor type:" & tab & "MAINLINE" & nl & "IP address:" & tab & "192.168.240.112" & nl & "Session user:" & tab & "you(1000)" & nl & "Wayland display:" & tab & "wayland-1" & nl );
+testkit.check( "status: running with the container, vendor, address and display", running.running && running.container == "RUNNING" && running.vendor == "MAINLINE" && running.ip == "192.168.240.112" && running.wayland == "wayland-1" );
+stopped = an.statusFrom( "Session:" & tab & "STOPPED" & nl & "Vendor type:" & tab & "MAINLINE" & nl );
+testkit.check( "status: stopped", !stopped.running && stopped.session == "STOPPED" && stopped.container == "" );
+testkit.check( "status: nothing at all is not running", !an.statusFrom( "" ).running );
+testkit.check( "status: a frozen container is a running session", an.statusFrom( "Session:" & tab & "RUNNING" & nl & "Container:" & tab & "FROZEN" & nl ).container == "FROZEN" );
+
+// ---- waydroid app list ----
+listing = "Name: Settings" & nl & "packageName: com.android.settings" & nl & "categories:" & nl & tab & "android.intent.category.LAUNCHER" & nl
+& "Name: Calculator" & nl & "packageName: com.android.calculator2" & nl & "categories:" & nl & tab & "android.intent.category.LAUNCHER" & nl & tab & "android.intent.category.APP_CALCULATOR" & nl
+& "Name: F-Droid" & nl & "packageName: org.fdroid.fdroid" & nl & "categories:" & nl;
+apps = an.appsFrom( listing );
+testkit.check( "apps: every app, by name", apps.len() == 3 && apps[ 1 ].name == "Calculator" && apps[ 2 ].name == "F-Droid" && apps[ 3 ].name == "Settings" );
+testkit.check( "apps: package and categories", apps[ 1 ].package == "com.android.calculator2" && apps[ 1 ].categories.len() == 2 && apps[ 2 ].categories.len() == 0 );
+testkit.check( "apps: nothing is an empty list", an.appsFrom( "" ).len() == 0 && an.appsFrom( "garbage" & nl & "more" ).len() == 0 );
+
+// ---- the image ----
+testkit.check( "image: from waydroid.cfg's system_ota", an.imageFrom( "[waydroid]" & nl & "system_ota = https://ota.waydro.id/system/lineage/waydroid_x86_64/GAPPS.json" & nl ) == "GAPPS"
+	&& an.imageFrom( "system_ota = https://ota.waydro.id/system/lineage/waydroid_x86_64/VANILLA.json" ) == "VANILLA" && an.imageFrom( "system_ota=https://x/y/foss.json" ) == "FOSS" && an.imageFrom( "" ) == "" );
+
+// ---- binder ----
+testkit.check( "binder: built into the kernel", an.binderFrom( "CONFIG_ANDROID_BINDER_IPC=y" & nl, "", false ).ok && an.binderFrom( "CONFIG_ANDROID_BINDER_IPC=y", "", false ).how == "built in" );
+testkit.check( "binder: a module in the kernel config, or one that is installed", an.binderFrom( "CONFIG_ANDROID_BINDER_IPC=m", "", false ).how == "a module" && an.binderFrom( "", "", true ).how == "a module" );
+testkit.check( "binder: binderfs in /proc/filesystems", an.binderFrom( "", "nodev" & tab & "sysfs" & nl & "nodev" & tab & "binder" & nl, false ).how == "binderfs" );
+testkit.check( "binder: nothing says missing", !an.binderFrom( "# CONFIG_ANDROID_BINDER_IPC is not set" & nl, "nodev" & tab & "binderish_fs" & nl, false ).ok && !an.binderFrom( "", "", false ).ok );
+
+// ---- the setup plan ----
+fresh = an.setupSteps( "arch", "GAPPS", false, false, "" );
+testkit.check( "setup on Arch from nothing: install, image, service, session", fresh.len() == 4 && fresh[ 1 ].argv.toList( " " ) == "sudo pacman -S --needed --noconfirm waydroid"
+	&& fresh[ 2 ].argv.toList( " " ) == "sudo waydroid init -s GAPPS" && fresh[ 3 ].argv.toList( " " ) == "sudo systemctl enable --now waydroid-container.service" && fresh[ 4 ].argv.toList( " " ) == "waydroid session start" && ( fresh[ 4 ].detach ?: false ) );
+testkit.check( "setup: --vanilla asks for the vanilla image", an.setupSteps( "arch", "VANILLA", false, false, "" )[ 2 ].argv.toList( " " ) == "sudo waydroid init -s VANILLA" );
+testkit.check( "setup: already installed and set up with that image skips both", an.setupSteps( "arch", "GAPPS", true, true, "GAPPS" ).len() == 2 );
+changing = an.setupSteps( "arch", "GAPPS", true, true, "VANILLA" );
+testkit.check( "setup: another image is forced over the old one", changing.len() == 3 && changing[ 1 ].argv.toList( " " ) == "sudo waydroid init -s GAPPS -f" && find( "replace", changing[ 1 ].title ) > 0 );
+testkit.check( "setup: installed but never set up only downloads the image", an.setupSteps( "arch", "GAPPS", true, false, "" ).len() == 3 );
+ub = an.setupSteps( "ubuntu", "GAPPS", false, false, "" );
+testkit.check( "setup on Ubuntu: Waydroid's repository first, then apt", ub.len() == 5 && find( "repo.waydro.id", ub[ 1 ].argv[ 4 ] ) > 0 && ub[ 1 ].argv[ 1 ] == "sudo" && find( "apt", ub[ 2 ].argv.toList( " " ) ) > 0 && find( "waydroid", ub[ 2 ].argv.toList( " " ) ) > 0 );
+testkit.check( "setup on Debian: the same", an.setupSteps( "debian", "GAPPS", false, false, "" ).len() == 5 );
+testkit.check( "setup: every step says what it does", fresh.every( function( s ) { return len( s.title ) > 10; } ) && ub.every( function( s ) { return len( s.title ) > 10; } ) );
+testkit.check( "setup: the session runs in the background", an.detached( [ "waydroid", "session", "start" ] ).toList( "|" ) == "sh|-c|setsid -f waydroid session start >/dev/null 2>&1 </dev/null" );
+testkit.check( "supported: everywhere but openSUSE", an.supported( "arch" ) && an.supported( "debian" ) && an.supported( "ubuntu" ) && !an.supported( "suse" ) );
+
+// ---- picking an app ----
+r = an.resolveApp( apps, "com.android.settings" );
+testkit.check( "app: by package", r.app.name == "Settings" );
+testkit.check( "app: by name, any case", an.resolveApp( apps, "calculator" ).app.package == "com.android.calculator2" && an.resolveApp( apps, "F-DROID" ).app.name == "F-Droid" );
+testkit.check( "app: by a part of the name when only one matches (a package is matched whole, not in part)", an.resolveApp( apps, "droid" ).app.name == "F-Droid" && an.resolveApp( apps, "set" ).app.package == "com.android.settings" );
+testkit.check( "app: a part that matches several is refused with them", structKeyExists( an.resolveApp( apps, "i" ), "error" ) && find( "F-Droid", an.resolveApp( apps, "i" ).error ) > 0 && find( "Settings", an.resolveApp( apps, "i" ).error ) > 0 );
+testkit.check( "app: no match is refused", structKeyExists( an.resolveApp( apps, "nope" ), "error" ) );
+
+// ---- Google Play ----
+testkit.check( "register: the Android ID is the long number in sqlite's output", an.androidIdFrom( "noise" & nl & "3456789012345678901" & nl ) == "3456789012345678901" && an.androidIdFrom( "" ) == "" && an.androidIdFrom( "12345" ) == "" );
+
+// ---- the Control Center page ----
+pp = new bxrig.AndroidProvider( true );
+off = pp.rowsFrom( { supported: true, wayland: false, binder: { ok: false }, installed: false, initialized: false }, {} );
+testkit.check( "page: off says so, how to turn it on, and what this machine has", off[ 1 ].state == "off" && !off[ 1 ].setup && find( "off", off[ 1 ].lines[ 1 ] ) > 0 && find( "S shows the plan", off[ 1 ].lines[ 2 ] ) > 0 && find( "not a Wayland session", off[ 2 ].text ) > 0 && find( "binder missing", off[ 2 ].text ) > 0 );
+rows = pp.rowsFrom( pp.demoStatus(), pp.demoApps() );
+testkit.check( "page: the state, then every app", rows.len() == 5 && rows[ 1 ].kind == "state" && rows[ 1 ].running && rows[ 1 ].state == "running" && rows[ 2 ].name == "Calculator" && rows[ 5 ].name == "Settings" );
+testkit.check( "page: the image and address are on the state row", find( "Google Play", rows[ 1 ].package ) > 0 && find( "192.168.240.112", rows[ 1 ].package ) > 0 );
+down = pp.rowsFrom( { supported: true, installed: true, initialized: true, image: "VANILLA", running: false }, {} );
+testkit.check( "page: stopped, with a note to start it", down[ 1 ].state == "stopped" && !down[ 1 ].running && down[ down.len() ].kind == "note" && find( "vanilla", down[ 1 ].package ) > 0 );
+testkit.check( "page: openSUSE has a note and nothing else", pp.rowsFrom( { supported: false }, {} ).len() == 1 && pp.rowsFrom( { supported: false }, {} )[ 1 ].kind == "note" );
+act = function( k ) { return pp.actions().filter( function( a ) { return compare( a.key, k ) == 0; } )[ 1 ]; };
+testkit.check( "page: Enter opens an app, or Android itself", act( "Enter" ).run( rows[ 2 ] ).args.toList( " " ) == "android open com.android.calculator2" && act( "Enter" ).run( rows[ 1 ] ).args.toList( " " ) == "android open" && structIsEmpty( act( "Enter" ).run( off[ 1 ] ) ) );
+testkit.check( "page: s starts or stops, r registers, S sets up", act( "s" ).run( rows[ 1 ] ).args.toList( " " ) == "android stop" && act( "s" ).run( down[ 1 ] ).args.toList( " " ) == "android start" && act( "r" ).run( rows[ 1 ] ).args.toList( " " ) == "android register"
+	&& act( "S" ).run( off[ 1 ] ).args.toList( " " ) == "android setup" && structIsEmpty( act( "s" ).run( off[ 1 ] ) ) );
+testkit.check( "page: after Secrets and Privacy, before Logs", find( "privacy,look,themes,accessibility,android,logs", new bxrig.ControlCenterPages().ids().toList( "," ) ) > 0 );
+testkit.check( "page: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), serializeJSON( rows ) & serializeJSON( off ) ) );
+
+// ---- opt in: the wizard question and the init step ----
+wiz = deserializeJSON( new bxrig.WizardData().demoPages() );
+pages = isArray( wiz ) ? wiz : wiz.pages;
+q = {};
+for ( pg in pages ) for ( qq in pg.questions ?: [] ) if ( ( qq.id ?: "" ) == "android" ) q = qq;
+testkit.check( "wizard: the Android question defaults to no", !structIsEmpty( q ) && q.default == "no" && q.options.map( function( o ) { return o.value; } ).toList() == "no,yes" );
+ip = new bxrig.InitPlan();
+yes = ip.plan( { android: "yes" } );
+step = yes.steps.filter( function( s ) { return s.id == "android"; } );
+testkit.check( "init: yes adds one optional step that runs the setup", step.len() == 1 && step[ 1 ].argv.toList( " " ) == "bxrig android setup --yes" && ( step[ 1 ].optional ?: false ) );
+testkit.check( "init: no, and the default, add nothing", ip.plan( { android: "no" } ).steps.filter( function( s ) { return s.id == "android"; } ).len() == 0 && ip.plan( {} ).steps.filter( function( s ) { return s.id == "android"; } ).len() == 0 );
+
+testkit.done( "all passed" );

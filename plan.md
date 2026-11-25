@@ -507,7 +507,7 @@ From the owner's request on 2026-11-21 to review what BxRig is missing for devel
 | 11b | Boxy, the desktop assistant: tools, approvals, skill review, Super+Period, bar tab | merged (#36) |
 | 12 | MCP for every agent, `bxrig privacy`, every major coding agent in the catalog | merged (#37) |
 | 13 | Sync (OneDrive, Dropbox, Google Drive, NAS) | **deferred** by the owner on 2026-11-25, shape below |
-| 14 | Android: Waydroid with Google Play, a Control Center page | next |
+| 14 | Android: Waydroid with Google Play, a Control Center page; opt-in, off by default | built, in review |
 
 ### 20.1 Deferred: PR 13 Sync (shape proposed 2026-11-25, not approved)
 

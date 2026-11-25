@@ -1,0 +1,346 @@
+// `bxrig android`: Android apps on your desktop with Waydroid. Off until you ask for it: nothing here is part of a default install, and every
+// command that changes something shows its plan first. Formats and commands from Waydroid's source and docs (read 2026-11-25):
+//   `waydroid status`   "Session:\tRUNNING|STOPPED", "Container:\tSTATE", "Vendor type:\t...", "IP address:\t...", "Wayland display:\t..."
+//   `waydroid app list` "Name: X", "packageName: Y", "categories:" and one tab-indented category per line, repeated per app
+//   `sudo waydroid init -s VANILLA|FOSS|GAPPS` downloads the image (about 1.2 GB); `-f` replaces an image that is already set up
+//   `waydroid session start|stop`, `waydroid app install|launch|remove`, `waydroid show-full-ui`, `waydroid shell`
+//   Google Play certification: the Android ID from gservices.db is registered at google.com/android/uncertified (docs.waydro.id)
+// Waydroid needs a Wayland session and the kernel's binder driver (the CachyOS kernels have it). There is no openSUSE package. Test hooks:
+// BXRIG_WAYDROID_DIR (default /var/lib/waydroid) and BXRIG_PROC_FILESYSTEMS (default /proc/filesystems).
+class Android {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( arguments.cli, "android" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		variables.registerUrl = "https://www.google.com/android/uncertified";
+		return this;
+	}
+
+	// ---- parsers (pure) ----
+
+	// `waydroid status` as a struct.
+	struct function statusFrom( required string text ) {
+		var out = { session: "", container: "", vendor: "", ip: "", wayland: "", running: false };
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			var at = find( ":", line );
+			if ( !at ) continue;
+			var k = lCase( trim( left( line, at - 1 ) ) );
+			var v = trim( mid( line, at + 1, len( line ) ) );
+			if ( k == "session" ) out.session = v;
+			else if ( k == "container" ) out.container = v;
+			else if ( k == "vendor type" ) out.vendor = v;
+			else if ( k == "ip address" ) out.ip = v;
+			else if ( k == "wayland display" ) out.wayland = v;
+		}
+		out.running = out.session == "RUNNING";
+		return out;
+	}
+
+	// `waydroid app list` as [ { name, package, categories } ], by name.
+	array function appsFrom( required string text ) {
+		var apps = [];
+		var cur = {};
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) {
+			if ( left( line, 6 ) == "Name: " ) {
+				if ( !structIsEmpty( cur ) ) apps.append( cur );
+				cur = { name: trim( mid( line, 7, len( line ) ) ), package: "", categories: [] };
+			} else if ( structIsEmpty( cur ) ) continue;
+			else if ( left( line, 13 ) == "packageName: " ) cur.package = trim( mid( line, 14, len( line ) ) );
+			else if ( left( line, 1 ) == chr( 9 ) && len( trim( line ) ) ) cur.categories.append( trim( line ) );
+		}
+		if ( !structIsEmpty( cur ) ) apps.append( cur );
+		apps.sort( function( a, b ) { return compareNoCase( a.name, b.name ); } );
+		return apps;
+	}
+
+	// VANILLA, FOSS or GAPPS from waydroid.cfg's system_ota line, or "".
+	string function imageFrom( required string cfg ) {
+		var m = reFind( "system_ota\s*=\s*\S*/([A-Za-z]+)\.json", arguments.cfg, 1, true );
+		return m.pos[ 1 ] ? uCase( mid( arguments.cfg, m.pos[ 2 ], m.len[ 2 ] ) ) : "";
+	}
+
+	// Whether the kernel has the binder driver, from its config, /proc/filesystems and whether a module is installed.
+	struct function binderFrom( required string config, required string filesystems, required boolean moduleFound ) {
+		if ( reFind( "(?m)^CONFIG_ANDROID_BINDER_IPC=y", arguments.config ) ) return { ok: true, how: "built in" };
+		if ( reFind( "(?m)^CONFIG_ANDROID_BINDER_IPC=m", arguments.config ) ) return { ok: true, how: "a module" };
+		if ( reFind( "(?m)(^|\s)binder\s*$", arguments.filesystems ) ) return { ok: true, how: "binderfs" };
+		if ( arguments.moduleFound ) return { ok: true, how: "a module" };
+		return { ok: false, how: "" };
+	}
+
+	// ---- what this machine has ----
+
+	string function waydroidDir() { return reReplace( variables.env.get( "BXRIG_WAYDROID_DIR", "/var/lib/waydroid" ), "/+$", "" ); }
+
+	boolean function isWayland() { return variables.env.get( "XDG_SESSION_TYPE", "" ) == "wayland" || len( variables.env.get( "WAYLAND_DISPLAY", "" ) ) > 0; }
+
+	string function readText( required string path ) {
+		try { return fileExists( arguments.path ) ? fileRead( arguments.path ) : ""; } catch ( any e ) { return ""; }
+	}
+
+	struct function binder() {
+		var cfg = variables.proc.exec( [ "sh", "-c", "zcat /proc/config.gz 2>/dev/null" ], 10 );
+		var mod = variables.proc.exec( [ "sh", "-c", "modinfo binder_linux >/dev/null 2>&1 || modinfo binder >/dev/null 2>&1" ], 10 );
+		return binderFrom( cfg.exitCode == 0 ? cfg.output : "", readText( variables.env.get( "BXRIG_PROC_FILESYSTEMS", "/proc/filesystems" ) ), mod.exitCode == 0 );
+	}
+
+	boolean function supported( required string distro ) { return arguments.distro != "suse"; }
+
+	struct function facts() {
+		var d = new bxrig.util.Distro().catalogName();
+		var have = variables.proc.has( "waydroid" );
+		var st = have ? statusFrom( variables.proc.exec( [ "waydroid", "status" ], 20 ).output ?: "" ) : statusFrom( "" );
+		var cfg = readText( waydroidDir() & "/waydroid.cfg" );
+		return {
+			distro: d, supported: supported( d ), wayland: isWayland(), binder: binder(), installed: have, initialized: len( cfg ) > 0,
+			image: imageFrom( cfg ), session: st.session, container: st.container, running: st.running, ip: st.ip
+		};
+	}
+
+	// ---- the plan (pure) ----
+
+	string function imageLabel( required string image ) {
+		return arguments.image == "GAPPS" ? "Google Play" : ( arguments.image == "FOSS" ? "open source apps only" : "vanilla, no Google" );
+	}
+
+	// The steps that make Android work from what is there now: [ { title, argv, live, detach } ].
+	array function setupSteps( required string distro, required string image, required boolean installed, required boolean initialized, required string currentImage ) {
+		var steps = [];
+		if ( !arguments.installed ) {
+			if ( arguments.distro == "debian" || arguments.distro == "ubuntu" ) {
+				steps.append( { title: "add Waydroid's package repository (repo.waydro.id)", argv: [ "sudo", "sh", "-c", "curl -s https://repo.waydro.id | bash" ], live: true } );
+			}
+			steps.append( { title: "install waydroid", argv: new bxrig.util.Packages().native( variables.proc, arguments.distro ).installArgv( [ "waydroid" ] ), live: true } );
+		}
+		if ( !arguments.initialized || arguments.currentImage != arguments.image ) {
+			var argv = [ "sudo", "waydroid", "init", "-s", arguments.image ];
+			if ( arguments.initialized ) argv.append( "-f" );
+			steps.append( { title: ( arguments.initialized ? "replace the Android image with the " : "download the " ) & imageLabel( arguments.image ) & " image (about 1.2 GB)", argv: argv, live: true } );
+		}
+		steps.append( { title: "start the waydroid-container service now and at every boot", argv: new bxrig.util.Systemd( variables.proc ).enableArgv( [ "waydroid-container.service" ], false, true ), live: true } );
+		steps.append( { title: "start your Android session", argv: [ "waydroid", "session", "start" ], detach: true } );
+		return steps;
+	}
+
+	// The program for the step, run in the background so it outlives this command.
+	array function detached( required array argv ) {
+		return [ "sh", "-c", "setsid -f " & arguments.argv.toList( " " ) & " >/dev/null 2>&1 </dev/null" ];
+	}
+
+	// Runs a step on the terminal (sudo can ask for a password, a download shows its progress): its exit code.
+	numeric function runLive( required array argv ) {
+		var rest = [];
+		for ( var i = 2; i <= arguments.argv.len(); i++ ) rest.append( arguments.argv[ i ] );
+		var r = systemExecute( arguments.argv[ 1 ], rest, 0, false, ".", "", "", true, {}, true );
+		return r.exitCode;
+	}
+
+	// Waits up to `seconds` for the session to run.
+	boolean function waitRunning( required numeric seconds ) {
+		for ( var i = 1; i <= arguments.seconds; i++ ) {
+			if ( statusFrom( variables.proc.exec( [ "waydroid", "status" ], 20 ).output ?: "" ).running ) return true;
+			variables.proc.exec( [ "sleep", "1" ], 5 );
+		}
+		return false;
+	}
+
+	// ---- status ----
+
+	function statusCmd( asJson ) {
+		var f = facts();
+		var lines = [];
+		if ( !f.supported ) lines.append( "Android is not available here: openSUSE has no Waydroid package." );
+		else if ( !f.installed && !f.initialized ) {
+			lines.append( "Android (Waydroid) is off: it is not set up, and BxRig does nothing about it until you ask." );
+			lines.append( "Turn it on: bxrig android setup --yes   (Google Play; --vanilla for no Google)" );
+		} else {
+			lines.append( "Waydroid " & ( f.installed ? "is installed" : "is not installed" ) & ( f.initialized ? ", image: " & imageLabel( f.image ) : ", no image yet" ) & "." );
+			lines.append( "Session: " & ( f.running ? "running" : "stopped" ) & ( len( f.container ) && f.running ? " (container " & lCase( f.container ) & ")" : "" ) & ( len( f.ip ) && f.running ? ", " & f.ip : "" ) );
+			lines.append( f.running ? "Open it: bxrig android open   Apps: bxrig android apps" : "Start it: bxrig android start" );
+		}
+		lines.append( "This machine: " & ( f.wayland ? "a Wayland session" : "NOT a Wayland session (Waydroid needs one)" ) & ", binder " & ( f.binder.ok ? "available (" & f.binder.how & ")" : "missing" ) & "." );
+		return variables.out.say( "ok", f, arguments.asJson, lines );
+	}
+
+	// ---- setup ----
+
+	function setupCmd( vanilla, yes, dry, asJson ) {
+		var f = facts();
+		if ( !f.supported ) return variables.out.precondition( "openSUSE has no Waydroid package, so BxRig does not set Android up there", arguments.asJson );
+		if ( !f.wayland ) return variables.out.precondition( "Waydroid needs a Wayland session (Hyprland, or Plasma on Wayland); this is not one", arguments.asJson );
+		if ( !f.binder.ok ) return variables.out.precondition( "this kernel has no binder driver, which Waydroid needs. The CachyOS kernels have it. On another kernel, install binder_linux-dkms from the AUR (BxRig does not change your kernel), restart, and run this again", arguments.asJson );
+		var image = arguments.vanilla ? "VANILLA" : "GAPPS";
+		var steps = setupSteps( f.distro, image, f.installed, f.initialized, f.image );
+		var shown = steps.map( function( s ) { return { title: s.title, command: s.argv.toList( " " ) }; } );
+		if ( f.installed && f.initialized && f.image == image && f.running ) return variables.out.say( "ok", f, arguments.asJson, [ "Android is already set up and running (" & imageLabel( image ) & ")." ] );
+		var lines = steps.map( function( s ) { return s.title; } );
+		lines.append( "Nothing else changes. Remove it again any time: bxrig android remove" );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "set up Android with Waydroid (" & imageLabel( image ) & ")", { image: image, steps: shown }, arguments.asJson, arguments.dry, lines );
+		for ( var s in steps ) {
+			var code = 0;
+			if ( s.detach ?: false ) code = variables.proc.exec( detached( s.argv ), 20 ).exitCode;
+			else code = runLive( s.argv );
+			if ( code != 0 ) return variables.out.failed( "'" & s.argv.toList( " " ) & "' failed (exit " & code & "). Run it again: it continues where it stopped", arguments.asJson );
+		}
+		var up = waitRunning( 25 );
+		var next = [ up ? "Android is running." : "Android is starting; give it a minute, then bxrig android status." ];
+		if ( image == "GAPPS" ) next.append( "Open Google Play with bxrig android open. Play needs this device registered once: bxrig android register" );
+		else next.append( "Install apps from a file with bxrig android install FILE.apk (F-Droid is a good source)." );
+		return variables.out.say( "ok", { image: image, running: up }, arguments.asJson, next );
+	}
+
+	// ---- start, stop ----
+
+	function needSetUp( f, asJson ) {
+		if ( !arguments.f.installed || !arguments.f.initialized ) return variables.out.precondition( "Android is not set up: bxrig android setup --yes", arguments.asJson );
+		return 0;
+	}
+
+	function startCmd( asJson ) {
+		var f = facts();
+		var n = needSetUp( f, arguments.asJson );
+		if ( n != 0 ) return n;
+		if ( f.running ) return variables.out.say( "ok", { running: true }, arguments.asJson, [ "Android is already running." ] );
+		variables.proc.exec( detached( [ "waydroid", "session", "start" ] ), 20 );
+		var up = waitRunning( 25 );
+		if ( !up ) return variables.out.failed( "the session did not start; see: waydroid log (and check that the waydroid-container service runs)", arguments.asJson );
+		return variables.out.say( "ok", { running: true }, arguments.asJson, [ "Android is running. Open it: bxrig android open" ] );
+	}
+
+	function stopCmd( asJson ) {
+		var f = facts();
+		if ( !f.installed ) return variables.out.precondition( "Waydroid is not installed", arguments.asJson );
+		if ( !f.running ) return variables.out.say( "ok", { running: false }, arguments.asJson, [ "Android is already stopped." ] );
+		var r = variables.proc.exec( [ "waydroid", "session", "stop" ], 60 );
+		if ( r.exitCode != 0 ) return variables.out.failed( "waydroid session stop failed: " & trim( r.output ?: "" ), arguments.asJson );
+		return variables.out.say( "ok", { running: false }, arguments.asJson, [ "Android is stopped. The waydroid-container service stays on; bxrig android remove takes it out." ] );
+	}
+
+	// ---- apps ----
+
+	// The apps, or { error } when Android is not running.
+	function appList() {
+		var f = facts();
+		var n = needSetUp( f, false );
+		if ( n != 0 ) return { error: "Android is not set up: bxrig android setup --yes" };
+		if ( !f.running ) return { error: "Android is not running: bxrig android start" };
+		var r = variables.proc.exec( [ "waydroid", "app", "list" ], 60 );
+		return { apps: appsFrom( r.output ?: "" ) };
+	}
+
+	function appsCmd( asJson ) {
+		var l = appList();
+		if ( structKeyExists( l, "error" ) ) return variables.out.precondition( l.error, arguments.asJson );
+		var w = 0;
+		for ( var a in l.apps ) if ( len( a.name ) > w ) w = len( a.name );
+		var lines = l.apps.map( function( a ) { return left( a.name & repeatString( " ", w ), w + 2 ) & a.package; } );
+		return variables.out.say( "ok", { apps: l.apps }, arguments.asJson, l.apps.len() ? lines : [ "No apps yet. Install one: bxrig android install FILE.apk" ] );
+	}
+
+	// The package for what you typed: a package name, an app's name, or a part of a name that matches one app.
+	function resolveApp( required array apps, required string typed ) {
+		var t = trim( arguments.typed );
+		for ( var a in arguments.apps ) if ( a.package == t ) return { app: a };
+		var exact = arguments.apps.filter( function( a ) { return compareNoCase( a.name, t ) == 0; } );
+		if ( exact.len() == 1 ) return { app: exact[ 1 ] };
+		var part = arguments.apps.filter( function( a ) { return findNoCase( t, a.name ) > 0; } );
+		if ( part.len() == 1 ) return { app: part[ 1 ] };
+		return { error: part.len() ? "'" & t & "' matches " & part.map( function( a ) { return a.name; } ).toList( ", " ) & "; be more exact" : "no app matches '" & t & "' (bxrig android apps)" };
+	}
+
+	function openCmd( app, asJson ) {
+		var f = facts();
+		var n = needSetUp( f, arguments.asJson );
+		if ( n != 0 ) return n;
+		if ( !f.running ) {
+			var s = startCmd( arguments.asJson );
+			if ( s != 0 ) return s;
+		}
+		if ( !len( trim( arguments.app ) ) ) {
+			variables.proc.exec( detached( [ "waydroid", "show-full-ui" ] ), 20 );
+			return variables.out.say( "ok", { opened: "full-ui" }, arguments.asJson, [ "Android is on your screen." ] );
+		}
+		var l = appList();
+		if ( structKeyExists( l, "error" ) ) return variables.out.precondition( l.error, arguments.asJson );
+		var got = resolveApp( l.apps, arguments.app );
+		if ( structKeyExists( got, "error" ) ) return variables.out.usage( got.error, arguments.asJson );
+		variables.proc.exec( detached( [ "waydroid", "app", "launch", got.app.package ] ), 20 );
+		return variables.out.say( "ok", { opened: got.app.package, name: got.app.name }, arguments.asJson, [ got.app.name & " is opening." ] );
+	}
+
+	function installCmd( file, yes, dry, asJson ) {
+		var f = arguments.file;
+		if ( !len( f ) ) return variables.out.usage( "bxrig android install FILE.apk [--yes]", arguments.asJson );
+		if ( lCase( right( f, 4 ) ) != ".apk" ) return variables.out.usage( f & " is not an .apk file", arguments.asJson );
+		if ( !fileExists( f ) ) return variables.out.usage( "there is no file " & f, arguments.asJson );
+		var l = appList();
+		if ( structKeyExists( l, "error" ) ) return variables.out.precondition( l.error, arguments.asJson );
+		var steps = [ "install " & f & " into Android (the app has to support x86_64: an arm-only .apk will not run)" ];
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "install " & getFileFromPath( f ), { file: f }, arguments.asJson, arguments.dry, steps );
+		var r = variables.proc.exec( [ "waydroid", "app", "install", f ], 600 );
+		if ( r.exitCode != 0 ) return variables.out.failed( "waydroid app install failed: " & trim( r.output ?: "" ), arguments.asJson );
+		return variables.out.say( "ok", { file: f }, arguments.asJson, [ getFileFromPath( f ) & " is installed. It is in your applications menu too." ] );
+	}
+
+	// ---- Google Play ----
+
+	// The Android ID in what `sqlite3` printed: a long number, or "".
+	string function androidIdFrom( required string text ) {
+		for ( var line in listToArray( arguments.text, chr( 10 ) ) ) if ( reFind( "^[0-9]{10,}$", trim( line ) ) ) return trim( line );
+		return "";
+	}
+
+	function registerCmd( openPage, asJson ) {
+		var f = facts();
+		var n = needSetUp( f, arguments.asJson );
+		if ( n != 0 ) return n;
+		if ( f.image != "GAPPS" ) return variables.out.precondition( "this is the " & imageLabel( f.image ) & " image: there is no Google Play, so there is nothing to register", arguments.asJson );
+		if ( !f.running ) return variables.out.precondition( "Android is not running: bxrig android start", arguments.asJson );
+		var sql = "sqlite3 /data/data/*/*/gservices.db 'select value from main where name = ""android_id"";'";
+		var r = variables.proc.exec( [ "sudo", "waydroid", "shell", "--", "sh", "-c", sql ], 60 );
+		var id = androidIdFrom( r.output ?: "" );
+		if ( !len( id ) ) return variables.out.precondition( "no Android ID yet: open Google Play once (bxrig android open), then run this again", arguments.asJson );
+		if ( arguments.openPage ) variables.proc.exec( [ "xdg-open", variables.registerUrl ], 10 );
+		return variables.out.say( "ok", { android_id: id, url: variables.registerUrl }, arguments.asJson, [
+				"Android ID: " & id,
+				"Register it on your Google account at " & variables.registerUrl & ( arguments.openPage ? " (opened)" : " (add --open to open it)" ),
+				"Give Google a few minutes, then restart Android: bxrig android stop, then bxrig android start."
+			] );
+	}
+
+	// ---- remove ----
+
+	// The folders --data deletes, those that exist (all fixed names).
+	array function dataPaths() {
+		var h = variables.env.home();
+		var all = [ waydroidDir() ];
+		if ( len( h ) ) for ( var p in [ h & "/.local/share/waydroid", h & "/waydroid", h & "/.waydroid" ] ) all.append( p );
+		return all.filter( function( p ) { return directoryExists( p ); } );
+	}
+
+	function removeCmd( data, yes, dry, asJson ) {
+		var f = facts();
+		var steps = [];
+		if ( f.installed && f.running ) steps.append( { title: "stop the Android session", argv: [ "waydroid", "session", "stop" ] } );
+		if ( f.installed ) {
+			steps.append( { title: "stop and disable the waydroid-container service", argv: new bxrig.util.Systemd( variables.proc ).disableArgv( [ "waydroid-container.service" ], false, true ) } );
+			steps.append( { title: "remove the waydroid package", argv: new bxrig.util.Packages().native( variables.proc, f.distro ).removeArgv( [ "waydroid" ] ) } );
+		}
+		var paths = arguments.data ? dataPaths() : [];
+		if ( paths.len() ) {
+			var rm = [ "sudo", "rm", "-rf" ];
+			for ( var p in paths ) rm.append( p );
+			steps.append( { title: "DELETE Android's images and everything in it (your apps and their data): " & paths.toList( ", " ), argv: rm } );
+		}
+		if ( !steps.len() ) return variables.out.say( "ok", { removed: false }, arguments.asJson, [ "Android is not set up; nothing to remove." ] );
+		var lines = steps.map( function( s ) { return s.title; } );
+		if ( !arguments.data ) lines.append( "Android's images and data stay on disk (add --data to delete them too)." );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "remove Android (Waydroid)", { steps: steps.map( function( s ) { return { title: s.title, command: s.argv.toList( " " ) }; } ) }, arguments.asJson, arguments.dry, lines );
+		for ( var s in steps ) {
+			var code = runLive( s.argv );
+			if ( code != 0 && s.argv[ 1 ] != "waydroid" ) return variables.out.failed( "'" & s.argv.toList( " " ) & "' failed (exit " & code & ")", arguments.asJson );
+		}
+		return variables.out.say( "ok", { removed: true, data: arguments.data }, arguments.asJson, [ "Android is removed." ] );
+	}
+}
