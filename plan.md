@@ -7,6 +7,8 @@
 
 ## 0. Status on 2026-11-15
 
+> The work after 2026-11-21 follows the 14-PR roadmap in section 20, which is current; this section is kept as the 2026-11-15 record.
+
 What exists, verified against the tree (version 0.11.0-dev, MatchBox 0.14.0 from the `bxrig` branch (renamed from `bxcachy`)):
 
 | Area | State |
@@ -482,3 +484,51 @@ KDE kept side by side. Catalog: legacy `apps.json` is canonical; `filezilla` and
 - 2026-11-10 one install command (owner): `bootstrap/install.sh [--yes] [--dry-run]` with no mode word does everything: packages and yay and Rust, toolchains (mvm, bvm, BoxLang, nvm and Node, MatchBox), the bxrig binary, then the core apps (`bxrig profile-install core --yes`). It shows the plan and asks one `Proceed? [Y/n]` at a terminal; without a terminal it needs `--yes` (exit 2 otherwise); `--dry-run` prints the plan and exits 0. `--all`, `--install`, `--install-toolchains`, `--install-binary` and `--plan` are gone (never released). `install.sh check` is the read-only report; `packages|toolchains|binary|core --yes` re-run one stage. The TUI wizard (`bxrig init`) runs after this in a later slice.
 - 2026-11-10 nvm and Node.js moved out of the required toolchain (owner): the install always adds BoxLang; JavaScript is an optional toolchain in the wizard (Node with nvm, Bun, Deno). `bxrig toolchain node` runs the pinned nvm installer.
 - 2026-11-18 MatchBox in the installers (owner, final): the end-user installer installs MatchBox with mvm, stable by default (`mvm install latest`, `mvm use latest`), `--snapshot` for `mvm install snapshot`, `--matchbox-branch REF [--matchbox-repo OWNER/NAME]` for a branch built with cargo under `~/.local/share/bxrig/matchbox`. The S3 head download, the "head not published" stop and the version equality check are gone; stages that compile bxrig (binary without `--binary`, a github source, `scripts/setup-local.sh`) probe for the terminal UI (`createObject( "rust", "tui.TUI" )`) and stop with a clear message when the MatchBox lacks it. `setup-local.sh` asks stable, snapshot or branch (no terminal: the `bxrig` branch); `edge` and `source` were removed. `get-matchbox.sh` and `matchbox.yml` still publish and consume the `bxrig` builds (CI native job); they are no longer needed by the installers.
+
+## 20. Roadmap from 2026-11-21: the 14 PRs (current)
+
+From the owner's request on 2026-11-21 to review what BxRig is missing for developers. Each PR is shaped with the owner (API, tasks) before code. State on 2026-11-25:
+
+| PR | What | State |
+| --- | --- | --- |
+| 1 | Accessibility: Mac zoom keys, reduce motion, three high-contrast themes | merged (#21) |
+| 2 | Fonts: interface font, rendering, coding fonts | merged (#22) |
+| 3 | Dev tools: API clients, cloud CLIs, git signing, `doctor --dev` | merged (#23) |
+| 4 | BoxLang runtime: check, update, home, run, repl, Modules page | merged (#24) |
+| 5 | BoxLang servers: MiniServer and CommandBox apps, Servers page | merged (#25) |
+| 6 | Scheduler: one BoxLang scheduler for BxRig's timers and your tasks | merged (#26) |
+| 7 | Task manager: Tasks page, System panel tab, bar badge | merged (#27) |
+| 8 | Calendar, agenda and reminders | merged (#28) |
+| 9 | Launcher: Vicinae with the BxRig theme, script commands, file search | merged (#29) |
+| 10 | Local AI on llama.cpp: hardware picks, one server, tune | merged (#31) |
+| 10b | Discover on Hugging Face, download queue, `ai bench`, agents on local models | merged (#32) |
+| 10c | AI on the selected text (Super+Alt+E). Asking your files (an index) was not built | merged (#33) |
+| 11 | BoxLang agents with bx-agents: `bxrig ai agents` | merged (#34) |
+| 11b | Boxy, the desktop assistant: tools, approvals, skill review, Super+Period, bar tab | merged (#36) |
+| 12 | MCP for every agent, `bxrig privacy`, every major coding agent in the catalog | merged (#37) |
+| 13 | Sync (OneDrive, Dropbox, Google Drive, NAS) | **deferred** by the owner on 2026-11-25, shape below |
+| 14 | Android: Waydroid with Google Play, a Control Center page | next |
+
+### 20.1 Deferred: PR 13 Sync (shape proposed 2026-11-25, not approved)
+
+Builds on `bxrig cloud` (rclone remotes, `rclone config`, mounts):
+
+```
+bxrig cloud add onedrive|dropbox|gdrive [NAME] [--yes]   # guided: installs rclone, signs in through the browser
+bxrig sync                                             # synced folders, last run, conflicts
+bxrig sync add NAME [--folder=DIR] [--remote-path=/] [--every=15m] [--yes]
+bxrig sync now [NAME] | pause NAME | resume NAME | remove NAME [--yes]
+```
+
+Two-way with `rclone bisync` (a first `--resync` shown as a plan), run by BxRig's scheduler (skips on battery, notifies on failure). Targets: the three cloud services and a NAS (the 2026-11-22 mockup had a NAS row; `nas sync` is one-way today). UI: synced folders on the Control Center's Storage page (sync now, pause), a state icon in the bar, an optional wizard question.
+
+Open questions for the owner: (1) the default folder, `~/OneDrive`, `~/Dropbox`, `~/Google Drive` or `~/Cloud/NAME`; (2) every 15 minutes or on change; (3) conflicts: keep both or the newer wins; (4) everything or chosen folders.
+
+### 20.2 Other open items
+
+- **MCP filters:** `bxrig mcp serve` drops bx-ai's log lines and its reply to `notifications/initialized` from standard output. bx-ai fixed both in #345 (merged 2026-11-25, checked locally); its snapshot did not publish because 4 Mistral tests got HTTP 402 (no API budget on CI's account). Remove the filters once bx-ai publishes and bx-agents ships a snapshot with it (bx-agents carries its own copy of bx-ai).
+- **bx-ai on MatchBox (bx-ai #341):** stdio serving did not work on 2026-11-25; switch `mcp serve` to it when it does.
+- **Boxy's character and voice** (the original 11b: a preview sheet, theme colours, outfits and holidays, voice in and out): not built.
+- **GPU monitoring** (graphics memory and temperature in the panel, planned in PR 10): not built; only hardware detection exists.
+- **Asking your files** (local search with embeddings, planned in 10c): not built.
+- **Parked:** screen and image understanding, cloud fallback with a cost meter, model profiles per app.
