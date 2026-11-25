@@ -302,6 +302,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `ai` | `--dir` | value |  |
 | `ai` | `--embeddings` | bool |  |
 | `ai` | `--fits` | bool |  |
+| `ai` | `--from` | value |  |
+| `ai` | `--lang` | value |  |
 | `ai` | `--limit` | value |  |
 | `ai` | `--listen` | value | `127.0.0.` |
 | `ai` | `--model` | value |  |
@@ -313,6 +315,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `ai` | `--port` | value |  |
 | `ai` | `--source` | value |  |
 | `ai` | `--test` | bool |  |
+| `ai` | `--text` | value |  |
+| `ai` | `--to` | value |  |
 | `ai` | `--tools` | bool |  |
 | `ai` | `--tune` | bool |  |
 | `ai` | `--vision` | bool |  |
