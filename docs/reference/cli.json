@@ -2671,6 +2671,7 @@
 						"ai downloads [clear | cancel ID] [--json]",
 						"ai bench [ID] [--json]",
 						"ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]",
+						"ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]",
 						"ai ask TEXT [--model=ID] [--json]",
 						"ai list",
 						"ai default [ID] [--yes]",
@@ -2722,6 +2723,14 @@
 							"type": "bool"
 						},
 						{
+							"name": "from",
+							"type": "value"
+						},
+						{
+							"name": "lang",
+							"type": "value"
+						},
+						{
 							"name": "limit",
 							"type": "value"
 						},
@@ -2764,6 +2773,14 @@
 						{
 							"name": "test",
 							"type": "bool"
+						},
+						{
+							"name": "text",
+							"type": "value"
+						},
+						{
+							"name": "to",
+							"type": "value"
 						},
 						{
 							"name": "tools",

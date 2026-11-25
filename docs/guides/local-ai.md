@@ -110,6 +110,17 @@ bxrig ai bench qwen3.5-0.8b
 
 `bench` runs BxRig's 20 tool-calling tasks (setting a theme, a reminder, an agenda, installing an app, two actions at once, and requests that need no tool) against your own server and reports the score, the median reply time and the tasks it missed. These are the same tasks behind the scores in BxRig's catalog, so you can compare a model you found on Hugging Face with the tested ones. The result is kept with the model and shown in `bxrig ai models`.
 
+## AI on the selected text
+
+Select text anywhere and press **Super+Alt+E**: a menu offers Summarize, Rewrite clearly, Fix spelling and grammar, Explain, Translate and Draft a reply. The result is copied to the clipboard and shown in a notification.
+
+```bash
+bxrig ai text summarize                      # the selection, else the clipboard
+bxrig ai text translate --lang=Spanish
+bxrig ai text fix --text="teh cat" --to=stdout
+bxrig ai text menu
+```
+
 ## Coding agents on local models
 
 ```bash

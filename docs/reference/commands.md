@@ -1620,6 +1620,7 @@ bxrig ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=
 bxrig ai downloads [clear | cancel ID] [--json]
 bxrig ai bench [ID] [--json]
 bxrig ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
+bxrig ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]
 bxrig ai ask TEXT [--model=ID] [--json]
 bxrig ai list
 bxrig ai default [ID] [--yes]
