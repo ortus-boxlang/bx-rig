@@ -532,4 +532,3 @@ Open questions for the owner: (1) the default folder, `~/OneDrive`, `~/Dropbox`,
 - **GPU monitoring** (graphics memory and temperature in the panel, planned in PR 10): not built; only hardware detection exists.
 - **Asking your files** (local search with embeddings, planned in 10c): not built.
 - **Parked:** screen and image understanding, cloud fallback with a cost meter, model profiles per app.
-
