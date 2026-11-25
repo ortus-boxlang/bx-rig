@@ -13,6 +13,7 @@ local bxrig = require("./bxrig.luau")
 local M = {}
 
 local data = nil
+local look = nil -- `bxrig boxy --json`: { name, state, image, outfit, voice = { enabled } }
 local errorText = nil
 local busy = nil -- "ask", "decide", "service", "make"
 local question = ""
@@ -52,6 +53,36 @@ function M.fetch(render)
 		end
 		render()
 	end, 30000)
+	-- how Boxy looks now (name, colour, outfit, what it is doing); the tab works without it
+	bxrig.json({ "boxy", "--json" }, function(result, err)
+		if err == nil and type(result) == "table" then
+			look = result
+			render()
+		end
+	end, 30000)
+end
+
+-- Boxy's picture for what it is doing, with a Talk button (hold-to-talk by key is Super+Comma): `bxrig boxy listen toggle`.
+local function portrait(render)
+	if look == nil or str(look.image) == "" then
+		return ui.spacer({})
+	end
+	local listening = str(look.state) == "listening"
+	return ui.row({ align = "center", gap = 10 }, {
+		ui.image({ key = "boxy-img", path = str(look.image), fit = "contain", height = 72, width = 72 }),
+		ui.column({ flexGrow = 1, gap = 2 }, {
+			ui.label({ text = str(look.name) .. " is " .. str(look.state), fontSize = 12, fontWeight = "semibold", maxLines = 1 }),
+			ui.label({ text = "Hold Super+Comma to talk", fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
+		}),
+		ui.button({ key = "talk", glyph = listening and "player-stop" or "microphone", text = listening and "Send" or "Talk", variant = listening and "secondary" or "ghost", controlSize = "sm", tooltip = "Talk to Boxy (needs Voxtype)", onClick = function()
+			bxrig.run({ "boxy", "listen", "toggle" }, function(ok, msg)
+				if not ok then
+					errorText = msg
+				end
+				M.fetch(render)
+			end, 120000)
+		end }),
+	})
 end
 
 local function takeReply(result, err)
@@ -185,7 +216,7 @@ function M.view(render)
 			end }),
 		})
 	end
-	local children = { header(a, render), ui.separator({}) }
+	local children = { header(a, render), portrait(render), ui.separator({}) }
 	if a.running == true then
 		table.insert(children, askBox(a, render))
 	else

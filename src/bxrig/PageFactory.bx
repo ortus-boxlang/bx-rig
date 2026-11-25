@@ -31,6 +31,7 @@ class PageFactory {
 			case "storage": return new bxrig.ListPage( new bxrig.StorageProvider( d ) );
 			case "secrets": return new bxrig.ListPage( new bxrig.SecretsProvider( d ) );
 			case "privacy": return new bxrig.ListPage( new bxrig.PrivacyProvider( d ) );
+			case "boxy": return new bxrig.ListPage( new bxrig.BoxyProvider( d ) );
 			case "android": return new bxrig.ListPage( new bxrig.AndroidProvider( d ) );
 			case "look": return new bxrig.LookPage( d );
 			case "themes": return new bxrig.ThemesPage( d );

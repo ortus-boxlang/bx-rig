@@ -31,6 +31,7 @@ class ControlCenterPages {
 			{ id: "look", title: "Look", icon: "eye" },
 			{ id: "themes", title: "Themes", icon: "brush" },
 			{ id: "accessibility", title: "Accessibility", icon: "access" },
+			{ id: "boxy", title: "Boxy", icon: "boxy" },
 			{ id: "android", title: "Android", icon: "android" },
 			{ id: "logs", title: "Logs", icon: "file" }
 		];

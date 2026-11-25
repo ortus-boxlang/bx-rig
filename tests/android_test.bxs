@@ -74,7 +74,7 @@ act = function( k ) { return pp.actions().filter( function( a ) { return compare
 testkit.check( "page: Enter opens an app, or Android itself", act( "Enter" ).run( rows[ 2 ] ).args.toList( " " ) == "android open com.android.calculator2" && act( "Enter" ).run( rows[ 1 ] ).args.toList( " " ) == "android open" && structIsEmpty( act( "Enter" ).run( off[ 1 ] ) ) );
 testkit.check( "page: s starts or stops, r registers, S sets up", act( "s" ).run( rows[ 1 ] ).args.toList( " " ) == "android stop" && act( "s" ).run( down[ 1 ] ).args.toList( " " ) == "android start" && act( "r" ).run( rows[ 1 ] ).args.toList( " " ) == "android register"
 	&& act( "S" ).run( off[ 1 ] ).args.toList( " " ) == "android setup" && structIsEmpty( act( "s" ).run( off[ 1 ] ) ) );
-testkit.check( "page: after Secrets and Privacy, before Logs", find( "privacy,look,themes,accessibility,android,logs", new bxrig.ControlCenterPages().ids().toList( "," ) ) > 0 );
+testkit.check( "page: after Secrets and Privacy, before Logs", find( "privacy,look,themes,accessibility,boxy,android,logs", new bxrig.ControlCenterPages().ids().toList( "," ) ) > 0 );
 testkit.check( "page: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), serializeJSON( rows ) & serializeJSON( off ) ) );
 
 // ---- opt in: the wizard question and the init step ----

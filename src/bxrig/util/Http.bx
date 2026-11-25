@@ -15,6 +15,20 @@ class Http {
 		return [ "curl", "-fsSL", "--max-time", arguments.maxTime, "-o", arguments.file, arguments.url ];
 	}
 
+	// The argv of a JSON POST whose answer goes to a file: curl -fsS --max-time N -X POST -H Content-Type -d BODY -o FILE URL. A header with a
+	// secret (Authorization) goes in a curl config file (-K), so it is never on the command line where `ps` shows it.
+	function postFileArgv( url, body, file, configFile = "", maxTime = 60 ) {
+		var a = [ "curl", "-fsS", "--max-time", arguments.maxTime, "-X", "POST", "-H", "Content-Type: application/json" ];
+		if ( len( arguments.configFile ) ) { a.append( "-K" ); a.append( arguments.configFile ); }
+		for ( var x in [ "-d", arguments.body, "-o", arguments.file, arguments.url ] ) a.append( x );
+		return a;
+	}
+
+	// POST JSON and save the answer to a file: { ok, exitCode, output }. Never throws.
+	function postFile( url, body, file, configFile = "", maxTime = 60 ) {
+		return answer( variables.proc.exec( postFileArgv( arguments.url, arguments.body, arguments.file, arguments.configFile, arguments.maxTime ), arguments.maxTime + 30 ) );
+	}
+
 	// The argv that downloads a vendor installer and pipes it to a shell; the URL and the arguments travel as arguments, never in the script text.
 	function installerArgv( url, shell = "bash", args = [], env = {} ) {
 		var argv = [];

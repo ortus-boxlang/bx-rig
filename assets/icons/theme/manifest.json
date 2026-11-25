@@ -280,6 +280,14 @@
 			"use": "the Android page (Waydroid)"
 		},
 		{
+			"name": "bxrig-boxy",
+			"glyph": "cube",
+			"category": "develop",
+			"context": "apps",
+			"title": "Boxy",
+			"use": "the Boxy page (the desktop assistant: look and voice)"
+		},
+		{
 			"name": "bxrig-storage",
 			"glyph": "hard-drives",
 			"category": "system",
