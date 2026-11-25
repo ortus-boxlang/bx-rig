@@ -1,0 +1,93 @@
+// BxRig's MCP server: Boxy's tools and the ones that change something, and what `bxrig mcp link` writes into each agent's own
+// config (JSON, JSON with comments, TOML, crushrc, YAML) and takes out again. Pure: nothing is written.
+// Run from src/: (cd src && matchbox ../tests/mcp_test.bxs)
+testkit = new lib.Check( "mcp" );
+nl = chr( 10 );
+mcp = new bxrig.AiMcp( new bxrig.util.Cli( "test" ) );
+lk = new bxrig.AiMcpLink();
+self = "/usr/bin/bxrig";
+
+// ---- the tools ----
+changes = mcp.changing();
+tools = mcp.toolsFrom( mcp.toolsSource(), changes );
+testkit.check( "tools: Boxy's 36 tools", tools.len() == 36 );
+testkit.check( "tools: the 19 that change something are Boxy's NEEDS_OK list", changes.len() == 19 && tools.filter( function( t ) { return t.changes; } ).len() == 19 );
+testkit.check( "tools: every one that changes something is a tool", changes.every( function( c ) { return tools.filter( function( t ) { return t.name == c; } ).len() == 1; } ) );
+testkit.check( "tools: reading is not changing", !tools.filter( function( t ) { return t.name == "battery_status"; } )[ 1 ].changes && tools.filter( function( t ) { return t.name == "theme_set"; } )[ 1 ].changes );
+testkit.check( "tools: each has what it does", tools.every( function( t ) { return len( t.description ) > 10; } ) );
+testkit.check( "tools: NEEDS_OK is read from the text", mcp.changingFrom( "variables.NEEDS_OK = [" & nl & """a_b"", ""c""" & nl & "];" ).toList() == "a_b,c" && mcp.changingFrom( "nothing" ).len() == 0 );
+
+// ---- the server ----
+serveSrc = new bxrig.util.Res().text( "templates/mcp/serve.bxs" );
+testkit.check( "serve: Boxy's tools by their @AITool marks, the changing ones only with BXRIG_MCP_WRITE", find( "scanClass( new BxRig()", serveSrc ) && find( "BXRIG_MCP_WRITE", serveSrc ) && find( "changing.json", serveSrc ) && find( "processStdio( ""bxrig"" )", serveSrc ) );
+argv = mcp.serveArgv( "/d", false );
+testkit.check( "serve: runs serve.bxs on BoxLang, with BxRig's path for the tools", argv[ 1 ] == "sh" && argv[ argv.len() ] == "/d/serve.bxs" && argv[ argv.len() - 2 ] == "" );
+testkit.check( "serve: --write tells the server", mcp.serveArgv( "/d", true )[ argv.len() - 2 ] == "1" );
+testkit.check( "serve: only MCP messages reach the agent", find( "grep --line-buffered ""^{""", argv[ 3 ] ) && find( "Method not found: notifications/", argv[ 3 ] ) );
+
+// ---- the agents ----
+testkit.check( "agents: 16 agents and editors", lk.ids().len() == 16 );
+for ( id in [ "claude-code", "codex-cli", "gemini-cli", "opencode-cli", "pi-agent", "copilot-cli", "cursor-agent", "amp", "crush", "goose", "kiro-cli", "qwen-code", "grok-build", "antigravity", "zed", "vscode" ] ) testkit.check( "agents: " & id, !structIsEmpty( lk.byId( id ) ) );
+testkit.check( "agents: Claude Code and Codex by their own commands", lk.cliAdd( "claude-code", self, false ).toList( " " ) == "claude mcp add --transport stdio --scope user bxrig -- /usr/bin/bxrig mcp serve" && lk.cliAdd( "codex-cli", self, true ).toList( " " ) == "codex mcp add bxrig -- /usr/bin/bxrig mcp serve --write" );
+testkit.check( "agents: and removed the same way", lk.cliRemove( "claude-code" ).toList( " " ) == "claude mcp remove bxrig --scope user" && lk.cliRemove( "codex-cli" ).toList( " " ) == "codex mcp remove bxrig" );
+
+// ---- JSON files ----
+pi = lk.byId( "pi-agent" );
+r = lk.change( pi, "", self, false, false );
+j = jsonDeserialize( r.text );
+testkit.check( "json: a new file gets mcpServers.bxrig", j.mcpServers.bxrig.command == self && j.mcpServers.bxrig.args.toList( " " ) == "mcp serve" );
+testkit.check( "json: read-only, then write", lk.state( pi, r.text ) == "read-only" && lk.state( pi, lk.change( pi, r.text, self, true, false ).text ) == "write" );
+had = "{""mcpServers"":{""github"":{""command"":""gh""}},""theme"":""dark""}";
+j = jsonDeserialize( lk.change( pi, had, self, false, false ).text );
+testkit.check( "json: what was there stays", j.theme == "dark" && j.mcpServers.github.command == "gh" && structKeyExists( j.mcpServers, "bxrig" ) );
+j = jsonDeserialize( lk.change( pi, lk.change( pi, had, self, false, false ).text, self, false, true ).text );
+testkit.check( "json: unlink takes only BxRig out", !structKeyExists( j.mcpServers, "bxrig" ) && j.mcpServers.github.command == "gh" && j.theme == "dark" );
+testkit.check( "json: not linked reads as empty", lk.state( pi, had ) == "" && lk.state( pi, "" ) == "" );
+testkit.check( "json: a file with comments is refused", structKeyExists( lk.change( lk.byId( "gemini-cli" ), "{ // x" & nl & """a"":1 }", self, false, false ), "error" ) );
+testkit.check( "json: Amp's key has a dot in its name", structKeyExists( jsonDeserialize( lk.change( lk.byId( "amp" ), "", self, false, false ).text )[ "amp.mcpServers" ], "bxrig" ) );
+oc = jsonDeserialize( lk.change( lk.byId( "opencode-cli" ), "", self, true, false ).text ).mcp.bxrig;
+testkit.check( "json: OpenCode is local, with the command and its arguments in one list", oc.type == "local" && oc.command.toList( " " ) == "/usr/bin/bxrig mcp serve --write" && oc.enabled );
+cp = jsonDeserialize( lk.change( lk.byId( "copilot-cli" ), "", self, false, false ).text ).mcpServers.bxrig;
+testkit.check( "json: Copilot is local with every tool", cp.type == "local" && cp.tools.toList() == "*" );
+testkit.check( "json: Cursor is stdio", jsonDeserialize( lk.change( lk.byId( "cursor-agent" ), "", self, false, false ).text ).mcpServers.bxrig.type == "stdio" );
+testkit.check( "json: Kiro is enabled", jsonDeserialize( lk.change( lk.byId( "kiro-cli" ), "", self, false, false ).text ).mcpServers.bxrig.disabled == false );
+testkit.check( "json: VS Code keeps servers", structKeyExists( jsonDeserialize( lk.change( lk.byId( "vscode" ), "", self, false, false ).text ).servers, "bxrig" ) );
+
+// ---- JSON with comments: Zed and VS Code ----
+zed = lk.byId( "zed" );
+zsrc = "// Zed settings" & nl & "{" & nl & "  // my theme" & nl & "  ""theme"": ""One Dark""" & nl & "}" & nl;
+zr = lk.change( zed, zsrc, self, false, false );
+testkit.check( "jsonc: Zed's comments stay", find( "// my theme", zr.text ) && find( "// Zed settings", zr.text ) );
+testkit.check( "jsonc: context_servers.bxrig in a marked block, with a comma before what follows", find( """context_servers"": { ""bxrig"": ", zr.text ) && find( lk.beginMark( "zed", "//" ), zr.text ) && reFind( "\} \},\n", zr.text ) );
+testkit.check( "jsonc: read back", lk.state( zed, zr.text ) == "read-only" );
+testkit.check( "jsonc: unlink gives the file back as it was", lk.change( zed, zr.text, self, false, true ).text == zsrc );
+testkit.check( "jsonc: relinking replaces the block", reFind( "BxRig MCP server \(", lk.change( zed, zr.text, self, true, false ).text ) && lk.state( zed, lk.change( zed, zr.text, self, true, false ).text ) == "write" );
+testkit.check( "jsonc: an empty object gets no comma", !find( "},", lk.change( zed, "{ // empty" & nl & "}", self, false, false ).text ) );
+testkit.check( "jsonc: context_servers already there is left to you", structKeyExists( lk.change( zed, "{ // c" & nl & """context_servers"": {} }", self, false, false ), "error" ) );
+testkit.check( "jsonc: plain JSON stays plain JSON", isStruct( jsonDeserialize( lk.change( zed, "{""theme"":""x""}", self, false, false ).text ) ) );
+
+// ---- Grok Build (TOML) ----
+grok = lk.byId( "grok-build" );
+gsrc = "[model.default]" & nl & "model = ""grok-4""" & nl;
+gr = lk.change( grok, gsrc, self, false, false ).text;
+testkit.check( "toml: a [mcp_servers.bxrig] table after what was there", find( "[model.default]", gr ) < find( "[mcp_servers.bxrig]", gr ) && find( "command = ""/usr/bin/bxrig""", gr ) && find( "args = [""mcp"", ""serve""]", gr ) );
+testkit.check( "toml: state and unlink", lk.state( grok, gr ) == "read-only" && lk.change( grok, gr, self, false, true ).text == gsrc );
+testkit.check( "toml: quotes in the path are escaped", find( "command = ""/a\""b""", lk.tomlAdd( "", "/a""b", false ) ) );
+
+// ---- Crush (crushrc) ----
+crush = lk.byId( "crush" );
+cr = lk.change( crush, "provider add local --type llamacpp" & nl, self, true, false ).text;
+testkit.check( "crushrc: mcp add bxrig, one --args per argument", find( "mcp add bxrig --command ""/usr/bin/bxrig"" --args mcp --args serve --args --write", cr ) && find( "provider add local", cr ) );
+testkit.check( "crushrc: state and unlink", lk.state( crush, cr ) == "write" && lk.change( crush, cr, self, false, true ).text == "provider add local --type llamacpp" & nl );
+
+// ---- Goose (YAML) ----
+goose = lk.byId( "goose" );
+ysrc = "GOOSE_PROVIDER: openai" & nl & "extensions:" & nl & "  developer:" & nl & "    enabled: true" & nl;
+yr = lk.change( goose, ysrc, self, false, false ).text;
+testkit.check( "yaml: BxRig's extension under extensions, the others stay", find( "extensions:" & nl & "  " & lk.beginMark( "goose" ), yr ) && find( "  bxrig:" & nl & "    type: stdio", yr ) && find( "  developer:", yr ) );
+testkit.check( "yaml: state and unlink", lk.state( goose, yr ) == "read-only" && lk.change( goose, yr, self, false, true ).text == ysrc );
+testkit.check( "yaml: no extensions yet, one is made", find( "extensions:" & nl & "  " & lk.beginMark( "goose" ), lk.change( goose, "GOOSE_MODEL: x" & nl, self, false, false ).text ) );
+testkit.check( "yaml: extensions: {} becomes a block", !find( "{}" & nl & "  ##", lk.change( goose, "extensions: {}" & nl, self, false, false ).text ) && find( "extensions:" & nl & "  ", lk.change( goose, "extensions: {}" & nl, self, false, false ).text ) );
+testkit.check( "yaml: other inline extensions are left to you", structKeyExists( lk.change( goose, "extensions: {developer: {enabled: true}}" & nl, self, false, false ), "error" ) );
+
+testkit.done( "all passed" );

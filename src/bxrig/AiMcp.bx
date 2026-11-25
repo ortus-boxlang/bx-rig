@@ -1,0 +1,209 @@
+// `bxrig mcp`: BxRig's own tools for any coding agent or editor, as an MCP server. The tools are Boxy's (the bx-agents agent
+// `bxrig ai agents setup` makes): each runs a BxRig command with --json, so an agent can do only what BxRig does, through the same
+// plans and checks. The server runs on BoxLang with bx-ai, which bx-agents installs. Read-only unless an agent is linked with
+// --write; the agent then asks you before each call that changes something. See COMMAND-CONTRACT.md 13.69.
+class AiMcp {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( arguments.cli, "mcp" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		variables.link = new bxrig.AiMcpLink();
+		variables.hub = new bxrig.AiAgentHub( arguments.cli, arguments.runner );
+		return this;
+	}
+
+	// ---- the tools ----
+
+	string function toolsSource() { return new bxrig.util.Res().text( "templates/agents/boxy/tools/BxRig.bx" ); }
+
+	// The tools that change something: Boxy's NEEDS_OK list in its Agent.bx (pure).
+	array function changingFrom( required string agentBx ) {
+		var m = reFind( "NEEDS_OK\s*=\s*\[([^\]]*)\]", arguments.agentBx, 1, true );
+		if ( !m.pos[ 1 ] ) return [];
+		var names = [];
+		var body = mid( arguments.agentBx, m.pos[ 2 ], m.len[ 2 ] );
+		var at = 1;
+		while ( true ) {
+			var q = reFind( """([a-z_]+)""", body, at, true );
+			if ( !q.pos[ 1 ] ) break;
+			names.append( mid( body, q.pos[ 2 ], q.len[ 2 ] ) );
+			at = q.pos[ 1 ] + q.len[ 1 ];
+		}
+		return names;
+	}
+
+	array function changing() { return changingFrom( new bxrig.util.Res().text( "templates/agents/boxy/Agent.bx" ) ); }
+
+	// Each tool's name and what it does, from the @AITool lines of the tools file (pure).
+	array function toolsFrom( required string source, required array changes ) {
+		var out = [];
+		var at = 1;
+		while ( true ) {
+			var m = reFind( "@AITool\(\s*""([^""]*)""\s*\)\s*function\s+([a-z_]+)\s*\(", arguments.source, at, true );
+			if ( !m.pos[ 1 ] ) break;
+			var n = mid( arguments.source, m.pos[ 3 ], m.len[ 3 ] );
+			out.append( { name: n, description: mid( arguments.source, m.pos[ 2 ], m.len[ 2 ] ), changes: arrayFindNoCase( arguments.changes, n ) > 0 } );
+			at = m.pos[ 1 ] + m.len[ 1 ];
+		}
+		return out;
+	}
+
+	function toolsCmd( asJson ) {
+		var rows = toolsFrom( toolsSource(), changing() );
+		var lines = [ "Read-only (every linked agent):" ];
+		for ( var r in rows ) if ( !r.changes ) lines.append( "  " & left( r.name & repeatString( " ", 22 ), 22 ) & r.description );
+		lines.append( "" );
+		lines.append( "Change something (agents linked with --write, and they ask you first):" );
+		for ( var r in rows ) if ( r.changes ) lines.append( "  " & left( r.name & repeatString( " ", 22 ), 22 ) & r.description );
+		return variables.out.say( "ok", { tools: rows, read_only: rows.filter( function( r ) { return !r.changes; } ).len(), changing: rows.filter( function( r ) { return r.changes; } ).len() }, arguments.asJson, lines );
+	}
+
+	// ---- the server ----
+
+	string function serveDir() { return variables.env.data( "mcp" ); }
+
+	string function boxlang() {
+		var own = variables.env.get( "BXRIG_BOXLANG", "" );
+		if ( len( own ) ) return own;
+		var bin = variables.hub.boxlangHome() & "/bin/boxlang";
+		return fileExists( bin ) ? bin : "boxlang";
+	}
+
+	// The files the server runs from, written when they differ from BxRig's own copies.
+	function writeServe() {
+		var d = serveDir();
+		directoryCreate( d, true, true );
+		var want = {
+			"serve.bxs": new bxrig.util.Res().text( "templates/mcp/serve.bxs" ),
+			"BxRig.bx": toolsSource(),
+			"changing.json": serializeJSON( changing() ) & chr( 10 )
+		};
+		for ( var f in want ) {
+			var p = d & "/" & f;
+			if ( !fileExists( p ) || fileRead( p ) != want[ f ] ) fileWrite( p, want[ f ] );
+		}
+		return d;
+	}
+
+	// The program the agent starts. Until bx-ai's fix for the STDIO transport ships, its log lines and its answer to the
+	// `notifications/initialized` message also reach standard output, where only MCP messages belong; the two filters drop them.
+	array function serveArgv( required string dir, required boolean write ) {
+		var script = 'BXRIG_SELF="$1" BXRIG_MCP_WRITE="$2" "$3" "$4" | { grep --line-buffered "^{" || true; } | { grep --line-buffered -v "Method not found: notifications/" || true; }';
+		return [ "sh", "-c", script, "bxrig-mcp", variables.hub.bxrigPath(), arguments.write ? "1" : "", boxlang(), arguments.dir & "/serve.bxs" ];
+	}
+
+	// Runs the server on this process's standard input and output. Nothing else may be written to standard output.
+	numeric function serve( required boolean write ) {
+		if ( !variables.hub.installed().installed ) {
+			// a precondition (exit 4); only MCP messages may go to standard output, so the reason goes to standard error
+			systemOutput( "bxrig mcp: bx-agents (with bx-ai) is not installed: bxrig ai agents install --yes", true, true );
+			return 4;
+		}
+		var argv = serveArgv( writeServe(), arguments.write );
+		return variables.hub.handOver( argv, serveDir() );
+	}
+
+	// ---- linking agents ----
+
+	// "write", "read-only" or "" for one agent.
+	string function stateOf( required struct agent ) {
+		if ( arguments.agent.kind != "cli" ) return variables.link.state( arguments.agent, variables.link.read( arguments.agent.file ) );
+		var cmd = variables.link.cliGet( arguments.agent.id );
+		if ( !variables.proc.has( cmd[ 1 ] ) ) return "";
+		var r = variables.proc.exec( cmd, 30 );
+		if ( r.exitCode != 0 ) return "";
+		return variables.link.writes( r.output ?: "" ) ? "write" : "read-only";
+	}
+
+	boolean function isInstalled( required struct agent ) {
+		for ( var c in arguments.agent.commands ) if ( variables.proc.has( c ) ) return true;
+		return false;
+	}
+
+	array function rows() {
+		return variables.link.agents().map( function( a ) {
+			var s = stateOf( a );
+			return { id: a.id, name: a.name, installed: isInstalled( a ), linked: s, file: a.file };
+		} );
+	}
+
+	function statusCmd( asJson ) {
+		var all = rows();
+		var ready = variables.hub.installed().installed;
+		var lines = [ ready ? "Server: ready (bx-ai from bx-agents " & variables.hub.installed().version & ")" : "Server: needs bx-agents (bxrig ai agents install --yes)", "" ];
+		for ( var r in all ) {
+			if ( !r.installed && !len( r.linked ) ) continue;
+			lines.append( left( r.name & repeatString( " ", 26 ), 26 ) & ( len( r.linked ) ? "linked, " & r.linked : "not linked" ) & ( r.installed ? "" : " (not installed)" ) );
+		}
+		var none = all.filter( function( r ) { return r.installed || len( r.linked ); } ).len() == 0;
+		if ( none ) lines.append( "No coding agent or editor found. Install one: bxrig ai list" );
+		lines.append( "" );
+		lines.append( "Link them: bxrig mcp link --yes (read-only), --write to allow changes. The tools: bxrig mcp tools" );
+		return variables.out.say( "ok", { server_ready: ready, agents: all, tools: toolsFrom( toolsSource(), changing() ).len() }, arguments.asJson, lines );
+	}
+
+	// link and unlink. ids: the agents named, else every installed one (link) or every linked one (unlink).
+	function linkCmd( required array ids, required boolean off, required boolean write, required boolean yes, required boolean dry, asJson ) {
+		for ( var i in arguments.ids ) if ( !arrayFind( variables.link.ids(), i ) ) return variables.out.usage( i & " is not an agent BxRig can link; one of: " & variables.link.ids().toList( ", " ), arguments.asJson );
+		var verb = arguments.off ? "unlink" : "link";
+		var picked = [];
+		for ( var a in variables.link.agents() ) {
+			var named = arguments.ids.len() ? arrayFind( arguments.ids, a.id ) > 0 : false;
+			if ( arguments.ids.len() ) { if ( named ) picked.append( a ); continue; }
+			if ( arguments.off ? len( stateOf( a ) ) > 0 : isInstalled( a ) ) picked.append( a );
+		}
+		if ( !picked.len() ) return variables.out.say( "ok", { agents: [] }, arguments.asJson, [ arguments.off ? "No agent uses BxRig's MCP server." : "No coding agent or editor is installed. Name one: bxrig mcp link pi-agent --yes" ] );
+		var self = variables.hub.bxrigPath();
+		var steps = [];
+		var changes = [];
+		var skipped = [];
+		for ( var a in picked ) {
+			if ( a.kind == "cli" ) {
+				if ( !variables.proc.has( a.commands[ 1 ] ) ) return variables.out.precondition( a.name & " is not installed (its " & a.commands[ 1 ] & " command manages its MCP servers)", arguments.asJson );
+				var argvs = [ variables.link.cliRemove( a.id ) ];
+				if ( !arguments.off ) argvs.append( variables.link.cliAdd( a.id, self, arguments.write ) );
+				steps.append( a.name & ": " & argvs.map( function( v ) { return v.toList( " " ); } ).toList( ", then " ) );
+				changes.append( { agent: a, argvs: argvs } );
+				continue;
+			}
+			var text = variables.link.read( a.file );
+			var next = variables.link.change( a, text, self, arguments.write, arguments.off );
+			if ( structKeyExists( next, "error" ) ) {
+				// a named agent must work; when BxRig picked them, it says why one is left out and does the others
+				if ( arguments.ids.len() ) return variables.out.precondition( a.name & ": " & next.error & " (" & a.file & ")", arguments.asJson );
+				skipped.append( { agent: a.id, reason: next.error, file: a.file } );
+				continue;
+			}
+			if ( arguments.off && next.text == text ) continue;
+			steps.append( a.name & ": " & ( arguments.off ? "remove BxRig from " : "add BxRig" & ( arguments.write ? " (it may change things, asking first)" : " (read-only)" ) & " to " ) & a.file );
+			changes.append( { agent: a, file: a.file, before: text, text: next.text } );
+		}
+		for ( var k in skipped ) steps.append( "left out: " & k.agent & ", " & k.reason & " (" & k.file & ")" );
+		if ( !changes.len() ) return variables.out.say( "ok", { agents: [], skipped: skipped }, arguments.asJson, skipped.len() ? steps : [ "Nothing to change." ] );
+		if ( !arguments.off && !variables.hub.installed().installed ) steps.append( "the server runs on bx-ai, which bx-agents installs: bxrig ai agents install --yes" );
+		steps.append( "only BxRig's own entry changes; a file's old copy is kept as FILE.bxrig-backup" );
+		var shown = changes.map( function( c ) { return { agent: c.agent.id, file: c.file ?: "", commands: ( c.argvs ?: [] ) }; } );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( verb & " " & changes.map( function( c ) { return c.agent.id; } ).toList( ", " ), { agents: shown, write: arguments.write, skipped: skipped }, arguments.asJson, arguments.dry, steps );
+		var done = [];
+		for ( var c in changes ) {
+			if ( structKeyExists( c, "argvs" ) ) {
+				// the remove may fail when it was not linked; the add must not
+				variables.proc.exec( c.argvs[ 1 ], 60 );
+				if ( c.argvs.len() > 1 ) {
+					var r = variables.proc.exec( c.argvs[ 2 ], 60 );
+					if ( r.exitCode != 0 ) return variables.out.failed( c.agent.name & ": " & c.argvs[ 2 ].toList( " " ) & " failed: " & trim( ( r.error ?: "" ) & " " & ( r.output ?: "" ) ), arguments.asJson );
+				}
+			} else {
+				directoryCreate( getDirectoryFromPath( c.file ), true, true );
+				if ( len( c.before ) ) fileCopy( c.file, c.file & ".bxrig-backup" );
+				fileWrite( c.file, c.text );
+			}
+			done.append( c.agent.id );
+		}
+		var lines = [ ( arguments.off ? "BxRig's MCP server removed from: " : "BxRig's MCP server added to: " ) & done.toList( ", " ) ];
+		if ( !arguments.off ) lines.append( "Restart a running agent or editor to see it. " & ( arguments.write ? "Tools that change something ask you first." : "Read-only: add --write to let them change things." ) );
+		for ( var k in skipped ) lines.append( "Left out " & k.agent & ": " & k.reason & " (" & k.file & ")" );
+		return variables.out.say( "ok", { agents: done, linked: !arguments.off, write: arguments.write, skipped: skipped }, arguments.asJson, lines );
+	}
+}
