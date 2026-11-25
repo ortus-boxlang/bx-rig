@@ -24,6 +24,7 @@
 - [Displays, power and time](https://bxcachy.boxlang.io/guides/system.md) ([HTML](https://bxcachy.boxlang.io/guides/system/index.html))
 - [Virtual machines](https://bxcachy.boxlang.io/guides/vms.md) ([HTML](https://bxcachy.boxlang.io/guides/vms/index.html))
 - [AI agents and skills](https://bxcachy.boxlang.io/guides/ai.md) ([HTML](https://bxcachy.boxlang.io/guides/ai/index.html))
+- [Android apps](https://bxcachy.boxlang.io/guides/android.md) ([HTML](https://bxcachy.boxlang.io/guides/android/index.html))
 - [Backups and BxTimeMachine](https://bxcachy.boxlang.io/guides/backups.md) ([HTML](https://bxcachy.boxlang.io/guides/backups/index.html))
 - [BoxLang agents](https://bxcachy.boxlang.io/guides/boxlang-agents.md) ([HTML](https://bxcachy.boxlang.io/guides/boxlang-agents/index.html))
 - [Local AI](https://bxcachy.boxlang.io/guides/local-ai.md) ([HTML](https://bxcachy.boxlang.io/guides/local-ai/index.html))
