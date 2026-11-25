@@ -41,7 +41,7 @@ summary: Where BxRig keeps things.
 | `/etc/systemd/system/automatic-timezoned.service`, `/etc/geoclue/conf.d/90-bxrig-timezone.conf` | the automatic time zone (`bxrig time auto on`) |
 | `~/.config/bxrig/plasma-panels/` | the Plasma panel layout and its backup |
 | `~/.config/bxrig/welcome.html` | the getting-started page |
-| `~/.config/bxrig/agents.json` | BoxLang agents: each project's port, the default agent, the projects folder when you changed it, projects added by path |
+| `~/.config/bxrig/agents.json` | BoxLang agents: each project's port, the default agent, the projects folder when you changed it, projects added by path, the agents' skills you reviewed |
 | `~/.config/systemd/user/bxrig-agent-NAME.service` | one BoxLang agent running in the background (`bxrig ai agents start NAME`) |
 | `~/Agents/` | your BoxLang agent projects (`BXRIG_AGENTS_DIR` or `bxrig ai agents dir PATH` moves it) |
 | `~/.bxagents/Agent.yml` | bx-agents' settings for all your agents; BxRig writes only its marked `bxrig` profile block (`BXAGENTS_USER_CONFIG` names another file) |
