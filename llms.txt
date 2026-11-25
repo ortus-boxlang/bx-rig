@@ -25,6 +25,7 @@
 - [Virtual machines](https://bxcachy.boxlang.io/guides/vms.md) ([HTML](https://bxcachy.boxlang.io/guides/vms/index.html))
 - [AI agents and skills](https://bxcachy.boxlang.io/guides/ai.md) ([HTML](https://bxcachy.boxlang.io/guides/ai/index.html))
 - [Backups and BxTimeMachine](https://bxcachy.boxlang.io/guides/backups.md) ([HTML](https://bxcachy.boxlang.io/guides/backups/index.html))
+- [BoxLang agents](https://bxcachy.boxlang.io/guides/boxlang-agents.md) ([HTML](https://bxcachy.boxlang.io/guides/boxlang-agents/index.html))
 - [Local AI](https://bxcachy.boxlang.io/guides/local-ai.md) ([HTML](https://bxcachy.boxlang.io/guides/local-ai/index.html))
 - [Mice, trackpads and keyboards](https://bxcachy.boxlang.io/guides/input.md) ([HTML](https://bxcachy.boxlang.io/guides/input/index.html))
 - [Scheduler](https://bxcachy.boxlang.io/guides/scheduler.md) ([HTML](https://bxcachy.boxlang.io/guides/scheduler/index.html))

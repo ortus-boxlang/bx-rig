@@ -34,6 +34,8 @@ Each key is marked as an AI key or another kind, and agents declare which provid
 
 BxRig runs models on your machine with llama.cpp, picked for your hardware, with OpenAI and Anthropic compatible APIs on `127.0.0.1:8089`. Start with `bxrig ai setup`. See [Local AI](local-ai.md).
 
+Your own agents, built with bx-agents (Boxy and the rest), run in the background with `bxrig ai agents`. See [BoxLang agents](boxlang-agents.md).
+
 ## Skills for every agent
 
 **Skills** are small `SKILL.md` files that teach an agent how to do one thing well. BxRig stores them once in `~/.agents/skills` and links each one into the skills folder of every agent you have (Claude Code, Codex, Gemini CLI, OpenCode). A folder of your own with the same name is never replaced.
