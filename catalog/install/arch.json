@@ -36,6 +36,13 @@
 			"repo": "extra",
 			"verified_on": "2026-11-09"
 		},
+		"amp": {
+			"source": "aur",
+			"targets": [
+				"ampcode"
+			],
+			"verified_on": "2026-11-25"
+		},
 		"antigravity": {
 			"source": "aur",
 			"targets": [
@@ -316,6 +323,20 @@
 			"repo": "extra",
 			"verified_on": "2026-11-10"
 		},
+		"copilot-cli": {
+			"source": "aur",
+			"targets": [
+				"github-copilot-cli-bin"
+			],
+			"verified_on": "2026-11-25"
+		},
+		"crush": {
+			"source": "aur",
+			"targets": [
+				"crush-bin"
+			],
+			"verified_on": "2026-11-25"
+		},
 		"cups": {
 			"source": "pacman",
 			"targets": [
@@ -347,6 +368,13 @@
 			],
 			"repo": "cachyos",
 			"verified_on": "2026-11-09"
+		},
+		"cursor-agent": {
+			"source": "aur",
+			"targets": [
+				"cursor-cli"
+			],
+			"verified_on": "2026-11-25"
 		},
 		"darkly": {
 			"source": "aur",
@@ -695,6 +723,13 @@
 			],
 			"verified_on": "2026-11-22"
 		},
+		"goose": {
+			"source": "aur",
+			"targets": [
+				"goose-cli-bin"
+			],
+			"verified_on": "2026-11-25"
+		},
 		"gopass": {
 			"source": "pacman",
 			"targets": [
@@ -747,6 +782,13 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-12"
+		},
+		"grok-build": {
+			"source": "aur",
+			"targets": [
+				"grok-build-bin"
+			],
+			"verified_on": "2026-11-25"
 		},
 		"grokbot": {
 			"source": "aur",
@@ -1078,6 +1120,13 @@
 			],
 			"repo": "extra",
 			"verified_on": "2026-11-19"
+		},
+		"kiro-cli": {
+			"source": "aur",
+			"targets": [
+				"kiro-cli"
+			],
+			"verified_on": "2026-11-25"
 		},
 		"kitty": {
 			"source": "pacman",
@@ -1894,6 +1943,14 @@
 				"qtengine"
 			],
 			"verified_on": "2026-11-19"
+		},
+		"qwen-code": {
+			"source": "pacman",
+			"targets": [
+				"qwen-code"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-25"
 		},
 		"rawmakase": {
 			"source": "pkgbuild",

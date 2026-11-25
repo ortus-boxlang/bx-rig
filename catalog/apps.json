@@ -1684,9 +1684,9 @@
 		},
 		{
 			"id": "pi-agent",
-			"name": "Pi coding agent",
-			"description": "AI agent toolkit: unified LLM API, agent loop, TUI, coding agent CLI (pi-mono)",
-			"description_source": "aur",
+			"name": "Pi",
+			"description": "A minimal, extensible coding agent for the terminal",
+			"description_source": "curated",
 			"kind": "tui",
 			"group": "ai",
 			"category": "Coding agents",
@@ -1696,7 +1696,7 @@
 				"owner-pick"
 			],
 			"decided_by_owner": true,
-			"homepage": "https://pi.dev/"
+			"homepage": "https://pi.dev"
 		},
 		{
 			"id": "t3-code",
@@ -1712,6 +1712,126 @@
 			"origin": [
 				"omarchy-desktop"
 			]
+		},
+		{
+			"id": "copilot-cli",
+			"name": "GitHub Copilot CLI",
+			"description": "GitHub Copilot's coding agent in your terminal",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://github.com/github/copilot-cli",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "cursor-agent",
+			"name": "Cursor Agent",
+			"description": "Cursor's coding agent on the command line",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://cursor.com/cli",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "amp",
+			"name": "Amp",
+			"description": "Sourcegraph's agentic coding tool for the terminal",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://ampcode.com",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "crush",
+			"name": "Crush",
+			"description": "Charm's AI coding agent for the terminal",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://github.com/charmbracelet/crush",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "goose",
+			"name": "Goose",
+			"description": "An open source, extensible AI agent that goes beyond code suggestions",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://github.com/aaif-goose/goose",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "kiro-cli",
+			"name": "Kiro CLI",
+			"description": "Kiro's agent: prompt to code to deployment in your terminal",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://kiro.dev/cli",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "qwen-code",
+			"name": "Qwen Code",
+			"description": "An open source coding agent from the Qwen team",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://github.com/QwenLM/qwen-code",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
+		},
+		{
+			"id": "grok-build",
+			"name": "Grok Build",
+			"description": "xAI's coding agent for the terminal",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://docs.x.ai/build/overview",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			}
 		},
 		{
 			"id": "pane",

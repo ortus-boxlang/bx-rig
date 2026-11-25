@@ -42,4 +42,15 @@ for id in gemini-cli hermes-agent; do [[ "$(jq -r --arg i "$id" '.apps[]|select(
 [[ "$(jq '[.apps[]|select(.source=="unresolved")]|length' "$cat")" == 0 ]] || fail 'no app is left unresolved'
 [[ "$(jq '[.apps[]|select(.source=="pkgbuild" and (.pkgbuild.ref|test("^[0-9a-f]{40}$")|not))]|length' "$cat")" == 0 ]] || fail 'every pkgbuild ref is a full commit'
 for id in zoom-web omapresent task-manager; do [[ "$(jq --arg i "$id" '[.apps[]|select(.id==$i)]|length' "$cat")" == 0 ]] || fail "$id was removed as an overlap"; done
+# PR 12: every major coding agent installs on Arch, and by its vendor's script on Debian and openSUSE.
+for id in pi-agent copilot-cli cursor-agent amp crush goose kiro-cli qwen-code grok-build; do
+	[[ "$("$binary" catalog show "$id" --distro=arch --json | jq -r '.data.category')" == 'Coding agents' ]] || fail "$id is a coding agent on Arch"
+done
+for d in debian suse; do
+	for id in pi-agent copilot-cli cursor-agent amp goose kiro-cli qwen-code grok-build; do
+		[[ "$("$binary" catalog show "$id" --distro=$d --json | jq -r '.data.source')" == script ]] || fail "$id installs by its script on $d"
+	done
+done
+# Debian's `pi` package computes digits of pi: Pi the agent comes from pi.dev's installer.
+[[ "$("$binary" catalog show pi-agent --distro=debian --json | jq -r '.data.script.url')" == 'https://pi.dev/install.sh' ]] || fail 'pi-agent on Debian is pi.dev/install.sh'
 echo 'catalog tests passed'

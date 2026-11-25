@@ -44,7 +44,13 @@ local AGENT_GLYPHS = {
 	["gemini-cli"] = "sparkles",
 	["copilot-cli"] = "brand-github-copilot",
 	["cursor-agent"] = "cube",
-	["grok-cli"] = "brand-x",
+	["grok-build"] = "brand-x",
+	["pi-agent"] = "math-pi",
+	["crush"] = "sparkles",
+	["goose"] = "feather",
+	["amp"] = "bolt",
+	["qwen-code"] = "code",
+	["kiro-cli"] = "ghost",
 }
 
 local function str(v)

@@ -49,9 +49,10 @@ class AiAgentsProvider {
 		var lk = links();
 		var known = arguments.list.agents ?: [];
 		var all = duplicate( known );
-		// Crush can use the local server but is not one of BxRig's agents: shown when it is installed or linked
+		// Crush is one of BxRig's agents now; an older `ai list` without it still shows it when it is installed or linked
 		var crushRow = ( arguments.agents.agents ?: [] ).filter( function( a ) { return a.id == "crush"; } );
-		if ( crushRow.len() && ( crushRow[ 1 ].installed || crushRow[ 1 ].linked ) ) all.append( { id: "crush", name: "Crush", installed: crushRow[ 1 ].installed, default: false } );
+		var listed = known.filter( function( a ) { return a.id == "crush"; } ).len() > 0;
+		if ( !listed && crushRow.len() && ( crushRow[ 1 ].installed || crushRow[ 1 ].linked ) ) all.append( { id: "crush", name: "Crush", installed: crushRow[ 1 ].installed, default: false } );
 		for ( var g in all ) {
 			var link = lk[ g.id ] ?: "";
 			var isLinked = len( link ) && ( linked[ link ] ?: false );
