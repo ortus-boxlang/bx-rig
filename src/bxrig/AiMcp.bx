@@ -123,9 +123,9 @@ class AiMcp {
 
 	array function rows() {
 		return variables.link.agents().map( function( a ) {
-			var s = stateOf( a );
-			return { id: a.id, name: a.name, installed: isInstalled( a ), linked: s, file: a.file };
-		} );
+				var s = stateOf( a );
+				return { id: a.id, name: a.name, installed: isInstalled( a ), linked: s, file: a.file };
+			} );
 	}
 
 	function statusCmd( asJson ) {

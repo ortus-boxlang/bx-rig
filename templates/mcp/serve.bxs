@@ -5,8 +5,8 @@
 changing = jsonDeserialize( fileRead( expandPath( "./changing.json" ) ) );
 write = getSystemSetting( "BXRIG_MCP_WRITE", "" ) == "1";
 tools = aiToolRegistry()
-	.scanClass( new BxRig(), "bxrig-mcp" )
-	.filter( ( t ) => write || !changing.findNoCase( t.getName() ) );
+.scanClass( new BxRig(), "bxrig-mcp" )
+.filter( ( t ) => write || !changing.findNoCase( t.getName() ) );
 mcpServer(
 	"bxrig",
 	"BxRig: this machine, its look, your plans, apps, captures and dev services" & ( write ? "" : " (read-only)" ),

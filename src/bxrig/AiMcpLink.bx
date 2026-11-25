@@ -77,11 +77,11 @@ class AiMcpLink {
 				var cmd = [ arguments.self ];
 				for ( var x in args ) cmd.append( x );
 				return { type: "local", command: cmd, enabled: true };
-			case "copilot": return { type: "local", command: arguments.self, args: args, tools: [ "*" ] };
-			case "stdio": return { type: "stdio", command: arguments.self, args: args };
-			case "kiro": return { command: arguments.self, args: args, disabled: false };
-			case "zed": return { command: arguments.self, args: args, env: {} };
-			default: return { command: arguments.self, args: args };
+				case "copilot": return { type: "local", command: arguments.self, args: args, tools: [ "*" ] };
+				case "stdio": return { type: "stdio", command: arguments.self, args: args };
+				case "kiro": return { command: arguments.self, args: args, disabled: false };
+				case "zed": return { command: arguments.self, args: args, env: {} };
+				default: return { command: arguments.self, args: args };
 		}
 	}
 
@@ -244,12 +244,12 @@ class AiMcpLink {
 		switch ( a.kind ) {
 			case "json":
 				if ( ( a.jsonc ?: false ) && ( find( beginMark( a.id, "//" ), arguments.text ) || !plainJson( arguments.text ) ) ) {
-					return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : jsoncAdd( arguments.text, a.id, a.path[ 1 ], entry( a.shape, arguments.self, arguments.write ) );
-				}
+				return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : jsoncAdd( arguments.text, a.id, a.path[ 1 ], entry( a.shape, arguments.self, arguments.write ) );
+			}
 				return arguments.off ? jsonRemove( arguments.text, a.path ) : jsonAdd( arguments.text, a.path, entry( a.shape, arguments.self, arguments.write ) );
-			case "toml": return { text: arguments.off ? blockRemove( arguments.text, a.id ) : tomlAdd( arguments.text, arguments.self, arguments.write ) };
-			case "crushrc": return { text: arguments.off ? blockRemove( arguments.text, a.id ) : crushAdd( arguments.text, arguments.self, arguments.write ) };
-			case "yaml": return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : yamlAdd( arguments.text, arguments.self, arguments.write );
+				case "toml": return { text: arguments.off ? blockRemove( arguments.text, a.id ) : tomlAdd( arguments.text, arguments.self, arguments.write ) };
+				case "crushrc": return { text: arguments.off ? blockRemove( arguments.text, a.id ) : crushAdd( arguments.text, arguments.self, arguments.write ) };
+				case "yaml": return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : yamlAdd( arguments.text, arguments.self, arguments.write );
 		}
 		return { error: "not a file agent" };
 	}
