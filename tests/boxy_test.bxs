@@ -2,6 +2,7 @@
 // Pure: nothing is drawn to a screen or run. Run from src/: (cd src && matchbox ../tests/boxy_test.bxs)
 testkit = new lib.Check( "boxy" );
 l = new bxrig.BoxyLook();
+h = chr( 35 );   // the hash sign, written so it is never read as an interpolation
 
 testkit.check( "states: idle, listening, working, speaking", l.states().toList( "," ) == "idle,listening,working,speaking" );
 testkit.check( "outfits: seven, each with an id and a name", l.outfits().len() == 7 && l.outfitIds().toList( "," ) == "beanie,flower,sunglasses,leaf,santa,witch,party" );
@@ -15,17 +16,17 @@ testkit.check( "birthday: the day you set", l.outfitFor( "auto", [], "03-09", 3,
 testkit.check( "a fixed outfit stays, none means none", l.outfitFor( "santa", [], "", 7, 1 ) == "santa" && l.outfitFor( "none", [ "christmas" ], "", 12, 24 ) == "" && l.outfitFor( "bogus", [], "", 7, 1 ) == "" );
 
 // colours
-testkit.check( "colour: a valid colour is 6 hex digits with #", l.validColor( "##00ff78" ) && l.validColor( "##FF8800" ) && !l.validColor( "red" ) && !l.validColor( "##12345" ) && !l.validColor( "" ) );
-testkit.check( "colour: mix keeps the form", l.validColor( l.mix( "##00ff78", 0.5 ) ) );
+testkit.check( "colour: a valid colour is 6 hex digits with #", l.validColor( ( h & "00ff78" ) ) && l.validColor( ( h & "FF8800" ) ) && !l.validColor( "red" ) && !l.validColor( ( h & "12345" ) ) && !l.validColor( "" ) );
+testkit.check( "colour: mix keeps the form", l.validColor( l.mix( ( h & "00ff78" ), 0.5 ) ) );
 
 // the images
 for ( s in l.states() ) {
-svg = l.svg( s, "##00ff78", "" );
-testkit.check( "svg " & s & ": a closed 256 square drawing in the accent", left( svg, 4 ) == "<svg" && find( "</svg>", svg ) > 0 && find( "viewBox=""0 0 256 256""", svg ) > 0 && find( "##00ff78", svg ) > 0 );
+	svg = l.svg( s, ( h & "00ff78" ), "" );
+	testkit.check( "svg " & s & ": a closed 256 square drawing in the accent", left( svg, 4 ) == "<svg" && find( "</svg>", svg ) > 0 && find( "viewBox=""0 0 256 256""", svg ) > 0 && find( ( h & "00ff78" ), svg ) > 0 );
 }
-testkit.check( "svg: the states differ", l.svg( "idle", "##00ff78", "" ) != l.svg( "listening", "##00ff78", "" ) && l.svg( "working", "##00ff78", "" ) != l.svg( "speaking", "##00ff78", "" ) );
-testkit.check( "svg: an outfit adds to the drawing", len( l.svg( "idle", "##00ff78", "santa" ) ) > len( l.svg( "idle", "##00ff78", "" ) ) );
-testkit.check( "svg: the accent changes it", find( "##ff8800", l.svg( "idle", "##ff8800", "" ) ) > 0 && find( "##ff8800", l.svg( "idle", "##00ff78", "" ) ) == 0 );
+testkit.check( "svg: the states differ", l.svg( "idle", ( h & "00ff78" ), "" ) != l.svg( "listening", ( h & "00ff78" ), "" ) && l.svg( "working", ( h & "00ff78" ), "" ) != l.svg( "speaking", ( h & "00ff78" ), "" ) );
+testkit.check( "svg: an outfit adds to the drawing", len( l.svg( "idle", ( h & "00ff78" ), "santa" ) ) > len( l.svg( "idle", ( h & "00ff78" ), "" ) ) );
+testkit.check( "svg: the accent changes it", find( ( h & "ff8800" ), l.svg( "idle", ( h & "ff8800" ), "" ) ) > 0 && find( ( h & "ff8800" ), l.svg( "idle", ( h & "00ff78" ), "" ) ) == 0 );
 
 // the text sprite
 idle = l.sprite( "idle", 0, "" );
