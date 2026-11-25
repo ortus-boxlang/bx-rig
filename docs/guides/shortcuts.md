@@ -70,6 +70,9 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+M` | Maximize or restore the window (the bar stays) |
 | `Super+Alt+Left` / `Right` / `Up` / `Down` | Snap the window to the left / right / top / bottom half of the screen |
 | `Super+Alt+Shift+C` | Center the floating window |
+| `Super+Ctrl+Up` | Overview of all windows (Mission Control) |
+| `Super+Alt+Escape` | Force quit a window |
+| `Super+Alt+E` | AI on the selected text: a menu to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](local-ai.md#ai-on-the-selected-text)) |
 | `Super+Shift+J` | Next layout on this workspace: dwindle, master, columns, scrolling, monocle |
 | `Super+Minus` / `Super+Equal` | Narrower / wider: the split (dwindle), the main column (master, columns), or the column through 1/3, 1/2, 2/3 and full (scrolling) |
 | `Super+Ctrl+Left` / `Right` | Previous / next workspace |
