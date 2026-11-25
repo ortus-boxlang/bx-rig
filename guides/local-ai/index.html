@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#set-it-up">Set it up</a></li><li class="toc-level-2"><a href="#your-hardware-and-the-picks">Your hardware and the picks</a></li><li class="toc-level-2"><a href="#the-engine">The engine</a></li><li class="toc-level-2"><a href="#models">Models</a></li><li class="toc-level-2"><a href="#the-server">The server</a></li><li class="toc-level-2"><a href="#in-the-control-center-and-the-bar">In the Control Center and the bar</a></li><li class="toc-level-2"><a href="#files">Files</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#set-it-up">Set it up</a></li><li class="toc-level-2"><a href="#your-hardware-and-the-picks">Your hardware and the picks</a></li><li class="toc-level-2"><a href="#the-engine">The engine</a></li><li class="toc-level-2"><a href="#models">Models</a></li><li class="toc-level-2"><a href="#discover-more-models">Discover more models</a></li><li class="toc-level-2"><a href="#downloads-in-the-background">Downloads in the background</a></li><li class="toc-level-2"><a href="#how-well-a-model-does-here">How well a model does here</a></li><li class="toc-level-2"><a href="#coding-agents-on-local-models">Coding agents on local models</a></li><li class="toc-level-2"><a href="#the-server">The server</a></li><li class="toc-level-2"><a href="#in-the-control-center-and-the-bar">In the Control Center and the bar</a></li><li class="toc-level-2"><a href="#files">Files</a></li></ul></details>
 		
 
 		
@@ -296,6 +296,34 @@ bxrig ai ask &quot;What is BoxLang?&quot;
 </code></pre>
 <p>Downloads run up to three at a time, continue where they stopped after an interruption, and are checked against the checksum in BxRig's catalog before they are used. A file that does not match is kept as <code>.part</code> and never served.</p>
 <p><strong>Tune</strong> runs llama.cpp's benchmark on each model (about a minute) with different thread counts, batch sizes and flash attention, and keeps the fastest settings for your machine. You can skip it at setup and run it any time.</p>
+<h2 id="discover-more-models"><a href="#discover-more-models" id="discover-more-models" name="discover-more-models" class="anchor"></a>Discover more models</h2>
+<pre><code class="language-bash">bxrig ai discover                  # staff picks for this machine, then the most downloaded GGUF models
+bxrig ai discover qwen --fits      # search Hugging Face; only what fits here
+bxrig ai models pull hf:bartowski/SmolLM2-1.7B-Instruct-GGUF --yes
+bxrig ai models pull hf:OWNER/REPO/FILE.gguf --yes     # a quant of your choice
+</code></pre>
+<p><strong>Staff picks</strong> are the models BxRig tested, picked for your hardware. The rest come from Hugging Face and are marked as not tested by BxRig. For each repository BxRig picks one file (a 4-bit quant first), shows its size and whether it fits, and checks the download against the SHA-256 that Hugging Face publishes. Only language models are listed (text, text with images, embeddings).</p>
+<p><video src="../assets/clips/ai-discover-tui.webm" poster="../assets/screenshots/ai-page-search.webp" autoplay loop muted playsinline width="100%"></video></p>
+<h2 id="downloads-in-the-background"><a href="#downloads-in-the-background" id="downloads-in-the-background" name="downloads-in-the-background" class="anchor"></a>Downloads in the background</h2>
+<pre><code class="language-bash">bxrig ai models pull gemma-4-e4b qwen3.5-4b --background --yes
+bxrig ai downloads                 # each one's share, queued, checking, done or failed
+bxrig ai downloads cancel qwen3.5-4b
+bxrig ai downloads clear           # forget the finished ones
+</code></pre>
+<p>Three download at a time; the rest wait in the queue. A background pull keeps going when you close the terminal or the Control Center.</p>
+<h2 id="how-well-a-model-does-here"><a href="#how-well-a-model-does-here" id="how-well-a-model-does-here" name="how-well-a-model-does-here" class="anchor"></a>How well a model does here</h2>
+<pre><code class="language-bash">bxrig ai bench                     # the active model
+bxrig ai bench qwen3.5-0.8b
+</code></pre>
+<p><code>bench</code> runs BxRig's 20 tool-calling tasks (setting a theme, a reminder, an agenda, installing an app, two actions at once, and requests that need no tool) against your own server and reports the score, the median reply time and the tasks it missed. These are the same tasks behind the scores in BxRig's catalog, so you can compare a model you found on Hugging Face with the tested ones. The result is kept with the model and shown in <code>bxrig ai models</code>.</p>
+<h2 id="coding-agents-on-local-models"><a href="#coding-agents-on-local-models" id="coding-agents-on-local-models" name="coding-agents-on-local-models" class="anchor"></a>Coding agents on local models</h2>
+<pre><code class="language-bash">bxrig ai link                              # which agents use the local server
+bxrig ai link opencode --yes               # add BxRig's server to OpenCode
+bxrig ai link opencode --default --yes     # and make the active model its default
+bxrig ai link crush --yes
+bxrig ai link opencode --off --yes
+</code></pre>
+<p>Only BxRig's own part of each agent's config is written (a provider called <code>bxrig</code>); everything else stays, and the old file is kept as <code>.bxrig-backup</code>. OpenCode gets a provider in <code>~/.config/opencode/opencode.json</code> with your chat models; Crush gets a <code>llamacpp</code> provider block in <code>~/.config/crush/crushrc</code> and finds the models itself. A config with comments (JSONC) is not rewritten. While the server listens on your network it needs an API key, so agents are linked only while it listens on 127.0.0.1.</p>
 <h2 id="the-server"><a href="#the-server" id="the-server" name="the-server" class="anchor"></a>The server</h2>
 <pre><code class="language-bash">bxrig ai serve                     # running? where?
 bxrig ai serve start
@@ -305,7 +333,8 @@ bxrig ai serve --listen=0.0.0.0 --yes   # also on your network
 <p>The server is a user service (<code>bxrig-ai.service</code>) running llama.cpp in router mode: every model you downloaded is available by its id, loaded when it is first asked for. Listening on your network (<code>0.0.0.0</code>) needs an API key: BxRig makes one, shows it once and keeps it in <code>~/.config/bxrig/ai-api-key</code> (only you can read it). Send it as <code>Authorization: Bearer KEY</code>.</p>
 <h2 id="in-the-control-center-and-the-bar"><a href="#in-the-control-center-and-the-bar" id="in-the-control-center-and-the-bar" name="in-the-control-center-and-the-bar" class="anchor"></a>In the Control Center and the bar</h2>
 <p>The <strong>AI</strong> page of the Control Center (<code>bxrig tui ai</code>) shows your machine, the engine, the server, your models and the picks you do not have yet. Enter downloads a pick or makes a model active, <code>t</code> tests, <code>u</code> tunes, <code>h</code> opens the model on Hugging Face, <code>x</code> removes it, <code>p</code> asks a question and <code>s</code> sets everything up.</p>
-<p>The bar's Agents panel has a <strong>Local</strong> tab: the server with Start and Stop, your models with Use, and a box to try a question.</p>
+<p><strong>Discover</strong> (<code>bxrig tui ai-discover</code>) shows downloads in progress, the staff picks and Hugging Face: <code>/</code> searches, Enter queues a download, <code>c</code> cancels one, <code>h</code> opens the model on Hugging Face. <strong>Agents</strong> (<code>bxrig tui ai-agents</code>) lists your coding agents: the default one, which use the local server (<code>l</code> switches), their sessions; Enter starts a session and <code>d</code> makes one the default. On the AI page, <code>b</code> runs the bench on the model under the cursor.</p>
+<p>The bar's Agents panel has a <strong>Local</strong> tab: the server with Start and Stop, your models with Use, downloads in progress, and a box to try a question.</p>
 <h2 id="files"><a href="#files" id="files" name="files" class="anchor"></a>Files</h2>
 <div class="bxsites-table-wrap"><table class="table">
 <thead>
@@ -316,6 +345,7 @@ bxrig ai serve --listen=0.0.0.0 --yes   # also on your network
 <tr><td><code>~/.config/bxrig/ai.json</code></td><td>your models, the active one, tuned settings, measured speed, where the server listens</td></tr>
 <tr><td><code>~/.config/bxrig/ai-models.ini</code></td><td>the server's model list, written from <code>ai.json</code></td></tr>
 <tr><td><code>~/.config/systemd/user/bxrig-ai.service</code></td><td>the server</td></tr>
+<tr><td><code>~/.local/state/bxrig/ai-downloads/</code></td><td>the download queue, one record per model</td></tr>
 </tbody>
 </table></div>
 <p>Other local AI apps (LM Studio, Jan, Ollama and others) are still in the app catalog if you prefer them.</p>
@@ -324,7 +354,7 @@ bxrig ai serve --listen=0.0.0.0 --yes   # also on your network
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/local-ai.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/local-ai.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 23, 2026, 10&#x3a;00&#x3a;39 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Local%20AI&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Flocal-ai%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/local-ai.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/local-ai.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 25, 2026, 10&#x3a;08&#x3a;19 AM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Local%20AI&amp;body=Found%20on%3A%20https%3A%2F%2Fbxcachy.boxlang.io%2Fguides%2Flocal-ai%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -368,7 +398,7 @@ bxrig ai serve --listen=0.0.0.0 --yes   # also on your network
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#set-it-up">Set it up</a></li><li class="toc-level-2"><a href="#your-hardware-and-the-picks">Your hardware and the picks</a></li><li class="toc-level-2"><a href="#the-engine">The engine</a></li><li class="toc-level-2"><a href="#models">Models</a></li><li class="toc-level-2"><a href="#the-server">The server</a></li><li class="toc-level-2"><a href="#in-the-control-center-and-the-bar">In the Control Center and the bar</a></li><li class="toc-level-2"><a href="#files">Files</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#set-it-up">Set it up</a></li><li class="toc-level-2"><a href="#your-hardware-and-the-picks">Your hardware and the picks</a></li><li class="toc-level-2"><a href="#the-engine">The engine</a></li><li class="toc-level-2"><a href="#models">Models</a></li><li class="toc-level-2"><a href="#discover-more-models">Discover more models</a></li><li class="toc-level-2"><a href="#downloads-in-the-background">Downloads in the background</a></li><li class="toc-level-2"><a href="#how-well-a-model-does-here">How well a model does here</a></li><li class="toc-level-2"><a href="#coding-agents-on-local-models">Coding agents on local models</a></li><li class="toc-level-2"><a href="#the-server">The server</a></li><li class="toc-level-2"><a href="#in-the-control-center-and-the-bar">In the Control Center and the bar</a></li><li class="toc-level-2"><a href="#files">Files</a></li></ul></nav>
 				</aside>
 			
 		</div>
