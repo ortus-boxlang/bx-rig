@@ -2649,7 +2649,7 @@
 				},
 				{
 					"name": "ai",
-					"summary": "AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), coding agents, tmux sessions, the pull-down AI shell.",
+					"summary": "AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), BoxLang agents (bx-agents), coding agents, tmux sessions, the pull-down AI shell.",
 					"usage": [
 						"ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]",
 						"ai session list",
@@ -2673,6 +2673,17 @@
 						"ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]",
 						"ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]",
 						"ai ask TEXT [--model=ID] [--json]",
+						"ai agents [list] [--json]",
+						"ai agents install|update [--snapshot|--stable] [--yes] [--dry-run]",
+						"ai agents new NAME [bxAgents new flags]",
+						"ai agents NAME VERB [bxAgents flags]",
+						"ai agents start|stop|status NAME [--json]",
+						"ai agents open NAME",
+						"ai agents default [NAME]",
+						"ai agents dir [PATH]",
+						"ai agents add PATH",
+						"ai agents forget NAME [--yes]",
+						"ai agents profile [--off]",
 						"ai list",
 						"ai default [ID] [--yes]",
 						"ai launch [ID] [--dry-run]",
@@ -2688,6 +2699,8 @@
 						"bxrig ai models recommend",
 						"bxrig ai models pull gemma-4-e4b --yes",
 						"bxrig ai discover qwen --fits",
+						"bxrig ai agents install --yes",
+						"bxrig ai agents Boxy chat",
 						"bxrig ai serve status",
 						"bxrig ai list",
 						"bxrig ai session start --name=work"
@@ -2767,8 +2780,16 @@
 							"type": "value"
 						},
 						{
+							"name": "snapshot",
+							"type": "bool"
+						},
+						{
 							"name": "source",
 							"type": "value"
+						},
+						{
+							"name": "stable",
+							"type": "bool"
 						},
 						{
 							"name": "test",

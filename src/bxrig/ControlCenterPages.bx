@@ -9,6 +9,7 @@ class ControlCenterPages {
 			{ id: "ai", title: "AI", icon: "chip" },
 			{ id: "ai-discover", title: "Discover", icon: "search" },
 			{ id: "ai-agents", title: "Agents", icon: "terminal" },
+			{ id: "ai-boxlang", title: "BoxLang agents", icon: "comments" },
 			{ id: "boxlang", title: "BoxLang", icon: "archive" },
 			{ id: "modules", title: "Modules", icon: "cubes" },
 			{ id: "servers", title: "Servers", icon: "server" },

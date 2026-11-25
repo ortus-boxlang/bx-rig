@@ -1,0 +1,82 @@
+// BoxLang agents (bx-agents projects): the agent name from Agent.yml, ports, the bxrig profile block, the service text, what is
+// handed to bxAgents, the Control Center rows and the bar's BoxLang tab. Pure: nothing is installed or started.
+// Run from src/: (cd src && matchbox ../tests/ai_agents_test.bxs)
+testkit = new lib.Check( "boxlang agents" );
+nl = chr( 10 );
+hub = new bxrig.AiAgentHub( new bxrig.util.Cli( "test" ) );
+
+// ---- the agent name ----
+testkit.check( "name: the top-level name of Agent.yml", hub.nameFrom( "name: Boxy" & nl & "model: x", "folder" ) == "Boxy" );
+testkit.check( "name: quotes and a comment are not part of it", hub.nameFrom( "name: ""Inbox Helper""  ## the inbox" & nl, "f" ) == "Inbox Helper" );
+testkit.check( "name: an indented name is not the agent's", hub.nameFrom( "profiles:" & nl & "  name: deep" & nl, "Folder" ) == "Folder" );
+testkit.check( "name: none means the folder name", hub.nameFrom( "model: x", "Researcher" ) == "Researcher" );
+testkit.check( "unit: one per agent, safe characters", hub.unitOf( "Inbox Helper" ) == "bxrig-agent-inbox-helper.service" );
+
+// ---- ports and lookups ----
+st = { root: "", default: "", entries: [] };
+a = hub.entryFor( st, "/p/a" );
+b = hub.entryFor( st, "/p/b", true );
+testkit.check( "ports: from 8790, one each", a.port == 8790 && b.port == 8791 && st.entries.len() == 2 );
+testkit.check( "ports: the same path keeps its port", hub.entryFor( st, "/p/a" ).port == 8790 && st.entries.len() == 2 );
+st.entries = [ { path: "/p/b", port: 8791, added: true } ];
+testkit.check( "ports: a freed port is used again", hub.entryFor( st, "/p/c" ).port == 8790 );
+list = [ { name: "Boxy", path: "/h/Agents/Boxy" }, { name: "Inbox", path: "/h/work/inbox-agent" } ];
+testkit.check( "find: by agent name, any case", hub.byName( list, "boxy" ).path == "/h/Agents/Boxy" );
+testkit.check( "find: by folder name too", hub.byName( list, "inbox-agent" ).name == "Inbox" );
+testkit.check( "find: nothing for an unknown one", structIsEmpty( hub.byName( list, "nope" ) ) );
+testkit.check( "reserved: command words are not agent names", arrayFind( hub.reserved(), "start" ) && arrayFind( hub.reserved(), "install" ) && !arrayFind( hub.reserved(), "boxy" ) );
+
+// ---- what is handed to bxAgents ----
+raw = [ "ai", "agents", "Boxy", "invoke", "--message=Where is my order", "--json" ];
+testkit.check( "pass: what was typed after the agent, exactly", hub.after( raw, [ "Boxy" ] ).toList( "|" ) == "invoke|--message=Where is my order|--json" );
+testkit.check( "pass: after new NAME", hub.after( [ "ai", "agents", "new", "Boxy", "--model=openai-compatible/x", "--no-wizard" ], [ "new", "Boxy" ] ).toList( "|" ) == "--model=openai-compatible/x|--no-wizard" );
+testkit.check( "pass: nothing after the agent", hub.after( [ "ai", "agents", "Boxy" ], [ "Boxy" ] ).len() == 0 );
+argv = hub.passArgv( "/h/Agents/Boxy", [ "routines", "list", "--json" ] );
+testkit.check( "pass: the verb, the project, then the rest", argv[ 2 ] == "routines" && argv[ 3 ] == "--projectRoot=/h/Agents/Boxy" && argv[ 4 ] == "list" && argv[ 5 ] == "--json" );
+
+// ---- the bxrig profile ----
+prof = new bxrig.AiAgentProfile();
+added = prof.add( "", "http://127.0.0.1:8089/v1", "qwen3.5-0.8b" );
+testkit.check( "profile: a new file gets the marked block", find( prof.begin(), added.text ) == 1 && find( "profiles:" & nl & "  bxrig:", added.text ) && find( "baseURL: ""http://127.0.0.1:8089/v1""", added.text ) && find( "model: qwen3.5-0.8b", added.text ) );
+mine = "chat:" & nl & "  shell: true" & nl;
+withBlock = prof.add( mine, "http://127.0.0.1:8089/v1", "a" ).text;
+testkit.check( "profile: the person's own settings stay", left( withBlock, len( mine ) ) == mine );
+again = prof.add( withBlock, "http://127.0.0.1:8089/v1", "b" ).text;
+testkit.check( "profile: written again, one block with the new model", ( len( again ) - len( replace( again, prof.begin(), "", "all" ) ) ) / len( prof.begin() ) == 1 && find( "model: b", again ) && !find( "model: a", again ) );
+testkit.check( "profile: removing it leaves the rest as it was", prof.remove( again ) == mine );
+clash = prof.add( "profiles:" & nl & "  fast:" & nl & "    model: x" & nl, "u", "m" );
+testkit.check( "profile: a profiles: of their own is not rewritten", structKeyExists( clash, "error" ) && clash.lines[ 1 ] == "  bxrig:" );
+testkit.check( "profile: no local model, no profile", !prof.write( "", "u" ).ok );
+
+// ---- the service ----
+unit = hub.unitText( { name: "Boxy", path: "/h/Agents/Boxy", port: 8790 } );
+testkit.check( "unit: builds first", reFind( "ExecStartPre=\S*bxAgents build --projectRoot=/h/Agents/Boxy --no-banner", unit ) );
+testkit.check( "unit: runs the miniserver in .build in the foreground, on its port and loopback", find( "ExecStart=/bin/sh -c ""cd .build && exec ", unit ) && find( "boxlang-miniserver --port 8790 --host 127.0.0.1""", unit ) );
+testkit.check( "unit: the build's own BoxLang home", find( "Environment=BOXLANG_HOME=/h/Agents/Boxy/.build/runtime", unit ) );
+testkit.check( "unit: restarts after a crash, starts with the session", find( "Restart=on-failure", unit ) && find( "WantedBy=default.target", unit ) );
+
+// ---- the Control Center ----
+cc = new bxrig.BoxlangAgentsProvider( true );
+rows = cc.load();
+testkit.check( "page: one row per agent, by name", rows.len() == 4 && rows[ 1 ].name == "Boxy" );
+testkit.check( "page: the default and the running ones marked", rows[ 1 ].mark == "●" && rows[ 2 ].mark == "✓" && rows[ 3 ].state == "stopped" && rows[ 3 ].where == ":8792" );
+missing = cc.rowsFrom( { installed: false, agents: [] } );
+testkit.check( "page: bx-agents missing, a row that installs it", missing.len() == 1 && missing[ 1 ].kind == "note" && missing[ 1 ].args[ 3 ] == "install" );
+acts = {};
+for ( x in cc.actions() ) acts[ x.key ] = x;
+s1 = acts[ "s" ].run( rows[ 1 ] );
+s3 = acts[ "s" ].run( rows[ 3 ] );
+testkit.check( "page: s stops a running agent and starts a stopped one", s1.args[ 3 ] == "stop" && s3.args[ 3 ] == "start" && s3.args[ 4 ] == "Researcher" );
+testkit.check( "page: o only for a running agent", acts[ "o" ].run( rows[ 1 ] ).argv[ 2 ] == "http://127.0.0.1:8790/" && structIsEmpty( acts[ "o" ].run( rows[ 3 ] ) ) );
+testkit.check( "page: d not for the default one", structIsEmpty( acts[ "d" ].run( rows[ 1 ] ) ) && acts[ "d" ].run( rows[ 2 ] ).args[ 4 ] == "Inbox" );
+testkit.check( "page: l shows its journal", acts[ "l" ].run( rows[ 1 ] ).argv[ 4 ] == "bxrig-agent-boxy.service" );
+testkit.check( "page: registered after Agents", new bxrig.ControlCenterPages().find( "ai-boxlang" ).title == "BoxLang agents" );
+
+// ---- the bar ----
+root = "../templates/noctalia-plugins/agents/";
+panelSrc = fileRead( root & "panel.luau" );
+blSrc = fileRead( root & "boxlang.luau" );
+testkit.check( "bar: the panel has a BoxLang tab and loads boxlang.luau", find( 'require("./boxlang.luau")', panelSrc ) > 0 && find( 'label = "BoxLang"', panelSrc ) > 0 );
+testkit.check( "bar: the BoxLang tab runs the commands it documents", find( '"ai", "agents", "--json"', blSrc ) && find( '"ai", "agents", running and "stop" or "start", str(a.name)', blSrc ) && find( '" ai agents " .. shq(a.name) .. " chat"', blSrc ) && find( '"ai", "agents", "install", "--yes"', blSrc ) && find( 'tui ai-boxlang', blSrc ) );
+testkit.check( "bar: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), panelSrc & blSrc ) );
+testkit.done( "all passed" );

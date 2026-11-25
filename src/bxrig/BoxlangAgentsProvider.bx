@@ -1,0 +1,77 @@
+// BoxLang agents: the bx-agents projects on this machine (Boxy and the rest). Each row: the default one marked, running or not, its
+// address, its folder. Enter opens its chat in a new terminal (its web page with o), s starts or stops it, d makes it the default,
+// l shows its log, i installs or updates bx-agents. Reads `bxrig ai agents --json`.
+class BoxlangAgentsProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "ai-boxlang"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "ai-boxlang" ); }
+	function title() { return "BoxLang agents"; }
+	function hint() { return "your bx-agents agents: chat, start, the default one"; }
+	function emptyText() { return "No BoxLang agents yet. Make one: bxrig ai agents new Boxy"; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "agent", w: 16 }, { key: "state", label: "", w: 10 }, { key: "where", label: "address", w: 24 }, { key: "path", label: "folder", w: 0 } ]; }
+
+	function style( r ) {
+		if ( r.kind == "note" ) return "dim";
+		return r.running ? "ok" : "";
+	}
+
+	function detail( r ) {
+		if ( r.kind == "note" ) return [ r.text ];
+		var lines = [ r.name & ( r.running ? " is running at " & r.url : " is stopped" ) & ( r.default ? ", your default agent" : "" ) & "." ];
+		lines.append( "Project " & r.path & ( r.added ? " (added by path)" : "" ) & ", port " & r.port & "." );
+		lines.append( "Anything else bxAgents does: bxrig ai agents " & r.name & " <verb>, for example routines list or skills list." );
+		return lines;
+	}
+
+	// The argv that opens `bxrig ai agents NAME chat` in a new terminal window, or [] when no terminal is installed.
+	array function chatArgv( required string name ) {
+		var term = new bxrig.Ai( new bxrig.util.Cli( "" ) ).terminal();
+		if ( structIsEmpty( term ) ) return [];
+		var a = [ "setsid", "-f" ];
+		for ( var t in term.argv ) a.append( t );
+		for ( var x in [ variables.proc.selfPath(), "ai", "agents", arguments.name, "chat" ] ) a.append( x );
+		return a;
+	}
+
+	function actions() {
+		var me = this;
+		return [
+			{ key: "Enter", label: "chat", run: function( r ) {
+					if ( r.kind != "agent" ) return r.kind == "note" && len( r.args ?: "" ) ? { action: "cli", title: r.title, args: r.args } : {};
+					var a = me.chatArgv( r.name );
+					return a.len() ? { action: "exec", title: "Chat with " & r.name, argv: a, plan: [ "Open a terminal with the chat of " & r.name & "." ] } : { action: "show", title: "No terminal", argv: [ "echo", "No terminal is installed (ghostty, kitty, alacritty, foot, konsole)." ] };
+				} },
+			{ key: "o", label: "web page", run: function( r ) { return r.kind == "agent" && r.running ? { action: "exec", title: "Open " & r.url, argv: [ "xdg-open", r.url ], plan: [ "Open " & r.url & " in your browser." ] } : {}; } },
+			{ key: "s", label: "start/stop", run: function( r ) { return r.kind == "agent" ? { action: "show", title: ( r.running ? "Stop " : "Start " ) & r.name, args: [ "ai", "agents", r.running ? "stop" : "start", r.name ] } : {}; } },
+			{ key: "d", label: "default", run: function( r ) { return r.kind == "agent" && !r.default ? { action: "show", title: "Make " & r.name & " the default", args: [ "ai", "agents", "default", r.name ] } : {}; } },
+			{ key: "l", label: "log", run: function( r ) { return r.kind == "agent" ? { action: "show", title: r.name & " log", argv: [ "journalctl", "--user", "-u", r.unit, "-n", "60", "--no-pager" ] } : {}; } },
+			{ key: "i", label: "install/update", run: function( r ) { return { action: "cli", title: "Install or update bx-agents", args: [ "ai", "agents", "update" ] }; } }
+		];
+	}
+
+	// The rows from `ai agents --json` (pure, for tests).
+	function rowsFrom( data ) {
+		var rows = [];
+		if ( !( arguments.data.installed ?: false ) ) rows.append( { kind: "note", mark: "", name: "bx-agents", state: "missing", where: "", path: "Enter installs it", text: "bx-agents is not installed. Enter installs it (the latest snapshot).", title: "Install bx-agents", args: [ "ai", "agents", "install" ] } );
+		for ( var a in arguments.data.agents ?: [] ) {
+			rows.append( { kind: "agent", name: a.name, path: a.path, port: a.port, url: a.url, unit: a.unit, running: a.running, default: a.default, added: a.added ?: false,
+					mark: a.default ? "●" : ( a.running ? "✓" : "" ), state: a.running ? "running" : "stopped", where: a.running ? a.url : ":" & a.port } );
+		}
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoData() );
+		return rowsFrom( variables.proc.selfData( [ "ai", "agents" ], 30 ) );
+	}
+
+	function demoData() {
+		var home = "/home/you/Agents/";
+		return { installed: true, version: "1.0.0-snapshot", default: "Boxy", agents: [
+				{ name: "Boxy", path: home & "Boxy", port: 8790, url: "http://127.0.0.1:8790/", unit: "bxrig-agent-boxy.service", running: true, default: true, added: false },
+				{ name: "Inbox", path: home & "Inbox", port: 8791, url: "http://127.0.0.1:8791/", unit: "bxrig-agent-inbox.service", running: true, default: false, added: false },
+				{ name: "Researcher", path: home & "Researcher", port: 8792, url: "http://127.0.0.1:8792/", unit: "bxrig-agent-researcher.service", running: false, default: false, added: false },
+				{ name: "ShopSupport", path: "/home/you/work/shop-support", port: 8793, url: "http://127.0.0.1:8793/", unit: "bxrig-agent-shopsupport.service", running: false, default: false, added: true }
+			] };
+	}
+}

@@ -1,0 +1,54 @@
+// BxRig's local model offered to every BoxLang agent: a `bxrig` profile in the person's bx-agents file (~/.bxagents/Agent.yml, or
+// BXAGENTS_USER_CONFIG), which bx-agents merges into every agent at build and at start. Only BxRig's own marked block is written or
+// removed; a file with a `profiles:` of its own is not rewritten (the lines to add are given instead). The text changes are pure.
+class AiAgentProfile {
+	function init() {
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	string function file() { return variables.env.named( "bxagentsUserConfig", variables.env.home() & "/.bxagents/Agent.yml" ); }
+	string function begin() { return "## >>> BxRig local AI (written by bxrig ai agents; agents use it with `profile: bxrig`) >>>"; }
+	string function end() { return "## <<< BxRig local AI <<<"; }
+
+	// The text without BxRig's block.
+	string function remove( required string text ) {
+		var keep = [];
+		var inside = false;
+		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
+			if ( trim( line ) == begin() ) { inside = true; continue; }
+			if ( inside ) { if ( trim( line ) == end() ) inside = false; continue; }
+			keep.append( line );
+		}
+		var t = keep.toList( chr( 10 ) );
+		return len( trim( t ) ) ? reReplace( t, "\n+$", "" ) & chr( 10 ) : "";
+	}
+
+	// The file with the profile: { text }, or { error, lines } when the file has a `profiles:` of its own (one YAML file can not have two).
+	struct function add( required string text, required string baseUrl, required string model ) {
+		var nl = chr( 10 );
+		var body = [ "  bxrig:", "    description: BxRig local AI (llama.cpp on this machine)", "    provider: openai-compatible", "    model: " & arguments.model, "    options:", "      baseURL: """ & arguments.baseUrl & """" ];
+		var keep = remove( arguments.text );
+		if ( reFind( "(^|\n)profiles\s*:", keep ) ) return { error: "your " & file() & " has a profiles: section of its own; add BxRig's profile to it by hand", lines: body };
+		var block = begin() & nl & "profiles:" & nl & body.toList( nl ) & nl & end() & nl;
+		return { text: ( len( keep ) ? keep & nl : "" ) & block };
+	}
+
+	boolean function present() { return fileExists( file() ) && find( begin(), fileRead( file() ) ) > 0; }
+
+	// Writes the profile for `model` at `baseUrl`: { ok, model, url, note }.
+	struct function write( required string model, required string baseUrl ) {
+		if ( !len( arguments.model ) ) return { ok: false, model: "", url: "", note: "no local model yet (bxrig ai setup); the bxrig profile is added once there is one" };
+		var f = file();
+		var r = add( fileExists( f ) ? fileRead( f ) : "", arguments.baseUrl, arguments.model );
+		if ( structKeyExists( r, "error" ) ) return { ok: false, model: arguments.model, url: arguments.baseUrl, note: r.error & ":" & chr( 10 ) & "profiles:" & chr( 10 ) & r.lines.toList( chr( 10 ) ) };
+		directoryCreate( getDirectoryFromPath( f ), true, true );
+		var code = new bxrig.ConfigService().writeText( "bx-agents user settings", f, r.text );
+		return { ok: code == 0, model: arguments.model, url: arguments.baseUrl, note: code == 0 ? "" : "could not write " & f };
+	}
+
+	// After `ai models use`: the profile follows the active model, when BxRig wrote one (it is never added unasked).
+	function refresh( required string model, required string baseUrl ) {
+		if ( present() ) write( arguments.model, arguments.baseUrl );
+	}
+}
