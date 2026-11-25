@@ -1,0 +1,75 @@
+// Android (Waydroid): off until you set it up. Once it is, the first row is the state (running or stopped, which image) and one row per
+// Android app. Enter opens an app (or Android itself), s starts or stops it, r registers it for Google Play, S sets it up. Reads
+// `bxrig android --json` and `bxrig android apps --json`.
+class AndroidProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "android"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "android" ); }
+	function title() { return "Android"; }
+	function hint() { return "Android apps on your desktop with Waydroid: opt in with S"; }
+	function emptyText() { return "Nothing to show yet."; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "app", w: 28 }, { key: "state", label: "", w: 10 }, { key: "package", label: "package", w: 0 } ]; }
+
+	function style( r ) {
+		if ( r.kind == "note" ) return "dim";
+		return r.kind == "state" && r.running ? "ok" : "";
+	}
+
+	function detail( r ) {
+		if ( r.kind == "note" ) return [ r.text ];
+		if ( r.kind == "state" ) return r.lines;
+		return [ r.name & " (" & r.package & ")", len( r.categories ) ? "Categories: " & r.categories.toList( ", " ) : "", "Enter opens it." ];
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "open", run: function( r ) {
+					if ( r.kind == "app" ) return { action: "cli", title: "Open " & r.name, args: [ "android", "open", r.package ] };
+					if ( r.kind == "state" && r.running ) return { action: "cli", title: "Open Android", args: [ "android", "open" ] };
+					return {};
+				} },
+			{ key: "s", label: "start/stop", run: function( r ) { return r.kind == "state" && r.setup ? { action: "cli", title: r.running ? "Stop Android" : "Start Android", args: [ "android", r.running ? "stop" : "start" ] } : {}; } },
+			{ key: "r", label: "Google Play", run: function( r ) { return r.kind == "state" && r.setup ? { action: "cli", title: "Register this device for Google Play", args: [ "android", "register" ] } : {}; } },
+			{ key: "S", label: "set up", run: function( r ) { return { action: "cli", title: "Set up Android (Waydroid, Google Play)", args: [ "android", "setup" ] }; } }
+		];
+	}
+
+	// The rows from the two answers (pure, for tests): `android --json` data and `android apps --json` data (or {}).
+	function rowsFrom( st, apps ) {
+		var s = isStruct( arguments.st ) ? arguments.st : {};
+		var rows = [];
+		var setup = ( s.installed ?: false ) && ( s.initialized ?: false );
+		var imageName = ( s.image ?: "" ) == "GAPPS" ? "Google Play" : ( ( s.image ?: "" ) == "FOSS" ? "open source apps" : "vanilla" );
+		if ( !( s.supported ?: true ) ) return [ { kind: "note", mark: "", name: "", state: "", package: "", text: "Android is not available here: openSUSE has no Waydroid package." } ];
+		if ( !setup ) {
+			rows.append( { kind: "state", mark: "", name: "Android (Waydroid)", state: "off", package: "not set up", running: false, setup: false,
+					lines: [ "Android is off. BxRig does nothing about it until you ask.", "S shows the plan to set it up (Google Play by default). It downloads about 1.2 GB and needs a Wayland session and the kernel's binder driver." ] } );
+			rows.append( { kind: "note", mark: "", name: "", state: "", package: "", text: "This machine: " & ( ( s.wayland ?: false ) ? "a Wayland session" : "not a Wayland session" ) & ", binder " & ( ( s.binder.ok ?: false ) ? "available" : "missing" ) & "." } );
+			return rows;
+		}
+		var running = s.running ?: false;
+		rows.append( { kind: "state", mark: running ? "●" : "", name: "Android (Waydroid)", state: running ? "running" : "stopped", package: imageName & ( running && len( s.ip ?: "" ) ? ", " & s.ip : "" ), running: running, setup: true,
+				lines: [ "Android is " & ( running ? "running" : "stopped" ) & ", image: " & imageName & ".", running ? "Enter opens Android; s stops it." : "s starts it.", ( s.image ?: "" ) == "GAPPS" ? "r registers this device so Google Play works." : "" ] } );
+		for ( var a in ( isStruct( arguments.apps ) ? arguments.apps.apps ?: [] : [] ) ) rows.append( { kind: "app", mark: "", name: a.name, state: "", package: a.package, categories: a.categories ?: [] } );
+		if ( !running ) rows.append( { kind: "note", mark: "", name: "", state: "", package: "", text: "Start Android (s) to see its apps." } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoStatus(), demoApps() );
+		var st = variables.proc.selfData( [ "android" ], 30 );
+		var apps = ( isStruct( st ) && ( st.running ?: false ) ) ? variables.proc.selfData( [ "android", "apps" ], 60 ) : {};
+		return rowsFrom( st, apps );
+	}
+
+	function demoStatus() { return { supported: true, wayland: true, binder: { ok: true, how: "built in" }, installed: true, initialized: true, image: "GAPPS", running: true, ip: "192.168.240.112", session: "RUNNING", container: "RUNNING" }; }
+
+	function demoApps() {
+		return { apps: [
+				{ name: "Calculator", package: "com.android.calculator2", categories: [ "android.intent.category.LAUNCHER" ] },
+				{ name: "F-Droid", package: "org.fdroid.fdroid", categories: [ "android.intent.category.LAUNCHER" ] },
+				{ name: "Google Play Store", package: "com.android.vending", categories: [ "android.intent.category.LAUNCHER" ] },
+				{ name: "Settings", package: "com.android.settings", categories: [ "android.intent.category.LAUNCHER" ] }
+			] };
+	}
+}

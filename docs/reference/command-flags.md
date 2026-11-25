@@ -296,6 +296,9 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `vm` | `--tag` | value | `ubuntu-xfce` |
 | `vm` | `--version` | value |  |
 | `vm` | `--web` | bool |  |
+| `android` | `--data` | bool |  |
+| `android` | `--open` | bool |  |
+| `android` | `--vanilla` | bool |  |
 | `ai` | `--agent` | value |  |
 | `ai` | `--all` | bool |  |
 | `ai` | `--backend` | value |  |

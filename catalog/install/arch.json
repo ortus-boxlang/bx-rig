@@ -2510,6 +2510,14 @@
 			"repo": "extra",
 			"verified_on": "2026-11-19"
 		},
+		"waydroid": {
+			"source": "pacman",
+			"targets": [
+				"waydroid"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-25"
+		},
 		"wayfreeze": {
 			"source": "aur",
 			"targets": [

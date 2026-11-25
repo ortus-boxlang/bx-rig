@@ -1215,6 +1215,18 @@
 			]
 		},
 		{
+			"id": "waydroid",
+			"name": "Waydroid",
+			"description": "Android apps on your desktop in a container (set up with bxrig android)",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "development",
+			"category": "Virtual machines",
+			"tier": "optional",
+			"homepage": "https://waydro.id",
+			"macos": null
+		},
+		{
 			"id": "tmux",
 			"name": "tmux",
 			"description": "Terminal multiplexer",

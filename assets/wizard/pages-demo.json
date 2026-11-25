@@ -1570,6 +1570,25 @@
 							"description": "Smallest image."
 						}
 					]
+				},
+				{
+					"type": "choice",
+					"id": "android",
+					"label": "Android apps",
+					"default": "no",
+					"help": "Run Android apps on your desktop with Waydroid (Google Play by default). It needs a Wayland session and the kernel's binder driver, downloads about 1.2 GB and asks for your password. Later works too: bxrig android setup.",
+					"options": [
+						{
+							"value": "no",
+							"label": "Not now",
+							"description": "Nothing is installed. Run bxrig android setup --yes whenever you want it."
+						},
+						{
+							"value": "yes",
+							"label": "Set it up",
+							"description": "Installs Waydroid, downloads the Google Play image and starts Android."
+						}
+					]
 				}
 			]
 		},

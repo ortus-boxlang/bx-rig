@@ -582,6 +582,24 @@ class {
 				CLIExit( xit.precondition() );
 			}
 				break;
+			case "android":
+				// Android apps with Waydroid; off until you set it up. See COMMAND-CONTRACT.md 13.71.
+				anSub = p.len() >= 2 ? p[2] : "";
+				an = new bxrig.Android( cli );
+				anRest = [];
+				for ( anI = 3; anI <= p.len(); anI++ ) anRest.append( p[ anI ] );
+				if ( anSub == "" ) CLIExit( an.statusCmd( asJson ) );
+				if ( anSub == "setup" && p.len() == 2 ) CLIExit( an.setupCmd( structKeyExists( args.options, "vanilla" ), structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				if ( anSub == "start" && p.len() == 2 ) CLIExit( an.startCmd( asJson ) );
+				if ( anSub == "stop" && p.len() == 2 ) CLIExit( an.stopCmd( asJson ) );
+				if ( anSub == "apps" && p.len() == 2 ) CLIExit( an.appsCmd( asJson ) );
+				if ( anSub == "open" ) CLIExit( an.openCmd( anRest.toList( " " ), asJson ) );
+				if ( anSub == "install" && p.len() == 3 ) CLIExit( an.installCmd( p[3], structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				if ( anSub == "register" && p.len() == 2 ) CLIExit( an.registerCmd( structKeyExists( args.options, "open" ), asJson ) );
+				if ( anSub == "remove" && p.len() == 2 ) CLIExit( an.removeCmd( structKeyExists( args.options, "data" ), structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+				println( new bxrig.CommandSpec().usage( "android" ) );
+				CLIExit( xit.usage() );
+				break;
 			case "vm":
 				// Windows and Linux desktops in containers. See COMMAND-CONTRACT.md 13.33.
 				vmSub = p.len() >= 2 ? p[2] : "list";

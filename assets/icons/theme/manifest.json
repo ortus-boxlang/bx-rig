@@ -272,6 +272,14 @@
 			"use": "the Privacy page (what leaves this machine)"
 		},
 		{
+			"name": "bxrig-android",
+			"glyph": "android-logo",
+			"category": "develop",
+			"context": "apps",
+			"title": "Android",
+			"use": "the Android page (Waydroid)"
+		},
+		{
 			"name": "bxrig-storage",
 			"glyph": "hard-drives",
 			"category": "system",
