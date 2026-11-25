@@ -55,6 +55,7 @@ class AiProvider {
 					var url = "https://huggingface.co/" & r.repo;
 					return { action: "exec", title: "Open " & url, argv: [ "xdg-open", url ], plan: [ "Open " & url & " in your browser." ] };
 				} },
+			{ key: "b", label: "bench", run: function( r ) { return r.kind == "model" && r.model_kind == "chat" ? { action: "show", title: "Bench " & r.label, args: [ "ai", "bench", r.id ] } : {}; } },
 			{ key: "x", label: "remove", run: function( r ) { return r.kind == "model" ? { action: "cli", title: "Remove " & r.label, args: [ "ai", "models", "remove", r.id ] } : {}; } },
 			{ key: "s", label: "set up", run: function( r ) { return { action: "cli", title: "Set up local AI", args: [ "ai", "setup" ] }; } }
 		];
@@ -80,6 +81,7 @@ class AiProvider {
 			var loaded = ( s.loaded ?: {} )[ id ] ?: "";
 			var info = structKeyExists( meas, "reply_s" ) ? meas.reply_s & " s here" & ( ( m.kind ?: "chat" ) == "embeddings" ? "" : ", " & meas.tps & " tok/s" ) : "not tested here";
 			if ( structKeyExists( m, "tuned" ) ) info &= ", tuned";
+			if ( structKeyExists( m.bench ?: {}, "score" ) ) info &= ", bench " & m.bench.score & "/" & m.bench.of;
 			if ( loaded == "loaded" ) info &= ", in memory";
 			rows.append( { kind: "model", id: id, model_kind: m.kind ?: "chat", active: s.active == id, mark: s.active == id ? "●" : "", name: c.label ?: id, label: c.label ?: id, role: ( m.kind ?: "chat" ) == "embeddings" ? "embeddings" : "",
 					score: structKeyExists( c.score ?: {}, "total" ) ? c.score.total & "/20" : "", size: mb( c.size_mb ?: 0 ), info: info, repo: c.repo ?: "" } );

@@ -101,11 +101,79 @@ testkit.check( "page: p asks a question of the model under the cursor", askIt.ac
 testkit.check( "page: s sets everything up (plan first)", acts.s( rows[ 1 ] ).action == "cli" && acts.s( rows[ 1 ] ).args.toList( " " ) == "ai setup" );
 testkit.check( "page: no answer from bxrig is one row that says so", pv.rowsFrom( {}, {} ).len() == 1 );
 
+// ---- Hugging Face ----
+hub = new bxrig.AiHub();
+testkit.check( "hf spec: repo, or repo and file", hub.parseSpec( "hf:bartowski/SmolLM2-135M-Instruct-GGUF" ).repo == "bartowski/SmolLM2-135M-Instruct-GGUF" && hub.parseSpec( "hf:a/b/sub/x-Q4_K_M.gguf" ).file == "sub/x-Q4_K_M.gguf" );
+testkit.check( "hf spec: refused when not hf:, too short, with .. or not a gguf", structIsEmpty( hub.parseSpec( "bartowski/x" ) ) && structIsEmpty( hub.parseSpec( "hf:onlyowner" ) ) && structIsEmpty( hub.parseSpec( "hf:a/b/../x.gguf" ) ) && structIsEmpty( hub.parseSpec( "hf:a/b/readme.md" ) ) && structIsEmpty( hub.parseSpec( "hf:a b/c" ) ) );
+srch = serializeJSON( [ { id: "org/Chat-GGUF", downloads: 10, likes: 2, pipeline_tag: "text-generation", tags: [ "gguf", "license:apache-2.0" ] }, { id: "org/Vis-GGUF", pipeline_tag: "image-text-to-text", tags: [] }, { id: "org/Tts-GGUF", pipeline_tag: "text-to-speech", tags: [] }, { id: "org/Emb-GGUF", pipeline_tag: "feature-extraction", tags: [], gated: "auto" } ] );
+hits = hub.parseSearch( srch );
+testkit.check( "search: language models only (speech is left out)", hits.len() == 3 && hits.map( function( h ) { return h.repo; } ).toList( "," ) == "org/Chat-GGUF,org/Vis-GGUF,org/Emb-GGUF" );
+testkit.check( "search: licence from the tags, vision, embeddings, gated", hits[ 1 ].license == "apache-2.0" && hits[ 2 ].vision && hits[ 3 ].embeddings && hits[ 3 ].gated && !hits[ 1 ].gated );
+testkit.check( "search: not JSON is nothing", hub.parseSearch( "<html>" ).len() == 0 );
+sha = repeatString( "a", 64 );
+tree = serializeJSON( [ { type: "file", path: "x-Q8_0.gguf", size: 2000000000, lfs: { oid: sha } }, { type: "file", path: "x-Q4_K_M.gguf", size: 1000000000, lfs: { oid: sha } }, { type: "file", path: "mmproj-x-f16.gguf", size: 1 }, { type: "file", path: "big/x-Q4_K_M-00001-of-00002.gguf", size: 1 }, { type: "directory", path: "big" }, { type: "file", path: "README.md", size: 1 } ] );
+files = hub.parseTree( tree );
+testkit.check( "files: model files only (no projector, no split parts, no folders)", files.len() == 2 && files[ 1 ].sha256 == sha );
+testkit.check( "files: the 4-bit K-quant first, or the asked file", hub.pickFile( files ).path == "x-Q4_K_M.gguf" && hub.pickFile( files, "x-Q8_0.gguf" ).path == "x-Q8_0.gguf" && structIsEmpty( hub.pickFile( files, "nope.gguf" ) ) );
+testkit.check( "quant: from the file name", hub.quantOf( "Qwen3.5-0.8B-Q4_K_M.gguf" ) == "Q4_K_M" && hub.quantOf( "m.IQ4_XS.gguf" ) == "IQ4_XS" && hub.quantOf( "m-f16.gguf" ) == "" );
+testkit.check( "id: the catalog's id for a catalog repository", hub.idFor( "unsloth/Qwen3.5-0.8B-GGUF", cat ) == "qwen3.5-0.8b" );
+testkit.check( "id: the name without -GGUF, the owner in front when it would clash", hub.idFor( "bartowski/SmolLM2-135M-Instruct-GGUF", cat ) == "smollm2-135m-instruct" && hub.idFor( "someone/qwen3.5-0.8b-GGUF", cat ) == "someone-qwen3.5-0.8b" );
+en = hub.entry( "x", hits[ 1 ], files[ 2 ] );
+testkit.check( "entry: shaped like a catalog model, not verified, from hf", en.file == "x-Q4_K_M.gguf" && en.size_mb == 1000 && en.sha256 == sha && !en.verified && en.source == "hf" && en.kind == "chat" && en.label == "Chat Q4_K_M" && cat.url( en ) == "https://huggingface.co/org/Chat-GGUF/resolve/main/x-Q4_K_M.gguf" );
+
+// ---- the bench ----
+bn = new bxrig.AiBench();
+testkit.check( "bench: 20 cases, 12 basic and 8 harder, 10 tools", bn.count() == 20 && bn.cases().filter( function( c ) { return c.set == "basic"; } ).len() == 12 && bn.request( "m", bn.cases()[ 1 ] ).tools.len() == 10 );
+testkit.check( "bench: the request has the system prompt, temperature 0 and thinking off", bn.request( "m", bn.cases()[ 1 ] ).messages[ 1 ].role == "system" && bn.request( "m", bn.cases()[ 1 ] ).temperature == 0 && !bn.request( "m", bn.cases()[ 1 ] ).chat_template_kwargs.enable_thinking );
+ans = function( calls ) { return serializeJSON( { choices: [ { message: { content: "", tool_calls: calls.map( function( c ) { return { type: "function", function: { name: c[ 1 ], arguments: c[ 2 ] } }; } ) } } ] } ); };
+got = bn.calls( ans( [ [ "set_theme", '{"name":"Dawn"}' ], [ "lock_screen", "" ] ] ) );
+testkit.check( "bench: tool calls read, arguments as JSON text or empty", got.len() == 2 && got[ 1 ].args.name == "Dawn" && structIsEmpty( got[ 2 ].args ) );
+testkit.check( "bench: one, case-insensitive argument pattern", bn.passes( bn.cases()[ 1 ], got ) && !bn.passes( bn.cases()[ 1 ], bn.calls( ans( [ [ "set_theme", '{"name":"ember"}' ] ] ) ) ) );
+testkit.check( "bench: a number pattern is exact", bn.passes( bn.cases()[ 3 ], bn.calls( ans( [ [ "show_agenda", '{"days":3}' ] ] ) ) ) && !bn.passes( bn.cases()[ 3 ], bn.calls( ans( [ [ "show_agenda", '{"days":30}' ] ] ) ) ) );
+testkit.check( "bench: both needs each call, in any order", bn.passes( bn.cases()[ 13 ], bn.calls( ans( [ [ "lock_screen", "{}" ], [ "set_theme", '{"name":"ember"}' ] ] ) ) ) && !bn.passes( bn.cases()[ 13 ], bn.calls( ans( [ [ "set_theme", '{"name":"ember"}' ] ] ) ) ) );
+testkit.check( "bench: none passes only without a call", bn.passes( bn.cases()[ 12 ], [] ) && !bn.passes( bn.cases()[ 12 ], got ) );
+testkit.check( "bench: a broken answer is no call; the median", bn.calls( "oops" ).len() == 0 && bn.median( [ 3, 1, 2 ] ) == 2 && bn.median( [ 4, 1, 2, 3 ] ) == 2.5 && bn.median( [] ) == 0 );
+
+// ---- agents and the local server ----
+lnk = new bxrig.AiAgentLink();
+oc = lnk.opencodeAdd( '{"theme":"x","providers":{"anthropic":{"name":"A"}},"model":"anthropic/c"}', "http://127.0.0.1:8089/v1", [ "a", "b" ], "a" );
+ocj = jsonDeserialize( oc.text );
+testkit.check( "opencode: BxRig's provider (openai-compatible package, settings.baseURL, models) and the rest kept", ocj.providers.bxrig.package == "@opencode/ai/providers/openai-compatible" && ocj.providers.bxrig.settings.baseURL == "http://127.0.0.1:8089/v1" && structKeyArray( ocj.providers.bxrig.models ).len() == 2 && ocj.providers.anthropic.name == "A" && ocj.theme == "x" );
+testkit.check( "opencode: --default sets bxrig/ID; without it the model stays", ocj.model == "bxrig/a" && jsonDeserialize( lnk.opencodeAdd( '{"model":"anthropic/c"}', "u", [ "a" ] ).text ).model == "anthropic/c" );
+testkit.check( "opencode: a new file gets the schema", jsonDeserialize( lnk.opencodeAdd( "", "u", [ "a" ] ).text )[ "$schema" ] == "https://opencode.ai/config.json" );
+testkit.check( "opencode: comments (JSONC) are refused, not rewritten", structKeyExists( lnk.opencodeAdd( '// mine' & chr( 10 ) & '{"theme":"x"}', "u", [ "a" ] ), "error" ) );
+rm = jsonDeserialize( lnk.opencodeRemove( oc.text ).text );
+testkit.check( "opencode: --off removes the provider and a bxrig default only", !structKeyExists( rm.providers, "bxrig" ) && !structKeyExists( rm, "model" ) && rm.providers.anthropic.name == "A" && lnk.opencodeLinked( oc.text ) && !lnk.opencodeLinked( lnk.opencodeRemove( oc.text ).text ) );
+cr = lnk.crushAdd( "option debug true" & chr( 10 ), "http://127.0.0.1:8089" );
+testkit.check( "crush: a marked llamacpp provider block after what was there", left( cr, 17 ) == "option debug true" && find( 'provider add bxrig --name "BxRig local AI" --type llamacpp --base-url "http://127.0.0.1:8089"', cr ) > 0 && lnk.crushLinked( cr ) );
+testkit.check( "crush: adding twice keeps one block; --off gives the file back", ( len( lnk.crushAdd( cr, "u" ) ) - len( replace( lnk.crushAdd( cr, "u" ), "provider add bxrig", "", "all" ) ) ) == len( "provider add bxrig" ) && lnk.crushRemove( cr ) == "option debug true" & chr( 10 ) && lnk.crushRemove( lnk.crushAdd( "", "u" ) ) == "" );
+
+// ---- the Discover and Agents pages ----
+dp = new bxrig.AiDiscoverProvider( true );
+drows = dp.load();
+testkit.check( "discover page: downloads, then staff picks, then Hugging Face", drows[ 1 ].kind == "heading" && drows[ 2 ].kind == "download" && drows.filter( function( r ) { return r.kind == "staff"; } ).len() == 3 && drows.filter( function( r ) { return r.kind == "hf"; } ).len() == 3 );
+dacts = {}; for ( a in dp.actions() ) dacts[ a.key ] = a.run;
+hfRow = drows.filter( function( r ) { return r.kind == "hf"; } ).first();
+staffRow = drows.filter( function( r ) { return r.kind == "staff" && !r.installed; } ).first();
+testkit.check( "discover page: Enter queues a download in the background (plan first)", dacts.Enter( hfRow ).action == "cli" && dacts.Enter( hfRow ).args.toList( " " ) == "ai models pull hf:bartowski/SmolLM2-1.7B-Instruct-GGUF/SmolLM2-1.7B-Instruct-Q4_K_M.gguf --background" && dacts.Enter( staffRow ).args[ 4 ] == "qwen3.5-0.8b" );
+testkit.check( "discover page: nothing for an installed model; c cancels a running download", structIsEmpty( dacts.Enter( drows.filter( function( r ) { return r.kind == "staff" && r.installed; } ).first() ) ) && dacts.c( drows[ 2 ] ).args.toList( " " ) == "ai downloads cancel qwen3.5-4b" && structIsEmpty( dacts.c( hfRow ) ) );
+testkit.check( "discover page: too big is marked and dimmed; it is a live search", drows.filter( function( r ) { return r.kind == "hf" && !r.fits; } ).first().mark == "✗" && dp.style( drows.filter( function( r ) { return r.kind == "hf" && !r.fits; } ).first() ) == "dim" && dp.live() && dp.refreshSeconds() == 2 );
+ap = new bxrig.AiAgentsProvider( true );
+arows = ap.load();
+oc2 = arows.filter( function( r ) { return r.id == "opencode-cli"; } ).first();
+testkit.check( "agents page: installed first, the default on top; OpenCode uses the local server; sessions counted", arows[ 1 ].id == "claude-code" && arows[ 1 ].sessions == "2 running" && oc2.linked && oc2.model == "local + cloud" && arows[ arows.len() ].installed == false );
+aacts = {}; for ( a in ap.actions() ) aacts[ a.key ] = a.run;
+testkit.check( "agents page: l unlinks a linked agent, links with --default otherwise, nothing for others", aacts.l( oc2 ).args.toList( " " ) == "ai link opencode --off" && structIsEmpty( aacts.l( arows[ 1 ] ) ) );
+testkit.check( "agents page: d makes it the default (plan first); Enter starts a session", aacts.d( oc2 ).action == "cli" && aacts.d( oc2 ).args.toList( " " ) == "ai default opencode-cli" && structIsEmpty( aacts.d( arows[ 1 ] ) ) && aacts.Enter( oc2 ).args.toList( " " ) == "ai session start opencode-cli" );
+crushRows = ap.rowsFrom( { agents: [] }, { agents: [ { id: "crush", linked: true, installed: true } ] }, {} );
+testkit.check( "agents page: Crush shows when it is installed or linked", crushRows.len() == 1 && crushRows[ 1 ].link == "crush" && crushRows[ 1 ].linked );
+
 // ---- the bar's Local tab ----
 root = "../templates/noctalia-plugins/agents/";
 panelSrc = fileRead( root & "panel.luau" );
 localSrc = fileRead( root & "local.luau" );
 testkit.check( "bar: the panel has Agents and Local tabs and loads local.luau", find( 'require("./local.luau")', panelSrc ) > 0 && find( 'label = "Local"', panelSrc ) > 0 && find( 'label = "Agents"', panelSrc ) > 0 );
+testkit.check( "bar: the Local tab shows downloads", find( '"ai", "downloads", "--json"', localSrc ) > 0 );
 testkit.check( "bar: the Local tab runs the commands it documents", find( '"ai", "status", "--json"', localSrc ) > 0 && find( '"ai", "serve", running and "stop" or "start"', localSrc ) > 0 && find( '"ai", "models", "use", id', localSrc ) > 0 && find( '"ai", "ask", question, "--json"', localSrc ) > 0 && find( 'tui ai', localSrc ) > 0 );
 testkit.check( "bar: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), panelSrc & localSrc ) );
 testkit.done( "all passed" );

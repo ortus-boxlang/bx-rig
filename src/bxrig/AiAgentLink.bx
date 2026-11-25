@@ -1,0 +1,84 @@
+// Points coding agents at BxRig's local AI server (`bxrig ai link opencode|crush [--off]`). Only BxRig's own part of each
+// agent's config is written or removed; everything else in the file stays as it was. Formats from the agents' docs (read 2026-11-23):
+//   OpenCode  ~/.config/opencode/opencode.json: providers.bxrig = { name, package "@opencode/ai/providers/openai-compatible",
+//             settings.baseURL, models { ID: {} } }; with --default also "model": "bxrig/ID". A file with comments (JSONC) is refused, not rewritten.
+//   Crush     ~/.config/crush/crushrc (crushrc commands): a marked block `provider add bxrig --type llamacpp --base-url URL`, which
+//             discovers the server's models itself.
+// The text changes are pure (tests feed them samples).
+class AiAgentLink {
+	function init() {
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	array function agents() { return [ "opencode", "crush" ]; }
+
+	string function file( required string agent ) {
+		return arguments.agent == "opencode" ? variables.env.xdgConfig( "opencode/opencode.json" ) : variables.env.xdgConfig( "crush/crushrc" );
+	}
+
+	// ---- OpenCode ----
+
+	// The config with BxRig's provider (and the default model when asked): { text } or { error }.
+	struct function opencodeAdd( required string text, required string baseUrl, required array models, string defaultModel = "" ) {
+		var j = {};
+		if ( len( trim( arguments.text ) ) ) {
+			try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the OpenCode config is not plain JSON (it may have comments); add the provider by hand" }; }
+			if ( !isStruct( j ) ) return { error: "the OpenCode config is not a JSON object" };
+		} else j[ "$schema" ] = "https://opencode.ai/config.json";
+		if ( !isStruct( j.providers ?: "" ) ) j.providers = {};
+		var ms = {};
+		for ( var m in arguments.models ) ms[ m ] = {};
+		j.providers.bxrig = { name: "BxRig local AI", package: "@opencode/ai/providers/openai-compatible", settings: { baseURL: arguments.baseUrl }, models: ms };
+		if ( len( arguments.defaultModel ) ) j.model = "bxrig/" & arguments.defaultModel;
+		return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+	}
+
+	// Without BxRig's provider, and without the default model when it was one of BxRig's.
+	struct function opencodeRemove( required string text ) {
+		var j = {};
+		try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the OpenCode config is not plain JSON (it may have comments); remove the bxrig provider by hand" }; }
+		if ( isStruct( j.providers ?: "" ) ) structDelete( j.providers, "bxrig" );
+		if ( left( j.model ?: "", 6 ) == "bxrig/" ) structDelete( j, "model" );
+		return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+	}
+
+	boolean function opencodeLinked( required string text ) {
+		try { var j = jsonDeserialize( arguments.text ); return isStruct( j ) && isStruct( j.providers ?: "" ) && structKeyExists( j.providers, "bxrig" ); } catch ( any e ) { return false; }
+	}
+
+	// ---- Crush ----
+
+	string function crushBegin() { return "## BxRig local AI (bxrig ai link crush --off removes this block)"; }
+	string function crushEnd() { return "## end of BxRig local AI"; }
+
+	string function crushRemove( required string text ) {
+		var out = [];
+		var inside = false;
+		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
+			if ( trim( line ) == crushBegin() ) { inside = true; continue; }
+			if ( inside ) { if ( trim( line ) == crushEnd() ) inside = false; continue; }
+			out.append( line );
+		}
+		var t = out.toList( chr( 10 ) );
+		return len( trim( t ) ) ? reReplace( t, "\n+$", "" ) & chr( 10 ) : "";
+	}
+
+	string function crushAdd( required string text, required string baseUrl ) {
+		var keep = crushRemove( arguments.text );
+		var nl = chr( 10 );
+		var block = crushBegin() & nl & "provider add bxrig --name ""BxRig local AI"" --type llamacpp --base-url """ & arguments.baseUrl & """" & nl & crushEnd() & nl;
+		return ( len( keep ) ? keep & nl : "" ) & block;
+	}
+
+	boolean function crushLinked( required string text ) { return find( crushBegin(), arguments.text ) > 0; }
+
+	// ---- on disk ----
+
+	string function read( required string agent ) { return fileExists( file( arguments.agent ) ) ? fileRead( file( arguments.agent ) ) : ""; }
+
+	boolean function linked( required string agent ) {
+		var t = read( arguments.agent );
+		return arguments.agent == "opencode" ? opencodeLinked( t ) : crushLinked( t );
+	}
+}

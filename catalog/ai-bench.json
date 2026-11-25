@@ -1,0 +1,409 @@
+{
+	"schema": 1,
+	"about": "BxRig's tool-calling test for local models (bxrig ai bench): 12 basic and 8 harder requests against 10 desktop tools. The catalog's scores come from these cases. A case passes when the model's tool calls match: one (the first call is this tool, its arguments match), both (each of two calls appears), none (no tool call). Argument patterns are case-insensitive regular expressions on the value as text.",
+	"system": "You are Boxy, the assistant of a Linux desktop. Use a tool only when the user asks for one of its actions; call several tools when the user asks for several actions. When no tool fits, answer in one short sentence and call no tool.",
+	"tools": [
+		{
+			"type": "function",
+			"function": {
+				"name": "set_theme",
+				"description": "Switch the desktop to a named colour theme",
+				"parameters": {
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string",
+							"description": "theme name, e.g. dawn, ember, forest"
+						}
+					},
+					"required": [
+						"name"
+					]
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "next_theme",
+				"description": "Switch to the next colour theme",
+				"parameters": {
+					"type": "object",
+					"properties": {},
+					"required": []
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "remind",
+				"description": "Set a reminder",
+				"parameters": {
+					"type": "object",
+					"properties": {
+						"text": {
+							"type": "string",
+							"description": "what to remind"
+						},
+						"when": {
+							"type": "string",
+							"description": "a delay like 30m or 2h, or a time like 09:25, optionally with a day"
+						}
+					},
+					"required": [
+						"text",
+						"when"
+					]
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "show_agenda",
+				"description": "Show calendar events",
+				"parameters": {
+					"type": "object",
+					"properties": {
+						"days": {
+							"type": "integer",
+							"description": "how many days ahead"
+						}
+					},
+					"required": []
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "lock_screen",
+				"description": "Lock the screen",
+				"parameters": {
+					"type": "object",
+					"properties": {},
+					"required": []
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "check_updates",
+				"description": "Check whether system or BxRig updates are available",
+				"parameters": {
+					"type": "object",
+					"properties": {},
+					"required": []
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "open_file_search",
+				"description": "Search files on this computer",
+				"parameters": {
+					"type": "object",
+					"properties": {
+						"query": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"query"
+					]
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "install_app",
+				"description": "Install an application",
+				"parameters": {
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"name"
+					]
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "world_clock",
+				"description": "Show the current time in other cities and time zones",
+				"parameters": {
+					"type": "object",
+					"properties": {},
+					"required": []
+				}
+			}
+		},
+		{
+			"type": "function",
+			"function": {
+				"name": "set_volume",
+				"description": "Set the audio volume",
+				"parameters": {
+					"type": "object",
+					"properties": {
+						"percent": {
+							"type": "integer"
+						}
+					},
+					"required": [
+						"percent"
+					]
+				}
+			}
+		}
+	],
+	"cases": [
+		{
+			"set": "basic",
+			"prompt": "switch to the dawn theme",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "set_theme",
+					"args": {
+						"name": "dawn"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "remind me to call Ana in 30 minutes",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "remind",
+					"args": {
+						"text": "ana",
+						"when": "30"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "what's on my calendar for the next 3 days?",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "show_agenda",
+					"args": {
+						"days": "^3$"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "lock my screen",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "lock_screen",
+					"args": {}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "are there any updates?",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "check_updates",
+					"args": {}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "find my invoice from March",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "open_file_search",
+					"args": {
+						"query": "invoice"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "install firefox",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "install_app",
+					"args": {
+						"name": "firefox"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "what time is it in Tokyo?",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "world_clock",
+					"args": {}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "next theme please",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "next_theme",
+					"args": {}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "remind me at 9:25 to stand up",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "remind",
+					"args": {
+						"when": "9:25",
+						"text": "stand"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "turn the volume down to 20 percent",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "set_volume",
+					"args": {
+						"percent": "^20$"
+					}
+				}
+			]
+		},
+		{
+			"set": "basic",
+			"prompt": "hi, how are you?",
+			"expect": "none",
+			"calls": []
+		},
+		{
+			"set": "hard",
+			"prompt": "switch to the ember theme and then lock the screen",
+			"expect": "both",
+			"calls": [
+				{
+					"name": "set_theme",
+					"args": {
+						"name": "ember"
+					}
+				},
+				{
+					"name": "lock_screen",
+					"args": {}
+				}
+			]
+		},
+		{
+			"set": "hard",
+			"prompt": "show me what I have this week",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "show_agenda",
+					"args": {
+						"days": "^7$"
+					}
+				}
+			]
+		},
+		{
+			"set": "hard",
+			"prompt": "mute the sound",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "set_volume",
+					"args": {
+						"percent": "^0$"
+					}
+				}
+			]
+		},
+		{
+			"set": "hard",
+			"prompt": "in two hours remind me to take my medication",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "remind",
+					"args": {
+						"text": "medic",
+						"when": "2 ?h|two hours|120"
+					}
+				}
+			]
+		},
+		{
+			"set": "hard",
+			"prompt": "I need the VS Code editor on this machine",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "install_app",
+					"args": {
+						"name": "code"
+					}
+				}
+			]
+		},
+		{
+			"set": "hard",
+			"prompt": "find the pdf about taxes I downloaded",
+			"expect": "one",
+			"calls": [
+				{
+					"name": "open_file_search",
+					"args": {
+						"query": "tax"
+					}
+				}
+			]
+		},
+		{
+			"set": "hard",
+			"prompt": "delete all my files",
+			"expect": "none",
+			"calls": []
+		},
+		{
+			"set": "hard",
+			"prompt": "what's the weather like tomorrow?",
+			"expect": "none",
+			"calls": []
+		}
+	]
+}

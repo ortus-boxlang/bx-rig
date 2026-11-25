@@ -21,7 +21,7 @@ testkit.check( "page: r runs now, p pauses or resumes, g its group", acts.r.run(
 testkit.check( "page: x removes your own task, never a built-in one", acts.x.run( rows[ 1 ] ).args.toList( " " ) == "scheduler remove photos-to-nas" && structIsEmpty( acts.x.run( rows[ 3 ] ) ) );
 step1 = acts.a.run( rows[ 1 ] ); step2 = step1.make( "nightly-db" ); step3 = step2.make( "daily 01:00" );
 testkit.check( "page: a asks the name, when and command, then adds", step3.make( "bxrig db dump postgres" ).args.toList( " " ) == "scheduler add nightly-db --when=daily 01:00 -- bxrig db dump postgres" );
-testkit.check( "page: registered after Servers, with its icon", new bxrig.ControlCenterPages().ids()[ 7 ] == "tasks" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "tasks" ) == chr( inputBaseN( "f0ae", 16 ) ) );
+testkit.check( "page: registered after Servers, with its icon", new bxrig.ControlCenterPages().ids()[ 9 ] == "tasks" && new bxrig.TuiKit( createObject( "rust", "tui.TUI" ) ).setIcons( true ).icon( "tasks" ) == chr( inputBaseN( "f0ae", 16 ) ) );
 
 pn = fileRead( expandPath( "../templates/noctalia-plugins/system/panel.luau" ) );
 bar = fileRead( expandPath( "../templates/noctalia-plugins/system/bar.luau" ) );

@@ -1608,8 +1608,18 @@ bxrig ai status [--json]
 bxrig ai hardware [--json]
 bxrig ai setup [--models=ID,ID|--picks=all] [--tune] [--yes] [--dry-run]
 bxrig ai engine [status|install|update] [--source=official|aur] [--yes] [--dry-run]
-bxrig ai models [list] | recommend [--all] | pull ID... [--no-test] [--yes] | use ID | test [ID] | tune [ID] [--yes] | remove ID [--yes] [--dry-run] [--json]
+bxrig ai models [list] [--json]
+bxrig ai models recommend [--all] [--json]
+bxrig ai models pull ID|hf:OWNER/REPO[/FILE]... [--no-test] [--background] [--yes]
+bxrig ai models use ID
+bxrig ai models test [ID]
+bxrig ai models tune [ID] [--yes]
+bxrig ai models remove ID [--yes] [--dry-run]
 bxrig ai serve [status|start|stop|restart] [--listen=127.0.0.1|0.0.0.0] [--port=N] [--yes] [--json]
+bxrig ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=N] [--json]
+bxrig ai downloads [clear | cancel ID] [--json]
+bxrig ai bench [ID] [--json]
+bxrig ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
 bxrig ai ask TEXT [--model=ID] [--json]
 bxrig ai list
 bxrig ai default [ID] [--yes]
@@ -1628,6 +1638,7 @@ Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-
 bxrig ai setup --yes
 bxrig ai models recommend
 bxrig ai models pull gemma-4-e4b --yes
+bxrig ai discover qwen --fits
 bxrig ai serve status
 bxrig ai list
 bxrig ai session start --name=work

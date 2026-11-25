@@ -58,6 +58,8 @@ ICONS = [
 	('bxrig-servers', 'globe', 'develop', 'apps', 'Servers', 'the Servers page'),
 	('bxrig-tasks', 'list-checks', 'system', 'apps', 'Tasks', 'the Tasks page'),
 	('bxrig-ai', 'cpu', 'develop', 'apps', 'AI', 'the AI page (local models)'),
+	('bxrig-ai-discover', 'magnifying-glass', 'develop', 'apps', 'Discover', 'the Discover page (models on Hugging Face)'),
+	('bxrig-ai-agents', 'robot', 'develop', 'apps', 'Agents', 'the Agents page (coding agents)'),
 	('bxrig-java', 'coffee', 'develop', 'apps', 'Java', 'the Java page'),
 	('bxrig-maven', 'wrench', 'develop', 'apps', 'Maven', 'the Maven page'),
 	('bxrig-gradle', 'hammer', 'develop', 'apps', 'Gradle', 'the Gradle page'),

@@ -3,6 +3,7 @@
 --   the server (running or not, where its OpenAI API is) with Start or Stop: `bxrig ai serve start|stop`
 --   the models on this machine, the active one marked, Use on the others: `bxrig ai models use ID`
 --   Try it: a question to the active model, the answer below: `bxrig ai ask TEXT --json`
+--   Downloads: the models downloading or queued, with their share (`bxrig ai downloads --json`)
 --   AI page: the Control Center's AI page in a terminal (`bxrig tui ai`): picks, downloads, tune, remove
 -- Data: `bxrig ai status --json`. Colors are palette roles only, so the tab follows the active theme.
 
@@ -15,6 +16,7 @@ local errorText = nil
 local busy = nil -- what is running: "server", a model id, "ask"
 local question = ""
 local answer = nil -- { text, meta } or nil
+local downloads = {} -- the active downloads
 
 local function str(v)
 	if v == nil then
@@ -28,6 +30,17 @@ local function shq(s)
 end
 
 function M.fetch(render)
+	bxrig.json({ "ai", "downloads", "--json" }, function(result, err)
+		downloads = {}
+		if err == nil and type(result.downloads) == "table" then
+			for _, d in ipairs(result.downloads) do
+				if type(d) == "table" and (d.status == "downloading" or d.status == "queued" or d.status == "checking") then
+					table.insert(downloads, d)
+				end
+			end
+		end
+		render()
+	end, 15000)
 	bxrig.json({ "ai", "status", "--json" }, function(result, err)
 		if err ~= nil then
 			errorText = err
@@ -123,6 +136,19 @@ local function modelRows(render)
 	return ui.column({ gap = 6 }, rows)
 end
 
+local function downloadRows()
+	local rows = {}
+	for i, d in ipairs(downloads) do
+		local what = d.status == "downloading" and (str(d.percent) .. "%") or str(d.status)
+		table.insert(rows, ui.row({ key = "dl-" .. i, align = "center", gap = 8 }, {
+			ui.glyph({ name = "download", size = 14, color = "primary" }),
+			ui.label({ text = str(d.label), fontSize = 11, flexGrow = 1, maxLines = 1 }),
+			ui.label({ text = what, fontSize = 10, color = "on_surface_variant" }),
+		}))
+	end
+	return ui.column({ gap = 4 }, rows)
+end
+
 local function askBox(render)
 	local children = {
 		ui.row({ align = "center", gap = 6 }, {
@@ -184,6 +210,9 @@ function M.view(render)
 		ui.separator({}),
 		askBox(render),
 	}
+	if #downloads > 0 then
+		table.insert(children, 4, downloadRows())
+	end
 	if errorText ~= nil then
 		table.insert(children, ui.label({ text = errorText, fontSize = 10, color = "error", maxLines = 2 }))
 	end

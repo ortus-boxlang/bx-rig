@@ -297,16 +297,25 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `vm` | `--web` | bool |  |
 | `ai` | `--all` | bool |  |
 | `ai` | `--backend` | value |  |
+| `ai` | `--background` | bool |  |
+| `ai` | `--default` | bool |  |
 | `ai` | `--dir` | value |  |
+| `ai` | `--embeddings` | bool |  |
+| `ai` | `--fits` | bool |  |
+| `ai` | `--limit` | value |  |
 | `ai` | `--listen` | value | `127.0.0.` |
 | `ai` | `--model` | value |  |
 | `ai` | `--models` | value |  |
 | `ai` | `--name` | value | `work` |
 | `ai` | `--no-test` | bool |  |
+| `ai` | `--off` | bool |  |
 | `ai` | `--picks` | value |  |
 | `ai` | `--port` | value |  |
 | `ai` | `--source` | value |  |
+| `ai` | `--test` | bool |  |
+| `ai` | `--tools` | bool |  |
 | `ai` | `--tune` | bool |  |
+| `ai` | `--vision` | bool |  |
 | `skills` | `--tag` | value |  |
 | `screenshot` | `--edit` | bool |  |
 | `qr` | `--out` | value | `wifi.png` |

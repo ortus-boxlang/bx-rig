@@ -1,0 +1,81 @@
+// Agents: your coding agents in one place. Each row: the default one marked, installed or not, whether it uses BxRig's local AI server
+// (OpenCode and Crush can), and its running tmux sessions. Enter opens the agent in a new terminal session, d makes it the default,
+// l points it at the local server or back (its plan first), n starts a tmux session. Reads `bxrig ai list --json`,
+// `bxrig ai link --json` and `bxrig ai session list --json`.
+class AiAgentsProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); return this; }
+	function id() { return "ai-agents"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "ai-agents" ); }
+	function title() { return "Agents"; }
+	function hint() { return "coding agents: the default one, local models, sessions"; }
+	function emptyText() { return "No coding agents known. bxrig ai list"; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "agent", w: 18 }, { key: "state", label: "", w: 15 }, { key: "model", label: "models", w: 24 }, { key: "sessions", label: "sessions", w: 0 } ]; }
+
+	function style( r ) {
+		if ( !r.installed ) return "dim";
+		return r.default ? "ok" : "";
+	}
+
+	function detail( r ) {
+		var lines = [ r.name & ( r.installed ? "" : " is not installed (bxrig install " & r.id & ")" ) & ( r.default ? ", your default agent" : "" ) & "." ];
+		if ( len( r.link ?: "" ) ) lines.append( r.linked ? "Uses BxRig's local AI server (provider bxrig). l stops that." : "Can use BxRig's local AI server: l points it there (only BxRig's part of its config changes)." );
+		else lines.append( "Uses its own cloud models." );
+		return lines;
+	}
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "session", run: function( r ) { return r.installed ? { action: "show", title: "Start " & r.name, args: [ "ai", "session", "start", r.id ] } : {}; } },
+			{ key: "d", label: "default", run: function( r ) { return r.installed && !r.default ? { action: "cli", title: "Make " & r.name & " the default", args: [ "ai", "default", r.id ] } : {}; } },
+			{ key: "l", label: "local model", run: function( r ) {
+					if ( !len( r.link ?: "" ) ) return {};
+					var a = [ "ai", "link", r.link ];
+					if ( r.linked ) a.append( "--off" ); else a.append( "--default" );
+					return { action: "cli", title: ( r.linked ? "Stop using the local server in " : "Use the local server in " ) & r.name, args: a };
+				} },
+			{ key: "s", label: "sessions", run: function( r ) { return { action: "show", title: "Agent sessions", args: [ "ai", "session", "list" ] }; } }
+		];
+	}
+
+	// The agents that can use the local server, by BxRig agent id.
+	struct function links() { return { "opencode-cli": "opencode", "crush": "crush" }; }
+
+	// The rows from the three answers (pure, for tests).
+	function rowsFrom( list, agents, sessions ) {
+		var linked = {};
+		for ( var a in arguments.agents.agents ?: [] ) linked[ a.id ] = a.linked;
+		var running = arguments.sessions.sessions ?: [];
+		var rows = [];
+		var lk = links();
+		var known = arguments.list.agents ?: [];
+		var all = duplicate( known );
+		// Crush can use the local server but is not one of BxRig's agents: shown when it is installed or linked
+		var crushRow = ( arguments.agents.agents ?: [] ).filter( function( a ) { return a.id == "crush"; } );
+		if ( crushRow.len() && ( crushRow[ 1 ].installed || crushRow[ 1 ].linked ) ) all.append( { id: "crush", name: "Crush", installed: crushRow[ 1 ].installed, default: false } );
+		for ( var g in all ) {
+			var link = lk[ g.id ] ?: "";
+			var isLinked = len( link ) && ( linked[ link ] ?: false );
+			var mine = running.filter( function( s ) { return find( "bxrig-" & g.id, s ) == 1; } );
+			rows.append( { id: g.id, name: g.name, installed: g.installed, default: g.default ?: false, link: link, linked: isLinked,
+					mark: ( g.default ?: false ) ? "●" : ( g.installed ? "✓" : "" ), state: ( g.default ?: false ) ? "default" : ( g.installed ? "installed" : "not installed" ),
+					model: isLinked ? "local + cloud" : ( len( link ) ? "cloud (local possible)" : "cloud" ), sessions: mine.len() ? mine.len() & " running" : "" } );
+		}
+		rows.sort( function( a, b ) { return a.installed != b.installed ? ( a.installed ? -1 : 1 ) : ( a.default != b.default ? ( a.default ? -1 : 1 ) : compareNoCase( a.name, b.name ) ); } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoList(), { agents: [ { id: "opencode", linked: true, installed: true }, { id: "crush", linked: false, installed: false } ] }, { sessions: [ "bxrig-claude-code", "bxrig-claude-code-site", "bxrig-opencode-cli-api" ] } );
+		return rowsFrom( variables.proc.selfData( [ "ai", "list" ], 20 ), variables.proc.selfData( [ "ai", "link" ], 20 ), variables.proc.selfData( [ "ai", "session", "list" ], 20 ) );
+	}
+
+	function demoList() {
+		return { agents: [
+				{ id: "claude-code", name: "Claude Code", installed: true, default: true },
+				{ id: "opencode-cli", name: "OpenCode", installed: true, default: false },
+				{ id: "codex-cli", name: "Codex", installed: true, default: false },
+				{ id: "gemini-cli", name: "Gemini CLI", installed: true, default: false },
+				{ id: "copilot-cli", name: "GitHub Copilot", installed: false, default: false }
+			] };
+	}
+}
