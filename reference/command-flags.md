@@ -267,6 +267,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `bxtimemachine` | `--local` | bool |  |
 | `bxtimemachine` | `--packages` | any |  |
 | `bxtimemachine` | `--path` | any |  |
+| `privacy` | `--off` | bool |  |
 | `boxlang` | `--list` | any |  |
 | `boxlang` | `--no-open` | any |  |
 | `boxlang` | `--yes` | bool |  |
@@ -328,6 +329,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `ai` | `--tune` | bool |  |
 | `ai` | `--vision` | bool |  |
 | `ai` | `--window` | bool |  |
+| `mcp` | `--write` | bool |  |
 | `skills` | `--tag` | value |  |
 | `screenshot` | `--edit` | bool |  |
 | `qr` | `--out` | value | `wifi.png` |

@@ -52,6 +52,8 @@ bxrig ai agents approve bxrig-1f2e3d4c5b6a      # or: reject
 
 **A model that fits.** Boxy has 36 tools. A very small model (Qwen3.5 0.8B) handles plain requests (list the themes, turn on the night light, a reminder in 30 minutes) but now and then proposes a change you did not ask for; the approval catches it. A 4B model (Qwen3.5 4B) answered every test request right. Pick a bigger one with `bxrig ai models recommend` and `bxrig ai models use ID`: the `bxrig` profile follows. On a computer without a graphics card the first answer can take a minute or two, so the `bxrig` profile gives the model 300 seconds.
 
+Other agents and editors can use the same tools: `bxrig mcp link --yes` (see [MCP and privacy](mcp-and-privacy.md)).
+
 Boxy is your project in `~/Agents/Boxy`: change its instructions (`instructions.md`), its tools (`tools/BxRig.bx`) or its model (`Agent.bx`), and `bxrig ai agents start Boxy` rebuilds it.
 
 ## Skills it saved for itself
