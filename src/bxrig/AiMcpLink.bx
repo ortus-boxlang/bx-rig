@@ -12,6 +12,7 @@
 class AiMcpLink {
 	function init() {
 		variables.env = new bxrig.util.Env();
+		variables.marked = new bxrig.util.Marked();
 		return this;
 	}
 
@@ -131,34 +132,10 @@ class AiMcpLink {
 
 	// ---- JSON with comments (Zed, VS Code) ----
 
-	// The file's text without // and /* */ comments, for checking only (pure).
-	string function uncomment( required string text ) {
-		var out = [];
-		for ( var line in listToArray( reReplace( arguments.text, "/\*.*?\*/", "", "all" ), chr( 10 ), true ) ) {
-			// a // that starts the line or follows a space, comma or bracket begins a comment (a URL's // follows a colon)
-			var m = reFind( "(^|[\s,{\[])//", line, 1, true );
-			var cut = m.pos[ 1 ] ? m.pos[ 1 ] + m.len[ 1 ] - 3 : -1;
-			out.append( cut < 0 ? line : ( cut > 0 ? left( line, cut ) : "" ) );
-		}
-		return out.toList( chr( 10 ) );
-	}
-
-	// A file with comments keeps them: BxRig's key goes in as a marked block right after the first `{` (pure). When the file
-	// already has the key outside BxRig's block: { error }.
+	// A file with comments keeps them: BxRig's key goes in as a marked block (util.Marked). { text } or { error }.
 	struct function jsoncAdd( required string text, required string id, required string key, required struct value ) {
-		var keep = blockRemove( arguments.text, arguments.id );
-		if ( find( """" & arguments.key & """", uncomment( keep ) ) ) return { error: "the file has comments and already lists " & arguments.key & "; add BxRig there by hand" };
-		var brace = find( "{", keep );
-		if ( !brace ) return { error: "the file is not a JSON object" };
-		// after the whole line with the first {, so a comment on that line stays on it
-		var open = find( chr( 10 ), keep, brace );
-		if ( !open ) open = len( keep );
-		var inner = trim( reReplace( uncomment( keep ), "^\s*\{|\}\s*$", "", "all" ) );
-		var nl = chr( 10 );
-		var block = "  " & beginMark( arguments.id, "//" ) & nl & "  """ & arguments.key & """: { ""bxrig"": " & serializeJSON( arguments.value ) & " }" & ( len( inner ) ? "," : "" ) & nl & "  " & endMark( "//" ) & nl;
-		var head = left( keep, open );
-		if ( right( head, 1 ) != nl ) head &= nl;
-		return { text: head & block & mid( keep, open + 1, len( keep ) ) };
+		var r = variables.marked.jsoncInsert( blockRemove( arguments.text, arguments.id ), beginMark( arguments.id, "//" ), endMark( "//" ), arguments.key, "{ ""bxrig"": " & serializeJSON( arguments.value ) & " }" );
+		return structKeyExists( r, "error" ) ? { error: r.error & " (add BxRig there by hand)" } : r;
 	}
 
 	// ---- marked blocks: Grok Build (TOML), Crush (crushrc), Goose (YAML) ----
@@ -166,26 +143,15 @@ class AiMcpLink {
 	string function beginMark( required string id, string c = "##" ) { return left( arguments.c, 1 ) == "/" ? "// BxRig MCP server (bxrig mcp unlink " & arguments.id & " removes this block)" : "## BxRig MCP server (bxrig mcp unlink " & arguments.id & " removes this block)"; }
 	string function endMark( string c = "##" ) { return left( arguments.c, 1 ) == "/" ? "// end of BxRig MCP server" : "## end of BxRig MCP server"; }
 
-	// The text without BxRig's block (pure). Indented marks count too (YAML).
+	// The text without BxRig's block (pure), in either comment style. Indented marks count too (YAML).
 	string function blockRemove( required string text, required string id ) {
-		var out = [];
-		var inside = false;
-		for ( var line in listToArray( arguments.text, chr( 10 ), true ) ) {
-			var t = trim( line );
-			if ( t == beginMark( arguments.id ) || t == beginMark( arguments.id, "//" ) ) { inside = true; continue; }
-			if ( inside ) { if ( t == endMark() || t == endMark( "//" ) ) inside = false; continue; }
-			out.append( line );
-		}
-		var t = out.toList( chr( 10 ) );
-		return len( trim( t ) ) ? reReplace( t, "\n+$", "" ) & chr( 10 ) : "";
+		return variables.marked.cut( variables.marked.cut( arguments.text, beginMark( arguments.id ), endMark() ), beginMark( arguments.id, "//" ), endMark( "//" ) );
 	}
 
 	string function blockState( required string text, required string id ) {
-		var c = find( beginMark( arguments.id ), arguments.text ) ? "##" : "//";
-		if ( !find( beginMark( arguments.id, c ), arguments.text ) ) return "";
-		var after = mid( arguments.text, find( beginMark( arguments.id, c ), arguments.text ), len( arguments.text ) );
-		var stop = find( endMark( c ), after );
-		return writes( stop ? left( after, stop ) : after ) ? "write" : "read-only";
+		var c = variables.marked.holds( arguments.text, beginMark( arguments.id ) ) ? "##" : "//";
+		if ( !variables.marked.holds( arguments.text, beginMark( arguments.id, c ) ) ) return "";
+		return writes( variables.marked.inside( arguments.text, beginMark( arguments.id, c ), endMark( c ) ) ) ? "write" : "read-only";
 	}
 
 	boolean function writes( required string s ) { return find( "--write", arguments.s ) > 0; }
@@ -243,7 +209,7 @@ class AiMcpLink {
 		var a = arguments.agent;
 		switch ( a.kind ) {
 			case "json":
-				if ( ( a.jsonc ?: false ) && ( find( beginMark( a.id, "//" ), arguments.text ) || !plainJson( arguments.text ) ) ) {
+				if ( ( a.jsonc ?: false ) && ( find( beginMark( a.id, "//" ), arguments.text ) || !variables.marked.plainJson( arguments.text ) ) ) {
 				return arguments.off ? { text: blockRemove( arguments.text, a.id ) } : jsoncAdd( arguments.text, a.id, a.path[ 1 ], entry( a.shape, arguments.self, arguments.write ) );
 			}
 				return arguments.off ? jsonRemove( arguments.text, a.path ) : jsonAdd( arguments.text, a.path, entry( a.shape, arguments.self, arguments.write ) );
@@ -255,10 +221,6 @@ class AiMcpLink {
 	}
 
 	// "write", "read-only" or "" for a file agent (pure).
-	boolean function plainJson( required string text ) {
-		if ( !len( trim( arguments.text ) ) ) return true;
-		try { jsonDeserialize( arguments.text ); return true; } catch ( any e ) { return false; }
-	}
 
 	string function state( required struct agent, required string text ) {
 		if ( find( beginMark( arguments.agent.id, "//" ), arguments.text ) ) return blockState( arguments.text, arguments.agent.id );

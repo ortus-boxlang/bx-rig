@@ -53,9 +53,9 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **Look and feel**: [`theme`](#bxrig-theme), [`appearance`](#bxrig-appearance), [`screensaver`](#bxrig-screensaver), [`hotcorners`](#bxrig-hotcorners), [`display`](#bxrig-display), [`power`](#bxrig-power), [`time`](#bxrig-time), [`calendar`](#bxrig-calendar), [`remind`](#bxrig-remind), [`accessibility`](#bxrig-accessibility), [`toggle`](#bxrig-toggle), [`nightshift`](#bxrig-nightshift), [`notify`](#bxrig-notify)
 
-**System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`git`](#bxrig-git), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine)
+**System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`git`](#bxrig-git), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine), [`privacy`](#bxrig-privacy)
 
-**Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`ai`](#bxrig-ai), [`skills`](#bxrig-skills)
+**Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`ai`](#bxrig-ai), [`mcp`](#bxrig-mcp), [`skills`](#bxrig-skills)
 
 **Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`share`](#bxrig-share), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`audio`](#bxrig-audio), [`bluetooth`](#bxrig-bluetooth), [`wifi`](#bxrig-wifi), [`airplay`](#bxrig-airplay)
 
@@ -1494,6 +1494,22 @@ bxrig bxtimemachine [--demo] [--local]
 bxrig bxtimemachine
 ```
 
+### `bxrig privacy` {#bxrig-privacy}
+
+What leaves this machine: which AI runs where, your keys, agent data, MCP servers, telemetry; and switches for local only and telemetry.
+
+```text
+bxrig privacy [--json] | local-only [--off] [--yes] | telemetry off|on [AGENT...] [--yes] [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig privacy
+bxrig privacy local-only --yes
+bxrig privacy telemetry off --yes
+```
+
 ## Develop
 
 BoxLang, editors, databases, containers, virtual machines and AI agents.
@@ -1662,6 +1678,23 @@ bxrig ai agents setup --yes
 bxrig ai serve status
 bxrig ai list
 bxrig ai session start --name=work
+```
+
+### `bxrig mcp` {#bxrig-mcp}
+
+BxRig's own tools for any coding agent or editor, as an MCP server (Boxy's tools, read-only unless --write).
+
+```text
+bxrig mcp [--json] | tools | serve [--write] | link [AGENT...] [--write] [--yes] | unlink [AGENT...] [--yes] [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig mcp
+bxrig mcp link --yes
+bxrig mcp link pi-agent claude-code --write --yes
+bxrig mcp tools
 ```
 
 ### `bxrig skills` {#bxrig-skills}

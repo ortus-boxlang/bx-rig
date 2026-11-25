@@ -1,0 +1,355 @@
+// `bxrig privacy`: what leaves this machine. Which AI runs here and which in the cloud, the keys you stored (names only, never a
+// value), the MCP servers each agent can reach, where agents keep your chats, and each agent's telemetry. Two switches:
+// `local-only` points the agents that can use a local model at BxRig's server, `telemetry off` turns off what each agent lets you
+// turn off. Facts from each agent's official docs (read 2026-11-25); an agent with no documented switch is said to have none.
+// Only BxRig's own entries are written; a file's old copy is kept as FILE.bxrig-backup. See COMMAND-CONTRACT.md 13.70.
+class AiPrivacy {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( arguments.cli, "privacy" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		variables.marked = new bxrig.util.Marked();
+		variables.link = new bxrig.AiMcpLink();
+		return this;
+	}
+
+	string function cfg() { return reReplace( variables.env.get( "XDG_CONFIG_HOME", variables.env.home() & "/.config" ), "/+$", "" ); }
+	string function dataDir() { return reReplace( variables.env.get( "XDG_DATA_HOME", variables.env.home() & "/.local/share" ), "/+$", "" ); }
+
+	// ---- the facts ----
+
+	// Per agent: where its model runs when it is not local (cloud), whether BxRig can point it at the local server (local: the
+	// way, or "" with why), its telemetry switch (telemetry: kind and where, or "" with how) and the folder of its chats.
+	struct function facts() {
+		var h = variables.env.home();
+		var c = cfg();
+		var d = dataDir();
+		return {
+			"claude-code": { cloud: "api.anthropic.com", local: "", why: "it only talks to Anthropic's API", telemetry: { kind: "json", file: h & "/.claude/settings.json", sets: [ { path: [ "env", "DISABLE_TELEMETRY" ], value: "1" }, { path: [ "env", "DISABLE_ERROR_REPORTING" ], value: "1" } ] }, chats: h & "/.claude" },
+			"codex-cli": { cloud: "api.openai.com", local: "", why: "possible by hand: [model_providers] in ~/.codex/config.toml; Codex needs the Responses API (/v1/responses), which only recent llama.cpp builds offer", telemetry: { kind: "toml", file: h & "/.codex/config.toml", table: "analytics", body: "enabled = false" }, chats: h & "/.codex" },
+			"gemini-cli": { cloud: "generativelanguage.googleapis.com", local: "", why: "it only talks to the Gemini API", telemetry: { kind: "json", file: h & "/.gemini/settings.json", sets: [ { path: [ "privacy", "usageStatisticsEnabled" ], value: false } ] }, chats: h & "/.gemini" },
+			"opencode-cli": { cloud: "the providers you pick", local: "opencode", why: "", telemetry: { kind: "", how: "OpenCode documents no telemetry switch" }, chats: d & "/opencode" },
+			"pi-agent": { cloud: "the providers you pick", local: "pi", why: "", telemetry: { kind: "json", file: h & "/.pi/agent/settings.json", sets: [ { path: [ "enableInstallTelemetry" ], value: false } ] }, chats: h & "/.pi/agent" },
+			"copilot-cli": { cloud: "api.githubcopilot.com", local: "copilot", why: "", telemetry: { kind: "", how: "Copilot CLI only stops it with COPILOT_OFFLINE=true, which also stops its cloud models" }, chats: h & "/.copilot" },
+			"cursor-agent": { cloud: "Cursor's servers", local: "", why: "Cursor sends every request through its own servers", telemetry: { kind: "", how: "Privacy Mode in your Cursor account settings" }, chats: h & "/.cursor" },
+			"amp": { cloud: "ampcode.com", local: "", why: "Amp sends model requests from its own servers", telemetry: { kind: "", how: "Amp documents no telemetry switch" }, chats: c & "/amp" },
+			"crush": { cloud: "the providers you pick", local: "crush", why: "", telemetry: { kind: "", how: "set CRUSH_DISABLE_METRICS=1 in your shell" }, chats: d & "/crush" },
+			"goose": { cloud: "the providers you pick", local: "goose", why: "", telemetry: { kind: "yaml", file: c & "/goose/config.yaml", line: "GOOSE_TELEMETRY_ENABLED: false", key: "GOOSE_TELEMETRY_ENABLED" }, chats: d & "/goose" },
+			"kiro-cli": { cloud: "Kiro's service (AWS)", local: "", why: "Kiro only offers its own models", telemetry: { kind: "cmd", off: [ "kiro-cli", "settings", "telemetry.enabled", "false" ], on: [ "kiro-cli", "settings", "telemetry.enabled", "true" ], file: h & "/.kiro/settings/cli.json", path: [ "telemetry.enabled" ] }, chats: h & "/.kiro" },
+			"qwen-code": { cloud: "the provider you sign in to", local: "", why: "possible by hand: modelProviders in ~/.qwen/settings.json", telemetry: { kind: "json", file: h & "/.qwen/settings.json", sets: [ { path: [ "privacy", "usageStatisticsEnabled" ], value: false } ] }, chats: h & "/.qwen" },
+			"grok-build": { cloud: "api.x.ai", local: "", why: "possible by hand: [model.local] in ~/.grok/config.toml", telemetry: { kind: "", how: "Grok Build documents no telemetry switch" }, chats: h & "/.grok" },
+			"antigravity": { cloud: "Google's models", local: "", why: "it only offers Google's hosted models", telemetry: { kind: "", how: "the Enable Telemetry switch in Antigravity's settings" }, chats: h & "/.gemini/antigravity" },
+			"zed": { cloud: "the providers you pick", local: "", why: "possible by hand: language_models.openai_compatible in Zed's settings", telemetry: { kind: "jsonc", file: c & "/zed/settings.json", key: "telemetry", value: { diagnostics: false, metrics: false }, path: [ "telemetry" ] }, chats: d & "/zed" },
+			"vscode": { cloud: "GitHub Copilot's models", local: "", why: "possible by hand: Manage Language Models, Custom Endpoint", telemetry: { kind: "jsonc", file: c & "/Code/User/settings.json", key: "telemetry.telemetryLevel", value: "off", path: [ "telemetry.telemetryLevel" ] }, chats: c & "/Code/User/globalStorage" }
+		};
+	}
+
+	// ---- telemetry ----
+
+	string function mark( required string id, string c = "##" ) { return ( left( arguments.c, 1 ) == "/" ? "//" : "##" ) & " BxRig: telemetry off (bxrig privacy telemetry on " & arguments.id & " undoes this)"; }
+	string function markEnd( string c = "##" ) { return ( left( arguments.c, 1 ) == "/" ? "//" : "##" ) & " end of BxRig telemetry"; }
+
+	// "off", "on" (as far as BxRig can tell: not turned off) or "" when there is no switch BxRig can read (pure but for reading).
+	string function telemetryState( required string id, required struct t, required string text ) {
+		switch ( arguments.t.kind ) {
+			case "json":
+				for ( var s in arguments.t.sets ) if ( serializeJSON( variables.marked.jsonGet( arguments.text, s.path, "<none>" ) ) != serializeJSON( s.value ) ) return "on";
+				return "off";
+				case "toml": return variables.marked.holds( arguments.text, mark( arguments.id ) ) || reFind( "(?m)^\[analytics\][^\[]*enabled\s*=\s*false", arguments.text ) ? "off" : "on";
+				case "yaml": return reFind( "(?m)^GOOSE_TELEMETRY_ENABLED:\s*false", arguments.text ) ? "off" : "on";
+				case "cmd": return serializeJSON( variables.marked.jsonGet( arguments.text, arguments.t.path, "<none>" ) ) == "false" || variables.marked.jsonGet( arguments.text, arguments.t.path, "" ) == "false" ? "off" : "on";
+			case "jsonc":
+				if ( variables.marked.holds( arguments.text, mark( arguments.id, "//" ) ) ) return "off";
+				return serializeJSON( variables.marked.jsonGet( arguments.text, arguments.t.path, "<none>" ) ) == serializeJSON( arguments.t.value ) ? "off" : "on";
+		}
+		return "";
+	}
+
+	// The file's new text to turn telemetry off (or back on): { text } or { error } (pure).
+	struct function telemetryChange( required string id, required struct t, required string text, required boolean on ) {
+		var x = arguments.text;
+		var nl = chr( 10 );
+		switch ( arguments.t.kind ) {
+			case "json":
+				for ( var s in arguments.t.sets ) {
+				var r = arguments.on ? variables.marked.jsonUnset( x, s.path ) : variables.marked.jsonSet( x, s.path, s.value );
+				if ( structKeyExists( r, "error" ) ) return r;
+				x = r.text;
+			}
+				return { text: x };
+			case "toml":
+				x = variables.marked.cut( x, mark( arguments.id ), markEnd() );
+				if ( arguments.on ) return { text: x };
+				if ( reFind( "(?m)^\[analytics\]", x ) ) return { error: "the file already has an [analytics] table; set enabled = false there" };
+				return { text: ( len( x ) ? x & nl : "" ) & mark( arguments.id ) & nl & "[" & arguments.t.table & "]" & nl & arguments.t.body & nl & markEnd() & nl };
+			case "yaml":
+				x = variables.marked.cut( x, mark( arguments.id ), markEnd() );
+				if ( arguments.on ) return { text: x };
+				if ( reFind( "(?m)^" & arguments.t.key & ":", x ) ) return { error: "the file already sets " & arguments.t.key & "; set it to false there" };
+				return { text: ( len( x ) ? x & nl : "" ) & mark( arguments.id ) & nl & arguments.t.line & nl & markEnd() & nl };
+			case "jsonc":
+				if ( variables.marked.plainJson( x ) && !variables.marked.holds( x, mark( arguments.id, "//" ) ) ) {
+				return arguments.on ? variables.marked.jsonUnset( x, arguments.t.path ) : variables.marked.jsonSet( x, arguments.t.path, arguments.t.value );
+			}
+				x = variables.marked.cut( x, mark( arguments.id, "//" ), markEnd( "//" ) );
+				if ( arguments.on ) return { text: x };
+				return variables.marked.jsoncInsert( x, mark( arguments.id, "//" ), markEnd( "//" ), arguments.t.key, serializeJSON( arguments.t.value ) );
+		}
+		return { error: "no switch" };
+	}
+
+	// ---- the local model ----
+
+	// The local server and its chat models, or { error }.
+	struct function localServer() {
+		var ail = new bxrig.AiLocal( variables.cli );
+		var st = ail.load();
+		if ( st.serve.listen != "127.0.0.1" ) return { error: "BxRig's AI server listens on your network; listen on 127.0.0.1 first (bxrig ai serve --listen=127.0.0.1 --yes)" };
+		var chats = structKeyArray( st.models ).filter( function( x ) { return ( st.models[ x ].kind ?: "chat" ) == "chat"; } );
+		if ( !chats.len() ) return { error: "no local chat models yet (bxrig ai setup)" };
+		chats.sort( "textnocase" );
+		return { base: ail.baseUrl( st ), models: chats, active: st.active ?: chats[ 1 ] };
+	}
+
+	// Where each local way writes (pure but for paths).
+	string function localFile( required string way ) {
+		var h = variables.env.home();
+		switch ( arguments.way ) {
+			case "pi": return h & "/.pi/agent/models.json";
+			case "copilot": return h & "/.copilot/providers.json";
+			case "goose": return cfg() & "/goose/custom_providers/bxrig.json";
+		}
+		return new bxrig.AiAgentLink().file( arguments.way );
+	}
+
+	// The new text to add (or take out) BxRig's local server: { text } or { error } (pure).
+	struct function localChange( required string way, required string text, required struct server, required boolean off ) {
+		var s = arguments.server;
+		var al = new bxrig.AiAgentLink();
+		switch ( arguments.way ) {
+			case "opencode": return arguments.off ? ( len( arguments.text ) ? al.opencodeRemove( arguments.text ) : { text: "" } ) : al.opencodeAdd( arguments.text, s.base & "/v1", s.models, s.active );
+			case "crush": return { text: arguments.off ? al.crushRemove( arguments.text ) : al.crushAdd( arguments.text, s.base ) };
+			case "pi":
+				if ( arguments.off ) return variables.marked.jsonUnset( arguments.text, [ "providers", "bxrig" ] );
+				return variables.marked.jsonSet( arguments.text, [ "providers", "bxrig" ], { baseUrl: s.base & "/v1", api: "openai-completions", apiKey: "bxrig-local", models: s.models.map( function( m ) { return { id: m }; } ) } );
+			case "copilot":
+				var j = { providers: [], models: [] };
+				if ( len( trim( arguments.text ) ) ) {
+				try { j = jsonDeserialize( arguments.text ); } catch ( any e ) { return { error: "the file is not plain JSON" }; }
+			}
+				var ps = ( isArray( j.providers ?: "" ) ? j.providers : [] ).filter( function( p ) { return ( p.name ?: "" ) != "bxrig"; } );
+				var ms = ( isArray( j.models ?: "" ) ? j.models : [] ).filter( function( m ) { return ( m.provider ?: "" ) != "bxrig"; } );
+				if ( !arguments.off ) {
+				ps.append( { name: "bxrig", type: "openai", baseUrl: s.base & "/v1" } );
+				for ( var m in s.models ) ms.append( { id: m, provider: "bxrig" } );
+			}
+				j.providers = ps;
+				j.models = ms;
+				return { text: jsonPrettify( serializeJSON( j ) ) & chr( 10 ) };
+			case "goose":
+				return { text: arguments.off ? "" : jsonPrettify( serializeJSON( { name: "bxrig", engine: "openai", display_name: "BxRig local AI", base_url: s.base & "/v1/chat/completions", requires_auth: false } ) ) & chr( 10 ) };
+		}
+		return { error: "not a local way" };
+	}
+
+	boolean function localOn( required string way, required string text ) {
+		switch ( arguments.way ) {
+			case "opencode": return new bxrig.AiAgentLink().opencodeLinked( arguments.text );
+			case "crush": return new bxrig.AiAgentLink().crushLinked( arguments.text );
+			case "pi": return isStruct( variables.marked.jsonGet( arguments.text, [ "providers", "bxrig" ], "" ) );
+			case "copilot": return find( """bxrig""", arguments.text ) > 0;
+			case "goose": return len( trim( arguments.text ) ) > 0;
+		}
+		return false;
+	}
+
+	// ---- the report ----
+
+	// The MCP servers in a JSON object of servers: [ { server, where } ] (pure).
+	array function serversIn( required any servers ) {
+		if ( !isStruct( arguments.servers ) ) return [];
+		var out = [];
+		for ( var n in arguments.servers ) {
+			var e = arguments.servers[ n ];
+			var webUrl = isStruct( e ) ? ( e.url ?: ( e.serverUrl ?: ( e.httpUrl ?: "" ) ) ) : "";
+			var host = len( webUrl ) ? reReplace( reReplace( webUrl, "^[a-z]+://", "" ), "[/:].*$", "" ) : "";
+			out.append( { server: n, where: len( host ) ? "web: " & host : "this machine" } );
+		}
+		return out;
+	}
+
+	// Every agent's MCP servers that BxRig can read.
+	array function mcpServers( required struct agent ) {
+		var a = arguments.agent;
+		var text = variables.link.read( a.file );
+		if ( !len( text ) ) return [];
+		if ( a.kind == "json" ) return serversIn( variables.marked.jsonGet( variables.marked.plainJson( text ) ? text : variables.marked.uncomment( text ), a.path, {} ) );
+		if ( a.id == "claude-code" ) return serversIn( variables.marked.jsonGet( text, [ "mcpServers" ], {} ) );
+		var names = [];
+		var re = a.kind == "toml" || a.id == "codex-cli" ? "(?m)^\[mcp_servers\.([A-Za-z0-9_-]+)\]" : ( a.kind == "crushrc" ? "(?m)^mcp add ([A-Za-z0-9_-]+)" : "(?m)^  ([A-Za-z0-9_-]+):\s*$" );
+		var at = 1;
+		while ( true ) {
+			var m = reFind( re, text, at, true );
+			if ( !m.pos[ 1 ] ) break;
+			names.append( { server: mid( text, m.pos[ 2 ], m.len[ 2 ] ), where: "this machine" } );
+			at = m.pos[ 1 ] + m.len[ 1 ];
+		}
+		return names;
+	}
+
+	struct function report() {
+		var f = facts();
+		var rows = [];
+		var servers = [];
+		var tele = [];
+		var chats = [];
+		var srv = localServer();
+		for ( var a in variables.link.agents() ) {
+			var installed = false;
+			for ( var c in a.commands ) if ( variables.proc.has( c ) ) installed = true;
+			if ( !installed ) continue;
+			var x = f[ a.id ];
+			var localNow = len( x.local ) && localOn( x.local, variables.link.read( localFile( x.local ) ) );
+			rows.append( { id: a.id, name: a.name, runs: localNow ? "this machine and " & x.cloud : x.cloud, local: localNow ? "on" : ( len( x.local ) ? "possible" : "no" ), why: x.why, cloud: !localNow } );
+			for ( var s in mcpServers( a ) ) servers.append( { agent: a.name, server: s.server, where: s.where } );
+			var t = x.telemetry;
+			var state = len( t.kind ) ? telemetryState( a.id, t, variables.link.read( t.file ) ) : "";
+			tele.append( { id: a.id, name: a.name, state: state, can: len( t.kind ) > 0, how: t.how ?: "" } );
+			if ( directoryExists( x.chats ) ) chats.append( { what: a.name & ": its chats and history", path: x.chats } );
+		}
+		if ( directoryExists( variables.env.home() & "/.bxagents" ) ) chats.append( { what: "BoxLang agents (Boxy and yours): chats, notes, files, skills", path: variables.env.home() & "/.bxagents" } );
+		var keys = [];
+		try {
+			var sec = new bxrig.Secrets( variables.cli );
+			var be = sec.backend();
+			for ( var n in sec.names() ) keys.append( { name: n, where: be == "keyring" ? "your system keyring" : "BxRig's secrets file" } );
+		} catch ( any e ) {}
+		for ( var p in new bxrig.AiProviders().all() ) {
+			if ( len( variables.env.get( p.env, "" ) ) && !keys.filter( function( k ) { return k.name == p.env; } ).len() ) keys.append( { name: p.env, where: "your environment" } );
+		}
+		return {
+			server: structKeyExists( srv, "error" ) ? { ready: false, note: srv.error } : { ready: true, address: srv.base, models: srv.models },
+			agents: rows, keys: keys, mcp: servers, data: chats, telemetry: tele,
+			cloud_agents: rows.filter( function( r ) { return r.cloud; } ).len()
+		};
+	}
+
+	string function pad( required string s, required numeric w ) { return len( arguments.s ) >= arguments.w ? arguments.s & " " : left( arguments.s & repeatString( " ", arguments.w ), arguments.w ); }
+
+	function reportCmd( asJson ) {
+		var r = report();
+		var lines = [ pad( "AI", 26 ) & pad( "Local model", 13 ) & "Leaves this machine" ];
+		lines.append( pad( "BxRig's AI server", 26 ) & pad( r.server.ready ? "yes" : "-", 13 ) & ( r.server.ready ? "no (" & r.server.address & ")" : "not set up" ) );
+		for ( var a in r.agents ) lines.append( pad( a.name, 26 ) & pad( a.local == "on" ? "in use" : ( a.local == "possible" ? "possible" : "no" ), 13 ) & ( a.cloud ? "yes: " & a.runs : "only when you pick a cloud model" ) );
+		if ( !r.agents.len() ) lines.append( "No coding agent or editor is installed." );
+		lines.append( "" );
+		lines.append( pad( "Keys (names only)", 26 ) & "Where" );
+		for ( var k in r.keys ) lines.append( pad( k.name, 26 ) & k.where );
+		if ( !r.keys.len() ) lines.append( "none stored" );
+		lines.append( "" );
+		lines.append( pad( "MCP server", 26 ) & pad( "Used by", 26 ) & "Where" );
+		for ( var m in r.mcp ) lines.append( pad( m.server, 26 ) & pad( m.agent, 26 ) & m.where );
+		if ( !r.mcp.len() ) lines.append( "none" );
+		lines.append( "" );
+		lines.append( pad( "Telemetry", 26 ) & "State" );
+		for ( var t in r.telemetry ) lines.append( pad( t.name, 26 ) & ( t.can ? t.state : "can not be turned off here: " & t.how ) );
+		lines.append( "" );
+		lines.append( "Your data" );
+		for ( var d in r.data ) lines.append( "  " & pad( variables.env.tilde( d.path ), 22 ) & d.what );
+		lines.append( "" );
+		lines.append( r.cloud_agents ? ( r.cloud_agents == 1 ? "1 of your agents sends" : r.cloud_agents & " of your agents send" ) & " prompts to the cloud. bxrig privacy local-only --yes points the ones that can at your local model." : "No agent sends prompts to the cloud right now." );
+		lines.append( "Turn off what can be turned off: bxrig privacy telemetry off --yes" );
+		return variables.out.say( "ok", r, arguments.asJson, lines );
+	}
+
+	// ---- the switches ----
+
+	// Writes the planned file changes (a backup of each file first) or shows the plan.
+	function apply( required string title, required array changes, required array steps, required boolean yes, required boolean dry, asJson, required string doneLine ) {
+		if ( !arguments.changes.len() ) return variables.out.say( "ok", { changed: [] }, arguments.asJson, arguments.steps.len() ? arguments.steps : [ "Nothing to change." ] );
+		var shown = arguments.changes.map( function( c ) { return { agent: c.agent, file: c.file ?: "", command: ( c.argv ?: [] ) }; } );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( arguments.title, { changes: shown }, arguments.asJson, arguments.dry, arguments.steps );
+		var done = [];
+		for ( var c in arguments.changes ) {
+			if ( structKeyExists( c, "argv" ) ) {
+				var r = variables.proc.exec( c.argv, 60 );
+				if ( r.exitCode != 0 ) return variables.out.failed( c.argv.toList( " " ) & " failed: " & trim( r.error ?: r.output ?: "" ), arguments.asJson );
+			} else if ( !len( c.text ) && fileExists( c.file ) && c.removeEmpty ) {
+				fileCopy( c.file, c.file & ".bxrig-backup" );
+				fileDelete( c.file );
+			} else {
+				directoryCreate( getDirectoryFromPath( c.file ), true, true );
+				if ( fileExists( c.file ) ) fileCopy( c.file, c.file & ".bxrig-backup" );
+				fileWrite( c.file, c.text );
+			}
+			done.append( c.agent );
+		}
+		var named = done.map( function( i ) { return variables.link.byId( i ).name ?: i; } );
+		return variables.out.say( "ok", { changed: done }, arguments.asJson, [ arguments.doneLine & named.toList( ", " ) & ".", "Restart a running agent or editor to see it." ] );
+	}
+
+	function localCmd( required boolean off, required boolean yes, required boolean dry, asJson ) {
+		var srv = { base: "", models: [], active: "" };
+		if ( !arguments.off ) {
+			srv = localServer();
+			if ( structKeyExists( srv, "error" ) ) return variables.out.precondition( srv.error, arguments.asJson );
+		}
+		var f = facts();
+		var changes = [];
+		var doing = [];
+		var steps = [];
+		for ( var a in variables.link.agents() ) {
+			var installed = false;
+			for ( var c in a.commands ) if ( variables.proc.has( c ) ) installed = true;
+			var x = f[ a.id ];
+			if ( !len( x.local ) ) {
+				if ( installed && !arguments.off ) steps.append( a.name & ": stays as it is, " & x.why );
+				continue;
+			}
+			var file = localFile( x.local );
+			var text = variables.link.read( file );
+			if ( !installed && !localOn( x.local, text ) ) continue;
+			if ( arguments.off && !localOn( x.local, text ) ) continue;
+			var next = localChange( x.local, text, srv, arguments.off );
+			if ( structKeyExists( next, "error" ) ) { steps.append( a.name & ": left out, " & next.error & " (" & variables.env.tilde( file ) & ")" ); continue; }
+			if ( next.text == text ) continue;
+			changes.append( { agent: a.id, file: file, text: next.text, removeEmpty: x.local == "goose" } );
+			doing.append( a.name & ": " & ( arguments.off ? "take BxRig's local server out of " : "add BxRig's local server (" & srv.models.toList( ", " ) & ") to " ) & file );
+		}
+		if ( !arguments.off && changes.len() ) steps.append( "OpenCode also gets bxrig/" & srv.active & " as its default model; in the others pick BxRig's provider" );
+		for ( var n in steps ) doing.append( n );
+		return apply( arguments.off ? "local-only off" : "local-only", changes, doing, arguments.yes, arguments.dry, arguments.asJson, arguments.off ? "BxRig's local server taken out of: " : "Your local model is in: " );
+	}
+
+	function telemetryCmd( required string state, required array ids, required boolean yes, required boolean dry, asJson ) {
+		if ( !arrayFind( [ "off", "on" ], arguments.state ) ) return variables.out.usage( "bxrig privacy telemetry off|on [AGENT...] [--yes]", arguments.asJson );
+		for ( var i in arguments.ids ) if ( !arrayFind( variables.link.ids(), i ) ) return variables.out.usage( i & " is not an agent BxRig knows; one of: " & variables.link.ids().toList( ", " ), arguments.asJson );
+		var on = arguments.state == "on";
+		var f = facts();
+		var changes = [];
+		var doing = [];
+		var steps = [];
+		for ( var a in variables.link.agents() ) {
+			if ( arguments.ids.len() && !arrayFind( arguments.ids, a.id ) ) continue;
+			var installed = false;
+			for ( var c in a.commands ) if ( variables.proc.has( c ) ) installed = true;
+			if ( !installed && !arguments.ids.len() ) continue;
+			var t = f[ a.id ].telemetry;
+			if ( !len( t.kind ) ) { steps.append( a.name & ": no switch BxRig can set (" & t.how & ")" ); continue; }
+			var text = variables.link.read( t.file );
+			if ( telemetryState( a.id, t, text ) == arguments.state ) continue;
+			if ( t.kind == "cmd" ) {
+				changes.append( { agent: a.id, argv: on ? t.on : t.off } );
+				doing.append( a.name & ": " & ( on ? t.on : t.off ).toList( " " ) );
+				continue;
+			}
+			var next = telemetryChange( a.id, t, text, on );
+			if ( structKeyExists( next, "error" ) ) { steps.append( a.name & ": left out, " & next.error & " (" & variables.env.tilde( t.file ) & ")" ); continue; }
+			changes.append( { agent: a.id, file: t.file, text: next.text, removeEmpty: false } );
+			doing.append( a.name & ": " & ( on ? "take BxRig's telemetry setting out of " : "turn telemetry off in " ) & variables.env.tilde( t.file ) );
+		}
+		for ( var n in steps ) doing.append( n );
+		return apply( "telemetry " & arguments.state, changes, doing, arguments.yes, arguments.dry, arguments.asJson, on ? "Telemetry back to each agent's own default: " : "Telemetry off: " );
+	}
+}

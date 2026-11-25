@@ -68,6 +68,7 @@ ICONS = [
 	('bxrig-databases', 'database', 'develop', 'apps', 'Databases', 'the Databases page'),
 	('bxrig-mail', 'envelope', 'utility', 'apps', 'Mail', 'the Mail page'),
 	('bxrig-machines', 'desktop-tower', 'system', 'apps', 'Machines', 'the Machines page'),
+	('bxrig-privacy', 'shield-check', 'system', 'apps', 'Privacy', 'the Privacy page (what leaves this machine)'),
 	('bxrig-storage', 'hard-drives', 'system', 'apps', 'Storage', 'the Storage page'),
 	('bxrig-secrets', 'key', 'utility', 'apps', 'Secrets', 'the Secrets page'),
 	('bxrig-logs', 'scroll', 'system', 'apps', 'Logs', 'the Logs page'),

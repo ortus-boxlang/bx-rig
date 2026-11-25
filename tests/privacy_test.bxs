@@ -1,0 +1,101 @@
+// `bxrig privacy`: each agent's facts, the telemetry switch in every format (JSON, TOML, YAML, JSON with comments) and back, the
+// local model in Pi, Copilot and Goose and back, the MCP servers read from a config, the Control Center rows, and util.Marked.
+// Pure: nothing is written. Run from src/: (cd src && matchbox ../tests/privacy_test.bxs)
+testkit = new lib.Check( "privacy" );
+nl = chr( 10 );
+pv = new bxrig.AiPrivacy( new bxrig.util.Cli( "test" ) );
+mk = new bxrig.util.Marked();
+f = pv.facts();
+
+// ---- the facts ----
+ids = new bxrig.AiMcpLink().ids();
+testkit.check( "facts: one for every agent BxRig links", ids.every( function( i ) { return structKeyExists( f, i ); } ) && structCount( f ) == ids.len() );
+testkit.check( "facts: each says where its model runs and where its chats are", ids.every( function( i ) { return len( f[ i ].cloud ) && len( f[ i ].chats ); } ) );
+testkit.check( "facts: an agent that can not use a local model says why", ids.every( function( i ) { return len( f[ i ].local ) || len( f[ i ].why ); } ) );
+testkit.check( "facts: an agent with no telemetry switch says how", ids.every( function( i ) { return len( f[ i ].telemetry.kind ) || len( f[ i ].telemetry.how ?: "" ); } ) );
+testkit.check( "facts: the local ways are OpenCode, Pi, Copilot, Crush and Goose", ids.filter( function( i ) { return len( f[ i ].local ); } ).toList() == "opencode-cli,pi-agent,copilot-cli,crush,goose" );
+testkit.check( "facts: no em or en dashes", !reFind( chr( 8212 ) & "|" & chr( 8211 ), serializeJSON( f ) ) );
+
+// ---- telemetry: JSON ----
+cl = f[ "claude-code" ].telemetry;
+had = "{""model"":""opus"",""env"":{""FOO"":""1""}}";
+off = pv.telemetryChange( "claude-code", cl, had, false ).text;
+testkit.check( "telemetry json: Claude Code's env gets DISABLE_TELEMETRY and DISABLE_ERROR_REPORTING", mk.jsonGet( off, [ "env", "DISABLE_TELEMETRY" ] ) == "1" && mk.jsonGet( off, [ "env", "DISABLE_ERROR_REPORTING" ] ) == "1" && mk.jsonGet( off, [ "env", "FOO" ] ) == "1" && mk.jsonGet( off, [ "model" ] ) == "opus" );
+testkit.check( "telemetry json: state off, then on", pv.telemetryState( "claude-code", cl, off ) == "off" && pv.telemetryState( "claude-code", cl, had ) == "on" && pv.telemetryState( "claude-code", cl, "" ) == "on" );
+back = pv.telemetryChange( "claude-code", cl, off, true ).text;
+testkit.check( "telemetry json: on takes out only those two", !structKeyExists( mk.jsonGet( back, [ "env" ] ), "DISABLE_TELEMETRY" ) && mk.jsonGet( back, [ "env", "FOO" ] ) == "1" );
+gmi = f[ "gemini-cli" ].telemetry;
+testkit.check( "telemetry json: Gemini CLI turns usage statistics off", mk.jsonGet( pv.telemetryChange( "gemini-cli", gmi, "", false ).text, [ "privacy", "usageStatisticsEnabled" ], true ) == false );
+testkit.check( "telemetry json: Pi turns install telemetry off", mk.jsonGet( pv.telemetryChange( "pi-agent", f[ "pi-agent" ].telemetry, "", false ).text, [ "enableInstallTelemetry" ], true ) == false );
+testkit.check( "telemetry json: a file with comments is left to you", structKeyExists( pv.telemetryChange( "gemini-cli", gmi, "{ // c" & nl & "}", false ), "error" ) );
+
+// ---- telemetry: Codex (TOML) ----
+cx = f[ "codex-cli" ].telemetry;
+tsrc = "model = ""gpt-5""" & nl;
+toff = pv.telemetryChange( "codex-cli", cx, tsrc, false ).text;
+testkit.check( "telemetry toml: an [analytics] table with enabled = false, after what was there", find( "model = ""gpt-5""", toff ) < find( "[analytics]", toff ) && find( "enabled = false", toff ) );
+testkit.check( "telemetry toml: state and back", pv.telemetryState( "codex-cli", cx, toff ) == "off" && pv.telemetryChange( "codex-cli", cx, toff, true ).text == tsrc );
+testkit.check( "telemetry toml: an [analytics] table of yours is left to you", structKeyExists( pv.telemetryChange( "codex-cli", cx, "[analytics]" & nl & "enabled = true" & nl, false ), "error" ) );
+testkit.check( "telemetry toml: yours with enabled = false counts as off", pv.telemetryState( "codex-cli", cx, "[analytics]" & nl & "enabled = false" & nl ) == "off" );
+
+// ---- telemetry: Goose (YAML) ----
+gs = f[ "goose" ].telemetry;
+ysrc = "GOOSE_PROVIDER: openai" & nl;
+yoff = pv.telemetryChange( "goose", gs, ysrc, false ).text;
+testkit.check( "telemetry yaml: GOOSE_TELEMETRY_ENABLED: false", reFind( "\nGOOSE_TELEMETRY_ENABLED: false\n", yoff ) && pv.telemetryState( "goose", gs, yoff ) == "off" );
+testkit.check( "telemetry yaml: back", pv.telemetryChange( "goose", gs, yoff, true ).text == ysrc );
+testkit.check( "telemetry yaml: a key of yours is left to you", structKeyExists( pv.telemetryChange( "goose", gs, "GOOSE_TELEMETRY_ENABLED: true" & nl, false ), "error" ) );
+
+// ---- telemetry: Zed and VS Code (JSON with comments) ----
+zd = f[ "zed" ].telemetry;
+zsrc = "{" & nl & "  // mine" & nl & "  ""theme"": ""x""" & nl & "}" & nl;
+zoff = pv.telemetryChange( "zed", zd, zsrc, false ).text;
+testkit.check( "telemetry jsonc: Zed keeps its comments, gets telemetry off in a marked block", find( "// mine", zoff ) && find( """telemetry"": {""diagnostics"":false,""metrics"":false}", zoff ) && pv.telemetryState( "zed", zd, zoff ) == "off" );
+testkit.check( "telemetry jsonc: back as it was", pv.telemetryChange( "zed", zd, zoff, true ).text == zsrc );
+vs = f[ "vscode" ].telemetry;
+voff = pv.telemetryChange( "vscode", vs, "{""editor.fontSize"":14}", false ).text;
+testkit.check( "telemetry jsonc: VS Code's plain settings stay plain JSON", mk.jsonGet( voff, [ "telemetry.telemetryLevel" ] ) == "off" && mk.jsonGet( voff, [ "editor.fontSize" ] ) == 14 && pv.telemetryState( "vscode", vs, voff ) == "off" );
+testkit.check( "telemetry: an agent with no switch has no state", pv.telemetryState( "amp", f[ "amp" ].telemetry, "" ) == "" );
+
+// ---- the local model ----
+srv = { base: "http://127.0.0.1:8089", models: [ "qwen3.5-4b", "gemma-4" ], active: "qwen3.5-4b" };
+pon = pv.localChange( "pi", "{""providers"":{""anthropic"":{}}}", srv, false ).text;
+testkit.check( "local: Pi gets providers.bxrig with the models, openai-completions and a key it needs", mk.jsonGet( pon, [ "providers", "bxrig", "baseUrl" ] ) == "http://127.0.0.1:8089/v1" && mk.jsonGet( pon, [ "providers", "bxrig", "api" ] ) == "openai-completions" && len( mk.jsonGet( pon, [ "providers", "bxrig", "apiKey" ] ) ) && mk.jsonGet( pon, [ "providers", "bxrig", "models" ] ).len() == 2 && isStruct( mk.jsonGet( pon, [ "providers", "anthropic" ] ) ) );
+testkit.check( "local: Pi on and off", pv.localOn( "pi", pon ) && !pv.localOn( "pi", pv.localChange( "pi", pon, srv, true ).text ) && isStruct( mk.jsonGet( pv.localChange( "pi", pon, srv, true ).text, [ "providers", "anthropic" ] ) ) );
+con = pv.localChange( "copilot", "{""providers"":[{""name"":""work"",""type"":""openai""}],""models"":[{""id"":""x"",""provider"":""work""}]}", srv, false ).text;
+cj = jsonDeserialize( con );
+testkit.check( "local: Copilot gets a bxrig provider and its models, yours stay", cj.providers.len() == 2 && cj.models.len() == 3 && cj.providers[ 2 ].name == "bxrig" && cj.providers[ 2 ].baseUrl == "http://127.0.0.1:8089/v1" );
+cj = jsonDeserialize( pv.localChange( "copilot", con, srv, true ).text );
+testkit.check( "local: Copilot off takes out only BxRig's", cj.providers.len() == 1 && cj.models.len() == 1 && cj.providers[ 1 ].name == "work" );
+gon = pv.localChange( "goose", "", srv, false ).text;
+testkit.check( "local: Goose gets a custom provider file", mk.jsonGet( gon, [ "engine" ] ) == "openai" && mk.jsonGet( gon, [ "base_url" ] ) == "http://127.0.0.1:8089/v1/chat/completions" && mk.jsonGet( gon, [ "requires_auth" ], true ) == false );
+testkit.check( "local: Goose off removes the file", pv.localChange( "goose", gon, srv, true ).text == "" );
+oon = pv.localChange( "opencode", "", srv, false ).text;
+testkit.check( "local: OpenCode the way bxrig ai link does it, the active model its default", mk.jsonGet( oon, [ "model" ] ) == "bxrig/qwen3.5-4b" && pv.localOn( "opencode", oon ) );
+
+// ---- MCP servers read from a config ----
+sv = pv.serversIn( { github: { url: "https://api.githubcopilot.com/mcp/" }, bxrig: { command: "/usr/bin/bxrig" }, zed: { serverUrl: "https://mcp.zed.dev:443/x" } } );
+testkit.check( "mcp: a command is this machine, a URL is its host", sv.filter( function( s ) { return s.server == "bxrig" && s.where == "this machine"; } ).len() == 1 && sv.filter( function( s ) { return s.server == "github" && s.where == "web: api.githubcopilot.com"; } ).len() == 1 && sv.filter( function( s ) { return s.where == "web: mcp.zed.dev"; } ).len() == 1 );
+testkit.check( "mcp: nothing for nothing", pv.serversIn( "" ).len() == 0 );
+
+// ---- the Control Center page ----
+pp = new bxrig.PrivacyProvider( true );
+rows = pp.rowsFrom( pp.demoData() );
+testkit.check( "page: the server, each agent, keys, MCP, telemetry, data and a note", rows[ 1 ].name == "BxRig's AI server" && rows.filter( function( r ) { return r.group == "Keys"; } ).len() == 1 && rows.filter( function( r ) { return r.group == "MCP"; } ).len() == 2 && rows.filter( function( r ) { return r.group == "Telemetry"; } ).len() == 3 && rows[ rows.len() ].kind == "note" );
+testkit.check( "page: a cloud agent that could be local is flagged", rows.filter( function( r ) { return r.name == "OpenCode" && r.warn; } ).len() == 1 && rows.filter( function( r ) { return r.name == "Pi" && r.good; } ).len() == 1 );
+testkit.check( "page: a web MCP server is flagged", rows.filter( function( r ) { return r.name == "github" && r.warn; } ).len() == 1 );
+testkit.check( "page: no data, one note", pp.rowsFrom( {} ).len() == 1 && pp.rowsFrom( {} )[ 1 ].kind == "note" );
+testkit.check( "page: l, L, t and T run the switches", pp.actions().filter( function( a ) { return compare( a.key, "l" ) == 0; } )[ 1 ].run( rows[ 1 ] ).args.toList( " " ) == "privacy local-only" && pp.actions().filter( function( a ) { return compare( a.key, "T" ) == 0; } )[ 1 ].run( rows[ 1 ] ).args.toList( " " ) == "privacy telemetry on" );
+testkit.check( "page: in the Control Center, after Secrets", new bxrig.ControlCenterPages().ids().toList().find( "secrets,privacy" ) > 0 );
+panelSrc = fileRead( expandPath( "../templates/noctalia-plugins/agents/panel.luau" ) );
+testkit.check( "bar: a Privacy button in the Agents tab opens the page", find( 'text = "Privacy"', panelSrc ) && find( "tui privacy", panelSrc ) );
+
+// ---- util.Marked ----
+testkit.check( "marked: cut takes the block out, leaves the rest", mk.cut( "a" & nl & "## b" & nl & "x" & nl & "## e" & nl & "c" & nl, "## b", "## e" ) == "a" & nl & "c" & nl );
+testkit.check( "marked: an indented block counts", mk.cut( "k:" & nl & "  ## b" & nl & "  x" & nl & "  ## e" & nl, "## b", "## e" ) == "k:" & nl );
+testkit.check( "marked: inside", trim( mk.inside( "## b" & nl & "x = 1" & nl & "## e", "## b", "## e" ) ) == "x = 1" && mk.inside( "none", "## b", "## e" ) == "" );
+testkit.check( "marked: uncomment keeps a URL", find( "https://x", mk.uncomment( """u"": ""https://x"" // note" ) ) && !find( "note", mk.uncomment( """u"": ""https://x"" // note" ) ) );
+testkit.check( "marked: json set and unset a deep key", mk.jsonGet( mk.jsonSet( "", [ "a", "b" ], 1 ).text, [ "a", "b" ] ) == 1 && !structKeyExists( mk.jsonGet( mk.jsonUnset( "{""a"":{""b"":1,""c"":2}}", [ "a", "b" ] ).text, [ "a" ] ), "b" ) );
+testkit.check( "marked: jsonGet falls back", mk.jsonGet( "nope", [ "a" ], "fb" ) == "fb" && mk.jsonGet( "{}", [ "a", "b" ], "fb" ) == "fb" );
+
+testkit.done( "all passed" );

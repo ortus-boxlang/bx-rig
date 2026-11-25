@@ -98,7 +98,7 @@ class AiMcp {
 		if ( !variables.hub.installed().installed ) {
 			// a precondition (exit 4); only MCP messages may go to standard output, so the reason goes to standard error
 			systemOutput( "bxrig mcp: bx-agents (with bx-ai) is not installed: bxrig ai agents install --yes", true, true );
-			return 4;
+			return new bxrig.util.Exit().precondition();
 		}
 		var argv = serveArgv( writeServe(), arguments.write );
 		return variables.hub.handOver( argv, serveDir() );
@@ -176,10 +176,10 @@ class AiMcp {
 				continue;
 			}
 			if ( arguments.off && next.text == text ) continue;
-			steps.append( a.name & ": " & ( arguments.off ? "remove BxRig from " : "add BxRig" & ( arguments.write ? " (it may change things, asking first)" : " (read-only)" ) & " to " ) & a.file );
+			steps.append( a.name & ": " & ( arguments.off ? "remove BxRig from " : "add BxRig" & ( arguments.write ? " (it may change things, asking first)" : " (read-only)" ) & " to " ) & variables.env.tilde( a.file ) );
 			changes.append( { agent: a, file: a.file, before: text, text: next.text } );
 		}
-		for ( var k in skipped ) steps.append( "left out: " & k.agent & ", " & k.reason & " (" & k.file & ")" );
+		for ( var k in skipped ) steps.append( "left out: " & k.agent & ", " & k.reason & " (" & variables.env.tilde( k.file ) & ")" );
 		if ( !changes.len() ) return variables.out.say( "ok", { agents: [], skipped: skipped }, arguments.asJson, skipped.len() ? steps : [ "Nothing to change." ] );
 		if ( !arguments.off && !variables.hub.installed().installed ) steps.append( "the server runs on bx-ai, which bx-agents installs: bxrig ai agents install --yes" );
 		steps.append( "only BxRig's own entry changes; a file's old copy is kept as FILE.bxrig-backup" );
@@ -201,9 +201,10 @@ class AiMcp {
 			}
 			done.append( c.agent.id );
 		}
-		var lines = [ ( arguments.off ? "BxRig's MCP server removed from: " : "BxRig's MCP server added to: " ) & done.toList( ", " ) ];
+		var named = done.map( function( i ) { return variables.link.byId( i ).name ?: i; } );
+		var lines = [ ( arguments.off ? "BxRig's MCP server removed from: " : "BxRig's MCP server added to: " ) & named.toList( ", " ) & "." ];
 		if ( !arguments.off ) lines.append( "Restart a running agent or editor to see it. " & ( arguments.write ? "Tools that change something ask you first." : "Read-only: add --write to let them change things." ) );
-		for ( var k in skipped ) lines.append( "Left out " & k.agent & ": " & k.reason & " (" & k.file & ")" );
+		for ( var k in skipped ) lines.append( "Left out " & k.agent & ": " & k.reason & " (" & variables.env.tilde( k.file ) & ")" );
 		return variables.out.say( "ok", { agents: done, linked: !arguments.off, write: arguments.write, skipped: skipped }, arguments.asJson, lines );
 	}
 }
