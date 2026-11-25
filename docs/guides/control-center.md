@@ -68,7 +68,14 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 |---|---|
 | Dashboard | what needs attention, meters, what runs, backups |
 | Apps | install, remove and update software: Installed, Discover and Updates tabs, a search box that is always there, icons and screenshots (see [Apps](apps.md#the-apps-manager)) |
+| AI | your local models on llama.cpp: Enter makes one active or downloads a pick, `p` asks a question, `t` tests, `u` tunes, `b` runs the bench, `h` opens it on Hugging Face, `x` removes it, `s` sets everything up (see [Local AI](local-ai.md)) |
+| Discover | models for this machine: BxRig's staff picks, then GGUF models on Hugging Face (`/` searches). Enter queues a download, `c` cancels one, `x` clears finished ones, `h` opens Hugging Face |
+| Agents | your coding agents: the default one, which use the local model, their tmux sessions. Enter starts a session, `d` makes one the default, `l` points it at the local model or back, `s` lists the sessions |
+| BoxLang agents | your bx-agents agents: Enter opens the chat in a terminal, `o` the web page, `s` starts or stops it, `d` the default one, `l` its log, `i` installs or updates bx-agents (see [BoxLang agents](boxlang-agents.md)) |
 | BoxLang | BoxLang versions through `bvm`: use, install, remove |
+| Modules | BoxLang modules from ForgeBox: installed and latest versions, `i` install, `u` update, `x` remove |
+| Servers | your BoxLang and CFML web apps: `s` start or stop, `r` restart, `o` open, `f` the folder, `l` the log, `a` add one, `x` forget it |
+| Tasks | the scheduler: every timed job, when it runs next and how its recent runs went. Enter shows one, `r` runs it now, `p` pauses it, `g` its group, `a` adds one, `x` removes it |
 | Java | your Java homes: default, remove, and `a` to browse every JDK SDKMAN offers and install one (see `bxrig java`) |
 | Maven | every Maven version SDKMAN offers, installed ones marked: install, default, remove (see `bxrig sdk`) |
 | Gradle | the same for Gradle |

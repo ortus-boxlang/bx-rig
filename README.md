@@ -62,7 +62,7 @@ Details: [getting started](docs/getting-started.md).
 | Apps | A curated catalog of about 290 apps by category, chosen in the wizard |
 | Databases | PostgreSQL, MySQL, Redis, MongoDB, vector databases and more as local containers (`bxrig db`) |
 | Virtual machines | Windows and Linux desktops in containers, any number of each (`bxrig vm`) |
-| AI | Coding agents, local models, API keys in your keyring (`bxrig secrets`), and agent skills for Claude Code, Codex, Gemini CLI and OpenCode (`bxrig skills`) |
+| AI | Coding agents, local models on llama.cpp picked for your hardware (`bxrig ai setup`), your own BoxLang agents with bx-agents (`bxrig ai agents`), AI on the selected text (`Super+Alt+E`), API keys in your keyring (`bxrig secrets`), and agent skills for Claude Code, Codex, Gemini CLI and OpenCode (`bxrig skills`) |
 | Safety | Every change is a plan until `--yes`; config files go through a backup and journal service and your own edits are never overwritten |
 
 ## Everyday commands
@@ -91,7 +91,7 @@ bxrig skills install --yes    # BxRig, BoxLang and MatchBox skills for your agen
 bxrig update check
 ```
 
-The full list (96 commands) is in the [command reference](https://bxcachy.boxlang.io/reference/commands/). Every command supports `--json`, and mutating commands support `--dry-run`. A command that only touches your own settings or starts a program (themes, the bar, `window quake`, `webcam toggle`) acts at once and needs no `--yes`.
+The full list (111 commands) is in the [command reference](https://bxcachy.boxlang.io/reference/commands/). Every command supports `--json`, and mutating commands support `--dry-run`. A command that only touches your own settings or starts a program (themes, the bar, `window quake`, `webcam toggle`) acts at once and needs no `--yes`.
 
 ## Exit codes
 
