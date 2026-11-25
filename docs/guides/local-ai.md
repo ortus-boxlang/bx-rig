@@ -136,6 +136,7 @@ Only BxRig's own part of each agent's config is written (a provider called `bxri
 ## The server
 
 ```bash
+bxrig ai status                    # everything at once: hardware, engine, server, active model, models
 bxrig ai serve                     # running? where?
 bxrig ai serve start
 bxrig ai serve stop
