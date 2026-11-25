@@ -27,7 +27,9 @@ class AiAgentProfile {
 	// The file with the profile: { text }, or { error, lines } when the file has a `profiles:` of its own (one YAML file can not have two).
 	struct function add( required string text, required string baseUrl, required string model ) {
 		var nl = chr( 10 );
-		var body = [ "  bxrig:", "    description: BxRig local AI (llama.cpp on this machine)", "    provider: openai-compatible", "    model: " & arguments.model, "    options:", "      baseURL: """ & arguments.baseUrl & """" ];
+		var body = [ "  bxrig:", "    description: BxRig local AI (llama.cpp on this machine)", "    provider: openai-compatible", "    model: " & arguments.model, "    options:", "      baseURL: """ & arguments.baseUrl & """",
+			// a local model on a CPU can take minutes with a long tool list (measured: over 90 s, bx-ai's default)
+			"      timeout: 300" ];
 		var keep = remove( arguments.text );
 		if ( reFind( "(^|\n)profiles\s*:", keep ) ) return { error: "your " & file() & " has a profiles: section of its own; add BxRig's profile to it by hand", lines: body };
 		var block = begin() & nl & "profiles:" & nl & body.toList( nl ) & nl & end() & nl;

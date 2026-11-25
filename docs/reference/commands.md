@@ -1627,7 +1627,12 @@ bxrig ai agents install|update [--snapshot|--stable] [--yes] [--dry-run]
 bxrig ai agents new NAME [bxAgents new flags]
 bxrig ai agents NAME VERB [bxAgents flags]
 bxrig ai agents start|stop|status NAME [--json]
-bxrig ai agents open NAME
+bxrig ai agents open [NAME]
+bxrig ai agents chat [NAME] [--window]
+bxrig ai agents ask TEXT [--agent=NAME] [--thread=ID] [--json]
+bxrig ai agents approve|reject THREAD [--agent=NAME] [--session] [--json]
+bxrig ai agents setup [--no-start] [--yes] [--dry-run]
+bxrig ai agents skills [NAME] [show|approve|remove SKILL] [--all] [--yes] [--json]
 bxrig ai agents default [NAME]
 bxrig ai agents dir [PATH]
 bxrig ai agents add PATH
@@ -1653,6 +1658,7 @@ bxrig ai models pull gemma-4-e4b --yes
 bxrig ai discover qwen --fits
 bxrig ai agents install --yes
 bxrig ai agents Boxy chat
+bxrig ai agents setup --yes
 bxrig ai serve status
 bxrig ai list
 bxrig ai session start --name=work

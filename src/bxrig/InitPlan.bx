@@ -319,6 +319,11 @@ class InitPlan {
 			if ( pick( a, "ai_local_tune", false ) == true ) aiArgv.append( "--tune" );
 			out.steps.append( { id: "ai-setup", title: "set up local AI: llama.cpp, " & ( arrayFind( aiArgv, "--picks=all" ) ? "the three models picked for this machine" : "the model picked for this machine" ) & " and an embedding model (several GB; you can skip it)", argv: aiArgv, optional: true } );
 		}
+		// Boxy: bx-agents for BoxLang at the OS level, then the assistant itself (after the local AI, so its profile has a model).
+		if ( pick( a, "boxy", "later" ) == "now" ) {
+			out.steps.append( { id: "bx-agents", title: "install bx-agents for BoxLang (the agent framework Boxy is built with)", argv: [ "bxrig", "ai", "agents", "install", "--yes" ], optional: true } );
+			out.steps.append( { id: "boxy", title: "make Boxy, your desktop assistant, in ~/Agents/Boxy and start it (Super+Period opens its chat)", argv: [ "bxrig", "ai", "agents", "setup", "--yes" ], optional: true } );
+		}
 		if ( len( pick( a, "launcher" ) ) ) out.steps.append( { id: "launcher", title: "use " & a.launcher & " as the app launcher (no shortcut is changed)", argv: [ "bxrig", "runner", "set", a.launcher ] } );
 		if ( len( pick( a, "menu" ) ) ) out.steps.append( { id: "menu", title: "use " & a.menu & " for BxRig menus", argv: [ "bxrig", "runner", "menu-set", a.menu ] } );
 		var gname = pick( a, "git_name" );

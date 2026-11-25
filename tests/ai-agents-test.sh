@@ -26,8 +26,11 @@ exit 0'
 stub curl 'echo "curl $*" >> "$LOG"
 case "$*" in
   *forgebox.test/api/v1/entry/bx-agents*) if [[ -e "$STATE/stable" ]]; then printf "{\"data\":{\"versions\":[{\"version\":\"1.1.0-snapshot\"},{\"version\":\"1.0.0\"}]}}"; else printf "{\"data\":{\"versions\":[{\"version\":\"1.0.0-snapshot\"}]}}"; fi ;;
+  *127.0.0.1:8790/__bxagents/invoke*) if [[ "$*" == *lock* ]]; then printf "{\"output\":{\"data\":{\"pendingActions\":[{\"toolName\":\"screen_lock\",\"toolArgs\":{}}],\"assistantMessage\":{\"content\":\"\"}}},\"success\":true}\n200"; else printf "{\"output\":\"Your battery is at 80 percent.\",\"success\":true}\n200"; fi ;;
+  *127.0.0.1:8790/__bxagents/resume*) if [[ "$*" == *reject* ]]; then printf "event: chunk\ndata: {\"choices\":[{\"delta\":{\"content\":\"OK, I left it.\"}}]}\n\nevent: done\ndata: [DONE]\n\n\n200"; else printf "event: tool\ndata: {\"name\":\"screen_lock\",\"status\":\"ok\"}\n\nevent: chunk\ndata: {\"choices\":[{\"delta\":{\"content\":\"Locked.\"}}]}\n\nevent: done\ndata: [DONE]\n\n\n200"; fi ;;
   *) exit 7 ;;
 esac'
+stub foot 'echo "foot $*" >> "$LOG"'
 stub xdg-open 'echo "xdg-open $*" >> "$LOG"'
 run() { env HOME="$H" BXRIG_SELF="$binary" BOXLANG_HOME="$BL" STATE="$tmp/state" PATH="$tmp/bin:$PATH" BXRIG_BXAGENTS="$tmp/bin/bxAgents" BXRIG_MINISERVER="$tmp/bin/boxlang-miniserver" \
 	BXRIG_BOXLANG_JARS="$tmp/jars" BXRIG_FORGEBOX_API="http://forgebox.test/api/v1" BXAGENTS_USER_CONFIG="$H/.bxagents/Agent.yml" "$binary" "$@"; }
@@ -75,7 +78,9 @@ grep -q "bxAgents routines --projectRoot=$H/Agents/Boxy list --name=Morning news
 run ai agents start Boxy >/dev/null
 u="$H/.config/systemd/user/bxrig-agent-boxy.service"
 grep -q "^ExecStartPre=$tmp/bin/bxAgents build --projectRoot=$H/Agents/Boxy --no-banner$" "$u" || fail 'the unit builds first'
-grep -q "^ExecStart=/bin/sh -c \"cd .build && exec $tmp/bin/boxlang-miniserver --port 8790 --host 127.0.0.1\"$" "$u" || fail "the unit runs the miniserver: $(grep ExecStart= "$u")"
+grep -q "^ExecStart=/bin/sh -c \"cd .build && BOXLANG_HOME=$H/Agents/Boxy/.build/runtime exec $tmp/bin/boxlang-miniserver --port 8790 --host 127.0.0.1\"$" "$u" || fail "the unit runs the miniserver: $(grep ExecStart= "$u")"
+! grep -q '^Environment=BOXLANG_HOME' "$u" || fail 'BOXLANG_HOME only for the server, not the build step'
+grep -q "^Environment=BXRIG_SELF=$binary$" "$u" || fail 'the unit gives the tools the path of bxrig'
 grep -q 'systemctl --user enable --now bxrig-agent-boxy.service' "$LOG" || fail 'start enables the unit'
 run ai agents status Boxy | grep -q 'Boxy is running at http://127.0.0.1:8790/' || fail 'status while running'
 run ai agents open Boxy >/dev/null; grep -q 'xdg-open http://127.0.0.1:8790/' "$LOG" || fail 'open'
@@ -103,4 +108,42 @@ grep -q 'systemctl --user restart bxrig-agent-boxy.service' "$LOG" || fail 'upda
 
 # the Control Center page
 run tui ai-boxlang --json | jq -e '.data.items[0].name == "Boxy" and .data.items[0].state == "running"' >/dev/null || fail 'the BoxLang agents page'
+# ---- Boxy (11b) ----
+run ai agents stop Boxy >/dev/null; run ai agents forget Boxy --yes >/dev/null; rm -rf "$H/Agents/Boxy"
+out="$(run ai agents setup || true)"; [[ "$out" == *"Make Boxy"* && "$out" == *"Add --yes"* ]] || fail "the Boxy plan: $out"
+[[ ! -e "$H/Agents/Boxy" ]] || fail 'the plan made files'
+run ai agents setup --yes --no-start >/dev/null
+for f in Agent.bx instructions.md tools/BxRig.bx; do cmp -s "$root/templates/agents/boxy/$f" "$H/Agents/Boxy/$f" || fail "boxy: $f is the template's"; done
+run ai agents --json | jq -e '.data.default == "Boxy" and ([.data.agents[] | select(.name == "Boxy")] | length) == 1' >/dev/null || fail 'Boxy is the default agent'
+[[ "$(code ai agents setup --yes)" == 4 ]] || fail 'a second Boxy'
+
+# chat: the default agent, connected to its server when it runs
+: > "$LOG"; run ai agents stop Boxy >/dev/null; run ai agents chat >/dev/null || true
+grep -q "bxAgents chat --projectRoot=$H/Agents/Boxy (in $H/Agents/Boxy)" "$LOG" || fail "chat while stopped: $(grep bxAgents "$LOG")"
+run ai agents start Boxy >/dev/null; : > "$LOG"; run ai agents chat >/dev/null || true
+grep -q "bxAgents chat --projectRoot=$H/Agents/Boxy --connect=http://127.0.0.1:8790 " "$LOG" || fail "chat while running: $(grep bxAgents "$LOG")"
+run ai agents chat --window >/dev/null; sleep 1
+grep -q "foot $binary ai agents chat Boxy" "$LOG" || fail "chat --window opens a terminal: $(grep foot "$LOG")"
+
+# ask, then answer what it waits for
+run ai agents ask how is my battery | grep -q 'Your battery is at 80 percent.' || fail 'ask: an answer'
+out="$(run ai agents ask please lock the screen --thread=t1)"; [[ "$out" == *"Boxy wants to run screen_lock"* && "$out" == *"bxrig ai agents approve t1"* ]] || fail "ask: what it waits for: $out"
+grep -q '"threadId":"t1"' "$LOG" && grep -q '"input":"please lock the screen"' "$LOG" || fail 'ask sends the question as input, and the thread'
+run ai agents approve t1 --json | jq -e '.data.ran == ["screen_lock"] and .data.answer == "Locked."' >/dev/null || fail 'approve'
+grep -q '"decision":"approve"' "$LOG" || fail 'approve sends approve'
+run ai agents reject t1 | grep -q 'OK, I left it.' || fail 'reject'
+run ai agents approve t1 --session >/dev/null; grep -q '"decision":"approve_session"' "$LOG" || fail 'approve --session'
+run ai agents stop Boxy >/dev/null; [[ "$(code ai agents ask hello)" == 4 ]] || fail 'ask while stopped'
+
+# the skills Boxy saved: flagged until reviewed, flagged again when it saves over one
+sk="$H/.bxagents/Boxy/skills/morning-check"; mkdir -p "$sk"; printf -- '---\nname: morning-check\ndescription: Check the machine each morning\n---\n1. machine_status\n' > "$sk/SKILL.md"
+run ai agents skills --json | jq -e '.data.agent == "Boxy" and .data.unreviewed == 1 and .data.skills[0].name == "morning-check"' >/dev/null || fail 'a new skill is flagged'
+run ai agents --json | jq -e '.data.agents[] | select(.name == "Boxy") | .unreviewed == 1' >/dev/null || fail 'the list counts it'
+run ai agents skills show morning-check | grep -q '1. machine_status' || fail 'show'
+run ai agents skills approve morning-check >/dev/null; run ai agents skills --json | jq -e '.data.unreviewed == 0' >/dev/null || fail 'approve marks it reviewed'
+echo '2. updates_waiting' >> "$sk/SKILL.md"; run ai agents skills --json | jq -e '.data.unreviewed == 1' >/dev/null || fail 'saving over it flags it again'
+run ai agents skills approve --all >/dev/null; run ai agents skills --json | jq -e '.data.unreviewed == 0' >/dev/null || fail 'approve --all'
+{ run ai agents skills Boxy remove morning-check || true; } | grep -q 'Add --yes' || fail 'remove shows its plan'
+run ai agents skills Boxy remove morning-check --yes >/dev/null; [[ ! -e "$sk" ]] || fail 'remove deletes it'
+[[ "$(code ai agents skills Boxy show nope)" == 4 ]] || fail 'an unknown skill'
 echo "ai-agents-test: ok"

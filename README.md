@@ -62,6 +62,7 @@ Details: [getting started](docs/getting-started.md).
 | Apps | A curated catalog of about 290 apps by category, chosen in the wizard |
 | Databases | PostgreSQL, MySQL, Redis, MongoDB, vector databases and more as local containers (`bxrig db`) |
 | Virtual machines | Windows and Linux desktops in containers, any number of each (`bxrig vm`) |
+| AI | Coding agents, local models, Boxy (a desktop assistant built with bx-agents that asks before it changes anything: `bxrig ai agents setup`, `Super+Period`), API keys in your keyring (`bxrig secrets`), and agent skills for Claude Code, Codex, Gemini CLI and OpenCode (`bxrig skills`) |
 | AI | Coding agents, local models on llama.cpp picked for your hardware (`bxrig ai setup`), your own BoxLang agents with bx-agents (`bxrig ai agents`), AI on the selected text (`Super+Alt+E`), API keys in your keyring (`bxrig secrets`), and agent skills for Claude Code, Codex, Gemini CLI and OpenCode (`bxrig skills`) |
 | Safety | Every change is a plan until `--yes`; config files go through a backup and journal service and your own edits are never overwritten |
 

@@ -1,0 +1,33 @@
+// Boxy: BxRig's desktop assistant, a bx-agents agent made by `bxrig ai agents setup`. It is your project: change it as you like
+// and `bxrig ai agents start Boxy` rebuilds it. Its tools (tools/BxRig.bx) run `bxrig ... --json`, so Boxy can do only what BxRig
+// does, through the same plans and checks. The tools that change something pause for your OK in the chat or the web page first.
+class extends="bxModules.bxai.models.runnables.AiAgent" {
+
+	// The tools that change your machine: each call waits for a person to approve, reject or approve for the conversation.
+	variables.NEEDS_OK = [
+		"theme_set", "theme_mode", "night_light_set", "do_not_disturb_set", "stay_awake_set", "brightness_set", "power_profile_set",
+		"reminder_add", "app_install", "app_remove", "screenshot_take", "recording_set", "database_start", "database_stop",
+		"vm_start", "vm_stop", "system_update", "screen_lock", "backup_now"
+	];
+
+	function init() {
+		super.init(
+			name        : "Boxy",
+			description : "Your BxRig desktop assistant: this machine, its look, your plans, apps, captures and dev services"
+		)
+		// an approval pauses the run until you answer, so the run is kept meanwhile
+		withCheckpointer( aiMemory( memory : "cache", config : {} ) )
+		withMiddleware( new bxModules.bxai.models.middleware.core.HumanInTheLoopMiddleware(
+				toolsRequiringApproval = variables.NEEDS_OK,
+				mode                   = "web"
+			) )
+		return this
+	}
+
+	// BxRig's local model (the bxrig profile in ~/.bxagents/Agent.yml, written by `bxrig ai agents install`). Change it to any
+	// provider/model or another profile.
+	function configure() {
+		return { profile : "bxrig" };
+	}
+
+}

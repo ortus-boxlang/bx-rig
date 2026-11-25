@@ -2495,6 +2495,25 @@
 					}
 				},
 				{
+					"type": "choice",
+					"id": "boxy",
+					"label": "Boxy, your desktop assistant",
+					"help": "Boxy is an AI agent built with bx-agents that knows this machine: ask it how the battery is doing, to switch the theme, add a reminder or install an app. It runs on your local model, and anything it changes waits for your OK. Super+Period opens a chat with it. Later works too: bxrig ai agents setup.",
+					"default": "now",
+					"options": [
+						{
+							"value": "now",
+							"label": "Set it up now",
+							"description": "Installs bx-agents for BoxLang, makes Boxy in ~/Agents/Boxy and starts it."
+						},
+						{
+							"value": "later",
+							"label": "Later",
+							"description": "Skip it; run bxrig ai agents install --yes and bxrig ai agents setup --yes when you want it."
+						}
+					]
+				},
+				{
 					"type": "multi",
 					"id": "agent_skills",
 					"label": "Agent skills",
