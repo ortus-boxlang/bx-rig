@@ -82,7 +82,7 @@ Answers are saved in `~/.config/bxrig/answers.json` (mode 600). They never conta
 | App grid style | Launchpad |
 | Color theme | BxRig |
 | Default browser | Brave |
-| Launcher, menu program | Noctalia, Rofi |
+| Launcher, menu program | Vicinae, Vicinae |
 | Workspaces | 4 |
 | Shell | zsh with the Starship prompt (Catppuccin Powerline) |
 | Terminal | Ghostty |

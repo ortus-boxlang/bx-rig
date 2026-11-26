@@ -93,7 +93,7 @@ testkit.check( "and asked once it is", a.finalAnswers().keyExists( "js_runtimes"
 testkit.check( "the toolchains page says BoxLang is always installed", find( "BoxLang", a.spec().pages[ 8 ].intro ) > 0 && a.spec().pages[ 8 ].questions[ 1 ].type == "info" );
 
 a = mk();
-testkit.check( "the launcher defaults to Noctalia and the menu to Rofi; the launcher is for Hyprland only", a.answerString( "launcher" ) == "noctalia" && a.answerString( "menu" ) == "rofi" && a.finalAnswers().keyExists( "launcher" ) && !mk( { desktops: "plasma" } ).finalAnswers().keyExists( "launcher" ) );
+testkit.check( "the launcher and the menu default to Vicinae; the launcher is for Hyprland only", a.answerString( "launcher" ) == "vicinae" && a.answerString( "menu" ) == "vicinae" && a.finalAnswers().keyExists( "launcher" ) && !mk( { desktops: "plasma" } ).finalAnswers().keyExists( "launcher" ) );
 
 a = mk();
 testkit.check( "no database is preselected", a.answerList( "databases" ).len() == 0 );
