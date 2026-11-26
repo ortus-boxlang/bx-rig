@@ -877,6 +877,8 @@ bxrig init --answers FILE [--yes] [--dry-run] [--json]    headless: no TUI, the 
 bxrig init --print-answers          the saved answers
 ```
 
+The install after the review runs **on the wizard's own screen** (decided with the owner 2026-11-26): `InitRun` starts each plan step detached (`Proc.startTo`: the output appended to a file, the exit code written to another; no new session, so the sudo ticket made by `sudo -v` just before is valid; stdin closed), `InstallApp` and `InstallView` read them every frame (a bar in the theme's colours, the running step with a spinner, its own `(n/m)` progress from the package manager, how long since it last printed), `v` opens the live log, Ctrl+C asks before killing the running step (`Proc.killTree`) and skipping the rest, `r` runs the failed steps again. Plan, commands and exit codes are the same as `run()`; `--answers --yes` and `--json` stay plain (add `--screen` for the screen), `init --plain` keeps the streaming output. **Every run writes a log** (`~/.local/state/bxrig/logs/init-STAMP.log` plus a folder of raw step outputs, 20 kept): version, system, plan, each command, every output line, exit codes and durations, and every exception with its stack; `--json` reports its path as `data.log`. Not tested on a real machine: the sudo password prompt before the screen and `sudo -n -v` refreshing the ticket (the sandbox runs as root).
+
 Exits: as `setup` (0, 2, 4, 5, 6, 7, 8); 4 also for no terminal without `--answers`. The wizard is only a front end: every answer becomes an ordinary command, so anything it does can be run by hand.
 
 ### 14.3 Pages, answers and what they run

@@ -11,7 +11,7 @@ Start with `bxrig status` and the doctors; each prints a fix next to every faile
 | Problem | Run |
 |---|---|
 | Something is missing after setup | `bxrig status`, then `bxrig init` |
-| Installer failed | read `~/.cache/bxrig/install.log` |
+| Installer failed | read `~/.cache/bxrig/install.log`; a wizard install also has its own log, `~/.local/state/bxrig/logs/init-*.log` (send it when asking for help) |
 | GPU or drivers | `bxrig gpu doctor` |
 | Magic Mouse, Trackpad, Bluetooth | `bxrig input doctor`, `bxrig input apple` |
 | Logitech mouse or keyboard | `bxrig input logitech`, `bxrig input offer` |

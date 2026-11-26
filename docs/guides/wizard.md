@@ -27,6 +27,25 @@ On a terminal narrower than 92 columns (no step list) the Theme page keeps the l
 
 The **Input** page asks about keyboard layouts, natural scrolling, and the shortcut style: "Mac-style Super keys" (on by default) and, when it is on, "Which keyboard do you type on?" (PC: Alt and Win are swapped so Alt acts as Cmd; Apple: no swap). When an Apple Magic or Logitech device is paired or plugged in (or the Mac-style keys are on) it also asks "Input devices" (default: detect); the answer becomes the optional step `bxrig input offer`, see [Mice, trackpads and keyboards](input.md). Off keeps the Traditional keys (classic Super-key tiling keys). The answers become `bxrig keys style` and the xremap setup, which is installed either way because copy, paste, cut and select all are remaps in both styles. See [Shortcuts](shortcuts.md).
 
+## The install screen
+
+When you press Enter on the review, the wizard stays on screen and installs. It does not drop back to a scrolling terminal.
+
+- **Progress.** A bar in your theme's colours, `7 of 16 steps`, the step that runs now with a spinner and how long it has run, and the last line it printed. The apps step also shows its own count (`12 of 43`) while the package manager installs.
+- **It says when it is quiet.** A download or a package build can print nothing for minutes. After 8 seconds without output the line says `no output for 42 s, still working`, so a long step does not look stuck.
+- **`v` opens the log** under the bar: every line every step prints, live, with the step it came from. Arrows, PgUp and PgDn scroll it; `End` follows the newest line again; `v` closes it.
+- **Ctrl+C asks first.** `y` stops: the running step is killed and the rest is not run.
+- **When it ends** the screen shows what worked and what failed, with the exit code and the last line of each failure. `r` runs the failed steps again; Enter leaves.
+- **Your password once.** The steps run in the background and cannot ask for it, so BxRig asks for the sudo password on the normal terminal just before the screen starts and keeps it fresh while it runs.
+
+A step that fails does not stop the others (a missing package should not cost you your keys and defaults): the plan goes on and the failure is shown at the end. Re-running the wizard repeats only what is still missing.
+
+### The log file
+
+Every install writes a log you can read later or send for debugging: `~/.local/state/bxrig/logs/init-YYYYMMDD-HHMMSS.log`. It has the BxRig version and the system, the plan, each step's command, every line it printed, its exit code and how long it took, and every exception with its message and stack. Next to it, a folder of the same name holds each step's raw output. The last 20 runs are kept. The path is printed when the install ends and shown on the screen.
+
+`bxrig init --plain` keeps the old streaming output instead of the screen, and `bxrig init --answers=FILE --yes --screen` runs a saved answers file on the screen. Both write the same log.
+
 ## Run it again
 
 On a machine that is already set up the wizard starts from your saved answers plus what it finds on the system, and marks installed options with `✓ installed`.

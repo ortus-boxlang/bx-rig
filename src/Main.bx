@@ -996,9 +996,11 @@ class {
 					println( "bxrig init: cannot read the answers file: " & e.message );
 					CLIExit( xit.precondition() );
 				}
+				// --screen: the same install on the progress screen (needs a terminal); without it the steps print as they run, as scripts expect
+				if ( structKeyExists( args.options, "screen" ) && structKeyExists( args.options, "yes" ) && !structKeyExists( args.options, "dry-run" ) && !asJson ) CLIExit( initRun.runScreen( initAnswers ) );
 				CLIExit( initRun.run( initAnswers, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 			}
-				CLIExit( initRun.wizard( structKeyExists( args.options, "dry-run" ), asJson, args.options.from ?: "", structKeyExists( args.options, "fresh" ) ? "fresh" : ( structKeyExists( args.options, "rerun" ) ? "rerun" : "tune" ) ) );
+				CLIExit( initRun.wizard( structKeyExists( args.options, "dry-run" ), asJson, args.options.from ?: "", structKeyExists( args.options, "fresh" ) ? "fresh" : ( structKeyExists( args.options, "rerun" ) ? "rerun" : "tune" ), structKeyExists( args.options, "plain" ) ) );
 				break;
 			case "wizard":
 				CLIExit( new bxrig.WizardCmd().run( p, args.options ) );

@@ -1,0 +1,264 @@
+// Draws the install screen (InstallApp's state) on MatchBox's terminal canvas, in the colours of the theme you chose in the wizard:
+// the logo, a progress bar in the brand gradient, what is running now with a spinner and how long since it last printed, the list of steps,
+// and, when you press v, a live scrolling log under it with every line the steps print. When it is over it shows what worked, what
+// failed (with the last lines of output) and where the log file is.
+//
+// paint( app, tick, width, height ) records the frame without painting the terminal, so a test can read it back with tui.render_to_string.
+class InstallView {
+	function init( tui, themeName = "" ) {
+		variables.tui = arguments.tui;
+		variables.kit = new bxrig.TuiKit( arguments.tui );
+		if ( len( arguments.themeName ) ) {
+			try { variables.kit.setPalette( new bxrig.Palette().forTheme( arguments.themeName ) ); } catch ( any e ) {}
+		}
+		variables.spin = [ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" ];
+		for ( var shade in [ "BASE", "MANTLE", "CRUST", "SURFACE0", "SURFACE1", "OVERLAY", "TEXT", "SUB", "GREEN", "CYAN", "YELLOW", "RED" ] ) variables[ shade ] = variables.kit.color( shade );
+		return this;
+	}
+
+	function hitAt( x, y ) { return variables.kit.hitAt( arguments.x, arguments.y ); }
+
+	// "3:07" from milliseconds.
+	function clock( ms ) {
+		var s = int( max( 0, arguments.ms ) / 1000 );
+		return int( s / 60 ) & ":" & right( "0" & ( s mod 60 ), 2 );
+	}
+
+	// "42 s", "3 min 10 s" from milliseconds.
+	function span( ms ) {
+		var s = int( max( 0, arguments.ms ) / 1000 );
+		return s < 60 ? s & " s" : int( s / 60 ) & " min " & ( s mod 60 ) & " s";
+	}
+
+	function icon( state, tick ) {
+		switch ( arguments.state ) {
+			case "done": return "✓";
+			case "failed": return "✗";
+			case "skipped": return "–";
+			case "stopped": return "■";
+			case "running": return variables.spin[ ( arguments.tick \ 2 ) mod 10 + 1 ];
+		}
+		return "·";
+	}
+
+	function iconColor( state ) {
+		switch ( arguments.state ) {
+			case "done": return variables.GREEN;
+			case "failed": return variables.RED;
+			case "skipped": return variables.YELLOW;
+			case "stopped": return variables.YELLOW;
+			case "running": return variables.CYAN;
+		}
+		return variables.OVERLAY;
+	}
+
+	// The progress of the whole run, 0..1: finished steps plus the share of the running one that its own progress line reports.
+	function fraction( st ) {
+		var n = arguments.st.steps.len();
+		if ( !n ) return 1;
+		var finished = 0;
+		var partial = 0;
+		for ( var s in arguments.st.steps ) {
+			if ( arrayFind( [ "done", "failed", "skipped", "stopped" ], s.state ) ) finished++;
+			else if ( s.state == "running" && s.subTotal > 0 ) partial = s.subDone / s.subTotal;
+		}
+		return min( 1, ( finished + partial ) / n );
+	}
+
+	function paint( app, tick, width, height ) {
+		var run = arguments.app.run();
+		var st = run.state();
+		var counts = run.counts();
+		variables.kit.clearHits();
+		variables.tui.begin_frame();
+		variables.tui.fill( 0, 0, arguments.width, arguments.height, { bg: variables.BASE } );
+		if ( arguments.width < 76 || arguments.height < 24 ) {
+			var msg = "Make the window a little bigger (76 x 24)";
+			variables.kit.put( int( ( arguments.width - len( msg ) ) / 2 ), int( arguments.height / 2 ), msg, variables.YELLOW, variables.BASE );
+			return this;
+		}
+		var phase = ( arguments.tick mod 90 ) / 90 * 1.4 - 0.2;
+		var verbose = arguments.app.verbose();
+		var top = 1;
+		if ( !verbose && arguments.height >= 32 ) {
+			var logoLines = new bxrig.Brand().lines( "small" );
+			var lw = 0; for ( var l in logoLines ) lw = max( lw, len( l ) );
+			top += variables.kit.logo( int( ( arguments.width - lw ) / 2 ), top, "small", phase, variables.BASE ) + 1;
+		}
+		var x = 2;
+		var w = arguments.width - 4;
+		// how tall the top panel is: the list of steps when the log is closed, a one-line strip when it is open
+		var listRows = verbose ? 1 : min( st.steps.len(), max( 3, arguments.height - top - 14 ) );
+		var failedRows = st.finished && counts.failed > 0 && !verbose ? min( 5, counts.failed * 2 ) + 1 : 0;
+		var ph = 9 + listRows + failedRows + ( failedRows ? 1 : 0 );
+		variables.kit.panel( x, top, w, ph, st.finished ? "Finished" : "Installing", true, phase );
+		var ix = x + 3; var iw = w - 6; var iy = top + 1;
+		header( st, counts, ix, iy, iw );
+		bar( st, ix, iy + 2, iw );
+		status( st, counts, ix, iy + 3, iw );
+		running( st, run, arguments.tick, ix, iy + 5, iw );
+		if ( verbose ) strip( st, arguments.tick, ix, iy + 7, iw );
+		else steplist( st, arguments.tick, ix, iy + 7, iw, listRows );
+		if ( failedRows ) failures( st, run, ix, iy + 8 + listRows, iw, failedRows );
+		var by = top + ph;
+		if ( verbose ) logPane( arguments.app, st, x, by, w, arguments.height - by - 2 );
+		keys( arguments.app, st, arguments.width, arguments.height );
+		if ( arguments.app.confirming() ) confirmStop( arguments.width, arguments.height );
+		return this;
+	}
+
+	function header( st, counts, x, y, w ) {
+		var title = arguments.st.finished ? ( arguments.counts.failed ? "Some steps did not work" : ( arguments.counts.stopped ? "Stopped" : "All done" ) ) : "Setting up your machine";
+		var col = arguments.st.finished ? ( arguments.counts.failed || arguments.counts.stopped ? variables.YELLOW : variables.GREEN ) : variables.TEXT;
+		variables.kit.put( arguments.x, arguments.y, title, col, variables.MANTLE, true );
+		var elapsed = clock( ( arguments.st.finished ? arguments.st.finishedAt : arguments.st.now ) - arguments.st.startedAt );
+		variables.kit.put( arguments.x + arguments.w - len( elapsed ), arguments.y, elapsed, variables.SUB, variables.MANTLE );
+	}
+
+	function bar( st, x, y, w ) {
+		var f = fraction( arguments.st );
+		var pct = int( f * 100 );
+		var label = right( "  " & pct, 3 ) & "%";
+		var bw = arguments.w - len( label ) - 1;
+		var filled = int( f * bw );
+		for ( var i = 0; i < bw; i++ ) {
+			if ( i < filled ) variables.kit.put( arguments.x + i, arguments.y, "█", variables.kit.brand( i / max( 1, bw - 1 ) ), variables.MANTLE );
+			else variables.kit.put( arguments.x + i, arguments.y, "░", variables.SURFACE1, variables.MANTLE );
+		}
+		variables.kit.put( arguments.x + bw + 1, arguments.y, label, variables.TEXT, variables.MANTLE, true );
+	}
+
+	function status( st, counts, x, y, w ) {
+		var total = arguments.st.steps.len();
+		var finished = arguments.counts.done + arguments.counts.failed + arguments.counts.skipped + arguments.counts.stopped;
+		var t = finished & " of " & total & " steps";
+		var cx = variables.kit.put( arguments.x, arguments.y, t, variables.SUB, variables.MANTLE );
+		if ( arguments.counts.failed ) cx = variables.kit.put( cx, arguments.y, "   " & arguments.counts.failed & " failed", variables.RED, variables.MANTLE, true );
+		if ( arguments.counts.skipped ) cx = variables.kit.put( cx, arguments.y, "   " & arguments.counts.skipped & " skipped", variables.YELLOW, variables.MANTLE );
+	}
+
+	// The step that is running: spinner, title, its own progress and how long it has run; below it the last thing it printed and, when it is
+	// quiet, how long that has been (a package build or a download can be silent for minutes: the spinner and this line say it is alive).
+	function running( st, run, tick, x, y, w ) {
+		if ( arguments.st.finished ) {
+			variables.kit.put( arguments.x, arguments.y, "The full log of this run:", variables.SUB, variables.MANTLE );
+			variables.kit.put( arguments.x, arguments.y + 1, variables.kit.trunc( arguments.st.logFile, arguments.w ), variables.CYAN, variables.MANTLE );
+			return;
+		}
+		var s = arguments.run.current();
+		if ( structIsEmpty( s ) ) { variables.kit.put( arguments.x, arguments.y, "Starting…", variables.SUB, variables.MANTLE ); return; }
+		var rt = clock( arguments.st.now - s.started );
+		if ( s.subTotal > 0 ) rt = s.subDone & " of " & s.subTotal & "   " & rt;
+		var head = variables.spin[ ( arguments.tick \ 2 ) mod 10 + 1 ] & " " & s.title;
+		variables.kit.put( arguments.x, arguments.y, variables.kit.trunc( head, arguments.w - len( rt ) - 2 ), variables.CYAN, variables.MANTLE, true );
+		variables.kit.put( arguments.x + arguments.w - len( rt ), arguments.y, rt, variables.SUB, variables.MANTLE );
+		var age = int( ( arguments.st.now - arguments.st.lastOutputAt ) / 1000 );
+		var quiet = age >= 8 ? "   no output for " & span( age * 1000 ) & ", still working" : "";
+		var tail = len( s.tail ) ? s.tail : "waiting for the first line…";
+		var room = max( 10, arguments.w - len( quiet ) - 2 );
+		var cx = variables.kit.put( arguments.x + 2, arguments.y + 1, variables.kit.trunc( tail, room ), variables.SUB, variables.MANTLE );
+		if ( len( quiet ) ) variables.kit.put( cx, arguments.y + 1, quiet, age >= 60 ? variables.YELLOW : variables.OVERLAY, variables.MANTLE );
+	}
+
+	// One line with a mark for every step.
+	function strip( st, tick, x, y, w ) {
+		var cx = arguments.x;
+		for ( var s in arguments.st.steps ) {
+			if ( cx + 2 > arguments.x + arguments.w ) break;
+			cx = variables.kit.put( cx, arguments.y, icon( s.state, arguments.tick ) & " ", iconColor( s.state ), variables.MANTLE, s.state == "running" );
+		}
+	}
+
+	// Every step on its own line, a window of them around the running one when the screen is short.
+	function steplist( st, tick, x, y, w, rows ) {
+		var n = arguments.st.steps.len();
+		var first = 1;
+		if ( n > arguments.rows ) {
+			var focus = arguments.st.index > 0 ? arguments.st.index : 1;
+			if ( arguments.st.finished ) {
+				focus = 1;
+				for ( var i = 1; i <= n; i++ ) if ( arguments.st.steps[ i ].state == "failed" ) { focus = i; break; }
+			}
+			first = min( max( 1, focus - int( arguments.rows / 2 ) ), n - arguments.rows + 1 );
+		}
+		for ( var r = 0; r < arguments.rows; r++ ) {
+			var i2 = first + r;
+			if ( i2 > n ) break;
+			var s = arguments.st.steps[ i2 ];
+			var col = s.state == "pending" ? variables.OVERLAY : ( s.state == "running" ? variables.TEXT : variables.SUB );
+			if ( s.state == "failed" ) col = variables.RED;
+			var cx = variables.kit.put( arguments.x, arguments.y + r, icon( s.state, arguments.tick ), iconColor( s.state ), variables.MANTLE, s.state == "running" );
+			var tail = "";
+			if ( s.state == "done" || s.state == "failed" ) tail = "  " & span( s.ended - s.started );
+			if ( s.state == "failed" ) tail = "  exit " & s.exit & tail;
+			variables.kit.put( cx + 1, arguments.y + r, variables.kit.trunc( s.title, arguments.w - len( tail ) - 3 ), col, variables.MANTLE, s.state == "running" );
+			if ( len( tail ) ) variables.kit.put( arguments.x + arguments.w - len( tail ), arguments.y + r, tail, variables.OVERLAY, variables.MANTLE );
+		}
+	}
+
+	// What went wrong, step by step: its exit code and the last lines it printed.
+	function failures( st, run, x, y, w, rows ) {
+		variables.kit.put( arguments.x, arguments.y, "What failed (the log has everything):", variables.SUB, variables.MANTLE );
+		var row = 1;
+		for ( var s in arguments.st.steps ) {
+			if ( s.state != "failed" || row >= arguments.rows ) continue;
+			variables.kit.put( arguments.x, arguments.y + row, variables.kit.trunc( "✗ " & s.title & " (exit " & s.exit & ")", arguments.w ), variables.RED, variables.MANTLE, true );
+			row++;
+			var last = listToArray( arguments.run.lastLines( s.n, 1 ), chr( 10 ), true );
+			if ( last.len() && len( trim( last[ 1 ] ) ) && row < arguments.rows ) {
+				variables.kit.put( arguments.x + 2, arguments.y + row, variables.kit.trunc( last[ 1 ], arguments.w - 2 ), variables.SUB, variables.MANTLE );
+				row++;
+			}
+		}
+	}
+
+	// The log: every line the steps printed, newest at the bottom, scrolled by the arrows.
+	function logPane( app, st, x, y, w, h ) {
+		var rows = arguments.h - 2;
+		if ( rows < 3 ) return;
+		var lines = arguments.st.lines;
+		var total = lines.len() + ( len( trim( arguments.st.partial ) ) ? 1 : 0 );
+		var scroll = min( arguments.app.scroll(), max( 0, total - rows ) );
+		var title = "Log" & ( scroll > 0 ? "  (" & scroll & " lines up, End follows)" : "  (live)" );
+		variables.kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, title, false, 0 );
+		variables.kit.fillRect( arguments.x + 1, arguments.y + 1, arguments.w - 2, arguments.h - 2, variables.CRUST );
+		var last = total - scroll;
+		var first = max( 1, last - rows + 1 );
+		var iw = arguments.w - 4;
+		var idW = 11;
+		var ry = arguments.y + 1;
+		for ( var i = first; i <= last; i++ ) {
+			var id = ""; var text = "";
+			if ( i <= lines.len() ) { id = lines[ i ].id; text = lines[ i ].text; }
+			else { id = arguments.st.index > 0 ? arguments.st.steps[ arguments.st.index ].id : ""; text = arguments.st.partial; }
+			var col = variables.TEXT;
+			if ( reFindNoCase( "\b(error|failed|fatal|cannot|denied|unable)\b", text ) ) col = variables.RED;
+			else if ( reFindNoCase( "\bwarning\b", text ) ) col = variables.YELLOW;
+			else if ( left( text, 3 ) == "==>" ) col = variables.CYAN;
+			variables.kit.put( arguments.x + 2, ry, variables.kit.trunc( id, idW - 1 ), variables.OVERLAY, variables.CRUST );
+			variables.kit.put( arguments.x + 2 + idW, ry, variables.kit.trunc( text, iw - idW ), col, variables.CRUST );
+			ry++;
+		}
+	}
+
+	function keys( app, st, width, height ) {
+		var pairs = [];
+		if ( arguments.st.finished ) {
+			pairs.append( [ "enter", "leave" ] );
+			if ( arguments.app.run().counts().failed || arguments.app.run().counts().stopped ) pairs.append( [ "r", "retry the failed steps" ] );
+		} else pairs.append( [ "ctrl-c", "stop" ] );
+		pairs.append( [ "v", arguments.app.verbose() ? "hide the log" : "show the log" ] );
+		if ( arguments.app.verbose() ) pairs.append( [ "↑↓ PgUp PgDn", "scroll" ] );
+		variables.kit.keybar( 0, arguments.height - 1, arguments.width, pairs );
+	}
+
+	function confirmStop( width, height ) {
+		var w = 54; var h = 5;
+		var x = int( ( arguments.width - w ) / 2 ); var y = int( ( arguments.height - h ) / 2 );
+		variables.kit.fillRect( x, y, w, h, variables.MANTLE );
+		variables.kit.panel( x, y, w, h, "Stop the install?", true, 0 );
+		variables.kit.put( x + 3, y + 2, "The running step is killed and the rest is not run.", variables.TEXT, variables.MANTLE );
+		variables.kit.put( x + 3, y + 3, "y", variables.GREEN, variables.MANTLE, true );
+		variables.kit.put( x + 5, y + 3, "stop      any other key goes on", variables.SUB, variables.MANTLE );
+	}
+}

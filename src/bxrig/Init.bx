@@ -118,10 +118,19 @@ class Init {
 		// A failed step is reported and the plan goes on: the steps are independent (one missing package or an optional desktop
 		// feature must not cost you your apps, keys and defaults). Re-running init repeats only what is still missing.
 		var firstCode = 0;
+		// everything that happens is also written to a log (~/.local/state/bxrig/logs), to read or send later
+		var log = new bxrig.InitLog();
+		log.header( plan.steps, { mode: "plain (no screen)" } );
+		data.log = log.file();
 		for ( var step in plan.steps ) {
 			var argv = commandFor( step );
 			if ( !arguments.asJson ) println( "==> " & step.title );
+			log.line( "==> step " & step.id & ": " & step.title );
+			log.line( "    command: " & argv.toList( " " ) );
+			var t0 = getTickCount();
 			var r = variables.inst.proc().exec( argv, 3600 );
+			if ( len( r.output ?: "" ) ) log.output( step.id, r.output );
+			log.line( "    exit " & ( r.timeout ? "124 (timed out)" : r.exitCode ) & " after " & int( ( getTickCount() - t0 ) / 1000 ) & " s" );
 			if ( !arguments.asJson && len( r.output ) ) print( r.output );
 			if ( ( r.timeout || r.exitCode != 0 ) && ( step.optional ?: false ) ) {
 				// an optional step (typing a key) that could not run is reported, and the plan goes on
@@ -146,12 +155,65 @@ class Init {
 		}
 		for ( var k in data.skipped ) println( "Skipped: " & k.id & " (" & k.reason & ")" );
 		if ( plan.pending.len() ) println( "Saved but not applied yet: " & plan.pending.toList( ", " ) );
+		println( "Log: " & log.file() );
 		return exit;
+	}
+
+	// sudo's password, asked once on the plain terminal before the install screen starts (the steps run in the background and cannot ask).
+	// Returns true when there is nothing to ask or it worked.
+	function sudoReady() {
+		var proc = variables.inst.proc();
+		if ( proc.isRoot() || !proc.has( "sudo" ) ) return true;
+		if ( proc.exec( [ "sudo", "-n", "true" ], 10 ).exitCode == 0 ) return true;
+		println( "BxRig installs packages with sudo. Type your password once; the install then runs on its own." );
+		return proc.exec( [ "sudo", "-v" ], 120 ).exitCode == 0;
+	}
+
+	// The install on the wizard's own screen: a progress bar and the step that runs now, `v` for the live log, and a log file kept for debugging.
+	// Same plan, same commands and same exit codes as run(); it is what the wizard calls (plain output stays for --answers and --json).
+	function runScreen( answers ) {
+		var plan = new bxrig.InitPlan().plan( arguments.answers, shellMap(), { theme: new bxrig.Palette().activeName() } );
+		if ( plan.errors.len() ) {
+			for ( var e in plan.errors ) println( "error: " & e );
+			return new bxrig.util.Exit().precondition();
+		}
+		if ( !sudoReady() ) {
+			println( "error: sudo did not accept the password. Your answers are saved; run the install again with: bxrig init --rerun" );
+			return new bxrig.util.Exit().precondition();
+		}
+		var steps = [];
+		for ( var st in plan.steps ) steps.append( { id: st.id, title: st.title, argv: commandFor( st ), optional: st.optional ?: false } );
+		var log = new bxrig.InitLog();
+		var proc = variables.inst.proc();
+		var apps = appsSplit( plan );
+		var run = new bxrig.InitRun( steps, log, proc, { appsTotal: apps.new.len() } );
+		var app = new bxrig.InstallApp( run, { keepAlive: function() { proc.exec( [ "sudo", "-n", "-v" ], 10 ); } } );
+		var theme = arguments.answers.theme_name ?: "";
+		try {
+			new bxrig.TuiRunner().run( app, function( tui ) { return new bxrig.InstallView( tui, theme ); } );
+		} catch ( any e ) {
+			// the screen could not start or broke: the install must not be lost. Say so, and run the rest in the foreground.
+			log.error( "install screen", e );
+			println( "The install screen stopped (" & e.message & "). The log is " & log.file() );
+			if ( !run.finished() ) run.stop();
+		}
+		var res = run.result();
+		for ( var d in res.done ) println( "Done: " & d.id );
+		for ( var f in res.failed ) {
+			println( "Failed: " & f.id & " (exit " & f.exit & ")" );
+			println( "  command: " & f.command );
+			for ( var ol in new bxrig.util.Text().lines( f.output ) ) println( "  | " & ol );
+		}
+		for ( var k in res.skipped ) println( "Skipped: " & k.id & " (" & k.reason & ")" );
+		for ( var sp in res.stopped ) println( "Not run (stopped): " & sp.id );
+		if ( plan.pending.len() ) println( "Saved but not applied yet: " & plan.pending.toList( ", " ) );
+		println( "Log: " & log.file() );
+		return res.code;
 	}
 
 	// The wizard, then the plan. The review screen is the confirmation, so the steps run without a second prompt
 	// (unless --dry-run). Needs a terminal.
-	function wizard( dryRun, asJson, from = "", mode = "tune" ) {
+	function wizard( dryRun, asJson, from = "", mode = "tune", plain = false ) {
 		var spec = wizardSpec();
 		var result = "";
 		try {
@@ -174,6 +236,7 @@ class Init {
 		if ( result.outcome != "done" ) return 130;
 		save( result.answers );
 		println( "Saved your answers to " & answersFile() );
-		return run( result.answers, true, arguments.dryRun, arguments.asJson );
+		if ( arguments.dryRun || arguments.asJson || arguments.plain ) return run( result.answers, true, arguments.dryRun, arguments.asJson );
+		return runScreen( result.answers );
 	}
 }

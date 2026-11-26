@@ -1,0 +1,78 @@
+// The log of one install run, kept so that what happened can be read later or sent for debugging:
+//   ~/.local/state/bxrig/logs/init-YYYYMMDD-HHMMSS.log    the header, every step's command, every line it printed, its exit code and how long it
+//                                                         took, and every exception (message, detail and stack) with where it happened
+//   ~/.local/state/bxrig/logs/init-YYYYMMDD-HHMMSS/NN-id.log   the raw output of each step, byte for byte
+// The newest logs are kept (20 runs); older ones are removed. Nothing in a log is secret: a step never prints one.
+class InitLog {
+	function init( dir = "" ) {
+		var env = new bxrig.util.Env();
+		variables.dir = len( arguments.dir ) ? arguments.dir : env.state( "logs" );
+		variables.stamp = dateTimeFormat( now(), "yyyyMMdd-HHmmss" );
+		variables.file = variables.dir & "/init-" & variables.stamp & ".log";
+		variables.stepFolder = variables.dir & "/init-" & variables.stamp;
+		variables.ok = true;
+		try {
+			directoryCreate( variables.stepFolder, true, true );
+			prune( 20 );
+		} catch ( any e ) { variables.ok = false; }
+		return this;
+	}
+
+	function file() { return variables.file; }
+	function folder() { return variables.stepFolder; }
+
+	// The raw output file of step number n.
+	function stepFile( n, id ) { return variables.stepFolder & "/" & right( "0" & arguments.n, 2 ) & "-" & arguments.id & ".log"; }
+
+	// One line at the end of the log, with the time. A log that cannot be written never stops the install.
+	function line( text ) {
+		if ( !variables.ok ) return this;
+		try { fileAppend( variables.file, dateTimeFormat( now(), "HH:mm:ss" ) & "  " & arguments.text & chr( 10 ) ); } catch ( any e ) { variables.ok = false; }
+		return this;
+	}
+
+	// The lines of a text, each marked with where it came from.
+	function output( prefix, text ) {
+		for ( var l in new bxrig.util.Text().lines( arguments.text ) ) line( arguments.prefix & " | " & l );
+		return this;
+	}
+
+	// The top of the log: what ran, on what, and the plan.
+	function header( steps, extra = {} ) {
+		var distro = new bxrig.util.Distro();
+		line( "bxrig " & new bxrig.util.Version().current() & " init" );
+		line( "system: " & distro.prettyName() & " (" & distro.id() & ")" );
+		line( "log: " & variables.file );
+		for ( var k in structKeyArray( arguments.extra ) ) line( k & ": " & arguments.extra[ k ] );
+		line( "plan: " & arguments.steps.len() & " steps" );
+		var n = 0;
+		for ( var s in arguments.steps ) { n++; line( "  " & n & ". " & s.id & ": " & s.title ); }
+		return this;
+	}
+
+	// An exception: where it happened, its message and detail, and the stack. Always written in full.
+	function error( where, e ) {
+		line( "EXCEPTION in " & arguments.where & ": " & ( arguments.e.message ?: "" ) );
+		if ( len( arguments.e.detail ?: "" ) ) output( "exception", arguments.e.detail );
+		var st = arguments.e.stackTrace ?: "";
+		if ( isSimpleValue( st ) && len( st ) ) output( "stack", st );
+		else if ( isArray( arguments.e.tagContext ?: "" ) ) for ( var t in arguments.e.tagContext ) line( "  at " & ( t.template ?: "" ) & ":" & ( t.line ?: "" ) );
+		return this;
+	}
+
+	// Keeps the newest `keep` runs: removes older logs and their step folders.
+	function prune( keep ) {
+		var logs = [];
+		for ( var f in directoryList( variables.dir, false, "name" ) ) if ( reFind( "^init-[0-9]{8}-[0-9]{6}\.log$", f ) ) logs.append( f );
+		logs.sort( "text" );
+		while ( logs.len() > arguments.keep ) {
+			var old = logs[ 1 ];
+			logs.deleteAt( 1 );
+			try {
+				fileDelete( variables.dir & "/" & old );
+				var sub = variables.dir & "/" & left( old, len( old ) - 4 );
+				if ( directoryExists( sub ) ) directoryDelete( sub, true );
+			} catch ( any e ) {}
+		}
+	}
+}

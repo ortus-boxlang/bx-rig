@@ -1,0 +1,63 @@
+// InstallApp and InstallView: the install screen shows what is running and why it is quiet, the verbose log, and the end with what failed.
+// Real tiny commands (sh); needs MatchBox built with bif-tui. Run from src/: (cd src && matchbox ../tests/install_view_test.bxs)
+testkit = new lib.Check( "install view" );
+tmp = "/tmp/bxrig-install-view-" & createUUID();
+directoryCreate( tmp, true, true );
+tui = createObject( "rust", "tui.TUI" );
+view = new bxrig.InstallView( tui );
+log = new bxrig.InitLog( tmp );
+steps = [
+	{ id: "first", title: "make the first thing", argv: [ "sh", "-c", "echo one; echo two; exit 0" ] },
+	{ id: "apps", title: "install 43 apps", argv: [ "sh", "-c", "echo '(7/43) installing foo'; echo 'Error: this line is red'; sleep 30" ] },
+	{ id: "later", title: "something after", argv: [ "sh", "-c", "exit 0" ] }
+];
+run = new bxrig.InitRun( steps, log, new bxrig.util.Proc(), { appsTotal: 43 } );
+app = new bxrig.InstallApp( run, { keepAliveTicks: 2, keepAlive: function() { keptAlive++; } } );
+keptAlive = 0;
+function shot( w = 120, h = 36, tick = 10 ) { view.paint( app, tick, w, h ); return tui.render_to_string( w, h ); }
+function spin( n ) { for ( var i = 1; i <= n; i++ ) { app.onTick( i ); sleep( 50 ); } }
+
+spin( 30 );
+s = shot();
+testkit.check( "running: the title, the bar and the count", find( "Installing", s ) > 0 && find( "%", s ) > 0 && find( "1 of 3 steps", s ) > 0 );
+testkit.check( "running: the step that runs, its own progress (7 of 43) and the last line it printed", find( "install 43 apps", s ) > 0 && find( "7 of 43", s ) > 0 && find( "this line is red", s ) > 0 );
+testkit.check( "running: the list has a mark for each step", find( "✓", s ) > 0 && find( "make the first thing", s ) > 0 && find( "something after", s ) > 0 );
+testkit.check( "running: the logo is drawn when there is room", find( "▀", s ) > 0 || find( "█", s ) > 0 );
+testkit.check( "running: the key bar offers stop and the log", find( "ctrl-c", s ) > 0 && find( "show the log", s ) > 0 );
+testkit.check( "a quiet step says how long and that it works", find( "no output for", shot( 120, 36 ) ) == 0 );
+testkit.check( "the sudo ticket is refreshed while it runs", keptAlive > 0 );
+testkit.check( "too small a window asks for more room", find( "76 x 24", shot( 60, 20 ) ) > 0 );
+
+// verbose
+app.onKey( "v" );
+s = shot();
+testkit.check( "verbose: the log panel with the lines of every step", app.verbose() && find( "Log", s ) > 0 && find( "(live)", s ) > 0 && find( "one", s ) > 0 && find( "two", s ) > 0 && find( "(7/43) installing foo", s ) > 0 );
+testkit.check( "verbose: each line shows the step it came from", find( "first", s ) > 0 && find( "apps", s ) > 0 );
+testkit.check( "verbose: the logo makes way for the log", find( "hide the log", s ) > 0 && find( "scroll", s ) > 0 );
+app.onKey( "Up" ); app.onKey( "Up" );
+testkit.check( "verbose: arrows scroll", app.scroll() == 2 );
+app.onKey( "End" );
+testkit.check( "verbose: End follows the newest line again", app.scroll() == 0 );
+app.onKey( "v" );
+testkit.check( "v closes the log", !app.verbose() );
+
+// stopping
+app.onKey( "Ctrl+c" );
+testkit.check( "ctrl-c asks first", app.confirming() && find( "Stop the install?", shot() ) > 0 && !run.finished() );
+app.onKey( "n" );
+testkit.check( "any other key goes on", !app.confirming() && !run.finished() );
+app.onKey( "Ctrl+c" ); app.onKey( "y" );
+testkit.check( "y stops: the running step failed (130), the rest not run", run.finished() && run.counts().failed == 1 && run.counts().stopped == 1 && app.outcome() == "running" );
+
+// the end
+s = shot();
+testkit.check( "finished: what failed with the exit code, and where the log is", find( "Finished", s ) > 0 && find( "What failed", s ) > 0 && find( "(exit 130)", s ) > 0 && find( log.file(), s ) > 0 );
+testkit.check( "finished: retry and leave are offered", find( "retry the failed steps", s ) > 0 && find( "leave", s ) > 0 );
+app.onKey( "r" );
+testkit.check( "r runs the failed and stopped steps again", !run.finished() && run.counts().pending == 2 );
+run.stop();
+app.onKey( "Enter" );
+testkit.check( "enter leaves once it is over", app.outcome() == "done" );
+
+directoryDelete( tmp, true );
+testkit.done();

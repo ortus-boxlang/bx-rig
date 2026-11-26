@@ -1,0 +1,78 @@
+// InitRun and InitLog: the plan's steps run in the background while something watches; every line, exit code and exception reaches the log.
+// Real tiny commands (sh), no BxRig and no package manager. Run from src/: (cd src && matchbox ../tests/init_run_test.bxs)
+testkit = new lib.Check( "init run" );
+tmp = "/tmp/bxrig-init-run-" & createUUID();
+directoryCreate( tmp, true, true );
+nl = chr( 10 );
+proc = new bxrig.util.Proc();
+
+function drive( run, seconds = 20 ) {
+	var n = 0;
+	run.begin();
+	while ( !run.finished() && n < seconds * 20 ) { run.tick(); sleep( 50 ); n++; }
+	return run;
+}
+
+log = new bxrig.InitLog( tmp );
+steps = [
+	{ id: "ok", title: "a step that works", argv: [ "sh", "-c", "echo hello; echo '(2/5) installing foo'; printf 'abc'; sleep 0.2; echo def; exit 0" ] },
+	{ id: "bad", title: "a step that fails", argv: [ "sh", "-c", "echo before; echo oops 1>&2; exit 3" ] },
+	{ id: "opt", title: "an optional step that fails", argv: [ "sh", "-c", "exit 4" ], optional: true },
+	{ id: "after", title: "runs after a failure", argv: [ "sh", "-c", "echo last" ] }
+];
+run = drive( new bxrig.InitRun( steps, log, proc, { appsTotal: 5 } ) );
+st = run.state();
+testkit.check( "the run finishes", run.finished() );
+by = {}; for ( s in st.steps ) by[ s.id ] = s;
+testkit.check( "a step that works is done", by.ok.state == "done" && by.ok.exit == 0 );
+testkit.check( "its progress line is read: (2/5) installing", by.ok.subDone == 2 && by.ok.subTotal == 5 );
+testkit.check( "a failing step is failed with its exit code", by.bad.state == "failed" && by.bad.exit == 3 );
+testkit.check( "a failing optional step is skipped, with how to do it later", by.opt.state == "skipped" && find( "exit 4", by.opt.note ) > 0 );
+testkit.check( "the plan goes on after a failure", by.after.state == "done" );
+lines = st.lines.map( function( l ) { return l.id & ":" & l.text; } ).toList( "|" );
+testkit.check( "every line is kept with its step, errors too", find( "ok:hello", lines ) > 0 && find( "ok:abcdef", lines ) > 0 && find( "bad:oops", lines ) > 0 && find( "after:last", lines ) > 0 );
+r = run.result();
+testkit.check( "the result: done, failed with the last lines, skipped; exit 7 (some done, some failed)", r.done.len() == 2 && r.failed.len() == 1 && r.failed[ 1 ].exit == 3 && find( "oops", r.failed[ 1 ].output ) > 0 && r.skipped.len() == 1 && r.code == 7 );
+
+// the log
+text = fileRead( log.file() );
+testkit.check( "log: header, the plan, each command and exit code", find( "init", text ) > 0 && find( "plan: 4 steps", text ) > 0 && find( "command: sh -c", text ) > 0 && find( "exit 3 after", text ) > 0 && find( "exit 0 after", text ) > 0 );
+testkit.check( "log: every output line, marked with its step", find( "[bad] oops", text ) > 0 && find( "[ok] hello", text ) > 0 );
+testkit.check( "log: the step's raw output is in its own file", fileExists( log.stepFile( 1, "ok" ) ) && find( "hello", fileRead( log.stepFile( 1, "ok" ) ) ) > 0 );
+testkit.check( "log: the finish line", find( "finished: 2 done, 1 failed, 1 skipped", text ) > 0 );
+
+// stop
+log2 = new bxrig.InitLog( tmp );
+sleepy = new bxrig.InitRun( [ { id: "slow", title: "slow", argv: [ "sh", "-c", "echo start; sleep 30; echo never" ] }, { id: "next", title: "next", argv: [ "sh", "-c", "echo x" ] } ], log2, proc );
+sleepy.begin();
+for ( i = 1; i <= 30; i++ ) { sleepy.tick(); sleep( 50 ); }
+testkit.check( "a long step is running", sleepy.current().state == "running" );
+sleepy.stop();
+testkit.check( "stop kills it and does not run the rest", sleepy.finished() && sleepy.state().steps[ 1 ].state == "failed" && sleepy.state().steps[ 1 ].exit == 130 && sleepy.state().steps[ 2 ].state == "stopped" && sleepy.result().code == 130 );
+sleep( 300 );
+testkit.check( "the killed command is gone", proc.exec( [ "sh", "-c", "pgrep -f '[s]leep 30' | wc -l" ] ).output.trim() == "0" );
+
+// retry
+sleepy.retry();
+testkit.check( "retry puts the failed and stopped steps back", !sleepy.finished() && sleepy.counts().pending == 2 );
+sleepy.stop();
+
+// a command that cannot start
+log3 = new bxrig.InitLog( tmp );
+nope = drive( new bxrig.InitRun( [ { id: "nope", title: "no such program", argv: [ "/nonexistent/program-xyz" ] } ], log3, proc ) );
+testkit.check( "a program that does not exist fails with 127", nope.state().steps[ 1 ].state == "failed" && nope.state().steps[ 1 ].exit == 127 );
+
+// the log keeps the newest 20 runs
+for ( i = 1; i <= 24; i++ ) { fileWrite( tmp & "/init-2020010" & ( i mod 10 ) & "-0000" & right( "0" & i, 2 ) & ".log", "old" ); }
+new bxrig.InitLog( tmp );
+n = 0; for ( f in directoryList( tmp, false, "name" ) ) if ( reFind( "^init-[0-9]{8}-[0-9]{6}\.log$", f ) ) n++;
+testkit.check( "log: only the newest 20 are kept", n == 20 );
+
+// an exception is written with its message and where
+log4 = new bxrig.InitLog( tmp );
+try { throw( "boom" ); } catch ( any e ) { log4.error( "somewhere", e ); }
+t4 = fileRead( log4.file() );
+testkit.check( "log: an exception has where, message and a stack", find( "EXCEPTION in somewhere: boom", t4 ) > 0 );
+
+directoryDelete( tmp, true );
+testkit.done();
