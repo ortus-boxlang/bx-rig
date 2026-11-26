@@ -221,9 +221,17 @@ class Init {
 			return new bxrig.util.Exit().precondition();
 		}
 		var unknown = dropUnknown( plan );
-		if ( !sudoReady() ) {
-			println( "error: sudo did not accept the password. Your answers are saved; run the install again with: bxrig init --rerun" );
-			return new bxrig.util.Exit().precondition();
+		// sudo's password: when sudo would ask, the screen asks (hidden, once) and the steps run with a helper that gives sudo the password; the
+		// screen owns the terminal, so a sudo prompt on it could neither be seen nor answered. Without a private runtime folder or setsid the
+		// old way is used: ask here on the plain terminal and rely on sudo's ticket.
+		var sudo = new bxrig.util.Sudo( variables.inst.proc() );
+		var needPassword = sudo.needed();
+		if ( needPassword && !sudo.available() ) {
+			needPassword = false;
+			if ( !sudoReady() ) {
+				println( "error: sudo did not accept the password. Your answers are saved; run the install again with: bxrig init --rerun" );
+				return new bxrig.util.Exit().precondition();
+			}
 		}
 		var steps = [];
 		for ( var st in plan.steps ) steps.append( { id: st.id, title: st.title, argv: commandFor( st ), optional: st.optional ?: false } );
@@ -231,11 +239,22 @@ class Init {
 		var proc = variables.inst.proc();
 		var apps = appsSplit( plan );
 		var run = new bxrig.InitRun( steps, log, proc, { appsTotal: apps.new.len() } );
-		var app = new bxrig.InstallApp( run, { keepAlive: function() { proc.exec( [ "sudo", "-n", "-v" ], 10 ); } } );
+		var app = new bxrig.InstallApp( run, {
+				keepAlive: function() { proc.exec( [ "sudo", "-n", "-v" ], 10 ); },
+				passwordNeeded: needPassword, verify: function( pw ) { return sudo.verify( pw ); }, user: sudo.user()
+			} );
 		var theme = arguments.answers.theme_name ?: "";
 		try {
 			new bxrig.TuiRunner().run( app, function( tui ) { return new bxrig.InstallView( tui, theme ); } );
+			sudo.cleanup();
+			if ( app.cancelled() ) {
+				log.line( "==> cancelled before it started: " & ( len( app.message() ) ? app.message() : "no password" ) );
+				println( len( app.message() ) ? "error: " & app.message() & ". Your answers are saved; run the install again with: bxrig init --rerun" : "The install was cancelled before it started. Your answers are saved; run it again with: bxrig init --rerun" );
+				println( "Log: " & log.file() );
+				return len( app.message() ) ? new bxrig.util.Exit().precondition() : 130;
+			}
 		} catch ( any e ) {
+			sudo.cleanup();
 			// the screen could not start or broke: the install must not be lost. Say so, and run the rest in the foreground.
 			log.error( "install screen", e );
 			println( "The install screen stopped (" & e.message & "). The log is " & log.file() );

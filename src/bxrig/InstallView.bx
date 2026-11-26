@@ -78,6 +78,7 @@ class InstallView {
 			return this;
 		}
 		var phase = ( arguments.tick mod 90 ) / 90 * 1.4 - 0.2;
+		if ( arguments.app.phase() == "password" ) { passwordScreen( arguments.app, arguments.width, arguments.height, arguments.tick, phase ); return this; }
 		var verbose = arguments.app.verbose();
 		var top = 1;
 		// the logo: BXRIG in DOS Rebel (the brand font, as on the welcome screen) when the window is tall enough, the small block logo when it is
@@ -258,6 +259,32 @@ class InstallView {
 		pairs.append( [ "v", arguments.app.verbose() ? "hide the log" : "show the log" ] );
 		if ( arguments.app.verbose() ) pairs.append( [ "↑↓ PgUp PgDn", "scroll" ] );
 		variables.kit.keybar( 0, arguments.height - 1, arguments.width, pairs );
+	}
+
+	// Asked once before the install: the sudo password, typed hidden. The steps cannot ask for it themselves (the screen owns the terminal).
+	function passwordScreen( app, width, height, tick, phase ) {
+		var top = max( 1, int( ( arguments.height - 14 ) / 2 ) );
+		if ( arguments.height >= 30 ) {
+			var size = arguments.height >= 40 ? "large" : "small";
+			var big = new bxrig.Brand().lines( size );
+			var bw = 0; for ( var l in big ) bw = max( bw, len( l ) );
+			top = variables.kit.logo( int( ( arguments.width - bw ) / 2 ), 1, size, arguments.phase, variables.BASE ) + 3;
+		}
+		var w = min( 66, arguments.width - 4 ); var h = 9;
+		var x = int( ( arguments.width - w ) / 2 );
+		variables.kit.fillRect( x, top, w, h, variables.MANTLE );
+		variables.kit.panel( x, top, w, h, "sudo password", true, arguments.phase );
+		variables.kit.put( x + 3, top + 2, "BxRig installs packages with sudo.", variables.TEXT, variables.MANTLE );
+		variables.kit.put( x + 3, top + 3, "Type your password once; the install then runs on its own.", variables.SUB, variables.MANTLE );
+		var label = "Password" & ( len( arguments.app.user() ) ? " for " & arguments.app.user() : "" ) & ":  ";
+		var cx = variables.kit.put( x + 3, top + 5, label, variables.SUB, variables.MANTLE );
+		var dots = arguments.app.maskedPassword();
+		var fieldW = max( 10, w - 6 - len( label ) );
+		variables.kit.fillRect( cx, top + 5, fieldW, 1, variables.SURFACE0 );
+		variables.kit.put( cx + 1, top + 5, right( dots, fieldW - 3 ), variables.GREEN, variables.SURFACE0, true );
+		if ( ( arguments.tick \ 6 ) mod 2 == 0 ) variables.kit.put( cx + 1 + min( len( dots ), fieldW - 3 ), top + 5, "▏", variables.GREEN, variables.SURFACE0 );
+		if ( len( arguments.app.message() ) ) variables.kit.put( x + 3, top + 7, variables.kit.trunc( arguments.app.message(), w - 6 ), variables.YELLOW, variables.MANTLE );
+		variables.kit.keybar( 0, arguments.height - 1, arguments.width, [ [ "enter", "continue" ], [ "esc", "cancel the install" ] ] );
 	}
 
 	function confirmStop( width, height ) {

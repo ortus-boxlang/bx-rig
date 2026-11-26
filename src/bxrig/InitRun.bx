@@ -16,6 +16,7 @@ class InitRun {
 		variables.proc = arguments.proc;
 		variables.timeoutMs = ( arguments.opts.timeoutSeconds ?: 3600 ) * 1000;
 		variables.appsTotal = arguments.opts.appsTotal ?: 0;
+		variables.askpass = arguments.opts.askpass ?: "";   // sudo helper script: with it the steps run with no terminal and a sudo in them reads its password from it
 		variables.maxLines = 4000;
 		variables.quietMs = arguments.opts.quietMs ?: 5000;   // how long a step may print nothing before the screen asks what it is running
 		variables.steps = [];
@@ -46,6 +47,7 @@ class InitRun {
 		return this;
 	}
 
+	function setAskpass( path ) { variables.askpass = arguments.path; return this; }
 	function nowMs() { return getTickCount(); }
 	function finished() { return variables.finished; }
 	function stopped() { return variables.stopped; }
@@ -88,9 +90,9 @@ class InitRun {
 				variables.lastSize = -1;
 				for ( var f in [ s.outFile, s.statusFile, s.pidFile ] ) if ( fileExists( f ) ) fileDelete( f );
 				variables.log.line( "==> step " & s.n & " (" & s.id & "): " & s.title );
-				variables.log.line( "    command: " & s.argv.toList( " " ) );
+				variables.log.line( "    command: " & s.argv.toList( " " ) & ( len( variables.askpass ) ? "   (a sudo in it reads its password from a helper)" : "" ) );
 				fileWrite( s.outFile, "" );
-				var r = variables.proc.startTo( s.argv, s.outFile, s.statusFile, s.pidFile );
+				var r = variables.proc.startTo( s.argv, s.outFile, s.statusFile, s.pidFile, variables.askpass );
 				if ( r.exitCode != 0 ) {
 					variables.log.line( "    could not start the step (exit " & r.exitCode & "): " & ( r.output ?: "" ) );
 					fileWrite( s.statusFile, "127" & chr( 10 ) );
