@@ -55,7 +55,7 @@ Settings that only touch your own config (a theme, the bar, the font) act at onc
 
 **System and security**: [`system`](#bxrig-system), [`security`](#bxrig-security), [`dns`](#bxrig-dns), [`kernel`](#bxrig-kernel), [`ssh`](#bxrig-ssh), [`git`](#bxrig-git), [`secrets`](#bxrig-secrets), [`vpn`](#bxrig-vpn), [`cloud`](#bxrig-cloud), [`settings`](#bxrig-settings), [`dotfiles`](#bxrig-dotfiles), [`nas`](#bxrig-nas), [`backup`](#bxrig-backup), [`timemachine`](#bxrig-timemachine), [`java`](#bxrig-java), [`sdk`](#bxrig-sdk), [`mail`](#bxrig-mail), [`tui`](#bxrig-tui), [`bxtimemachine`](#bxrig-bxtimemachine), [`privacy`](#bxrig-privacy)
 
-**Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`android`](#bxrig-android), [`ai`](#bxrig-ai), [`mcp`](#bxrig-mcp), [`skills`](#bxrig-skills)
+**Develop**: [`boxlang`](#bxrig-boxlang), [`editor`](#bxrig-editor), [`db`](#bxrig-db), [`containers`](#bxrig-containers), [`vm`](#bxrig-vm), [`android`](#bxrig-android), [`boxy`](#bxrig-boxy), [`ai`](#bxrig-ai), [`mcp`](#bxrig-mcp), [`skills`](#bxrig-skills)
 
 **Everyday tools**: [`screenshot`](#bxrig-screenshot), [`qr`](#bxrig-qr), [`share`](#bxrig-share), [`record`](#bxrig-record), [`browser`](#bxrig-browser), [`files`](#bxrig-files), [`webcam`](#bxrig-webcam), [`clipboard`](#bxrig-clipboard), [`emoji`](#bxrig-emoji), [`forcequit`](#bxrig-forcequit), [`window`](#bxrig-window), [`overview`](#bxrig-overview), [`quicklook`](#bxrig-quicklook), [`dolphin`](#bxrig-dolphin), [`dictation`](#bxrig-dictation), [`strata`](#bxrig-strata), [`gpu`](#bxrig-gpu), [`input`](#bxrig-input), [`audio`](#bxrig-audio), [`bluetooth`](#bxrig-bluetooth), [`wifi`](#bxrig-wifi), [`airplay`](#bxrig-airplay)
 
@@ -1627,6 +1627,25 @@ bxrig android setup --yes
 bxrig android apps
 bxrig android open Firefox
 bxrig android install ~/Downloads/app.apk --yes
+```
+
+### `bxrig boxy` {#bxrig-boxy}
+
+Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, optional speech. All opt in.
+
+```text
+bxrig boxy [--json] | look [--name=N] [--color=theme|#RRGGBB] [--outfit=auto|none|ID] [--holidays=LIST|none] [--birthday=MM-DD]
+bxrig boxy export [--dir=DIR] | state | listen start|stop|toggle | say TEXT
+bxrig boxy voice [on|off|set] [--url=URL] [--model=M] [--voice=V] [--key=SECRET_NAME] [--format=wav|mp3|opus|flac] [--json]
+```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
+
+```bash
+bxrig boxy
+bxrig boxy look --name=Pixel --color=#ff8800 --outfit=auto --holidays=christmas,halloween
+bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY
+bxrig boxy listen toggle
 ```
 
 ### `bxrig ai` {#bxrig-ai}

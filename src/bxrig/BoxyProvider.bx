@@ -1,0 +1,54 @@
+// Boxy: how the desktop assistant looks and sounds. The first row is Boxy now (its text sprite, name, colour, state), then one row for its
+// speech, then the outfits: Enter on one puts it on ("auto" follows the season). v turns the speech on or off, e writes the images, t shows
+// how to talk to it. Reads `bxrig boxy --json` and `bxrig boxy voice --json`. Everything here is opt in; the voice is off until you set it up.
+class BoxyProvider {
+	function init( demo = false ) { variables.demo = arguments.demo; variables.proc = new bxrig.util.Proc(); variables.look = new bxrig.BoxyLook(); return this; }
+	function id() { return "boxy"; }
+	function icon() { return new bxrig.ControlCenterPages().icon( "boxy" ); }
+	function title() { return "Boxy"; }
+	function hint() { return "Boxy's outfits and voice; colour and name: bxrig boxy look; chats: bxrig ai agents chat"; }
+	function emptyText() { return "Nothing to show yet."; }
+	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "", w: 26 }, { key: "state", label: "", w: 14 }, { key: "note", label: "", w: 0 } ]; }
+
+	function style( r ) {
+		return r.kind == "outfit" && r.worn ? "ok" : ( r.kind == "state" ? "ok" : "" );
+	}
+
+	function detail( r ) { return r.lines; }
+
+	function actions() {
+		return [
+			{ key: "Enter", label: "wear", run: function( r ) { return r.kind == "outfit" ? { action: "cli", title: "Boxy wears: " & r.name, args: [ "boxy", "look", "--outfit=" & r.id ] } : {}; } },
+			{ key: "v", label: "voice on/off", run: function( r ) { return r.kind == "voice" ? { action: "cli", title: r.on ? "Turn Boxy's speech off" : "Turn Boxy's speech on", args: [ "boxy", "voice", r.on ? "off" : "on" ] } : {}; } },
+			{ key: "e", label: "images", run: function( r ) { return { action: "cli", title: "Write Boxy's images", args: [ "boxy", "export" ] }; } },
+			{ key: "t", label: "talk", run: function( r ) { return { action: "show", title: "Talk to Boxy", args: [ "boxy" ] }; } }
+		];
+	}
+
+	// The rows from the two answers (pure, for tests): `boxy --json` data and `boxy voice --json` data.
+	function rowsFrom( st, voice ) {
+		var s = isStruct( arguments.st ) ? arguments.st : {};
+		var v = isStruct( arguments.voice ) ? arguments.voice : {};
+		var rows = [];
+		var setting = s.outfit_setting ?: "auto";
+		var stateLines = duplicate( s.sprite ?: [] );
+		stateLines.append( ( s.name ?: "Boxy" ) & " is " & ( s.state ?: "idle" ) & ( len( s.outfit_name ?: "" ) ? ", wearing the " & s.outfit_name : "" ) & ". Talk: hold Super+Comma (Super+Ctrl+Slash in the Mac style)." );
+		rows.append( { kind: "state", mark: "", name: s.name ?: "Boxy", state: s.state ?: "idle", note: s.accent ?: "", id: "", worn: false, lines: stateLines } );
+		rows.append( { kind: "voice", mark: ( v.enabled ?: false ) ? "●" : "", name: "Speech", state: ( v.enabled ?: false ) ? "on" : "off", note: ( v.configured ?: false ) ? "to " & ( v.where ?: "" ) : "not set up", id: "", worn: false, on: v.enabled ?: false,
+				lines: [ "Boxy speaks its answers when this is on. It is off until you set it up:", "bxrig boxy voice set --url=URL --model=M --voice=V --key=SECRET_NAME", ( v.enabled ?: false ) && ( v.where ?: "" ) != "this machine" ? "Its answers are sent to " & ( v.where ?: "" ) & " to be turned into speech." : "v turns it on or off." ] } );
+		var opts = [ { id: "auto", name: "Follow the season" }, { id: "none", name: "No outfit" } ];
+		for ( var o in variables.look.outfits() ) opts.append( { id: o.id, name: o.name } );
+		for ( var o in opts ) rows.append( { kind: "outfit", mark: o.id == setting ? "●" : "", name: o.name, state: "", note: "", id: o.id, worn: o.id == setting, lines: [ o.name & ( o.id == setting ? " (on now)" : "" ), "Enter puts it on." ] } );
+		return rows;
+	}
+
+	function load( q = "" ) {
+		if ( variables.demo ) return rowsFrom( demoStatus(), { enabled: false, configured: true, where: "api.openai.com" } );
+		return rowsFrom( variables.proc.selfData( [ "boxy" ], 30 ), variables.proc.selfData( [ "boxy", "voice" ], 30 ) );
+	}
+
+	function demoStatus() {
+		var l = new bxrig.BoxyLook();
+		return { name: "Boxy", color: "theme", accent: "#00ff78", outfit_setting: "auto", outfit: "leaf", outfit_name: "autumn leaf", state: "idle", sprite: l.sprite( "idle", 0, "leaf" ) };
+	}
+}

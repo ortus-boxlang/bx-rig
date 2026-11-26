@@ -228,7 +228,15 @@ class AiPrivacy {
 		for ( var p in new bxrig.AiProviders().all() ) {
 			if ( len( variables.env.get( p.env, "" ) ) && !keys.filter( function( k ) { return k.name == p.env; } ).len() ) keys.append( { name: p.env, where: "your environment" } );
 		}
+		// Boxy's speech sends each answer it reads aloud to a speech server: only when you turned it on
+		var speech = { enabled: false, where: "" };
+		try {
+			var bx = new bxrig.Boxy( variables.cli );
+			var vc = bx.config().voice;
+			if ( vc.enabled ) speech = { enabled: true, where: bx.voiceWhere( vc ) };
+		} catch ( any e ) {}
 		return {
+			speech: speech,
 			server: structKeyExists( srv, "error" ) ? { ready: false, note: srv.error } : { ready: true, address: srv.base, models: srv.models },
 			agents: rows, keys: keys, mcp: servers, data: chats, telemetry: tele,
 			cloud_agents: rows.filter( function( r ) { return r.cloud; } ).len()
@@ -252,6 +260,7 @@ class AiPrivacy {
 		for ( var m in r.mcp ) lines.append( pad( m.server, 26 ) & pad( m.agent, 26 ) & m.where );
 		if ( !r.mcp.len() ) lines.append( "none" );
 		lines.append( "" );
+		if ( r.speech.enabled ) { lines.append( pad( "Boxy's speech", 26 ) & ( r.speech.where == "this machine" ? "this machine" : "its answers are sent to " & r.speech.where ) ); lines.append( "" ); }
 		lines.append( pad( "Telemetry", 26 ) & "State" );
 		for ( var t in r.telemetry ) lines.append( pad( t.name, 26 ) & ( t.can ? t.state : "can not be turned off here: " & t.how ) );
 		lines.append( "" );

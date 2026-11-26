@@ -2696,6 +2696,68 @@
 					]
 				},
 				{
+					"name": "boxy",
+					"summary": "Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, optional speech. All opt in.",
+					"usage": [
+						"boxy [--json] | look [--name=N] [--color=theme|#RRGGBB] [--outfit=auto|none|ID] [--holidays=LIST|none] [--birthday=MM-DD]",
+						"boxy export [--dir=DIR] | state | listen start|stop|toggle | say TEXT",
+						"boxy voice [on|off|set] [--url=URL] [--model=M] [--voice=V] [--key=SECRET_NAME] [--format=wav|mp3|opus|flac] [--json]"
+					],
+					"examples": [
+						"bxrig boxy",
+						"bxrig boxy look --name=Pixel --color=#ff8800 --outfit=auto --holidays=christmas,halloween",
+						"bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY",
+						"bxrig boxy listen toggle"
+					],
+					"mutates": true,
+					"flags": [
+						{
+							"name": "birthday",
+							"type": "value"
+						},
+						{
+							"name": "color",
+							"type": "value"
+						},
+						{
+							"name": "dir",
+							"type": "value"
+						},
+						{
+							"name": "format",
+							"type": "value"
+						},
+						{
+							"name": "holidays",
+							"type": "value"
+						},
+						{
+							"name": "key",
+							"type": "value"
+						},
+						{
+							"name": "model",
+							"type": "value"
+						},
+						{
+							"name": "name",
+							"type": "value"
+						},
+						{
+							"name": "outfit",
+							"type": "value"
+						},
+						{
+							"name": "url",
+							"type": "value"
+						},
+						{
+							"name": "voice",
+							"type": "value"
+						}
+					]
+				},
+				{
 					"name": "ai",
 					"summary": "AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), BoxLang agents (bx-agents), coding agents, tmux sessions, the pull-down AI shell.",
 					"usage": [

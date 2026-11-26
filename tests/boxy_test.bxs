@@ -1,0 +1,54 @@
+// Boxy's character (BoxyLook) and the Control Center page: the outfit calendar, the colours, the four state images and the text sprite.
+// Pure: nothing is drawn to a screen or run. Run from src/: (cd src && matchbox ../tests/boxy_test.bxs)
+testkit = new lib.Check( "boxy" );
+l = new bxrig.BoxyLook();
+h = chr( 35 );   // the hash sign, written so it is never read as an interpolation
+
+testkit.check( "states: idle, listening, working, speaking", l.states().toList( "," ) == "idle,listening,working,speaking" );
+testkit.check( "outfits: seven, each with an id and a name", l.outfits().len() == 7 && l.outfitIds().toList( "," ) == "beanie,flower,sunglasses,leaf,santa,pumpkin,party" );
+
+// the season, with every holiday off
+testkit.check( "season: winter beanie, spring flower, summer sunglasses, autumn leaf", l.outfitFor( "auto", [], "", 1, 15 ) == "beanie" && l.outfitFor( "auto", [], "", 4, 1 ) == "flower" && l.outfitFor( "auto", [], "", 7, 1 ) == "sunglasses" && l.outfitFor( "auto", [], "", 10, 1 ) == "leaf" && l.outfitFor( "auto", [], "", 12, 1 ) == "beanie" );
+testkit.check( "holidays are off until chosen", l.outfitFor( "auto", [], "", 12, 24 ) == "beanie" && l.outfitFor( "auto", [], "", 10, 31 ) == "leaf" );
+testkit.check( "holidays: christmas, halloween and new year once chosen", l.outfitFor( "auto", [ "christmas" ], "", 12, 24 ) == "santa" && l.outfitFor( "auto", [ "halloween" ], "", 10, 31 ) == "pumpkin" && l.outfitFor( "auto", [ "newyear" ], "", 12, 31 ) == "party" && l.outfitFor( "auto", [ "newyear" ], "", 1, 2 ) == "party" );
+testkit.check( "holidays: a holiday only on its own days", l.outfitFor( "auto", [ "christmas" ], "", 12, 27 ) == "beanie" && l.outfitFor( "auto", [ "halloween" ], "", 10, 23 ) == "leaf" );
+testkit.check( "birthday: the day you set", l.outfitFor( "auto", [], "03-09", 3, 9 ) == "party" && l.outfitFor( "auto", [], "03-09", 3, 10 ) == "flower" );
+testkit.check( "a fixed outfit stays, none means none", l.outfitFor( "santa", [], "", 7, 1 ) == "santa" && l.outfitFor( "none", [ "christmas" ], "", 12, 24 ) == "" && l.outfitFor( "bogus", [], "", 7, 1 ) == "" );
+
+// colours
+testkit.check( "colour: a valid colour is 6 hex digits with #", l.validColor( ( h & "00ff78" ) ) && l.validColor( ( h & "FF8800" ) ) && !l.validColor( "red" ) && !l.validColor( ( h & "12345" ) ) && !l.validColor( "" ) );
+testkit.check( "colour: mix keeps the form", l.validColor( l.mix( ( h & "00ff78" ), 0.5 ) ) );
+
+// the images
+for ( s in l.states() ) {
+	svg = l.svg( s, ( h & "00ff78" ), "" );
+	testkit.check( "svg " & s & ": a closed 256 square drawing in the accent", left( svg, 4 ) == "<svg" && find( "</svg>", svg ) > 0 && find( "viewBox=""0 0 256 256""", svg ) > 0 && find( ( h & "00ff78" ), svg ) > 0 );
+}
+testkit.check( "svg: the states differ", l.svg( "idle", ( h & "00ff78" ), "" ) != l.svg( "listening", ( h & "00ff78" ), "" ) && l.svg( "working", ( h & "00ff78" ), "" ) != l.svg( "speaking", ( h & "00ff78" ), "" ) );
+testkit.check( "svg: an outfit adds to the drawing", len( l.svg( "idle", ( h & "00ff78" ), "santa" ) ) > len( l.svg( "idle", ( h & "00ff78" ), "" ) ) );
+testkit.check( "frames: the working swirl has four turning pictures, the others one", l.frameCount( "working" ) == 4 && l.frameCount( "idle" ) == 1 && l.svg( "working", ( h & "00ff78" ), "", 0 ) != l.svg( "working", ( h & "00ff78" ), "", 1 ) && l.svg( "working", ( h & "00ff78" ), "", 4 ) == l.svg( "working", ( h & "00ff78" ), "", 0 ) );
+testkit.check( "antenna: every state has the swirl on the antenna tip, and a hat does not cover it", reFind( "stroke-linecap", l.svg( "idle", ( h & "00ff78" ), "" ) ) > 0 && find( "cy=""-84""", l.svg( "working", ( h & "00ff78" ), "santa" ) ) > 0 );
+testkit.check( "svg: the accent changes it", find( ( h & "ff8800" ), l.svg( "idle", ( h & "ff8800" ), "" ) ) > 0 && find( ( h & "ff8800" ), l.svg( "idle", ( h & "00ff78" ), "" ) ) == 0 );
+
+// the text sprite
+idle = l.sprite( "idle", 0, "" );
+testkit.check( "sprite: a face line, a hat line only with an outfit", idle.len() == 1 && find( "[", idle[ 1 ] ) > 0 && l.sprite( "idle", 0, "beanie" ).len() == 2 );
+testkit.check( "sprite: every state has its own face", l.sprite( "listening", 0, "" )[ 1 ] != idle[ 1 ] && l.sprite( "speaking", 0, "" )[ 1 ] != idle[ 1 ] );
+testkit.check( "sprite: working animates over frames", l.sprite( "working", 0, "" )[ 1 ] != l.sprite( "working", 1, "" )[ 1 ] );
+
+// the Control Center page
+p = new bxrig.BoxyProvider( true );
+rows = p.load();
+testkit.check( "page: Boxy, speech, then auto, none and the seven outfits", rows.len() == 11 && rows[ 1 ].kind == "state" && rows[ 2 ].kind == "voice" && rows[ 3 ].id == "auto" && rows[ 4 ].id == "none" && rows[ 11 ].id == "party" );
+testkit.check( "page: the current setting is marked", rows[ 3 ].worn && !rows[ 4 ].worn && rows[ 3 ].mark == "●" );
+testkit.check( "page: speech is off by default and says so", rows[ 2 ].state == "off" && !rows[ 2 ].on );
+testkit.check( "page: the Enter action puts an outfit on, only on outfit rows", p.actions()[ 1 ].run( rows[ 5 ] ).args.toList( " " ) == "boxy look --outfit=beanie" && structIsEmpty( p.actions()[ 1 ].run( rows[ 1 ] ) ) );
+testkit.check( "page: v flips the speech", p.actions()[ 2 ].run( rows[ 2 ] ).args.toList( " " ) == "boxy voice on" );
+
+// the bar tab
+luau = fileRead( "../templates/noctalia-plugins/agents/boxy.luau" );
+testkit.check( "bar: the Boxy tab shows its picture and a Talk button, from bxrig boxy", find( '"boxy", "--json"', luau ) > 0 && find( "ui.image(", luau ) > 0 && find( '"boxy", "listen", "toggle"', luau ) > 0 );
+testkit.check( "bar: the picture turns while it works and follows the state, even before Boxy is set up", find( "function M.tick", luau ) > 0 && find( "look.frames", luau ) > 0 && find( "boxy.tick(render)", fileRead( "../templates/noctalia-plugins/agents/panel.luau" ) ) > 0 && find( "gap = 8 }, {" & chr( 10 ) & chr( 9 ) & chr( 9 ) & chr( 9 ) & "portrait(render),", luau ) > 0 );
+testkit.check( "bar: Chat, Web and Logs open bx-agents' own chat, web page and log viewer", find( '" ai agents chat"', luau ) > 0 && find( '{ "ai", "agents", "open" }', luau ) > 0 && find( 'logs --ui', luau ) > 0 );
+
+testkit.done( "all passed" );

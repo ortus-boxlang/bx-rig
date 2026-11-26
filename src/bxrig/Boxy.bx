@@ -1,0 +1,409 @@
+// `bxrig boxy`: Boxy's character and voice (the desktop assistant `bxrig ai agents setup` makes). The art is BoxyLook.bx. Its own settings
+// (name, colour, outfit, voice) are in ~/.config/bxrig/boxy.json; what it is doing now (idle, listening, working, speaking) is a small state
+// file the bar and the Control Center read.
+//   boxy                          the character as text, and how to talk to it
+//   boxy look [--name=N] [--color=theme|#RRGGBB] [--outfit=auto|none|ID] [--holidays=LIST|none] [--birthday=MM-DD]
+//   boxy export [--dir=D]         the four state images (PNG when rsvg-convert or ImageMagick is there, else SVG)
+//   boxy state                    the state, and the image to show for it (re-made when the look changed)
+//   boxy listen start|stop|toggle hold-to-talk: Voxtype records (`voxtype record start --output-file`), the words go to Boxy, the answer comes
+//                                 as a notice and, when its voice is on, aloud. Approving something stays on screen: never by voice.
+//   boxy say TEXT                 speak it through the voice you set up
+//   boxy voice [on|off|set]       Boxy's speech: off until you turn it on; any OpenAI-compatible /v1/audio/speech server (a cloud provider, or
+//                                 a local one) with --url --model --voice [--key=SECRET_NAME] [--format=wav]
+// Exit: 0 done, 2 usage, 4 precondition, 6 a step failed. Facts from Voxtype's docs (README, USER_MANUAL) and Hyprland's Lua binds (read 2026-11-25).
+class Boxy {
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.runner = arguments.runner;
+		variables.out = new bxrig.util.Out( arguments.cli, "boxy" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.env = new bxrig.util.Env();
+		variables.look = new bxrig.BoxyLook();
+		variables.store = new bxrig.util.JsonStore();
+		return this;
+	}
+
+	// ---- settings ----
+
+	function configFile() { return variables.env.config( "boxy.json" ); }
+	function stateFile() { return variables.env.state( "boxy-state.json" ); }
+	function heardFile() { return variables.env.state( "boxy-heard.txt" ); }
+	function imageDir() { return variables.env.cache( "boxy" ); }
+
+	struct function defaults() {
+		return { name: "Boxy", color: "theme", outfit: "auto", holidays: [], birthday: "", voice: { enabled: false, url: "", model: "", voice: "", key: "", format: "wav" } };
+	}
+
+	struct function config() {
+		var c = variables.store.read( configFile(), defaults() );
+		var d = defaults();
+		if ( !isStruct( c.voice ?: "" ) ) c.voice = d.voice;
+		for ( var k in d.voice ) if ( !structKeyExists( c.voice, k ) ) c.voice[ k ] = d.voice[ k ];
+		if ( !isArray( c.holidays ?: "" ) ) c.holidays = [];
+		return c;
+	}
+
+	// ---- the look now ----
+
+	// The theme's accent, "#00ff78" when there is no theme yet.
+	string function themeAccent() {
+		try {
+			var th = new bxrig.Theme( variables.cli, variables.runner );
+			var st = th.readState();
+			var t = th.find( len( st.name ) ? st.name : "bxrig" );
+			if ( t.found ) {
+				var p = new bxrig.ThemeColors().parse( t.colorsText );
+				if ( p.ok && variables.look.validColor( p.colors.accent ?: "" ) ) return p.colors.accent;
+			}
+		} catch ( any e ) {}
+		return variables.look.col( "00ff78" );
+	}
+
+	// Today as { month, day }; BXRIG_TODAY=YYYY-MM-DD for tests.
+	struct function today() {
+		var t = variables.env.get( "BXRIG_TODAY", "" );
+		if ( reFind( "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", t ) ) return { month: int( val( mid( t, 6, 2 ) ) ), day: int( val( mid( t, 9, 2 ) ) ) };
+		return { month: month( now() ), day: day( now() ) };
+	}
+
+	struct function lookNow() {
+		var c = config();
+		var d = today();
+		var accent = c.color == "theme" ? themeAccent() : c.color;
+		var id = variables.look.outfitFor( c.outfit, c.holidays, c.birthday, d.month, d.day );
+		var name = "";
+		for ( var o in variables.look.outfits() ) if ( o.id == id ) name = o.name;
+		return { name: c.name, accent: accent, color: c.color, outfit_setting: c.outfit, outfit: id, outfit_name: name, holidays: c.holidays, birthday: c.birthday };
+	}
+
+	// ---- what it is doing ----
+
+	string function readState() {
+		var j = variables.store.load( stateFile(), {} );
+		if ( !isStruct( j ) || !arrayFind( variables.look.states(), j.state ?: "" ) ) return "idle";
+		// a state that nothing updated for three minutes is a crashed run
+		if ( ( j.state ?: "idle" ) != "idle" && secondsNow() - val( j.since ?: 0 ) > 180 ) return "idle";
+		return j.state;
+	}
+
+	numeric function secondsNow() { return dateDiff( "s", createDate( 1970, 1, 1 ), now() ); }
+
+	function writeState( required string state ) {
+		directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
+		fileWrite( stateFile(), jsonSerialize( { state: arguments.state, since: secondsNow() } ) );
+	}
+
+	// ---- the images ----
+
+	// The program that turns an SVG into a PNG, or "".
+	string function rasterTool() {
+		for ( var t in [ "rsvg-convert", "convert" ] ) if ( variables.proc.has( t ) ) return t;
+		return "";
+	}
+
+	array function rasterArgv( required string tool, required string svg, required string png ) {
+		if ( arguments.tool == "rsvg-convert" ) return [ "rsvg-convert", "-w", "256", "-h", "256", arguments.svg, "-o", arguments.png ];
+		return [ "convert", "-background", "none", "-density", "288", arguments.svg, "-resize", "256x256", arguments.png ];
+	}
+
+	// The file name of a state's picture at a frame: boxy-idle, boxy-working, boxy-working-1 ... (frame 0 has no suffix).
+	string function imageName( required string state, numeric frame = 0 ) { return "boxy-" & arguments.state & ( arguments.frame > 0 ? "-" & arguments.frame : "" ); }
+
+	// Writes the state images for the look now (the working swirl has four, turning): { dir, format, files: { state: path }, frames: { state: [ paths ] } }.
+	struct function exportImages( required string dir ) {
+		var l = lookNow();
+		var tool = rasterTool();
+		directoryCreate( arguments.dir, true, true );
+		var files = {};
+		var frames = {};
+		var format = len( tool ) ? "png" : "svg";
+		for ( var s in variables.look.states() ) {
+			frames[ s ] = [];
+			for ( var f = 0; f < variables.look.frameCount( s ); f++ ) {
+				var svgPath = arguments.dir & "/" & imageName( s, f ) & ".svg";
+				fileWrite( svgPath, variables.look.svg( s, l.accent, l.outfit, f ) );
+				var path = svgPath;
+				if ( len( tool ) ) {
+					var png = arguments.dir & "/" & imageName( s, f ) & ".png";
+					var r = variables.proc.exec( rasterArgv( tool, svgPath, png ), 60 );
+					if ( r.exitCode == 0 && fileExists( png ) ) path = png; else format = "svg";
+				}
+				frames[ s ].append( path );
+			}
+			files[ s ] = frames[ s ][ 1 ];
+		}
+		fileWrite( arguments.dir & "/.look", lookKey( l ) );
+		return { dir: arguments.dir, format: format, files: files, frames: frames };
+	}
+
+	string function lookKey( required struct l ) { return hash( "antenna-1|" & l.accent & "|" & l.outfit & "|" & rasterTool() ); }
+
+	// The pictures for a state (one, or four for the working swirl), made again first when the look changed or a file is gone.
+	array function framesFor( required string state ) {
+		var l = lookNow();
+		var dir = imageDir();
+		var ok = fileExists( dir & "/.look" ) && fileRead( dir & "/.look" ) == lookKey( l );
+		var out = [];
+		for ( var f = 0; f < variables.look.frameCount( arguments.state ); f++ ) {
+			var png = dir & "/" & imageName( arguments.state, f ) & ".png";
+			var svg = dir & "/" & imageName( arguments.state, f ) & ".svg";
+			if ( !fileExists( png ) && !fileExists( svg ) ) ok = false;
+			out.append( fileExists( png ) ? png : svg );
+		}
+		if ( ok ) return out;
+		try { return exportImages( dir ).frames[ arguments.state ]; } catch ( any x ) { return []; }
+	}
+
+	string function imageFor( required string state ) {
+		var f = framesFor( arguments.state );
+		return f.len() ? f[ 1 ] : "";
+	}
+
+	// ---- the commands ----
+
+	function statusCmd( asJson ) {
+		var l = lookNow();
+		var st = readState();
+		var c = config();
+		var lines = variables.look.sprite( st, 0, l.outfit );
+		lines.append( "" );
+		lines.append( l.name & " is " & st & ( len( l.outfit_name ) ? ", wearing the " & l.outfit_name & ( l.outfit_setting == "auto" ? " (the season)" : "" ) : "" ) & "." );
+		lines.append( "Colour: " & ( l.color == "theme" ? "your theme's accent (" & l.accent & ")" : l.accent ) & ".  Change it: bxrig boxy look --name=NAME --color=#RRGGBB --outfit=auto|none|ID" );
+		lines.append( "Talk to it: hold Super+Comma, speak, let go (needs Voxtype: bxrig dictation setup voxtype). Approvals stay on screen." );
+		lines.append( "Speech: " & ( c.voice.enabled ? "on, " & voiceWhere( c.voice ) : "off (bxrig boxy voice)" ) & "." );
+		return variables.out.say( "ok", {
+				name: l.name, color: l.color, accent: l.accent, outfit_setting: l.outfit_setting, outfit: l.outfit, outfit_name: l.outfit_name, holidays: l.holidays, birthday: l.birthday,
+				state: st, sprite: variables.look.sprite( st, 0, l.outfit ), image: imageFor( st ), frames: framesFor( st ),
+				voice: { enabled: c.voice.enabled, configured: len( c.voice.url ) > 0, where: voiceWhere( c.voice ) }
+			}, arguments.asJson, lines );
+	}
+
+	// Where the voice's words go: "this machine" for a local server, else the host.
+	string function voiceWhere( required struct v ) {
+		if ( !len( arguments.v.url ) ) return "not set up";
+		var host = reReplace( reReplace( arguments.v.url, "^[a-z]+://", "" ), "[/:].*$", "" );
+		return arrayFind( [ "127.0.0.1", "localhost", "::1", "[::1]" ], host ) ? "this machine" : host;
+	}
+
+	boolean function validDay( required string md ) {
+		if ( !reFind( "^[0-9]{2}-[0-9]{2}$", arguments.md ) ) return false;
+		var m = int( val( left( arguments.md, 2 ) ) );
+		var d = int( val( right( arguments.md, 2 ) ) );
+		var days = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+		return m >= 1 && m <= 12 && d >= 1 && d <= days[ m ];
+	}
+
+	function lookCmd( o, asJson ) {
+		var c = config();
+		var changed = [];
+		if ( structKeyExists( arguments.o, "name" ) ) {
+			if ( !reFind( "^[A-Za-z0-9][A-Za-z0-9 _-]{0,23}$", arguments.o.name ) ) return variables.out.usage( "--name is 1 to 24 letters, digits, spaces, - or _", arguments.asJson );
+			c.name = arguments.o.name;
+			changed.append( "name" );
+		}
+		if ( structKeyExists( arguments.o, "color" ) ) {
+			var col = lCase( arguments.o.color );
+			if ( col != "theme" && !variables.look.validColor( col ) ) return variables.out.usage( "--color is theme or a colour like #00ff78", arguments.asJson );
+			c.color = col;
+			changed.append( "colour" );
+		}
+		if ( structKeyExists( arguments.o, "outfit" ) ) {
+			if ( !arrayFind( [ "auto", "none" ], arguments.o.outfit ) && !arrayFind( variables.look.outfitIds(), arguments.o.outfit ) ) return variables.out.usage( "--outfit is auto, none or one of " & variables.look.outfitIds().toList( ", " ), arguments.asJson );
+			c.outfit = arguments.o.outfit;
+			changed.append( "outfit" );
+		}
+		if ( structKeyExists( arguments.o, "holidays" ) ) {
+			var list = arguments.o.holidays == "none" ? [] : listToArray( arguments.o.holidays, "," );
+			for ( var h in list ) if ( !arrayFind( variables.look.holidays(), h ) ) return variables.out.usage( "--holidays is none or some of " & variables.look.holidays().toList( ", " ), arguments.asJson );
+			c.holidays = list;
+			changed.append( "holidays" );
+		}
+		if ( structKeyExists( arguments.o, "birthday" ) ) {
+			if ( len( arguments.o.birthday ) && !validDay( arguments.o.birthday ) ) return variables.out.usage( "--birthday is a date as MM-DD (empty clears it)", arguments.asJson );
+			c.birthday = arguments.o.birthday;
+			changed.append( "birthday" );
+		}
+		if ( changed.len() ) {
+			directoryCreate( getDirectoryFromPath( configFile() ), true, true );
+			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
+		}
+		return statusCmd( arguments.asJson );
+	}
+
+	function exportCmd( dir, asJson ) {
+		var d = len( arguments.dir ) ? arguments.dir : imageDir();
+		var e = exportImages( d );
+		var lines = [ "The pictures (" & e.format & "; the working swirl has four, turning) are in " & variables.env.tilde( d ) & ":" ];
+		for ( var s in variables.look.states() ) lines.append( "  " & variables.env.tilde( e.files[ s ] ) );
+		if ( e.format == "svg" ) lines.append( "No rsvg-convert or ImageMagick found, so these are SVG. For PNG: bxrig install librsvg" );
+		return variables.out.say( "ok", e, arguments.asJson, lines );
+	}
+
+	function stateCmd( asJson ) {
+		var st = readState();
+		var l = lookNow();
+		return variables.out.say( "ok", { state: st, image: imageFor( st ), frames: framesFor( st ), sprite: variables.look.sprite( st, 0, l.outfit ), name: l.name, accent: l.accent, outfit: l.outfit }, arguments.asJson, [ st ] );
+	}
+
+	// ---- notices ----
+
+	function notice( required string body ) {
+		if ( variables.proc.has( "notify-send" ) ) variables.proc.exec( [ "notify-send", "--app-name=Boxy", config().name, left( arguments.body, 400 ) ], 10 );
+	}
+
+	// ---- voice in ----
+
+	function listenCmd( action, asJson ) {
+		var a = arguments.action;
+		if ( !arrayFind( [ "start", "stop", "toggle" ], a ) ) return variables.out.usage( "bxrig boxy listen start|stop|toggle", arguments.asJson );
+		if ( a == "toggle" ) a = readState() == "listening" ? "stop" : "start";
+		return a == "start" ? listenStart( arguments.asJson ) : listenStop( arguments.asJson );
+	}
+
+	function listenStart( asJson ) {
+		if ( !variables.proc.has( "voxtype" ) ) return variables.out.precondition( "Voxtype listens for Boxy, and it is not installed: bxrig dictation setup voxtype", arguments.asJson );
+		directoryCreate( getDirectoryFromPath( heardFile() ), true, true );
+		if ( fileExists( heardFile() ) ) fileDelete( heardFile() );
+		var r = variables.proc.exec( [ "voxtype", "record", "start", "--output-file", heardFile() ], 15 );
+		if ( r.exitCode != 0 ) return variables.out.precondition( "Voxtype did not start recording (is its background service running? voxtype setup systemd): " & trim( r.output ?: "" ), arguments.asJson );
+		writeState( "listening" );
+		return variables.out.say( "ok", { state: "listening" }, arguments.asJson, [ config().name & " is listening. Let go of the key, or: bxrig boxy listen stop" ] );
+	}
+
+	// Waits up to `seconds` for Voxtype to write what it heard: the text, or "".
+	string function waitHeard( required numeric seconds ) {
+		for ( var i = 1; i <= arguments.seconds * 2; i++ ) {
+			if ( fileExists( heardFile() ) && len( trim( fileRead( heardFile() ) ) ) ) return trim( fileRead( heardFile() ) );
+			variables.proc.exec( [ "sleep", "0.5" ], 5 );
+		}
+		return "";
+	}
+
+	function listenStop( asJson ) {
+		var c = config();
+		variables.proc.exec( [ "voxtype", "record", "stop" ], 30 );
+		writeState( "working" );
+		var heard = waitHeard( 30 );
+		if ( !len( heard ) ) {
+			writeState( "idle" );
+			notice( "I did not hear anything." );
+			return variables.out.say( "ok", { heard: "", state: "idle" }, arguments.asJson, [ "Nothing was heard." ] );
+		}
+		var ask = new bxrig.AiAgentHub( variables.cli, variables.runner ).askData( heard, "", "bxrig-voice" );
+		if ( !ask.ok ) {
+			writeState( "idle" );
+			notice( "I heard you (" & heard & ") but could not ask: " & ask.error );
+			var said = "heard """ & heard & """, but " & ask.error;
+			return ask.why == "precondition" ? variables.out.precondition( said, arguments.asJson ) : variables.out.failed( said, arguments.asJson );
+		}
+		if ( len( ask.answer ) ) notice( ask.answer );
+		// something to change waits for you on screen; a voice never approves it
+		for ( var p in ask.pending ) notice( "I would like to run " & ( p.tool ?: "a tool" ) & ". Approve or reject it in the chat (Super+Period) or the bar: not by voice." );
+		var spoke = false;
+		if ( c.voice.enabled && len( ask.answer ) ) spoke = speak( ask.answer ).ok;
+		writeState( "idle" );
+		return variables.out.say( "ok", { heard: heard, answer: ask.answer, pending: ask.pending, spoke: spoke, state: "idle" }, arguments.asJson, [ "Heard: " & heard, ask.answer ] );
+	}
+
+	// ---- voice out ----
+
+	// The first audio player there is, as an argv without the file: [] when none.
+	array function playerArgv() {
+		var players = [ [ "pw-play" ], [ "paplay" ], [ "ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet" ], [ "mpv", "--no-video", "--really-quiet" ] ];
+		for ( var p in players ) if ( variables.proc.has( p[ 1 ] ) ) return p;
+		return [];
+	}
+
+	// The text as it is spoken: plain, at most 600 characters, ending at a sentence when it can.
+	string function speakable( required string text ) {
+		var t = trim( reReplace( arguments.text, "[*`]", "", "all" ) );
+		t = reReplace( t, "\s+", " ", "all" );
+		if ( len( t ) <= 600 ) return t;
+		var cut = left( t, 600 );
+		var at = 0;
+		for ( var i = len( cut ); i >= 300; i-- ) if ( find( mid( cut, i, 1 ), ".!?" ) ) { at = i; break; }
+		return at ? left( cut, at ) : cut;
+	}
+
+	// The secret's value: BxRig's stored secret of that name, else the environment variable.
+	string function keyValue( required string name ) {
+		if ( !len( arguments.name ) ) return "";
+		var v = "";
+		try { v = new bxrig.Secrets( variables.cli, variables.runner ).fetch( arguments.name ); } catch ( any e ) {}
+		return len( v ) ? v : variables.env.get( arguments.name, "" );
+	}
+
+	// Speaks the text through the voice settings: { ok, error }.
+	struct function speak( required string text ) {
+		var v = config().voice;
+		if ( !len( v.url ) ) return { ok: false, error: "no voice is set up: bxrig boxy voice set --url=URL --model=M --voice=V" };
+		var player = playerArgv();
+		if ( !player.len() ) return { ok: false, error: "no audio player found (pw-play, paplay, ffplay or mpv)" };
+		var body = jsonSerialize( { model: v.model, input: speakable( arguments.text ), voice: v.voice, response_format: v.format } );
+		directoryCreate( getDirectoryFromPath( heardFile() ), true, true );
+		var audio = variables.env.state( "boxy-say." & v.format );
+		var cfg = "";
+		var key = keyValue( v.key );
+		if ( len( key ) ) {
+			cfg = variables.env.state( "boxy-curl.conf" );
+			fileWrite( cfg, 'header = "Authorization: Bearer ' & key & '"' & chr( 10 ) );
+			variables.proc.exec( [ "chmod", "600", cfg ], 5 );
+		}
+		writeState( "speaking" );
+		var r = new bxrig.util.Http( variables.proc ).postFile( v.url, body, audio, cfg, 90 );
+		if ( len( cfg ) && fileExists( cfg ) ) fileDelete( cfg );
+		if ( !r.ok || !fileExists( audio ) ) { writeState( "idle" ); return { ok: false, error: "the voice server did not answer (" & trim( r.output ?: "" ) & ")" }; }
+		var argv = duplicate( player );
+		argv.append( audio );
+		variables.proc.exec( argv, 300 );
+		if ( fileExists( audio ) ) fileDelete( audio );
+		writeState( "idle" );
+		return { ok: true, error: "" };
+	}
+
+	function sayCmd( text, asJson ) {
+		if ( !len( trim( arguments.text ) ) ) return variables.out.usage( "bxrig boxy say TEXT", arguments.asJson );
+		var r = speak( arguments.text );
+		if ( !r.ok ) return variables.out.precondition( r.error, arguments.asJson );
+		return variables.out.say( "ok", { spoke: true }, arguments.asJson, [ "Spoken." ] );
+	}
+
+	function voiceCmd( words, o, asJson ) {
+		var c = config();
+		var sub = arguments.words.len() ? arguments.words[ 1 ] : "";
+		if ( sub == "set" ) {
+			if ( structKeyExists( arguments.o, "url" ) ) {
+				if ( !reFind( "^https?://[^\s]+$", arguments.o.url ) ) return variables.out.usage( "--url is an http or https address, such as https://api.openai.com/v1/audio/speech", arguments.asJson );
+				c.voice.url = arguments.o.url;
+			}
+			for ( var k in [ "model", "voice" ] ) if ( structKeyExists( arguments.o, k ) ) {
+				if ( !reFind( "^[A-Za-z0-9._:/-]{1,80}$", arguments.o[ k ] ) ) return variables.out.usage( "--" & k & " is letters, digits and . _ : / -", arguments.asJson );
+				c.voice[ k ] = arguments.o[ k ];
+			}
+			if ( structKeyExists( arguments.o, "key" ) ) {
+				if ( len( arguments.o.key ) && !new bxrig.util.Names().valid( "secret", arguments.o.key ) ) return variables.out.usage( "--key is the name of a stored secret or an environment variable, such as OPENAI_API_KEY", arguments.asJson );
+				c.voice.key = arguments.o.key;
+			}
+			if ( structKeyExists( arguments.o, "format" ) ) {
+				if ( !arrayFind( [ "wav", "mp3", "opus", "flac" ], arguments.o.format ) ) return variables.out.usage( "--format is wav, mp3, opus or flac", arguments.asJson );
+				c.voice.format = arguments.o.format;
+			}
+			directoryCreate( getDirectoryFromPath( configFile() ), true, true );
+			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
+		} else if ( sub == "on" ) {
+			if ( !len( c.voice.url ) || !len( c.voice.model ) ) return variables.out.precondition( "set the voice up first: bxrig boxy voice set --url=URL --model=MODEL --voice=VOICE [--key=SECRET_NAME]", arguments.asJson );
+			c.voice.enabled = true;
+			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
+		} else if ( sub == "off" ) {
+			c.voice.enabled = false;
+			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
+		} else if ( len( sub ) ) return variables.out.usage( "bxrig boxy voice [on|off|set --url=URL --model=M --voice=V --key=NAME --format=wav]", arguments.asJson );
+		var v = c.voice;
+		var where = voiceWhere( v );
+		var lines = [ "Boxy's speech is " & ( v.enabled ? "on" : "off" ) & ( len( v.url ) ? ": " & where : "" ) & "." ];
+		if ( v.enabled && where != "this machine" ) lines.append( "Its answers are sent to " & where & " to be turned into speech." );
+		if ( !len( v.url ) ) lines.append( "Off until you set it up: bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY, then bxrig boxy voice on" );
+		else lines.append( "Model " & v.model & ", voice " & v.voice & ", " & v.format & ( len( v.key ) ? ", key " & v.key & ( len( keyValue( v.key ) ) ? " (found)" : " (NOT found: bxrig secrets set " & v.key & ")" ) : ", no key" ) & ". Try it: bxrig boxy say hello" );
+		return variables.out.say( "ok", { enabled: v.enabled, configured: len( v.url ) > 0, where: where, url: v.url, model: v.model, voice: v.voice, key: v.key, format: v.format }, arguments.asJson, lines );
+	}
+}

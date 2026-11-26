@@ -70,6 +70,7 @@ ICONS = [
 	('bxrig-machines', 'desktop-tower', 'system', 'apps', 'Machines', 'the Machines page'),
 	('bxrig-privacy', 'shield-check', 'system', 'apps', 'Privacy', 'the Privacy page (what leaves this machine)'),
 	('bxrig-android', 'android-logo', 'develop', 'apps', 'Android', 'the Android page (Waydroid)'),
+	('bxrig-boxy', 'cube', 'develop', 'apps', 'Boxy', 'the Boxy page (the desktop assistant: look and voice)'),
 	('bxrig-storage', 'hard-drives', 'system', 'apps', 'Storage', 'the Storage page'),
 	('bxrig-secrets', 'key', 'utility', 'apps', 'Secrets', 'the Secrets page'),
 	('bxrig-logs', 'scroll', 'system', 'apps', 'Logs', 'the Logs page'),

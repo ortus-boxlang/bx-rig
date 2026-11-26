@@ -424,19 +424,28 @@ class AiAgentHub {
 		return lines;
 	}
 
-	function askCmd( text, agent, thread, asJson ) {
-		if ( !len( trim( arguments.text ) ) ) return variables.out.usage( "ai agents ask TEXT [--agent=NAME] [--thread=ID]", arguments.asJson );
+	// One question to an agent's running web API: { ok, agent, thread, answer, pending } or { ok: false, why: "precondition"|"failed", error, agent, output }.
+	// `thread` keeps a conversation going; "" makes a new one (bxrig- and 12 hex digits).
+	function askData( text, agent, thread ) {
 		var st = load();
 		var p = pick( projects( st ), arguments.agent, st );
-		if ( structIsEmpty( p ) ) return variables.out.precondition( noAgent( arguments.agent ), arguments.asJson );
-		if ( !running( p ) ) return variables.out.precondition( p.name & " is not running. Start it: bxrig ai agents start " & p.name, arguments.asJson );
+		if ( structIsEmpty( p ) ) return { ok: false, why: "precondition", error: noAgent( arguments.agent ) };
+		if ( !running( p ) ) return { ok: false, why: "precondition", error: p.name & " is not running. Start it: bxrig ai agents start " & p.name, agent: p.name };
 		var t = len( arguments.thread ) ? arguments.thread : "bxrig-" & lCase( left( replace( createUUID(), "-", "", "all" ), 12 ) );
 		var r = api( p, "invoke", { input: arguments.text, threadId: t }, 600 );
-		if ( !r.ok ) return variables.out.say( "failed", { agent: p.name, error: "HTTP " & r.status, output: left( r.body, 500 ) }, arguments.asJson, [ "error: " & p.name & " did not answer (HTTP " & r.status & ")" ] );
+		if ( !r.ok ) return { ok: false, why: "failed", error: "HTTP " & r.status, output: left( r.body, 500 ), agent: p.name };
 		var s = invokeSummary( r.body );
-		var lines = len( s.answer ) ? [ s.answer ] : [];
-		for ( var l in pendingLines( s.pending, p.name, t ) ) lines.append( l );
-		return variables.out.say( "ok", { agent: p.name, thread: t, answer: s.answer, pending: s.pending }, arguments.asJson, lines );
+		return { ok: true, agent: p.name, thread: t, answer: s.answer, pending: s.pending };
+	}
+
+	function askCmd( text, agent, thread, asJson ) {
+		if ( !len( trim( arguments.text ) ) ) return variables.out.usage( "ai agents ask TEXT [--agent=NAME] [--thread=ID]", arguments.asJson );
+		var a = askData( arguments.text, arguments.agent, arguments.thread );
+		if ( !a.ok && a.why == "precondition" ) return variables.out.precondition( a.error, arguments.asJson );
+		if ( !a.ok ) return variables.out.say( "failed", { agent: a.agent, error: a.error, output: a.output }, arguments.asJson, [ "error: " & a.agent & " did not answer (" & a.error & ")" ] );
+		var lines = len( a.answer ) ? [ a.answer ] : [];
+		for ( var l in pendingLines( a.pending, a.agent, a.thread ) ) lines.append( l );
+		return variables.out.say( "ok", { agent: a.agent, thread: a.thread, answer: a.answer, pending: a.pending }, arguments.asJson, lines );
 	}
 
 	function decideCmd( thread, decision, agent, asJson ) {

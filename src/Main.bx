@@ -600,6 +600,22 @@ class {
 				println( new bxrig.CommandSpec().usage( "android" ) );
 				CLIExit( xit.usage() );
 				break;
+			case "boxy":
+				// Boxy's character and voice. See COMMAND-CONTRACT.md 13.72.
+				byBx = new bxrig.Boxy( cli );
+				bySub = p.len() >= 2 ? p[2] : "";
+				byRest = [];
+				for ( byI = 3; byI <= p.len(); byI++ ) byRest.append( p[ byI ] );
+				if ( bySub == "" ) CLIExit( byBx.statusCmd( asJson ) );
+				if ( bySub == "look" && p.len() == 2 ) CLIExit( byBx.lookCmd( args.options, asJson ) );
+				if ( bySub == "export" && p.len() == 2 ) CLIExit( byBx.exportCmd( args.options.dir ?: "", asJson ) );
+				if ( bySub == "state" && p.len() == 2 ) CLIExit( byBx.stateCmd( asJson ) );
+				if ( bySub == "listen" && p.len() == 3 ) CLIExit( byBx.listenCmd( p[3], asJson ) );
+				if ( bySub == "say" ) CLIExit( byBx.sayCmd( byRest.toList( " " ), asJson ) );
+				if ( bySub == "voice" ) CLIExit( byBx.voiceCmd( byRest, args.options, asJson ) );
+				println( new bxrig.CommandSpec().usage( "boxy" ) );
+				CLIExit( xit.usage() );
+				break;
 			case "vm":
 				// Windows and Linux desktops in containers. See COMMAND-CONTRACT.md 13.33.
 				vmSub = p.len() >= 2 ? p[2] : "list";
