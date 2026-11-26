@@ -7,9 +7,9 @@
 			"commands": [
 				{
 					"name": "init",
-					"summary": "The setup wizard: asks the questions, shows a review, then runs the matching commands.",
+					"summary": "The setup wizard: asks the questions, shows a review, then installs on a progress screen (press v for the live log) and keeps a log file.",
 					"usage": [
-						"init [--from=FILE] [--fresh | --rerun] | init --answers=FILE [--yes] [--dry-run] [--json] | init --print-answers [--from-system] [--json] | init --export=FILE [--force]"
+						"init [--from=FILE] [--fresh | --rerun] [--plain] | init --answers=FILE [--yes [--screen]] [--dry-run] [--json] | init --print-answers [--from-system] [--json] | init --export=FILE [--force]"
 					],
 					"examples": [
 						"bxrig init",
@@ -51,6 +51,10 @@
 							"type": "bool"
 						},
 						{
+							"name": "plain",
+							"type": "bool"
+						},
+						{
 							"name": "print-answers",
 							"type": "bool"
 						},
@@ -60,6 +64,10 @@
 						},
 						{
 							"name": "rerun",
+							"type": "bool"
+						},
+						{
+							"name": "screen",
 							"type": "bool"
 						},
 						{

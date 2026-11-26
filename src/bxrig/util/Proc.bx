@@ -86,4 +86,22 @@ class Proc {
 		for ( var a in arguments.args ) argv.append( a );
 		return exec( argv, arguments.timeout );
 	}
+
+	// Starts one argv in the background without a new session (so `sudo` keeps the ticket you just made): its output is added to logFile, its
+	// stdin is closed, its exit code is written to statusFile when it ends, and pidFile gets the pid of the runner. Returns the starter's result.
+	function startTo( argv, logFile, statusFile, pidFile ) {
+		var run = [ "sh", "-c", 'log=$1; st=$2; pf=$3; shift 3; ( "$@" </dev/null >>"$log" 2>&1; echo $? >"$st.tmp"; mv -f "$st.tmp" "$st" ) </dev/null >/dev/null 2>&1 & echo $! >"$pf"', "_", arguments.logFile, arguments.statusFile, arguments.pidFile ];
+		for ( var p in arguments.argv ) run.append( p );
+		return exec( run, 15 );
+	}
+
+	// Stops a process and everything it started (TERM, children first). Never throws.
+	function killTree( pid ) {
+		return exec( [ "sh", "-c", 'kt() { for c in $(pgrep -P "$1" 2>/dev/null); do kt "$c"; done; kill -TERM "$1" 2>/dev/null; }; kt "$1"', "_", toString( arguments.pid ) ], 10 );
+	}
+
+	// True when a process is still running.
+	function alive( pid ) {
+		return exec( [ "kill", "-0", toString( arguments.pid ) ], 5 ).exitCode == 0;
+	}
 }

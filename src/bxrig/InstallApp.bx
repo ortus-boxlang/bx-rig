@@ -1,0 +1,78 @@
+// The install screen's state and keys, with no drawing (InstallView draws it, TuiRunner runs the loop, InitRun does the work).
+//   v            the log under the bar: every line the steps print, live
+//   Up Down PageUp PageDown Home End   scroll the log (End or scrolling to the bottom follows it again)
+//   Ctrl+C       asks to stop; y stops (the running step is killed, the rest is not run), anything else goes on
+//   when it is over:  Enter or q leaves,  r runs the failed steps again,  v the log
+// outcome() is "running" until the person leaves after the run has finished.
+class InstallApp {
+	function init( run, opts = {} ) {
+		variables.run = arguments.run;
+		variables.keepAlive = arguments.opts.keepAlive ?: "";
+		variables.keepAliveTicks = arguments.opts.keepAliveTicks ?: 600;   // 30 s at 50 ms a frame
+		variables.verbose = arguments.opts.verbose ?: false;
+		variables.scroll = 0;            // lines above the bottom of the log; 0 follows the newest line
+		variables.confirming = false;
+		variables.outcome = "running";
+		variables.began = false;
+		variables.ticks = 0;
+		return this;
+	}
+
+	function hasTick() { return true; }
+	function run() { return variables.run; }
+	function outcome() { return variables.outcome; }
+	function verbose() { return variables.verbose; }
+	function scroll() { return variables.scroll; }
+	function confirming() { return variables.confirming; }
+
+	// Every frame: start the run, let it look at its steps, and keep sudo's ticket fresh so a long step never asks for the password on the screen.
+	function onTick( tick ) {
+		variables.ticks++;
+		if ( !variables.began ) { variables.began = true; variables.run.begin(); }
+		variables.run.tick();
+		if ( !variables.run.finished() && !isSimpleValue( variables.keepAlive ) && variables.ticks mod variables.keepAliveTicks == 0 ) {
+			try { variables.keepAlive(); } catch ( any e ) {}
+		}
+		return this;
+	}
+
+	function onKey( key ) {
+		var k = arguments.key;
+		if ( variables.confirming ) {
+			if ( k == "y" || k == "Y" ) variables.run.stop();
+			variables.confirming = false;
+			return this;
+		}
+		if ( k == "Ctrl+c" ) {
+			if ( variables.run.finished() ) variables.outcome = "done";
+			else variables.confirming = true;
+			return this;
+		}
+		if ( k == "v" ) { variables.verbose = !variables.verbose; variables.scroll = 0; return this; }
+		if ( variables.run.finished() ) {
+			if ( k == "Enter" || k == "q" || k == "Escape" ) { variables.outcome = "done"; return this; }
+			if ( k == "r" ) { variables.run.retry(); return this; }
+		}
+		if ( variables.verbose ) {
+			switch ( k ) {
+				case "Up": case "k":         variables.scroll++; break;
+				case "Down": case "j":       variables.scroll = max( 0, variables.scroll - 1 ); break;
+				case "PageUp":               variables.scroll += 10; break;
+				case "PageDown":             variables.scroll = max( 0, variables.scroll - 10 ); break;
+				case "Home":                 variables.scroll = 100000; break;
+				case "End":                  variables.scroll = 0; break;
+			}
+		}
+		return this;
+	}
+
+	function onScroll( direction ) {
+		if ( !variables.verbose ) return this;
+		if ( arguments.direction == "up" ) variables.scroll += 3;
+		else variables.scroll = max( 0, variables.scroll - 3 );
+		return this;
+	}
+
+	// The install screen has nothing to click.
+	function act( hit ) { return this; }
+}

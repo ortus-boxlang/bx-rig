@@ -3,6 +3,7 @@
 //   app        pure model: outcome() ("running" until it is done), onKey( key ) -> intent, act( hit ) -> intent, onScroll( dir ) -> intent
 //   makeView   function( tui ) -> a view with paint( app, tick, width, height ) and hitAt( x, y )
 //   onIntent   optional function( intent ) that does the real work for an intent the model returned (run a command, reload data)
+// A model may also have hasTick() returning true and onTick( tick ): it is called every frame before drawing (the install screen reads its steps there).
 // Keys, clicks and scrolls go to the model; whatever it returns goes to onIntent. The model never touches the terminal.
 class TuiRunner {
 	function init( frameMs = 50 ) { variables.frameMs = arguments.frameMs; return this; }
@@ -11,11 +12,15 @@ class TuiRunner {
 		var tui = createObject( "rust", "tui.TUI" );
 		var view = arguments.makeView( tui );
 		var handle = function( intent ) { if ( !isSimpleValue( onIntent ) && !isNull( intent ) ) onIntent( intent ); };
+		// (a class instance cannot be asked for a method with structKeyExists in MatchBox, so a model that wants ticks says so)
+		var ticks = false;
+		try { ticks = arguments.app.hasTick() == true; } catch ( any e ) {}
 		tui.init();
 		try {
 			var tick = 0;
 			while ( arguments.app.outcome() == "running" ) {
 				var size = tui.size();
+				if ( ticks ) arguments.app.onTick( tick );
 				view.paint( arguments.app, tick, size.width, size.height );
 				tui.end_frame();
 				var ev = tui.poll_event( variables.frameMs );

@@ -20,9 +20,11 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `init` | `--fresh` | bool |  |
 | `init` | `--from` | value |  |
 | `init` | `--from-system` | bool |  |
+| `init` | `--plain` | bool |  |
 | `init` | `--print-answers` | bool |  |
 | `init` | `--remote` | any |  |
 | `init` | `--rerun` | bool |  |
+| `init` | `--screen` | bool |  |
 | `init` | `--workspaces` | any |  |
 | `refresh` | `--starter` | bool |  |
 | `reinstall` | `--answers` | any |  |

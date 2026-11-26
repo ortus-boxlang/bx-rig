@@ -1,0 +1,277 @@
+// Runs the steps of an install plan in the background, one after another, while a screen watches. A step is a command line that starts
+// detached (Proc.startTo): its output goes to a file, its exit code to another, and tick() reads both. Nothing here draws: InstallApp
+// and InstallView do. Every line a step prints, every start and end, and every exception goes to the InitLog.
+//
+//   run = new bxrig.InitRun( steps, log, proc, { appsTotal: 43 } );   steps: [ { id, title, argv, optional } ] with argv ready to run
+//   run.begin();  then run.tick() about every 50 ms until run.finished()
+//   run.state()   { steps, index, finished, stopped, lines, partial, ... } for the screen
+//   run.stop()    kills the running step and skips the rest;   run.retry()   starts the failed steps again
+//   run.result()  the same shape `bxrig init` reports: { done, failed, skipped, code }
+//
+// A step is pending, running, done, failed (a non-optional step that did not exit 0), skipped (an optional one that could not run, or a step
+// after stop) or stopped.
+class InitRun {
+	function init( steps, log, proc, opts = {} ) {
+		variables.log = arguments.log;
+		variables.proc = arguments.proc;
+		variables.timeoutMs = ( arguments.opts.timeoutSeconds ?: 3600 ) * 1000;
+		variables.appsTotal = arguments.opts.appsTotal ?: 0;
+		variables.maxLines = 4000;
+		variables.steps = [];
+		var n = 0;
+		for ( var s in arguments.steps ) {
+			n++;
+			variables.steps.append( {
+					n: n, id: s.id, title: s.title, argv: s.argv, optional: s.optional ?: false,
+					state: "pending", started: 0, ended: 0, exit: -1, note: "", tail: "", subDone: 0, subTotal: 0,
+					outFile: variables.log.stepFile( n, s.id ), statusFile: variables.log.stepFile( n, s.id ) & ".exit", pidFile: variables.log.stepFile( n, s.id ) & ".pid"
+				} );
+		}
+		variables.index = 0;
+		variables.startedAt = 0;
+		variables.finishedAt = 0;
+		variables.finished = false;
+		variables.stopped = false;
+		variables.lines = [];            // every line the steps printed so far (newest last), with the step it came from
+		variables.partial = "";         // the unfinished line a step is printing now (a progress bar)
+		variables.readLen = 0;
+		variables.pending = "";
+		variables.lastOutputAt = 0;
+		variables.lastSize = -1;
+		variables.lastCheckAt = 0;
+		variables.lastAliveAt = 0;
+		return this;
+	}
+
+	function nowMs() { return getTickCount(); }
+	function finished() { return variables.finished; }
+	function stopped() { return variables.stopped; }
+
+	// Everything a screen needs, as copies of nothing: the live structs.
+	function state() {
+		return {
+			steps: variables.steps, index: variables.index, finished: variables.finished, stopped: variables.stopped, lines: variables.lines, partial: variables.partial,
+			startedAt: variables.startedAt, finishedAt: variables.finishedAt, lastOutputAt: variables.lastOutputAt, now: nowMs(), appsTotal: variables.appsTotal, logFile: variables.log.file()
+		};
+	}
+
+	function current() { return variables.index > 0 && variables.index <= variables.steps.len() ? variables.steps[ variables.index ] : {}; }
+
+	function counts() {
+		var c = { pending: 0, running: 0, done: 0, failed: 0, skipped: 0, stopped: 0 };
+		for ( var s in variables.steps ) c[ s.state ] = c[ s.state ] + 1;
+		return c;
+	}
+
+	function begin() {
+		variables.startedAt = nowMs();
+		variables.log.header( variables.steps );
+		return this;
+	}
+
+	// Starts the next pending step, or finishes the run when there is none.
+	function startNext() {
+		for ( var i = 1; i <= variables.steps.len(); i++ ) {
+			if ( variables.steps[ i ].state == "pending" ) {
+				var s = variables.steps[ i ];
+				variables.index = i;
+				s.state = "running";
+				s.started = nowMs();
+				variables.readLen = 0;
+				variables.pending = "";
+				variables.partial = "";
+				variables.lastOutputAt = s.started;
+				variables.lastSize = -1;
+				for ( var f in [ s.outFile, s.statusFile, s.pidFile ] ) if ( fileExists( f ) ) fileDelete( f );
+				variables.log.line( "==> step " & s.n & " (" & s.id & "): " & s.title );
+				variables.log.line( "    command: " & s.argv.toList( " " ) );
+				fileWrite( s.outFile, "" );
+				var r = variables.proc.startTo( s.argv, s.outFile, s.statusFile, s.pidFile );
+				if ( r.exitCode != 0 ) {
+					variables.log.line( "    could not start the step (exit " & r.exitCode & "): " & ( r.output ?: "" ) );
+					fileWrite( s.statusFile, "127" & chr( 10 ) );
+					fileAppend( s.outFile, "could not start: " & ( r.output ?: "" ) & chr( 10 ) );
+				}
+				return true;
+			}
+		}
+		variables.index = 0;
+		variables.finished = true;
+		variables.finishedAt = nowMs();
+		variables.partial = "";
+		var c = counts();
+		variables.log.line( "==> finished: " & c.done & " done, " & c.failed & " failed, " & c.skipped & " skipped, " & c.stopped & " stopped, in " & int( ( variables.finishedAt - variables.startedAt ) / 1000 ) & " s" );
+		variables.log.line( "    the output of each step is in " & variables.log.folder() );
+		return false;
+	}
+
+	// A line from a step, cleaned: the last carriage-return piece, no terminal colour codes.
+	function clean( line ) {
+		var t = arguments.line;
+		if ( find( chr( 13 ), t ) ) {
+			var parts = listToArray( t, chr( 13 ), true );
+			t = parts[ parts.len() ];
+			var k = parts.len();
+			while ( !len( trim( t ) ) && k > 1 ) { k--; t = parts[ k ]; }
+		}
+		return reReplace( t, chr( 27 ) & "\[[0-9;?]*[A-Za-z]", "", "all" );
+	}
+
+	// Reads what the running step printed since the last look: new complete lines go to the screen's list and to the log.
+	function readNew( s ) {
+		if ( !fileExists( arguments.s.outFile ) ) return;
+		var size = getFileInfo( arguments.s.outFile ).size;
+		if ( size == variables.lastSize ) return;
+		variables.lastSize = size;
+		var all = fileRead( arguments.s.outFile );
+		if ( len( all ) <= variables.readLen ) return;
+		var fresh = variables.pending & mid( all, variables.readLen + 1, len( all ) - variables.readLen );
+		variables.readLen = len( all );
+		variables.lastOutputAt = nowMs();
+		var pieces = listToArray( fresh, chr( 10 ), true );
+		var endsLine = right( fresh, 1 ) == chr( 10 );
+		variables.pending = endsLine ? "" : pieces[ pieces.len() ];
+		var upto = endsLine ? pieces.len() : pieces.len() - 1;
+		for ( var i = 1; i <= upto; i++ ) {
+			var raw = pieces[ i ];
+			if ( i == pieces.len() && !len( raw ) ) continue;
+			var t = clean( raw );
+			variables.lines.append( { n: arguments.s.n, id: arguments.s.id, text: t } );
+			if ( len( trim( t ) ) ) arguments.s.tail = t;
+			variables.log.line( "[" & arguments.s.id & "] " & t );
+			sub( arguments.s, t );
+		}
+		if ( variables.lines.len() > variables.maxLines ) variables.lines = arraySlice( variables.lines, variables.lines.len() - variables.maxLines + 1 );
+		variables.partial = len( variables.pending ) ? clean( variables.pending ) : "";
+		if ( len( trim( variables.partial ) ) ) arguments.s.tail = variables.partial;
+		sub( arguments.s, variables.partial );
+	}
+
+	// pacman and zypper print "(12/43) installing foo": that is the step's own progress.
+	function sub( s, text ) {
+		var m = reFind( "\(([0-9]+)/([0-9]+)\)\s+(installing|upgrading|reinstalling|Installing|Upgrading)", arguments.text, 1, true );
+		if ( isStruct( m ) && structKeyExists( m, "match" ) && m.match.len() >= 3 ) {
+			arguments.s.subDone = int( val( m.match[ 2 ] ) );
+			arguments.s.subTotal = int( val( m.match[ 3 ] ) );
+		}
+	}
+
+	// One look: finishes the step that ended, starts the next, keeps reading output. Call it every frame; it is cheap.
+	function tick() {
+		if ( variables.finished ) return this;
+		try {
+			var s = current();
+			if ( structIsEmpty( s ) ) { startNext(); return this; }
+			readNew( s );
+			if ( fileExists( s.statusFile ) ) {
+				readNew( s );
+				var code = int( val( trim( fileRead( s.statusFile ) ) ) );
+				endStep( s, code );
+			} else if ( nowMs() - s.started > variables.timeoutMs ) {
+				stopRunning( s );
+				variables.log.line( "    timed out after " & int( variables.timeoutMs / 1000 ) & " s" );
+				endStep( s, 124 );
+			} else if ( nowMs() - variables.lastAliveAt > 3000 ) {
+				// a runner that vanished without writing its code (killed from outside)
+				variables.lastAliveAt = nowMs();
+				if ( fileExists( s.pidFile ) && len( trim( fileRead( s.pidFile ) ) ) && !variables.proc.alive( trim( fileRead( s.pidFile ) ) ) && !fileExists( s.statusFile ) ) {
+					variables.log.line( "    the step's process is gone and left no exit code" );
+					endStep( s, 137 );
+				}
+			}
+		} catch ( any e ) {
+			variables.log.error( "InitRun.tick", e );
+		}
+		return this;
+	}
+
+	function endStep( s, code ) {
+		arguments.s.ended = nowMs();
+		arguments.s.exit = arguments.code;
+		var secs = int( ( arguments.s.ended - arguments.s.started ) / 1000 );
+		if ( arguments.code == 0 ) arguments.s.state = "done";
+		else if ( arguments.s.optional ) { arguments.s.state = "skipped"; arguments.s.note = "could not run (exit " & arguments.code & "); do it later: " & arguments.s.argv.toList( " " ); }
+		else arguments.s.state = "failed";
+		variables.log.line( "    exit " & arguments.code & " after " & secs & " s: " & arguments.s.state );
+		variables.pending = "";
+		variables.partial = "";
+		for ( var f in [ arguments.s.statusFile, arguments.s.pidFile ] ) if ( fileExists( f ) ) fileDelete( f );
+		variables.index = 0;
+		if ( variables.stopped ) markRest( "stopped" ); else startNext();
+	}
+
+	function stopRunning( s ) {
+		if ( fileExists( arguments.s.pidFile ) ) variables.proc.killTree( trim( fileRead( arguments.s.pidFile ) ) );
+	}
+
+	function markRest( state ) {
+		for ( var s in variables.steps ) if ( s.state == "pending" ) s.state = arguments.state;
+		if ( variables.index == 0 ) {
+			variables.finished = true;
+			variables.finishedAt = nowMs();
+			variables.log.line( "==> stopped: the rest was not run" );
+		}
+	}
+
+	// Stops the run: the running step is killed (and counted as failed with exit 130), the rest is not run.
+	function stop() {
+		if ( variables.finished ) return this;
+		variables.stopped = true;
+		variables.log.line( "==> stop requested" );
+		var s = current();
+		if ( !structIsEmpty( s ) ) {
+			stopRunning( s );
+			readNew( s );
+			s.ended = nowMs();
+			s.exit = 130;
+			s.state = "failed";
+			s.note = "stopped";
+			variables.log.line( "    exit 130: stopped while running" );
+			for ( var f in [ s.statusFile, s.pidFile ] ) if ( fileExists( f ) ) fileDelete( f );
+			variables.index = 0;
+		}
+		markRest( "stopped" );
+		return this;
+	}
+
+	// Runs the failed steps (and the ones that were stopped) again, after the others.
+	function retry() {
+		if ( !variables.finished ) return this;
+		var any = false;
+		for ( var s in variables.steps ) if ( s.state == "failed" || s.state == "stopped" ) { s.state = "pending"; s.exit = -1; s.note = ""; s.subDone = 0; s.subTotal = 0; any = true; }
+		if ( !any ) return this;
+		variables.finished = false;
+		variables.stopped = false;
+		variables.index = 0;
+		variables.log.line( "==> retry: running the failed steps again" );
+		return this;
+	}
+
+	// What `bxrig init` reports: the same lists and exit code as running the plan in the foreground.
+	function result() {
+		var data = { done: [], failed: [], skipped: [], stopped: [] };
+		var firstCode = 0;
+		for ( var s in variables.steps ) {
+			if ( s.state == "done" ) data.done.append( { id: s.id } );
+			else if ( s.state == "skipped" ) data.skipped.append( { id: s.id, reason: s.note } );
+			else if ( s.state == "stopped" ) data.stopped.append( { id: s.id } );
+			else if ( s.state == "failed" ) {
+				var bad = { id: s.id, exit: s.exit, command: s.argv.toList( " " ), output: lastLines( s.n, 8 ) };
+				data.failed.append( bad );
+				if ( !firstCode ) firstCode = s.exit;
+			}
+		}
+		data.code = !data.failed.len() ? ( data.stopped.len() ? 130 : 0 ) : ( data.done.len() ? 7 : firstCode );
+		return data;
+	}
+
+	// The last lines (not empty) a step printed.
+	function lastLines( n, count = 8 ) {
+		var out = [];
+		for ( var i = variables.lines.len(); i >= 1 && out.len() < arguments.count; i-- ) {
+			var l = variables.lines[ i ];
+			if ( l.n == arguments.n && len( trim( l.text ) ) ) out.insertAt( 1, l.text );
+		}
+		return out.toList( chr( 10 ) );
+	}
+}
