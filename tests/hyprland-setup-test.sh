@@ -29,12 +29,12 @@ run() { env BXRIG_SYSTEMD_RUN_DIR="${SYSD_DIR:-$tmp/sysd}" BXRIG_OS_RELEASE="$tm
 [[ ! -e "$tmp/cfg" && ! -e "$tmp/home/Pictures" ]] || fail 'the plan wrote files'
 run "$binary" setup hyprland --dry-run --json | jq -e '.ok and (.data.steps | map(.id) | index("starter") != null)' >/dev/null || fail 'dry-run --json lists the starter step'
 
-# a hyprland.lua the user already has is never touched
+# a hyprland.lua the user already has is never overwritten: setup only adds the one load line to the end of it
 mkdir -p "$tmp/cfg/hypr"; echo '-- mine' > "$tmp/cfg/hypr/hyprland.lua"
 out="$(run "$binary" setup hyprland --yes --json)" || fail 'setup hyprland --yes --json failed'
 echo "$out" | jq -e '.ok and (.data.done | map(.id) == ["packages","bluetooth","images","starter","keys"])' >/dev/null || fail "stdout is not one clean JSON envelope with all five steps done: $out"
 grep -q '^systemctl enable --now bluetooth.service' "$LOG" || fail "the Bluetooth service is turned on: $(grep systemctl "$LOG")"
-[[ "$(cat "$tmp/cfg/hypr/hyprland.lua")" == '-- mine' ]] || fail 'existing hyprland.lua was overwritten'
+[[ "$(head -n 1 "$tmp/cfg/hypr/hyprland.lua")" == '-- mine' && "$(grep -c '^require("bxrig")$' "$tmp/cfg/hypr/hyprland.lua")" == 1 ]] || fail 'existing hyprland.lua was overwritten, or the load line was not added once'
 grep -q 'pacman -S --needed --noconfirm hyprland' "$LOG" || fail 'packages installed'
 cmp "$tmp/home/Pictures/BxRig/bxrig.jpg" "$root/assets/wallpapers/bxrig.jpg" || fail "wallpaper written"
 grep -q 'custom_palette = "BxRig"' "$tmp/cfg/noctalia/config.toml" || fail 'noctalia config written'

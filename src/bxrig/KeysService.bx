@@ -40,12 +40,29 @@ class KeysService {
 	}
 
 	// Whether the user's hyprland.lua loads the managed module: clean, not-loaded, or skipped (no hyprland.lua, e.g. a Plasma-only machine).
-	// bxrig never edits hyprland.lua; it only reports and prints the line to add.
+	// `keys apply --yes` adds the one line when it is missing (hyprlandAdd); the rest of the file is never touched. A commented line does not count.
 	function hyprlandLoad() {
 		var file = variables.config.cfgHome() & "/hypr/hyprland.lua";
 		var st = "skipped";
-		if ( fileExists( file ) ) st = find( variables.sc.hyprlandLoadLine(), fileRead( file ) ) > 0 ? "clean" : "not-loaded";
+		if ( fileExists( file ) ) {
+			st = "not-loaded";
+			for ( var line in listToArray( fileRead( file ), chr( 10 ), true ) ) {
+				var t = trim( line );
+				if ( t == variables.sc.hyprlandLoadLine() || t == replace( variables.sc.hyprlandLoadLine(), '"', "'", "all" ) ) { st = "clean"; break; }
+			}
+		}
 		return { name: "hyprland.lua", target: file, state: st };
+	}
+
+	// Adds the load line to the end of the user's hyprland.lua, once, with a comment saying where it came from. The file is backed up first
+	// (~/.local/state/bxrig/backups/hyprland.lua) and written as it was, byte for byte, plus the block. Returns an exit code.
+	function hyprlandAdd( yes, dryRun ) {
+		var hl = hyprlandLoad();
+		var text = fileRead( hl.target );
+		var block = "-- BxRig: loads ~/.config/hypr/bxrig.lua (shortcuts, the Noctalia bar and rules). Added by `bxrig keys apply`; delete these two lines to stop." & chr( 10 ) & variables.sc.hyprlandLoadLine() & chr( 10 );
+		var content = text & ( len( text ) && right( text, 1 ) != chr( 10 ) ? chr( 10 ) : "" ) & ( len( text ) ? chr( 10 ) : "" ) & block;
+		var entry = { name: "hyprland.lua", target: hl.target, mode: variables.config.modeOf( hl.target ), content: content, rc: true };
+		return variables.config.configWrite( entry, content, "add the load line to", yes, dryRun );
 	}
 
 	// `keys check`
@@ -87,8 +104,11 @@ class KeysService {
 			}
 		} else progress( "plasma: kwriteconfig6 not found, skipped (not a Plasma machine)" );
 		if ( worst == 2 ) progress( "Nothing changed. Pass --yes to proceed." );
-		if ( hyprlandLoad().state == "not-loaded" ) progress( "Add this line to " & hyprlandLoad().target & ": " & variables.sc.hyprlandLoadLine() );
-		if ( worst == 0 && yes && !dryRun ) progress( "Note: xremap and the desktop pick the new keys up at their next restart or login. Hyprland loads the module through the line in hyprland.lua." );
+		if ( hyprlandLoad().state == "not-loaded" ) {
+			var hc = hyprlandAdd( yes, dryRun );
+			if ( hc != 0 ) worst = max( worst, hc );
+		}
+		if ( worst == 0 && yes && !dryRun ) progress( "Note: xremap and the desktop pick the new keys up at their next restart or login. Hyprland loads the module through the line in hyprland.lua (reload it: hyprctl reload)." );
 		if ( asJson ) println( variables.cli.envelope( "keys apply", worst, { applied: worst == 0 }, dryRun ) );
 		return worst;
 	}
