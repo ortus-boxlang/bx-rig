@@ -153,8 +153,10 @@ class InstallView {
 		variables.kit.put( arguments.x, arguments.y, variables.kit.trunc( head, arguments.w - len( rt ) - 2 ), variables.CYAN, variables.MANTLE, true );
 		variables.kit.put( arguments.x + arguments.w - len( rt ), arguments.y, rt, variables.SUB, variables.MANTLE );
 		var age = int( ( arguments.st.now - arguments.st.lastOutputAt ) / 1000 );
-		var quiet = age >= 8 ? "   no output for " & span( age * 1000 ) & ", still working" : "";
+		var quiet = age >= 8 ? "   no output for " & span( age * 1000 ) & ( len( arguments.st.leaf ) ? ", running " & arguments.st.leaf : ", still working" ) : "";
 		var tail = len( s.tail ) ? s.tail : "waiting for the first line…";
+		// when it is quiet the line says why: how long, and what the step is running right now
+		if ( len( quiet ) ) quiet = variables.kit.trunc( quiet, max( 20, arguments.w - 14 ) );
 		var room = max( 10, arguments.w - len( quiet ) - 2 );
 		var cx = variables.kit.put( arguments.x + 2, arguments.y + 1, variables.kit.trunc( tail, room ), variables.SUB, variables.MANTLE );
 		if ( len( quiet ) ) variables.kit.put( cx, arguments.y + 1, quiet, age >= 60 ? variables.YELLOW : variables.OVERLAY, variables.MANTLE );

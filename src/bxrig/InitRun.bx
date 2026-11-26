@@ -17,6 +17,7 @@ class InitRun {
 		variables.timeoutMs = ( arguments.opts.timeoutSeconds ?: 3600 ) * 1000;
 		variables.appsTotal = arguments.opts.appsTotal ?: 0;
 		variables.maxLines = 4000;
+		variables.quietMs = arguments.opts.quietMs ?: 5000;   // how long a step may print nothing before the screen asks what it is running
 		variables.steps = [];
 		var n = 0;
 		for ( var s in arguments.steps ) {
@@ -40,6 +41,8 @@ class InitRun {
 		variables.lastSize = -1;
 		variables.lastCheckAt = 0;
 		variables.lastAliveAt = 0;
+		variables.leaf = "";             // what the running step is doing now (its deepest child process), looked up while it is quiet
+		variables.lastLeafAt = 0;
 		return this;
 	}
 
@@ -51,7 +54,7 @@ class InitRun {
 	function state() {
 		return {
 			steps: variables.steps, index: variables.index, finished: variables.finished, stopped: variables.stopped, lines: variables.lines, partial: variables.partial,
-			startedAt: variables.startedAt, finishedAt: variables.finishedAt, lastOutputAt: variables.lastOutputAt, now: nowMs(), appsTotal: variables.appsTotal, logFile: variables.log.file()
+			startedAt: variables.startedAt, finishedAt: variables.finishedAt, lastOutputAt: variables.lastOutputAt, leaf: variables.leaf, now: nowMs(), appsTotal: variables.appsTotal, logFile: variables.log.file()
 		};
 	}
 
@@ -81,6 +84,7 @@ class InitRun {
 				variables.pending = "";
 				variables.partial = "";
 				variables.lastOutputAt = s.started;
+				variables.leaf = "";
 				variables.lastSize = -1;
 				for ( var f in [ s.outFile, s.statusFile, s.pidFile ] ) if ( fileExists( f ) ) fileDelete( f );
 				variables.log.line( "==> step " & s.n & " (" & s.id & "): " & s.title );
@@ -171,7 +175,13 @@ class InitRun {
 				stopRunning( s );
 				variables.log.line( "    timed out after " & int( variables.timeoutMs / 1000 ) & " s" );
 				endStep( s, 124 );
-			} else if ( nowMs() - variables.lastAliveAt > 3000 ) {
+			} else if ( nowMs() - variables.lastOutputAt > variables.quietMs && nowMs() - variables.lastLeafAt > 2500 && fileExists( s.pidFile ) ) {
+				// quiet for a while: look at what the step is running (pacman, makepkg, curl...) and put it on the screen and in the log
+				variables.lastLeafAt = nowMs();
+				var lf = variables.proc.leafCommand( trim( fileRead( s.pidFile ) ) );
+				if ( len( lf ) && lf != variables.leaf ) { variables.leaf = lf; variables.log.line( "    [" & s.id & "] now running: " & lf ); }
+			}
+			if ( !fileExists( s.statusFile ) && nowMs() - variables.lastAliveAt > 3000 ) {
 				// a runner that vanished without writing its code (killed from outside)
 				variables.lastAliveAt = nowMs();
 				if ( fileExists( s.pidFile ) && len( trim( fileRead( s.pidFile ) ) ) && !variables.proc.alive( trim( fileRead( s.pidFile ) ) ) && !fileExists( s.statusFile ) ) {

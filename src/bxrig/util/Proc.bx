@@ -100,6 +100,12 @@ class Proc {
 		return exec( [ "sh", "-c", 'kt() { for c in $(pgrep -P "$1" 2>/dev/null); do kt "$c"; done; kill -TERM "$1" 2>/dev/null; }; kt "$1"', "_", toString( arguments.pid ) ], 10 );
 	}
 
+	// The command line of the deepest child of a process (what it is really doing now: pacman, makepkg, curl, a sudo waiting for a password), "" if it is gone.
+	function leafCommand( pid ) {
+		var r = exec( [ "sh", "-c", 'p=$1; while c=$(pgrep -P "$p" 2>/dev/null | head -n 1); [ -n "$c" ]; do p=$c; done; tr "\\0" " " < /proc/$p/cmdline 2>/dev/null', "_", toString( arguments.pid ) ], 10 );
+		return r.exitCode == 0 ? trim( r.output ) : "";
+	}
+
 	// True when a process is still running.
 	function alive( pid ) {
 		return exec( [ "kill", "-0", toString( arguments.pid ) ], 5 ).exitCode == 0;
