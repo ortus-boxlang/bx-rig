@@ -2697,20 +2697,27 @@
 				},
 				{
 					"name": "boxy",
-					"summary": "Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, optional speech. All opt in.",
+					"summary": "Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, speech on this machine (English and Spanish) or from a server. All opt in.",
 					"usage": [
 						"boxy [--json] | look [--name=N] [--color=theme|#RRGGBB] [--outfit=auto|none|ID] [--holidays=LIST|none] [--birthday=MM-DD]",
 						"boxy export [--dir=DIR] | state | listen start|stop|toggle | say TEXT",
-						"boxy voice [on|off|set] [--url=URL] [--model=M] [--voice=V] [--key=SECRET_NAME] [--format=wav|mp3|opus|flac] [--json]"
+						"boxy voice [on|off|set] [--url=URL] [--model=M] [--voice=V] [--key=SECRET_NAME] [--format=wav|mp3|opus|flac] [--json]",
+						"boxy voice local [--lang=auto|en|es] [--voice=NAME] [--accent=latam|castilian] [--speed=N] [--hear=auto|en|es] [--yes] | list [--lang=en|es] | test [--lang=en|es]"
 					],
 					"examples": [
 						"bxrig boxy",
 						"bxrig boxy look --name=Pixel --color=#ff8800 --outfit=auto --holidays=christmas,halloween",
 						"bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY",
+						"bxrig boxy voice local --lang=auto --accent=latam --hear=auto --yes",
+						"bxrig boxy voice test --lang=es",
 						"bxrig boxy listen toggle"
 					],
 					"mutates": true,
 					"flags": [
+						{
+							"name": "accent",
+							"type": "value"
+						},
 						{
 							"name": "birthday",
 							"type": "value"
@@ -2728,11 +2735,19 @@
 							"type": "value"
 						},
 						{
+							"name": "hear",
+							"type": "value"
+						},
+						{
 							"name": "holidays",
 							"type": "value"
 						},
 						{
 							"name": "key",
+							"type": "value"
+						},
+						{
+							"name": "lang",
 							"type": "value"
 						},
 						{
@@ -2745,6 +2760,10 @@
 						},
 						{
 							"name": "outfit",
+							"type": "value"
+						},
+						{
+							"name": "speed",
 							"type": "value"
 						},
 						{

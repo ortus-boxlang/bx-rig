@@ -1631,12 +1631,13 @@ bxrig android install ~/Downloads/app.apk --yes
 
 ### `bxrig boxy` {#bxrig-boxy}
 
-Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, optional speech. All opt in.
+Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, speech on this machine (English and Spanish) or from a server. All opt in.
 
 ```text
 bxrig boxy [--json] | look [--name=N] [--color=theme|#RRGGBB] [--outfit=auto|none|ID] [--holidays=LIST|none] [--birthday=MM-DD]
 bxrig boxy export [--dir=DIR] | state | listen start|stop|toggle | say TEXT
 bxrig boxy voice [on|off|set] [--url=URL] [--model=M] [--voice=V] [--key=SECRET_NAME] [--format=wav|mp3|opus|flac] [--json]
+bxrig boxy voice local [--lang=auto|en|es] [--voice=NAME] [--accent=latam|castilian] [--speed=N] [--hear=auto|en|es] [--yes] | list [--lang=en|es] | test [--lang=en|es]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -1645,6 +1646,8 @@ Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-
 bxrig boxy
 bxrig boxy look --name=Pixel --color=#ff8800 --outfit=auto --holidays=christmas,halloween
 bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY
+bxrig boxy voice local --lang=auto --accent=latam --hear=auto --yes
+bxrig boxy voice test --lang=es
 bxrig boxy listen toggle
 ```
 

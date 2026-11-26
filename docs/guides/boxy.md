@@ -50,7 +50,34 @@ Your words go to Boxy like a typed question. The answer comes as a notice. **If 
 
 ## Let it speak
 
-Speech is off. To turn it on, point it at any OpenAI-compatible `/v1/audio/speech` server:
+Speech is off. There are two ways to turn it on.
+
+### On this machine, in English and Spanish
+
+Boxy can speak with [bx-audio](https://github.com/ortus-boxlang/bx-audio), a BoxLang module that runs the voices on your own machine. Nothing Boxy says leaves it.
+
+```bash
+install-bx-module bx-audio
+bxrig boxy voice local                     # the plan: voices, accent, download size
+bxrig boxy voice local --yes               # English and Spanish, Latin American accent
+bxrig boxy voice test --lang=es
+```
+
+The first `--yes` downloads the speech engine and the voices (about 350 MB, once). Then:
+
+| Option | What it does |
+| --- | --- |
+| `--lang=auto\|en\|es` | `auto` (the default) speaks each answer in the language it is written in. `en` or `es` always uses that language |
+| `--voice=NAME` | the voice for the language you name with `--lang=en` or `--lang=es`. `bxrig boxy voice list --lang=es` shows the choices (`dora`, `alex`, `santa_es`) |
+| `--accent=latam\|castilian` | how Spanish sounds: Latin American (the default, `z` and `ce`, `ci` as `s`) or Castilian (as `th`) |
+| `--speed=N` | 1 is the voice's own pace, 1.2 faster, 0.85 slower |
+| `--hear=auto\|en\|es` | the language Voxtype listens for when you hold the key. Sets `language` in `[whisper]` of `~/.config/voxtype/config.toml`. For Spanish use a multilingual Voxtype model (not an `.en` one): `voxtype setup model` |
+
+Boxy tells the language by its letters and its small words (`el`, `de`, `que`, `the`, `and`). Short or mixed text can be wrong: set `--lang=en` or `--lang=es` if you always use one.
+
+### With a server
+
+Point it at any OpenAI-compatible `/v1/audio/speech` server:
 
 ```bash
 bxrig secrets set OPENAI_API_KEY
@@ -59,7 +86,7 @@ bxrig boxy voice on
 bxrig boxy say "hello"
 ```
 
-With a cloud server, each answer Boxy reads aloud is sent there: `bxrig boxy voice` and `bxrig privacy` both say where. A local speech server works the same way, with a `127.0.0.1` URL. It needs one of `pw-play`, `paplay`, `ffplay` or `mpv`.
+With a cloud server, each answer Boxy reads aloud is sent there: `bxrig boxy voice` and `bxrig privacy` both say where. A speech server on this machine works the same way, with a `127.0.0.1` URL. Either way it needs one of `pw-play`, `paplay`, `ffplay` or `mpv`. `bxrig boxy voice set` goes back to a server; `bxrig boxy voice local --yes` goes back to bx-audio.
 
 ## Not tested on real hardware
 
