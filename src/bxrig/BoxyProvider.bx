@@ -6,7 +6,7 @@ class BoxyProvider {
 	function id() { return "boxy"; }
 	function icon() { return new bxrig.ControlCenterPages().icon( "boxy" ); }
 	function title() { return "Boxy"; }
-	function hint() { return "Boxy's name, colour, outfits and voice"; }
+	function hint() { return "Boxy's outfits and voice; colour and name: bxrig boxy look; chats: bxrig ai agents chat"; }
 	function emptyText() { return "Nothing to show yet."; }
 	function columns() { return [ { key: "mark", label: "", w: 3 }, { key: "name", label: "", w: 26 }, { key: "state", label: "", w: 14 }, { key: "note", label: "", w: 0 } ]; }
 
@@ -32,7 +32,7 @@ class BoxyProvider {
 		var rows = [];
 		var setting = s.outfit_setting ?: "auto";
 		var stateLines = duplicate( s.sprite ?: [] );
-		for ( var ln in [ "", ( s.name ?: "Boxy" ) & " is " & ( s.state ?: "idle" ) & ( len( s.outfit_name ?: "" ) ? ", wearing the " & s.outfit_name : "" ) & ".", "Colour " & ( s.color ?: "theme" ) & " (" & ( s.accent ?: "" ) & "). Name, colour and holidays: bxrig boxy look.", "Hold Super+Ctrl+Slash (Super+Comma on the traditional style), speak, let go. Approvals always stay on screen." ] ) stateLines.append( ln );
+		stateLines.append( ( s.name ?: "Boxy" ) & " is " & ( s.state ?: "idle" ) & ( len( s.outfit_name ?: "" ) ? ", wearing the " & s.outfit_name : "" ) & ". Talk: hold Super+Comma (Super+Ctrl+Slash in the Mac style)." );
 		rows.append( { kind: "state", mark: "", name: s.name ?: "Boxy", state: s.state ?: "idle", note: s.accent ?: "", id: "", worn: false, lines: stateLines } );
 		rows.append( { kind: "voice", mark: ( v.enabled ?: false ) ? "●" : "", name: "Speech", state: ( v.enabled ?: false ) ? "on" : "off", note: ( v.configured ?: false ) ? "to " & ( v.where ?: "" ) : "not set up", id: "", worn: false, on: v.enabled ?: false,
 				lines: [ "Boxy speaks its answers when this is on. It is off until you set it up:", "bxrig boxy voice set --url=URL --model=M --voice=V --key=SECRET_NAME", ( v.enabled ?: false ) && ( v.where ?: "" ) != "this machine" ? "Its answers are sent to " & ( v.where ?: "" ) & " to be turned into speech." : "v turns it on or off." ] } );

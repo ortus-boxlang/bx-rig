@@ -53,23 +53,55 @@ function M.fetch(render)
 		end
 		render()
 	end, 30000)
-	-- how Boxy looks now (name, colour, outfit, what it is doing); the tab works without it
+	M.fetchLook(render)
+end
+
+local lastLookMs = 0
+
+-- How Boxy looks and what it is doing now (`bxrig boxy --json`); renders only when the picture or the state changed. The tab works without it.
+function M.fetchLook(render)
 	bxrig.json({ "boxy", "--json" }, function(result, err)
 		if err == nil and type(result) == "table" then
+			local changed = look == nil or str(look.state) ~= str(result.state) or str(look.image) ~= str(result.image)
 			look = result
-			render()
+			if changed then
+				render()
+			end
 		end
 	end, 30000)
 end
 
--- Boxy's picture for what it is doing, with a Talk button (hold-to-talk by key is Super+Comma): `bxrig boxy listen toggle`.
+-- Called once a second while the panel is open: follows Boxy's state (the hold-to-talk key changes it from outside) and turns the swirl.
+function M.tick(render)
+	local now = noctalia.nowMs()
+	if now - lastLookMs >= 3000 then
+		lastLookMs = now
+		M.fetchLook(render)
+	end
+	if look ~= nil and type(look.frames) == "table" and #look.frames > 1 then
+		render()
+	end
+end
+
+-- The picture to draw: the one for the state, or the frame of the turning swirl for this moment.
+local function picture()
+	if look == nil then
+		return ""
+	end
+	if type(look.frames) == "table" and #look.frames > 1 then
+		return str(look.frames[(math.floor(noctalia.nowMs() / 700) % #look.frames) + 1])
+	end
+	return str(look.image)
+end
+
+-- Boxy's picture for what it is doing (the antenna swirl turns while it works), with a Talk button (hold-to-talk by key is Super+Comma): `bxrig boxy listen toggle`.
 local function portrait(render)
-	if look == nil or str(look.image) == "" then
+	if look == nil or picture() == "" then
 		return ui.spacer({})
 	end
 	local listening = str(look.state) == "listening"
 	return ui.row({ align = "center", gap = 10 }, {
-		ui.image({ key = "boxy-img", path = str(look.image), fit = "contain", height = 72, width = 72 }),
+		ui.image({ key = "boxy-img", path = picture(), fit = "contain", height = 72, width = 72 }),
 		ui.column({ flexGrow = 1, gap = 2 }, {
 			ui.label({ text = str(look.name) .. " is " .. str(look.state), fontSize = 12, fontWeight = "semibold", maxLines = 1 }),
 			ui.label({ text = "Hold Super+Comma to talk", fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
@@ -136,13 +168,6 @@ local function header(a, render)
 			ui.label({ text = str(a.name), fontSize = 14, fontWeight = "semibold", maxLines = 1 }),
 			ui.label({ text = running and str(a.url) or "stopped", fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
 		}),
-		ui.button({ key = "chat", glyph = "message-chatbot", variant = "ghost", controlSize = "sm", tooltip = "Chat in a terminal (Super+Period)", onClick = function()
-			noctalia.runInTerminal(shq(bxrig.command()) .. " ai agents chat")
-			panel.close()
-		end }),
-		running and ui.button({ key = "web", glyph = "world", variant = "ghost", controlSize = "sm", tooltip = "Its web page (Super+Shift+Period)", onClick = function()
-			bxrig.run({ "ai", "agents", "open" }, function() end, 10000)
-		end }) or ui.spacer({}),
 		ui.button({ key = "svc", text = busy == "service" and "…" or (running and "Stop" or "Start"), glyph = running and "player-stop" or "player-play", variant = "ghost", controlSize = "sm", onClick = function()
 			busy = "service"
 			render()
@@ -153,6 +178,25 @@ local function header(a, render)
 				end
 				M.fetch(render)
 			end, 120000)
+		end }),
+	})
+end
+
+-- Past chats and logs are bx-agents' own: its chat in a terminal (`bxrig ai agents chat`), its web page (`bxrig ai agents open`) and
+-- its log viewer (`bxrig ai agents NAME logs --ui`). BxRig keeps no copy of your conversations.
+local function links(a)
+	local running = a.running == true
+	return ui.row({ align = "center", gap = 6 }, {
+		ui.button({ key = "chat", text = "Chat", glyph = "message-chatbot", variant = "ghost", controlSize = "sm", tooltip = "Chat in a terminal, with your past chats (Super+Period)", onClick = function()
+			noctalia.runInTerminal(shq(bxrig.command()) .. " ai agents chat")
+			panel.close()
+		end }),
+		running and ui.button({ key = "web", text = "Web", glyph = "world", variant = "ghost", controlSize = "sm", tooltip = "bx-agents' web page: past chats, files, skills (Super+Shift+Period)", onClick = function()
+			bxrig.run({ "ai", "agents", "open" }, function() end, 10000)
+		end }) or ui.spacer({}),
+		ui.button({ key = "logs", text = "Logs", glyph = "file-text", variant = "ghost", controlSize = "sm", tooltip = "bx-agents' log viewer", onClick = function()
+			noctalia.runInTerminal(shq(bxrig.command()) .. " ai agents " .. shq(str(a.name)) .. " logs --ui")
+			panel.close()
 		end }),
 	})
 end
@@ -201,6 +245,7 @@ function M.view(render)
 	local a = agent()
 	if a == nil then
 		return ui.column({ paddingV = 16, align = "center", gap = 8 }, {
+			portrait(render),
 			ui.glyph({ name = "message-chatbot", size = 24, color = "on_surface_variant" }),
 			ui.label({ text = "Boxy, your desktop assistant, is not set up yet", fontSize = 12, textAlign = "center", maxLines = 3 }),
 			ui.button({ key = "make", text = busy == "make" and "…" or "Make Boxy", glyph = "sparkles", variant = "secondary", controlSize = "sm", onClick = function()
@@ -216,7 +261,7 @@ function M.view(render)
 			end }),
 		})
 	end
-	local children = { header(a, render), portrait(render), ui.separator({}) }
+	local children = { header(a, render), portrait(render), links(a), ui.separator({}) }
 	if a.running == true then
 		table.insert(children, askBox(a, render))
 	else

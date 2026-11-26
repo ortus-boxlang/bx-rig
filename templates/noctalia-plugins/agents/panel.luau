@@ -427,4 +427,5 @@ function update()
 	if noctalia.nowMs() - lastFetchMs >= REFRESH_MS then
 		fetch()
 	end
+	boxy.tick(render)
 end

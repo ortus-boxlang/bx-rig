@@ -26,6 +26,8 @@ for ( s in l.states() ) {
 }
 testkit.check( "svg: the states differ", l.svg( "idle", ( h & "00ff78" ), "" ) != l.svg( "listening", ( h & "00ff78" ), "" ) && l.svg( "working", ( h & "00ff78" ), "" ) != l.svg( "speaking", ( h & "00ff78" ), "" ) );
 testkit.check( "svg: an outfit adds to the drawing", len( l.svg( "idle", ( h & "00ff78" ), "santa" ) ) > len( l.svg( "idle", ( h & "00ff78" ), "" ) ) );
+testkit.check( "frames: the working swirl has four turning pictures, the others one", l.frameCount( "working" ) == 4 && l.frameCount( "idle" ) == 1 && l.svg( "working", ( h & "00ff78" ), "", 0 ) != l.svg( "working", ( h & "00ff78" ), "", 1 ) && l.svg( "working", ( h & "00ff78" ), "", 4 ) == l.svg( "working", ( h & "00ff78" ), "", 0 ) );
+testkit.check( "antenna: every state has the swirl on the antenna tip, and a hat does not cover it", reFind( "stroke-linecap", l.svg( "idle", ( h & "00ff78" ), "" ) ) > 0 && find( "cy=""-84""", l.svg( "working", ( h & "00ff78" ), "santa" ) ) > 0 );
 testkit.check( "svg: the accent changes it", find( ( h & "ff8800" ), l.svg( "idle", ( h & "ff8800" ), "" ) ) > 0 && find( ( h & "ff8800" ), l.svg( "idle", ( h & "00ff78" ), "" ) ) == 0 );
 
 // the text sprite
@@ -46,5 +48,7 @@ testkit.check( "page: v flips the speech", p.actions()[ 2 ].run( rows[ 2 ] ).arg
 // the bar tab
 luau = fileRead( "../templates/noctalia-plugins/agents/boxy.luau" );
 testkit.check( "bar: the Boxy tab shows its picture and a Talk button, from bxrig boxy", find( '"boxy", "--json"', luau ) > 0 && find( "ui.image(", luau ) > 0 && find( '"boxy", "listen", "toggle"', luau ) > 0 );
+testkit.check( "bar: the picture turns while it works and follows the state, even before Boxy is set up", find( "function M.tick", luau ) > 0 && find( "look.frames", luau ) > 0 && find( "boxy.tick(render)", fileRead( "../templates/noctalia-plugins/agents/panel.luau" ) ) > 0 && find( "gap = 8 }, {" & chr( 10 ) & chr( 9 ) & chr( 9 ) & chr( 9 ) & "portrait(render),", luau ) > 0 );
+testkit.check( "bar: Chat, Web and Logs open bx-agents' own chat, web page and log viewer", find( '" ai agents chat"', luau ) > 0 && find( '{ "ai", "agents", "open" }', luau ) > 0 && find( 'logs --ui', luau ) > 0 );
 
 testkit.done( "all passed" );

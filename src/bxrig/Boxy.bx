@@ -106,42 +106,57 @@ class Boxy {
 		return [ "convert", "-background", "none", "-density", "288", arguments.svg, "-resize", "256x256", arguments.png ];
 	}
 
-	// Writes the four state images for the look now: { dir, format, files: { state: path } }.
+	// The file name of a state's picture at a frame: boxy-idle, boxy-working, boxy-working-1 ... (frame 0 has no suffix).
+	string function imageName( required string state, numeric frame = 0 ) { return "boxy-" & arguments.state & ( arguments.frame > 0 ? "-" & arguments.frame : "" ); }
+
+	// Writes the state images for the look now (the working swirl has four, turning): { dir, format, files: { state: path }, frames: { state: [ paths ] } }.
 	struct function exportImages( required string dir ) {
 		var l = lookNow();
 		var tool = rasterTool();
 		directoryCreate( arguments.dir, true, true );
 		var files = {};
+		var frames = {};
 		var format = len( tool ) ? "png" : "svg";
 		for ( var s in variables.look.states() ) {
-			var svgPath = arguments.dir & "/boxy-" & s & ".svg";
-			fileWrite( svgPath, variables.look.svg( s, l.accent, l.outfit ) );
-			var path = svgPath;
-			if ( len( tool ) ) {
-				var png = arguments.dir & "/boxy-" & s & ".png";
-				var r = variables.proc.exec( rasterArgv( tool, svgPath, png ), 60 );
-				if ( r.exitCode == 0 && fileExists( png ) ) path = png; else format = "svg";
+			frames[ s ] = [];
+			for ( var f = 0; f < variables.look.frameCount( s ); f++ ) {
+				var svgPath = arguments.dir & "/" & imageName( s, f ) & ".svg";
+				fileWrite( svgPath, variables.look.svg( s, l.accent, l.outfit, f ) );
+				var path = svgPath;
+				if ( len( tool ) ) {
+					var png = arguments.dir & "/" & imageName( s, f ) & ".png";
+					var r = variables.proc.exec( rasterArgv( tool, svgPath, png ), 60 );
+					if ( r.exitCode == 0 && fileExists( png ) ) path = png; else format = "svg";
+				}
+				frames[ s ].append( path );
 			}
-			files[ s ] = path;
+			files[ s ] = frames[ s ][ 1 ];
 		}
 		fileWrite( arguments.dir & "/.look", lookKey( l ) );
-		return { dir: arguments.dir, format: format, files: files };
+		return { dir: arguments.dir, format: format, files: files, frames: frames };
 	}
 
-	string function lookKey( required struct l ) { return hash( l.accent & "|" & l.outfit & "|" & rasterTool() ); }
+	string function lookKey( required struct l ) { return hash( "antenna-1|" & l.accent & "|" & l.outfit & "|" & rasterTool() ); }
 
-	// The image for a state, made again first when the look changed or a file is gone.
-	string function imageFor( required string state ) {
+	// The pictures for a state (one, or four for the working swirl), made again first when the look changed or a file is gone.
+	array function framesFor( required string state ) {
 		var l = lookNow();
 		var dir = imageDir();
 		var ok = fileExists( dir & "/.look" ) && fileRead( dir & "/.look" ) == lookKey( l );
-		var png = dir & "/boxy-" & arguments.state & ".png";
-		var svg = dir & "/boxy-" & arguments.state & ".svg";
-		if ( ok && !fileExists( png ) && !fileExists( svg ) ) ok = false;
-		if ( !ok ) {
-			try { var e = exportImages( dir ); return e.files[ arguments.state ]; } catch ( any x ) { return ""; }
+		var out = [];
+		for ( var f = 0; f < variables.look.frameCount( arguments.state ); f++ ) {
+			var png = dir & "/" & imageName( arguments.state, f ) & ".png";
+			var svg = dir & "/" & imageName( arguments.state, f ) & ".svg";
+			if ( !fileExists( png ) && !fileExists( svg ) ) ok = false;
+			out.append( fileExists( png ) ? png : svg );
 		}
-		return fileExists( png ) ? png : svg;
+		if ( ok ) return out;
+		try { return exportImages( dir ).frames[ arguments.state ]; } catch ( any x ) { return []; }
+	}
+
+	string function imageFor( required string state ) {
+		var f = framesFor( arguments.state );
+		return f.len() ? f[ 1 ] : "";
 	}
 
 	// ---- the commands ----
@@ -153,12 +168,12 @@ class Boxy {
 		var lines = variables.look.sprite( st, 0, l.outfit );
 		lines.append( "" );
 		lines.append( l.name & " is " & st & ( len( l.outfit_name ) ? ", wearing the " & l.outfit_name & ( l.outfit_setting == "auto" ? " (the season)" : "" ) : "" ) & "." );
-		lines.append( "Colour: " & ( l.color == "theme" ? "your theme's accent" : l.color ) & " (" & l.accent & ").  Change it: bxrig boxy look --name=NAME --color=#RRGGBB --outfit=auto|none|ID" );
+		lines.append( "Colour: " & ( l.color == "theme" ? "your theme's accent (" & l.accent & ")" : l.accent ) & ".  Change it: bxrig boxy look --name=NAME --color=#RRGGBB --outfit=auto|none|ID" );
 		lines.append( "Talk to it: hold Super+Comma, speak, let go (needs Voxtype: bxrig dictation setup voxtype). Approvals stay on screen." );
 		lines.append( "Speech: " & ( c.voice.enabled ? "on, " & voiceWhere( c.voice ) : "off (bxrig boxy voice)" ) & "." );
 		return variables.out.say( "ok", {
 				name: l.name, color: l.color, accent: l.accent, outfit_setting: l.outfit_setting, outfit: l.outfit, outfit_name: l.outfit_name, holidays: l.holidays, birthday: l.birthday,
-				state: st, sprite: variables.look.sprite( st, 0, l.outfit ), image: imageFor( st ),
+				state: st, sprite: variables.look.sprite( st, 0, l.outfit ), image: imageFor( st ), frames: framesFor( st ),
 				voice: { enabled: c.voice.enabled, configured: len( c.voice.url ) > 0, where: voiceWhere( c.voice ) }
 			}, arguments.asJson, lines );
 	}
@@ -218,7 +233,7 @@ class Boxy {
 	function exportCmd( dir, asJson ) {
 		var d = len( arguments.dir ) ? arguments.dir : imageDir();
 		var e = exportImages( d );
-		var lines = [ "The four images (" & e.format & ") are in " & variables.env.tilde( d ) & ":" ];
+		var lines = [ "The pictures (" & e.format & "; the working swirl has four, turning) are in " & variables.env.tilde( d ) & ":" ];
 		for ( var s in variables.look.states() ) lines.append( "  " & variables.env.tilde( e.files[ s ] ) );
 		if ( e.format == "svg" ) lines.append( "No rsvg-convert or ImageMagick found, so these are SVG. For PNG: bxrig install librsvg" );
 		return variables.out.say( "ok", e, arguments.asJson, lines );
@@ -227,7 +242,7 @@ class Boxy {
 	function stateCmd( asJson ) {
 		var st = readState();
 		var l = lookNow();
-		return variables.out.say( "ok", { state: st, image: imageFor( st ), sprite: variables.look.sprite( st, 0, l.outfit ), name: l.name, accent: l.accent, outfit: l.outfit }, arguments.asJson, [ st ] );
+		return variables.out.say( "ok", { state: st, image: imageFor( st ), frames: framesFor( st ), sprite: variables.look.sprite( st, 0, l.outfit ), name: l.name, accent: l.accent, outfit: l.outfit }, arguments.asJson, [ st ] );
 	}
 
 	// ---- notices ----
@@ -278,7 +293,8 @@ class Boxy {
 		if ( !ask.ok ) {
 			writeState( "idle" );
 			notice( "I heard you (" & heard & ") but could not ask: " & ask.error );
-			return ask.why == "precondition" ? variables.out.precondition( ask.error, arguments.asJson ) : variables.out.failed( ask.error, arguments.asJson );
+			var said = "heard """ & heard & """, but " & ask.error;
+			return ask.why == "precondition" ? variables.out.precondition( said, arguments.asJson ) : variables.out.failed( said, arguments.asJson );
 		}
 		if ( len( ask.answer ) ) notice( ask.answer );
 		// something to change waits for you on screen; a voice never approves it

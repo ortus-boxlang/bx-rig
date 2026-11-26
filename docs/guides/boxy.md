@@ -23,8 +23,20 @@ bxrig boxy export                              # the four pictures
 
 - **Colour** follows your theme's accent unless you pick one with `--color`.
 - **Outfits** follow the season in `auto`: a beanie in winter, a flower in spring, sunglasses in summer, a leaf in autumn. Holiday outfits (`christmas`, `halloween`, `newyear`) appear only for the holidays you list, and the party hat on your birthday. `--outfit=none` turns it all off, or pick one: `beanie`, `flower`, `sunglasses`, `leaf`, `santa`, `pumpkin`, `party`.
-- **Four pictures:** idle, listening, working (a BoxLang swirl above its head) and speaking. The bar shows the one for what Boxy is doing; `bxrig boxy export` writes them as PNG (SVG without `rsvg-convert` or ImageMagick).
+- **Four pictures:** Boxy is an antenna bot. The tip of its antenna is the BoxLang swirl: it is lit and turns while Boxy works, the antenna leans while it listens, and the mouth opens when it speaks. The bar shows the one for what Boxy is doing; `bxrig boxy export` writes them as PNG (SVG without `rsvg-convert` or ImageMagick). The working swirl has four pictures, so it turns.
 - **In a terminal** it is a small text sprite, like `[ •‿• ]`, with the outfit as a hat above.
+
+## Your conversations and logs
+
+BxRig keeps no copy of your chats. They are bx-agents' own (`~/.bxagents/Boxy/chat.db`), and you open them there:
+
+- **Chat in a terminal:** `bxrig ai agents chat`, Super+Period, or the bar's Boxy tab, **Chat**. It joins the running Boxy, so your earlier chats are there.
+- **The web page:** `bxrig ai agents open`, Super+Shift+Period, or **Web** in the bar tab: chats, files and skills.
+- **Logs:** `bxrig ai agents Boxy logs --ui` (a full-screen viewer), or **Logs** in the bar tab.
+
+What you say with the hold-to-talk key goes into the same Boxy, as the conversation `bxrig-voice`.
+
+![The Boxy tab in the bar](../assets/screenshots/boxy-bar.webp)
 
 The Control Center has a Boxy page (`bxrig tui boxy`): Enter on an outfit puts it on.
 

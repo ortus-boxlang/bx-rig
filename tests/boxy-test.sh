@@ -35,9 +35,9 @@ bx look --outfit=auto --holidays=none --birthday= >/dev/null
 
 # ---- images and state ----
 bx export --dir="$tmp/img" --json | jq -e '(.data.files | length) == 4' >/dev/null || fail "export: $(bx export --dir="$tmp/img")"
-ls "$tmp/img"/boxy-*.svg | wc -l | grep -q 4 || fail 'four SVGs'
+ls "$tmp/img"/boxy-*.svg | wc -l | grep -q 7 || fail 'seven SVGs: one each and the working swirl in four'
 grep -q '<svg' "$tmp/img/boxy-listening.svg" || fail 'svg content'
-bx state --json | jq -e '.data.state == "idle" and (.data.image | length) > 0' >/dev/null || fail 'state'
+bx state --json | jq -e '.data.state == "idle" and (.data.image | length) > 0 and (.data.frames | length) == 1' >/dev/null || fail 'state'
 
 # ---- speech: off until set up, never sends before it is on ----
 bx voice --json | jq -e '.data.enabled == false and .data.configured == false' >/dev/null || fail 'voice off'
