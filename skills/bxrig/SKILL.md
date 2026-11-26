@@ -5,7 +5,7 @@ description: "Use this skill when the user asks about BxRig, the developer rig t
 
 # BxRig
 
-BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for developers. Supported today: CachyOS and Arch Linux (Debian, Ubuntu and Fedora are the direction, not yet supported). It turns a CachyOS or Arch install into a finished developer rig: Hyprland with Noctalia (KDE Plasma stays installed beside it), BoxLang and MatchBox, apps, shell, AI agents. It is one native binary, `bxrig`, written in BoxLang and compiled with MatchBox. Docs: https://bxcachy.boxlang.io
+BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for developers. Supported today: CachyOS and Arch Linux (Debian, Ubuntu and Fedora are the direction, not yet supported). It turns a CachyOS or Arch install into a finished developer rig: Hyprland with Noctalia (KDE Plasma stays installed beside it), BoxLang and MatchBox, apps, shell, AI agents. It is one native binary, `bxrig`, written in BoxLang and compiled with MatchBox. Docs: https://bxrig.boxlang.io
 
 ## Rules every command follows
 

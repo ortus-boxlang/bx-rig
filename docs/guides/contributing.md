@@ -10,7 +10,7 @@ BxRig is written in BoxLang and compiled with MatchBox. The code is in `src/`, t
 
 ## These docs
 
-The docs are built with [bxSites](https://bxsites.io) from `docs/` and `bxsites.yaml` and published to GitHub Pages at <https://bxcachy.boxlang.io> by `.github/workflows/docs.yml` on every push to `development`.
+The docs are built with [bxSites](https://bxsites.io) from `docs/` and `bxsites.yaml` and published to GitHub Pages at <https://bxrig.boxlang.io> by `.github/workflows/docs.yml` on every push to `development`.
 
 ```bash
 bx-module install bx-sites

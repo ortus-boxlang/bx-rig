@@ -14,7 +14,7 @@ One command installs the toolchains, the desktop and your apps, then a setup wiz
 
 BxRig is a [BoxLang](https://boxlang.io) program compiled to a native executable with [MatchBox](https://github.com/ortus-boxlang/matchbox).
 
-Docs: <https://bxcachy.boxlang.io> (built with bxSites from `docs/`).
+Docs: <https://bxrig.boxlang.io> (built with bxSites from `docs/`).
 
 ## Install
 
@@ -93,7 +93,7 @@ bxrig skills install --yes    # BxRig, BoxLang and MatchBox skills for your agen
 bxrig update check
 ```
 
-The full list (114 commands) is in the [command reference](https://bxcachy.boxlang.io/reference/commands/). Every command supports `--json`, and mutating commands support `--dry-run`. A command that only touches your own settings or starts a program (themes, the bar, `window quake`, `webcam toggle`) acts at once and needs no `--yes`.
+The full list (114 commands) is in the [command reference](https://bxrig.boxlang.io/reference/commands/). Every command supports `--json`, and mutating commands support `--dry-run`. A command that only touches your own settings or starts a program (themes, the bar, `window quake`, `webcam toggle`) acts at once and needs no `--yes`.
 
 ## Exit codes
 

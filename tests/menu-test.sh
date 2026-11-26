@@ -67,7 +67,7 @@ rm -f "$FAKE/n" "$FAKE/spawn.log" "$FAKE/terminal.log"; : > "$FAKE/answers"; run
 play 0 0 "$EXIT"; wait_for "$FAKE/spawn.log"; grep -q 'bxrig apps' "$FAKE/spawn.log" || fail 'search: the first flat entry is Apps'
 i="$(flatidx 'Appearance > Next theme')"; [[ "$i" =~ ^[0-9]+$ ]] || fail 'flatidx'
 play 0 "$i" "$EXIT"; wait_for "$FAKE/spawn.log"; grep -q 'bxrig theme next' "$FAKE/spawn.log" || fail "search runs the chosen entry: $(cat "$FAKE/spawn.log" 2>/dev/null)"
-j="$(flatidx 'Learn > BxRig docs')"; play 0 "$j" "$EXIT"; wait_for "$FAKE/open.log"; grep -q 'xdg-open https://bxcachy.boxlang.io/' "$FAKE/open.log" || fail 'an open entry runs xdg-open'
+j="$(flatidx 'Learn > BxRig docs')"; play 0 "$j" "$EXIT"; wait_for "$FAKE/open.log"; grep -q 'xdg-open https://bxrig.boxlang.io/' "$FAKE/open.log" || fail 'an open entry runs xdg-open'
 
 # ---- pick: Appearance (4) -> Theme (0) -> the first theme in the list (0) ----
 play 5 0 0 7 "$EXIT"; wait_for "$FAKE/spawn.log"; grep -q '^bxrig theme set bxrig$' "$FAKE/spawn.log" || fail "theme picker: $(cat "$FAKE/spawn.log" 2>/dev/null)"

@@ -487,7 +487,7 @@ KDE kept side by side. Catalog: legacy `apps.json` is canonical; `filezilla` and
 
 ## 20. Roadmap from 2026-11-21: the 14 PRs (current)
 
-From the owner's request on 2026-11-21 to review what BxRig is missing for developers. Each PR is shaped with the owner (API, tasks) before code. State on 2026-11-25:
+From the owner's request on 2026-11-21 to review what BxRig is missing for developers. Each PR is shaped with the owner (API, tasks) before code. State on 2026-11-26:
 
 | PR | What | State |
 | --- | --- | --- |
@@ -502,33 +502,17 @@ From the owner's request on 2026-11-21 to review what BxRig is missing for devel
 | 9 | Launcher: Vicinae with the BxRig theme, script commands, file search | merged (#29) |
 | 10 | Local AI on llama.cpp: hardware picks, one server, tune | merged (#31) |
 | 10b | Discover on Hugging Face, download queue, `ai bench`, agents on local models | merged (#32) |
-| 10c | AI on the selected text (Super+Alt+E). Asking your files (an index) was not built | merged (#33) |
+| 10c | AI on the selected text (Super+Alt+E). Asking your files was dropped on 2026-11-26: a local indexer and search tool does that | merged (#33) |
 | 11 | BoxLang agents with bx-agents: `bxrig ai agents` | merged (#34) |
 | 11b | Boxy, the desktop assistant: tools, approvals, skill review, Super+Period, bar tab | merged (#36) |
 | 12 | MCP for every agent, `bxrig privacy`, every major coding agent in the catalog | merged (#37) |
-| 13 | Sync (OneDrive, Dropbox, Google Drive, NAS) | **deferred** by the owner on 2026-11-25, shape below |
-| 14 | Android: Waydroid with Google Play, a Control Center page; opt-in, off by default | built, in review |
+| 14 | Android: Waydroid with Google Play, a Control Center page; opt-in, off by default | merged (#39) |
+| 15 | Boxy's character and voice: the antenna bot, outfits by season and holiday, hold-to-talk with Voxtype, optional speech, Chat, Web and Logs in the bar | merged (#40) |
 
-### 20.1 Deferred: PR 13 Sync (shape proposed 2026-11-25, not approved)
+### 20.1 Other open items
 
-Builds on `bxrig cloud` (rclone remotes, `rclone config`, mounts):
-
-```
-bxrig cloud add onedrive|dropbox|gdrive [NAME] [--yes]   # guided: installs rclone, signs in through the browser
-bxrig sync                                             # synced folders, last run, conflicts
-bxrig sync add NAME [--folder=DIR] [--remote-path=/] [--every=15m] [--yes]
-bxrig sync now [NAME] | pause NAME | resume NAME | remove NAME [--yes]
-```
-
-Two-way with `rclone bisync` (a first `--resync` shown as a plan), run by BxRig's scheduler (skips on battery, notifies on failure). Targets: the three cloud services and a NAS (the 2026-11-22 mockup had a NAS row; `nas sync` is one-way today). UI: synced folders on the Control Center's Storage page (sync now, pause), a state icon in the bar, an optional wizard question.
-
-Open questions for the owner: (1) the default folder, `~/OneDrive`, `~/Dropbox`, `~/Google Drive` or `~/Cloud/NAME`; (2) every 15 minutes or on change; (3) conflicts: keep both or the newer wins; (4) everything or chosen folders.
-
-### 20.2 Other open items
-
-- **MCP filters:** `bxrig mcp serve` drops bx-ai's log lines and its reply to `notifications/initialized` from standard output. bx-ai fixed both in #345 (merged 2026-11-25, checked locally); its snapshot did not publish because 4 Mistral tests got HTTP 402 (no API budget on CI's account). Remove the filters once bx-ai publishes and bx-agents ships a snapshot with it (bx-agents carries its own copy of bx-ai).
+- **MCP filters:** `bxrig mcp serve` drops bx-ai's log lines and its reply to `notifications/initialized` from standard output. bx-ai fixed both in #345 (merged 2026-11-25, checked locally); its snapshot did not publish because 4 Mistral tests got HTTP 402 (no API budget on CI's account; the owner added budget and released it by hand on 2026-11-26, and bx-agents' own CI is being fixed). Remove the filters once bx-ai publishes and bx-agents ships a snapshot with it (bx-agents carries its own copy of bx-ai).
 - **bx-ai on MatchBox (bx-ai #341):** stdio serving did not work on 2026-11-25; switch `mcp serve` to it when it does.
-- **Boxy's character and voice** (the original 11b: a preview sheet, theme colours, outfits and holidays, voice in and out): not built.
-- **GPU monitoring** (graphics memory and temperature in the panel, planned in PR 10): not built; only hardware detection exists.
-- **Asking your files** (local search with embeddings, planned in 10c): not built.
+- **Boxy's character and voice:** built (PR 15, #40). Open: **local speech** (a speech server on this machine behind `bxrig boxy voice`; the owner wants it, shape not agreed yet) and a check on a real machine: the held key, Voxtype with a microphone, and Chat, Web and Logs against a real Boxy.
+- **Dropped by the owner on 2026-11-26:** GPU monitoring (other tools do it) and asking your files (a local indexer and search tool does it).
 - **Parked:** screen and image understanding, cloud fallback with a cost meter, model profiles per app.

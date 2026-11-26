@@ -1,6 +1,6 @@
 name: "BxRig"
 description: "BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for developers."
-baseURL: "https://bxcachy.boxlang.io/"
+baseURL: "https://bxrig.boxlang.io/"
 source: docs
 theme:
   name: bootstrap
