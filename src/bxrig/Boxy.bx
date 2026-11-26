@@ -8,6 +8,8 @@
 //   boxy listen start|stop|toggle hold-to-talk: Voxtype records (`voxtype record start --output-file`), the words go to Boxy, the answer comes
 //                                 as a notice and, when its voice is on, aloud. Approving something stays on screen: never by voice.
 //   boxy say TEXT                 speak it through the voice you set up
+//   boxy voice local [--lang=auto|en|es] [--voice=N] [--accent=latam|castilian] [--speed=N] [--hear=auto|en|es] --yes   speech on this machine with bx-audio
+//   boxy voice list|test          the voices bx-audio offers; say a sample line
 //   boxy voice [on|off|set]       Boxy's speech: off until you turn it on; any OpenAI-compatible /v1/audio/speech server (a cloud provider, or
 //                                 a local one) with --url --model --voice [--key=SECRET_NAME] [--format=wav]
 // Exit: 0 done, 2 usage, 4 precondition, 6 a step failed. Facts from Voxtype's docs (README, USER_MANUAL) and Hyprland's Lua binds (read 2026-11-25).
@@ -31,7 +33,7 @@ class Boxy {
 	function imageDir() { return variables.env.cache( "boxy" ); }
 
 	struct function defaults() {
-		return { name: "Boxy", color: "theme", outfit: "auto", holidays: [], birthday: "", voice: { enabled: false, url: "", model: "", voice: "", key: "", format: "wav" } };
+		return { name: "Boxy", color: "theme", outfit: "auto", holidays: [], birthday: "", voice: { enabled: false, engine: "http", url: "", model: "", voice: "", key: "", format: "wav", lang: "auto", accent: "latam", speed: 1, voices: { en: "joe", es: "dora" } } };
 	}
 
 	struct function config() {
@@ -39,6 +41,8 @@ class Boxy {
 		var d = defaults();
 		if ( !isStruct( c.voice ?: "" ) ) c.voice = d.voice;
 		for ( var k in d.voice ) if ( !structKeyExists( c.voice, k ) ) c.voice[ k ] = d.voice[ k ];
+		if ( !isStruct( c.voice.voices ) ) c.voice.voices = d.voice.voices;
+		for ( var k in d.voice.voices ) if ( !structKeyExists( c.voice.voices, k ) ) c.voice.voices[ k ] = d.voice.voices[ k ];
 		if ( !isArray( c.holidays ?: "" ) ) c.holidays = [];
 		return c;
 	}
@@ -174,12 +178,13 @@ class Boxy {
 		return variables.out.say( "ok", {
 				name: l.name, color: l.color, accent: l.accent, outfit_setting: l.outfit_setting, outfit: l.outfit, outfit_name: l.outfit_name, holidays: l.holidays, birthday: l.birthday,
 				state: st, sprite: variables.look.sprite( st, 0, l.outfit ), image: imageFor( st ), frames: framesFor( st ),
-				voice: { enabled: c.voice.enabled, configured: len( c.voice.url ) > 0, where: voiceWhere( c.voice ) }
+				voice: { enabled: c.voice.enabled, engine: c.voice.engine, configured: voiceReady( c.voice ), where: voiceWhere( c.voice ) }
 			}, arguments.asJson, lines );
 	}
 
 	// Where the voice's words go: "this machine" for a local server, else the host.
 	string function voiceWhere( required struct v ) {
+		if ( ( arguments.v.engine ?: "http" ) == "bx-audio" ) return "this machine";
 		if ( !len( arguments.v.url ) ) return "not set up";
 		var host = reReplace( reReplace( arguments.v.url, "^[a-z]+://", "" ), "[/:].*$", "" );
 		return arrayFind( [ "127.0.0.1", "localhost", "::1", "[::1]" ], host ) ? "this machine" : host;
@@ -336,6 +341,7 @@ class Boxy {
 	// Speaks the text through the voice settings: { ok, error }.
 	struct function speak( required string text ) {
 		var v = config().voice;
+		if ( v.engine == "bx-audio" ) return speakLocal( arguments.text, v );
 		if ( !len( v.url ) ) return { ok: false, error: "no voice is set up: bxrig boxy voice set --url=URL --model=M --voice=V" };
 		var player = playerArgv();
 		if ( !player.len() ) return { ok: false, error: "no audio player found (pw-play, paplay, ffplay or mpv)" };
@@ -361,6 +367,138 @@ class Boxy {
 		return { ok: true, error: "" };
 	}
 
+	// ---- local speech (bx-audio) ----
+
+	boolean function voiceReady( required struct v ) { return arguments.v.engine == "bx-audio" || len( arguments.v.url ) > 0; }
+
+	// The language of a text, "es" or "en": Spanish when it has a letter only Spanish uses (n with a tilde, an upside down mark) or more Spanish
+	// than English small words, else English.
+	string function langOf( required string text ) {
+		var marks = chr( 241 ) & chr( 191 ) & chr( 161 );
+		var accents = chr( 225 ) & chr( 233 ) & chr( 237 ) & chr( 243 ) & chr( 250 );
+		var t = " " & lCase( reReplace( arguments.text, "[^a-zA-Z" & marks & accents & chr( 252 ) & "]+", " ", "all" ) ) & " ";
+		if ( reFind( "[" & marks & "]", t ) ) return "es";
+		var es = 0;
+		var en = 0;
+		for ( var w in [ "el", "la", "los", "las", "de", "que", "y", "en", "un", "una", "es", "por", "con", "para", "no", "se", "lo", "su", "al", "del", "me", "mi", "te", "pero", "como", "muy", "hola", "gracias", "est" & chr( 225 ), "m" & chr( 225 ) & "s" ] ) if ( find( " " & w & " ", t ) ) es++;
+		for ( var w in [ "the", "and", "is", "are", "of", "to", "in", "that", "it", "for", "you", "with", "on", "this", "was", "not", "have", "hello", "thanks", "i" ] ) if ( find( " " & w & " ", t ) ) en++;
+		if ( es == 0 && en == 0 && reFind( "[" & accents & "]", t ) ) return "es";
+		return es > en ? "es" : "en";
+	}
+
+	// Speaks the text on this machine with bx-audio: { ok, error }. The accent for Spanish goes in BX_AUDIO_ACCENT (latam or castilian).
+	struct function speakLocal( required string text, required struct v ) {
+		if ( !variables.proc.has( "bx-audio" ) ) return { ok: false, error: "bx-audio is not installed: install-bx-module bx-audio" };
+		var player = playerArgv();
+		if ( !player.len() ) return { ok: false, error: "no audio player found (pw-play, paplay, ffplay or mpv)" };
+		var lang = arguments.v.lang == "auto" ? langOf( arguments.text ) : arguments.v.lang;
+		var voice = arguments.v.voices[ lang ] ?: arguments.v.voices.en;
+		directoryCreate( getDirectoryFromPath( heardFile() ), true, true );
+		var words = variables.env.state( "boxy-say.txt" );
+		var audio = variables.env.state( "boxy-say.wav" );
+		fileWrite( words, speakable( arguments.text ) );
+		writeState( "speaking" );
+		// the first time, bx-audio downloads the engine and the voice: give it time
+		var r = variables.proc.exec( [ "env", "BX_AUDIO_ACCENT=" & arguments.v.accent, "bx-audio", "speak", "--file=" & words, "--voice=" & voice, "--out=" & audio, "--speed=" & arguments.v.speed ], 900 );
+		if ( fileExists( words ) ) fileDelete( words );
+		if ( r.exitCode != 0 || !fileExists( audio ) ) {
+			writeState( "idle" );
+			return { ok: false, error: "bx-audio could not speak (" & variables.proc.why( r ) & ")" };
+		}
+		var argv = duplicate( player );
+		argv.append( audio );
+		variables.proc.exec( argv, 300 );
+		if ( fileExists( audio ) ) fileDelete( audio );
+		writeState( "idle" );
+		return { ok: true, error: "" };
+	}
+
+	function saveConfig( required struct c, asJson ) {
+		directoryCreate( getDirectoryFromPath( configFile() ), true, true );
+		if ( variables.store.write( "boxy", configFile(), arguments.c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
+		return 0;
+	}
+
+	// Voxtype's own file: the language it listens for is the `language` key of its [whisper] section.
+	function voxtypeFile() { return variables.env.xdgConfig( "voxtype/config.toml" ); }
+
+	function localCmd( o, asJson ) {
+		var c = config();
+		var dry = structKeyExists( arguments.o, "dry-run" );
+		var yes = structKeyExists( arguments.o, "yes" );
+		var v = duplicate( c.voice );
+		if ( structKeyExists( arguments.o, "lang" ) ) {
+			if ( !arrayFind( [ "auto", "en", "es" ], arguments.o.lang ) ) return variables.out.usage( "--lang is auto, en or es", arguments.asJson );
+			v.lang = arguments.o.lang;
+		}
+		if ( structKeyExists( arguments.o, "accent" ) ) {
+			if ( !arrayFind( [ "latam", "castilian" ], arguments.o.accent ) ) return variables.out.usage( "--accent is latam (Latin American) or castilian", arguments.asJson );
+			v.accent = arguments.o.accent;
+		}
+		if ( structKeyExists( arguments.o, "voice" ) ) {
+			if ( !reFind( "^[A-Za-z0-9._-]{1,40}$", arguments.o.voice ) ) return variables.out.usage( "--voice is a bx-audio voice name, such as dora (see: bxrig boxy voice list)", arguments.asJson );
+			if ( !arrayFind( [ "en", "es" ], v.lang ) ) return variables.out.usage( "--voice needs --lang=en or --lang=es to say which language it speaks", arguments.asJson );
+			v.voices[ v.lang ] = arguments.o.voice;
+		}
+		if ( structKeyExists( arguments.o, "speed" ) ) {
+			if ( !isNumeric( arguments.o.speed ) || val( arguments.o.speed ) < 0.25 || val( arguments.o.speed ) > 4 ) return variables.out.usage( "--speed is a number from 0.25 to 4 (1 is the voice's own pace)", arguments.asJson );
+			v.speed = val( arguments.o.speed );
+		}
+		var hear = arguments.o.hear ?: "";
+		if ( len( hear ) && !arrayFind( [ "auto", "en", "es" ], hear ) ) return variables.out.usage( "--hear is auto, en or es: the language Voxtype listens for", arguments.asJson );
+		v.engine = "bx-audio";
+		v.enabled = true;
+		var steps = [
+			"Speech runs on this machine with bx-audio: " & v.voices.en & " for English, " & v.voices.es & " for Spanish (" & ( v.accent == "latam" ? "Latin American" : "Castilian" ) & "), language " & v.lang & ".",
+			"The voices are downloaded the first time (about 350 MB, one time); nothing you say or Boxy answers leaves this machine."
+		];
+		if ( len( hear ) ) steps.append( "Voxtype listens for " & hear & ": language=" & hear & " in " & voxtypeFile() & ( hear == "en" ? "" : " (needs a multilingual model, not an .en one: voxtype setup model)" ) & "." );
+		var data = { engine: "bx-audio", lang: v.lang, accent: v.accent, voices: v.voices, speed: v.speed, hear: hear };
+		if ( !yes || dry ) return variables.out.plan( "turn Boxy's speech on, local with bx-audio", data, arguments.asJson, dry, steps );
+		if ( !variables.proc.has( "bx-audio" ) ) return variables.out.precondition( "bx-audio is not installed: install-bx-module bx-audio", arguments.asJson );
+		var warm = v.lang == "auto" ? [ "en", "es" ] : [ v.lang ];
+		directoryCreate( getDirectoryFromPath( heardFile() ), true, true );
+		var sample = variables.env.state( "boxy-sample.wav" );
+		for ( var lg in warm ) {
+			var r = variables.proc.exec( [ "env", "BX_AUDIO_ACCENT=" & v.accent, "bx-audio", "speak", lg == "es" ? "Hola, soy " & c.name : "Hello, I am " & c.name, "--voice=" & v.voices[ lg ], "--out=" & sample ], 1800 );
+			if ( fileExists( sample ) ) fileDelete( sample );
+			if ( r.exitCode != 0 ) return variables.out.failed( "bx-audio could not get the " & lg & " voice " & v.voices[ lg ] & " (" & variables.proc.why( r ) & ")", arguments.asJson );
+		}
+		if ( len( hear ) ) {
+			var file = voxtypeFile();
+			var lines = fileExists( file ) ? listToArray( fileRead( file ), chr( 10 ), true ) : [];
+			lines = new bxrig.util.Ini().set( lines, "whisper", "language", '"' & hear & '"' );
+			directoryCreate( getDirectoryFromPath( file ), true, true );
+			fileWrite( file, lines.toList( chr( 10 ) ) & chr( 10 ) );
+		}
+		c.voice = v;
+		var w = saveConfig( c, arguments.asJson );
+		if ( w != 0 ) return w;
+		return variables.out.say( "ok", data, arguments.asJson, steps );
+	}
+
+	function listCmd( o, asJson ) {
+		if ( !variables.proc.has( "bx-audio" ) ) return variables.out.precondition( "bx-audio is not installed: install-bx-module bx-audio", arguments.asJson );
+		var lang = arguments.o.lang ?: "";
+		if ( len( lang ) && !arrayFind( [ "en", "es" ], lang ) ) return variables.out.usage( "--lang is en or es", arguments.asJson );
+		var argv = [ "bx-audio", "voices" ];
+		if ( len( lang ) ) argv.append( "--lang=" & ( lang == "es" ? "es_ES" : "en_US" ) );
+		var r = variables.proc.exec( argv, 60 );
+		if ( r.exitCode != 0 ) return variables.out.failed( "bx-audio could not list voices (" & variables.proc.why( r ) & ")", arguments.asJson );
+		return variables.out.say( "ok", { text: r.output }, arguments.asJson, listToArray( r.output, chr( 10 ), true ) );
+	}
+
+	function testCmd( o, asJson ) {
+		var c = config();
+		var lang = arguments.o.lang ?: ( c.voice.lang == "auto" ? "en" : c.voice.lang );
+		if ( !arrayFind( [ "en", "es" ], lang ) ) return variables.out.usage( "--lang is en or es", arguments.asJson );
+		var v = duplicate( c.voice );
+		v.engine = "bx-audio";
+		var r = speakLocal( lang == "es" ? "Hola, soy " & c.name & ". Esta es mi voz." : "Hello, I am " & c.name & ". This is my voice.", v );
+		if ( !r.ok ) return variables.out.precondition( r.error, arguments.asJson );
+		return variables.out.say( "ok", { spoke: true, lang: lang, voice: v.voices[ lang ] }, arguments.asJson, [ "Spoken, " & lang & ", voice " & v.voices[ lang ] & "." ] );
+	}
+
 	function sayCmd( text, asJson ) {
 		if ( !len( trim( arguments.text ) ) ) return variables.out.usage( "bxrig boxy say TEXT", arguments.asJson );
 		var r = speak( arguments.text );
@@ -371,7 +509,11 @@ class Boxy {
 	function voiceCmd( words, o, asJson ) {
 		var c = config();
 		var sub = arguments.words.len() ? arguments.words[ 1 ] : "";
+		if ( sub == "local" ) return localCmd( arguments.o, arguments.asJson );
+		if ( sub == "list" ) return listCmd( arguments.o, arguments.asJson );
+		if ( sub == "test" ) return testCmd( arguments.o, arguments.asJson );
 		if ( sub == "set" ) {
+			c.voice.engine = "http";
 			if ( structKeyExists( arguments.o, "url" ) ) {
 				if ( !reFind( "^https?://[^\s]+$", arguments.o.url ) ) return variables.out.usage( "--url is an http or https address, such as https://api.openai.com/v1/audio/speech", arguments.asJson );
 				c.voice.url = arguments.o.url;
@@ -391,19 +533,21 @@ class Boxy {
 			directoryCreate( getDirectoryFromPath( configFile() ), true, true );
 			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
 		} else if ( sub == "on" ) {
-			if ( !len( c.voice.url ) || !len( c.voice.model ) ) return variables.out.precondition( "set the voice up first: bxrig boxy voice set --url=URL --model=MODEL --voice=VOICE [--key=SECRET_NAME]", arguments.asJson );
+			if ( c.voice.engine != "bx-audio" && ( !len( c.voice.url ) || !len( c.voice.model ) ) ) return variables.out.precondition( "set the voice up first: bxrig boxy voice set --url=URL --model=MODEL --voice=VOICE [--key=SECRET_NAME]", arguments.asJson );
 			c.voice.enabled = true;
 			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
 		} else if ( sub == "off" ) {
 			c.voice.enabled = false;
 			if ( variables.store.write( "boxy", configFile(), c ) != 0 ) return variables.out.failed( "could not write " & configFile(), arguments.asJson );
-		} else if ( len( sub ) ) return variables.out.usage( "bxrig boxy voice [on|off|set --url=URL --model=M --voice=V --key=NAME --format=wav]", arguments.asJson );
+		} else if ( len( sub ) ) return variables.out.usage( "bxrig boxy voice [on|off|set --url=URL --model=M --voice=V --key=NAME --format=wav | local [--lang=auto|en|es] [--voice=NAME] [--accent=latam|castilian] [--speed=N] [--hear=auto|en|es] | list [--lang=en|es] | test [--lang=en|es]]", arguments.asJson );
 		var v = c.voice;
 		var where = voiceWhere( v );
-		var lines = [ "Boxy's speech is " & ( v.enabled ? "on" : "off" ) & ( len( v.url ) ? ": " & where : "" ) & "." ];
+		var local = v.engine == "bx-audio";
+		var lines = [ "Boxy's speech is " & ( v.enabled ? "on" : "off" ) & ( voiceReady( v ) ? ": " & where : "" ) & "." ];
 		if ( v.enabled && where != "this machine" ) lines.append( "Its answers are sent to " & where & " to be turned into speech." );
-		if ( !len( v.url ) ) lines.append( "Off until you set it up: bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY, then bxrig boxy voice on" );
+		if ( local ) lines.append( "Local, with bx-audio: " & v.voices.en & " for English, " & v.voices.es & " for Spanish (" & ( v.accent == "latam" ? "Latin American" : "Castilian" ) & "), language " & v.lang & ", speed " & v.speed & ". Nothing leaves this machine. Try it: bxrig boxy voice test --lang=es" );
+		else if ( !len( v.url ) ) lines.append( "Off until you set it up: local, bxrig boxy voice local --lang=auto --yes, or a server: bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY, then bxrig boxy voice on" );
 		else lines.append( "Model " & v.model & ", voice " & v.voice & ", " & v.format & ( len( v.key ) ? ", key " & v.key & ( len( keyValue( v.key ) ) ? " (found)" : " (NOT found: bxrig secrets set " & v.key & ")" ) : ", no key" ) & ". Try it: bxrig boxy say hello" );
-		return variables.out.say( "ok", { enabled: v.enabled, configured: len( v.url ) > 0, where: where, url: v.url, model: v.model, voice: v.voice, key: v.key, format: v.format }, arguments.asJson, lines );
+		return variables.out.say( "ok", { enabled: v.enabled, engine: v.engine, configured: voiceReady( v ), where: where, url: v.url, model: v.model, voice: v.voice, key: v.key, format: v.format, lang: v.lang, accent: v.accent, speed: v.speed, voices: v.voices }, arguments.asJson, lines );
 	}
 }

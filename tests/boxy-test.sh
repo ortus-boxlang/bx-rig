@@ -54,6 +54,36 @@ grep -q 'sekret' <(grep '^curl' "$LOG" | sed 's/auth=.*//') && fail 'the key nev
 grep -q '^play ' "$LOG" || fail 'the audio is played'
 bx voice off >/dev/null; bx voice --json | jq -e '.data.enabled == false and .data.configured' >/dev/null || fail 'voice off keeps the settings'
 
+# ---- speech on this machine: bx-audio, English and Spanish ----
+stub bx-audio 'echo "bx-audio accent=${BX_AUDIO_ACCENT:-} $*" >> "$LOG"
+if [[ "$1" == voices ]]; then echo "dora  es_ES  Apache-2.0"; exit 0; fi
+for a in "$@"; do case "$a" in --out=*) printf RIFFfake > "${a#--out=}" ;; esac; done'
+: > "$LOG"
+[[ "$(code "$binary" boxy voice local --lang=fr --yes)" == 2 && "$(code "$binary" boxy voice local --accent=klingon --yes)" == 2 && "$(code "$binary" boxy voice local --voice=dora --yes)" == 2 && "$(code "$binary" boxy voice local --speed=9 --yes)" == 2 && "$(code "$binary" boxy voice local --hear=fr --yes)" == 2 ]] || fail 'bad local options are usage errors'
+[[ "$(code "$binary" boxy voice local)" == 2 ]] || fail 'local voice shows a plan before --yes'
+grep -q 'bx-audio' "$LOG" && fail 'the plan runs nothing'
+bx voice local --dry-run --lang=auto --accent=castilian --hear=auto | grep -q 'Castilian' || fail 'dry run says the accent'
+[[ -f "$H/.config/bxrig/boxy.json" ]] && jq -e '.voice.engine == "bx-audio"' "$H/.config/bxrig/boxy.json" >/dev/null && fail 'dry run writes nothing'
+bx voice local --yes --json | jq -e '.data.engine == "bx-audio" and .data.lang == "auto" and .data.accent == "latam" and .data.voices.es == "dora" and .data.voices.en == "joe"' >/dev/null || fail 'local on, defaults: Latin American, dora and joe'
+grep -q 'speak Hello, I am Pixel --voice=joe' "$LOG" && grep -q 'speak Hola, soy Pixel --voice=dora' "$LOG" || fail "both voices are fetched first: $(cat "$LOG")"
+bx voice --json | jq -e '.data.enabled and .data.engine == "bx-audio" and .data.configured and .data.where == "this machine"' >/dev/null || fail 'voice status says local'
+bx voice | grep -q 'Nothing leaves this machine' || fail 'status says nothing leaves'
+bx --json | jq -e '.data.voice.engine == "bx-audio" and .data.voice.where == "this machine"' >/dev/null || fail 'boxy status says local'
+: > "$LOG"; bx say "Hola, ¿cómo estás? Gracias por todo." >/dev/null || fail 'say in Spanish'
+grep -q 'accent=latam speak --file=.* --voice=dora ' "$LOG" || fail "Spanish text uses dora, Latin American: $(cat "$LOG")"
+grep -q '^play ' "$LOG" || fail 'the audio is played'
+: > "$LOG"; bx say "The weather is nice and it is for you." >/dev/null; grep -q -- '--voice=joe ' "$LOG" || fail "English text uses joe: $(cat "$LOG")"
+: > "$LOG"; bx say "La casa es grande" >/dev/null; grep -q -- '--voice=dora ' "$LOG" || fail "small Spanish words are enough: $(cat "$LOG")"
+bx voice local --yes --lang=es --voice=alex --accent=castilian --speed=1.1 --hear=es >/dev/null || fail 'local with options'
+: > "$LOG"; bx say "hello there" >/dev/null; grep -q 'accent=castilian speak --file=.* --voice=alex --out=.* --speed=1.1' "$LOG" || fail "a fixed language ignores the text's: $(cat "$LOG")"
+grep -q 'language="es"' "$H/.config/voxtype/config.toml" || fail "Voxtype listens for Spanish: $(cat "$H/.config/voxtype/config.toml")"
+bx voice test --lang=es --json | jq -e '.data.spoke and .data.voice == "alex"' >/dev/null || fail 'voice test'
+bx voice list --lang=es | grep -q dora || fail 'voice list'
+[[ "$(code "$binary" boxy voice local --yes --lang=auto --voice=dora)" == 2 ]] || fail '--voice with lang auto is a usage error'
+bx voice set --url=https://api.example.com/v1/audio/speech --model=tts-1 --voice=alloy >/dev/null; bx voice --json | jq -e '.data.engine == "http"' >/dev/null || fail 'voice set goes back to a server'
+mv "$tmp/bin/bx-audio" "$tmp/bin/bx-audio.off"; [[ "$(code "$binary" boxy voice local --yes --lang=en)" == 4 ]] || fail 'no bx-audio is a precondition'
+mv "$tmp/bin/bx-audio.off" "$tmp/bin/bx-audio"
+
 # ---- hold to talk ----
 : > "$LOG"
 bx listen start | grep -q 'is listening' || fail 'listen start'

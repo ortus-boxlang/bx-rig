@@ -513,6 +513,6 @@ From the owner's request on 2026-11-21 to review what BxRig is missing for devel
 
 - **MCP filters:** `bxrig mcp serve` drops bx-ai's log lines and its reply to `notifications/initialized` from standard output. bx-ai fixed both in #345 (merged 2026-11-25, checked locally); its snapshot did not publish because 4 Mistral tests got HTTP 402 (no API budget on CI's account; the owner added budget and released it by hand on 2026-11-26, and bx-agents' own CI is being fixed). Remove the filters once bx-ai publishes and bx-agents ships a snapshot with it (bx-agents carries its own copy of bx-ai).
 - **bx-ai on MatchBox (bx-ai #341):** stdio serving did not work on 2026-11-25; switch `mcp serve` to it when it does.
-- **Boxy's character and voice:** built (PR 15, #40). Open: **local speech** (a speech server on this machine behind `bxrig boxy voice`; the owner wants it, shape not agreed yet) and a check on a real machine: the held key, Voxtype with a microphone, and Chat, Web and Logs against a real Boxy.
+- **Boxy's character and voice:** built (PR 15, #40), and local speech in English and Spanish with bx-audio (PR 16, `bxrig boxy voice local`). Open: a check on a real machine: the held key, Voxtype with a microphone (Spanish needs a multilingual model), and Chat, Web and Logs against a real Boxy.
 - **Dropped by the owner on 2026-11-26:** GPU monitoring (other tools do it) and asking your files (a local indexer and search tool does it).
 - **Parked:** screen and image understanding, cloud fallback with a cost meter, model profiles per app.
