@@ -23,11 +23,27 @@ sha=0123456789abcdef0123456789abcdef01234567
 mkdir -p "$tmp/bin" "$tmp/mvmbin"
 cat > "$tmp/mb-template" <<'FAKE'
 #!/usr/bin/env bash
+printf 'fakebin %s\n' "$*" >> "${FAKE_LOG:-/dev/null}"
 case "${1:-}" in
 	--version|-v) echo "matchbox version ${FAKE_MB_VERSION:-${MB_VERSION:-0.14.0}}"; echo "commit: feedbee" ;;
 	*--build*) if [[ "${FAKE_SHARE:-1}" == 1 ]]; then echo "Error: Compiler Error: Circular class reference: A -> B -> A" >&2; exit 1; else echo "thread 'main' has overflowed its stack" >&2; exit 134; fi ;;
 	*probe.bxs) if [[ "${FAKE_TUI:-1}" == 1 ]]; then echo bxrig-tui-ok; else echo "Error: Native class 'tui.TUI' not found. Ensure it is registered." >&2; exit 1; fi ;;
 esac
+# dev-build puts --output after --target; create the binary from whichever argument carries the path
+case " $* " in
+	*" --output "*)
+		out=""
+		while (( $# )); do [[ "$1" == --output ]] && { out="${2:-}"; break; }; shift; done
+		[[ -n "$out" ]] || exit 0
+		cat > "$out" <<'BIN'
+#!/usr/bin/env bash
+printf 'fakebin %s\n' "$*" >> "${FAKE_LOG:-/dev/null}"
+[[ "${1:-}" == version ]] && echo "BxRig 0.11.0-dev"
+exit 0
+BIN
+		chmod +x "$out" ;;
+esac
+exit 0
 FAKE
 cat > "$tmp/bin/git" <<'FAKE'
 #!/usr/bin/env bash
@@ -72,9 +88,28 @@ n=0
 # fresh: a scratch repo with the scripts under test (root = $w/repo, so .cache is $w/repo/.cache); a clean HOME without mvm
 fresh() {
 	n=$((n+1)); w="$tmp/case$n"; r="$w/repo"; log="$w/log"
-	mkdir -p "$r/scripts/lib" "$r/bootstrap" "$r/tests"
+	mkdir -p "$r/scripts/lib" "$r/bootstrap" "$r/src" "$r/tests"
 	cp "$src/box.json" "$r/"; cp "$src/scripts/setup-local.sh" "$src/scripts/get-matchbox.sh" "$src/scripts/dev-build.sh" "$r/scripts/"
 	cp "$src/scripts/lib/matchbox-ref.sh" "$r/scripts/lib/"
+	: > "$r/src/Main.bx"
+	printf '#!/usr/bin/env bash\nexit 0\n' | tee "$r/bootstrap/gen-assets.sh" "$r/bootstrap/gen-version.sh" "$r/scripts/get-modules.sh" > /dev/null
+	chmod +x "$r/bootstrap/gen-assets.sh" "$r/bootstrap/gen-version.sh" "$r/scripts/get-modules.sh"
+	# The installer stages are faked: they log the exact call (and the MatchBox env) and install the binary they are given.
+	cat > "$r/bootstrap/install.sh" <<'FAKE'
+#!/usr/bin/env bash
+printf 'installer %s [mb=%s]\n' "$*" "${BXRIG_MATCHBOX_FILE:-none}" >> "${FAKE_LOG:-/dev/null}"
+if [[ -n "${FAKE_INSTALLER_FAIL:-}" && "${1:-}" == "$FAKE_INSTALLER_FAIL" ]]; then
+	echo "fake installer stage $1 failed" >&2
+	exit 7
+fi
+case "${1:-}" in
+	binary)
+		dest="${BXRIG_BIN_DIR:-$HOME/.local/bin}/bxrig"; mkdir -p "${dest%/*}"
+		for a in "$@"; do [[ -f "$a" && -x "$a" ]] && { cp "$a" "$dest"; chmod +x "$dest"; }; done ;;
+esac
+exit 0
+FAKE
+	chmod +x "$r/bootstrap/install.sh"
 	rm -rf "${tmp:?}/home"; mkdir -p "$tmp/home"
 	: > "$log"
 }
@@ -338,6 +373,41 @@ rm -f "$r/dist/bxrig"
 extra_env=(HOME="$tmp/home" MATCHBOX="$w/mb" FAKE_SHARE=0); run dev-build.sh; extra_env=(HOME="$tmp/home")
 [[ $rc == 1 ]] || fail "dev-build with a MatchBox without class sharing: exit $rc"
 has "$w/out" "cannot compile BxRig efficiently" "dev-build: the class-sharing message"; [[ ! -e "$r/dist/bxrig" ]] || fail "dev-build built with a MatchBox that cannot compile bxrig"
+
+# ---- after a successful build: provision this machine with the same stages as bootstrap/install.sh ----
+fresh; run setup-local.sh --matchbox branch
+[[ $rc == 0 ]] || fail "build + machine setup: exit $rc: $(cat "$w/out")"
+d="$(mbdir ortus-boxlang-matchbox-bxrig)"
+has "$log" "installer packages --yes [mb=none]" "setup: packages"
+has "$log" "installer toolchains --yes [mb=$d/target/debug/matchbox]" "setup: toolchains use the MatchBox just built"
+has "$log" "installer binary --yes --force --binary $r/dist/bxrig [mb=none]" "setup: installs the binary just built"
+has "$log" "installer core --yes [mb=none]" "setup: core apps"
+has "$w/out" "== the bxrig binary from dist/bxrig ==" "setup: stage names are shown"
+p="$(grep -n '^installer packages ' "$log" | cut -d: -f1)"; t="$(grep -n '^installer toolchains ' "$log" | cut -d: -f1)"
+b="$(grep -n '^installer binary ' "$log" | cut -d: -f1)"; c="$(grep -n '^installer core ' "$log" | cut -d: -f1)"
+[[ -n "$p" && -n "$t" && -n "$b" && -n "$c" && $p -lt $t && $t -lt $b && $b -lt $c ]] || fail "setup: stages ran out of order ($p $t $b $c)"
+# no terminal: the wizard is left to the user, like the installer without --yes
+lacks "$log" "installer wizard" "setup: no wizard call without a terminal"
+has "$w/out" "No terminal for the setup wizard. Run: bxrig init" "setup: wizard hint"
+
+fresh; run setup-local.sh --matchbox branch --defaults
+[[ $rc == 0 ]] || fail "setup with --defaults: exit $rc: $(cat "$w/out")"
+has "$log" "fakebin init --defaults --yes" "--defaults runs the wizard against the installed binary"
+[[ -x "$tmp/home/.local/bin/bxrig" ]] || fail "--defaults: the binary stage did not install bxrig"
+fresh; run setup-local.sh --matchbox branch --defaults --no-wizard
+[[ $rc == 0 ]] || fail "--no-wizard: exit $rc"
+lacks "$log" "fakebin init" "--no-wizard: the wizard did not run"
+
+fresh; run setup-local.sh --matchbox branch --no-setup
+[[ $rc == 0 ]] || fail "--no-setup: exit $rc: $(cat "$w/out")"
+lacks "$log" "installer " "--no-setup: no installer stage ran"
+has "$w/out" "Machine setup skipped (--no-setup)" "--no-setup: says so"
+
+fresh; extra_env=(HOME="$tmp/home" FAKE_INSTALLER_FAIL=core); run setup-local.sh --matchbox branch; extra_env=(HOME="$tmp/home")
+[[ $rc != 0 ]] || fail "a failed installer stage must fail setup-local"
+has "$w/out" "Machine setup failed at the core apps" "setup: failure names the stage"
+has "$w/out" "dist/bxrig is still ready" "setup: failure keeps the build"
+lacks "$log" "fakebin init" "setup: failure stops before the wizard"
 
 # ---- the summary at the end: which MatchBox, how to switch, how to test the installer with it ----
 fresh; run setup-local.sh --matchbox-branch develop --no-build

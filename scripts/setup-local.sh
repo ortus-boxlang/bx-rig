@@ -2,6 +2,7 @@
 # Sets up a local BxRig development environment: picks a MatchBox, records it in .cache/dev.env
 # (read by scripts/dev-build.sh and tests/run-all.sh), builds dist/bxrig and runs a smoke test.
 #   scripts/setup-local.sh [--matchbox stable|snapshot|branch] [--matchbox-branch REF] [--matchbox-repo REPO] [--release] [--no-build]
+#                          [--no-setup] [--no-wizard] [--defaults]
 #     stable    the released MatchBox, installed with mvm (`mvm install latest`, `mvm use latest`)
 #     snapshot  the snapshot MatchBox from mvm (`mvm install snapshot`, `mvm use snapshot`)
 #     branch    a branch of a MatchBox repository, shallow clone in .cache/matchbox-src/<repo>-<ref> built with cargo
@@ -14,12 +15,15 @@
 # BxRig is always built with the MatchBox chosen. It needs both the terminal UI (bif-tui) and the class-file sharing fix (MatchBox
 # commit e7812e6, on the bxrig branch but not on develop/snapshots). The script probes both and stops with the reason before saving
 # anything or building; it never switches to another MatchBox by itself.
+# After a successful build it provisions this machine with the same stages as bootstrap/install.sh (packages, toolchains, the
+# fresh dist/bxrig, core apps), then starts the setup wizard at a terminal. --defaults runs the wizard with its defaults when
+# there is no terminal. --no-setup only builds; --no-wizard skips just the wizard.
 # .cache/dev.env records the MatchBox path, repo, ref and commit. Switch: scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 . "$root/scripts/lib/matchbox-ref.sh"
 envfile="$root/.cache/dev.env"
-choice=""; build=1; release=0
+choice=""; build=1; release=0; setup=1; wizard=1; wizard_defaults=0
 branch="${BXRIG_MATCHBOX_BRANCH:-}"; branch_set=0; [[ -z "$branch" ]] || branch_set=1
 repo_in="${BXRIG_MATCHBOX_REPO:-}"; repo_set=0; [[ -z "$repo_in" ]] || repo_set=1
 branch_from="BXRIG_MATCHBOX_BRANCH"; repo_from="BXRIG_MATCHBOX_REPO"
@@ -34,6 +38,10 @@ while (( $# )); do
 		--matchbox-repo=*) repo_in="${1#*=}"; repo_set=1; repo_from="--matchbox-repo"; shift ;;
 		--release) release=1; shift ;;
 		--no-build) build=0; shift ;;
+		--setup) setup=1; shift ;;
+		--no-setup) setup=0; shift ;;
+		--no-wizard) wizard=0; shift ;;
+		--defaults) wizard_defaults=1; shift ;;
 		-h|--help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 0 ;;
 		*) echo "unknown argument: $1" >&2; exit 2 ;;
 	esac
@@ -157,13 +165,48 @@ summary() {
 	echo "Switch:          scripts/setup-local.sh --matchbox stable|snapshot|branch   (for example: --matchbox branch --matchbox-branch bxrig)"
 	printf 'Test the end-user installer with it:\n  BXRIG_MATCHBOX_FILE=%q bash bootstrap/install.sh toolchains --yes\n' "$mb"
 }
+# Provision this machine from the local checkout, with the exact binary and MatchBox just built. These are the same stages the
+# web installer runs through bootstrap/install.sh; only the download/signature part is skipped (there is nothing to download).
+setup_machine() {
+	local inst="$root/bootstrap/install.sh" bin="$root/dist/bxrig" installed="${BXRIG_BIN_DIR:-$HOME/.local/bin}/bxrig"
+	[[ -f "$inst" ]] || { echo "No installer at $inst" >&2; return 4; }
+	[[ -x "$bin" ]] || { echo "No built binary at $bin" >&2; return 4; }
+	stage() { # LABEL CMD...
+		local label="$1"; shift
+		echo
+		echo "== $label =="
+		"$@" || { printf 'Machine setup failed at %s. dist/bxrig is still ready; fix the problem and rerun this script.\n' "$label" >&2; return 1; }
+	}
+	stage "packages (bootstrap/install.sh packages)" bash "$inst" packages --yes || return $?
+	# The branch, snapshot or stable MatchBox chosen above is installed the way the installer's summary suggests.
+	stage "toolchains (with the MatchBox chosen above)" env BXRIG_MATCHBOX_FILE="$mb" bash "$inst" toolchains --yes || return $?
+	stage "the bxrig binary from dist/bxrig" bash "$inst" binary --yes --force --binary "$bin" || return $?
+	stage "the core apps" bash "$inst" core --yes || return $?
+	if (( wizard )); then
+		echo
+		if (( wizard_defaults )); then
+			stage "the setup wizard (defaults)" "$installed" init --defaults --yes || return $?
+		elif [[ -t 0 && -t 1 ]]; then
+			stage "the setup wizard" bash "$inst" wizard || return $?
+		else
+			echo "No terminal for the setup wizard. Run: bxrig init"
+		fi
+	fi
+}
+
 (( build )) || { summary; exit 0; }
 echo
 echo "Building dist/bxrig with $mb (usually about a second) ..."
 MATCHBOX="$mb" "$root/scripts/dev-build.sh"
 echo "Running smoke test ..."
 "$root/dist/bxrig" version
-(cd "$root/src" && "$mb" ../tests/init_plan_test.bxs >/dev/null) && echo "smoke test passed"
+if (cd "$root/src" && "$mb" ../tests/init_plan_test.bxs >/dev/null); then echo "smoke test passed"; else echo "Smoke test failed; this machine was not set up" >&2; exit 1; fi
+if (( setup )); then
+	setup_machine || exit $?
+else
+	echo
+	echo "Machine setup skipped (--no-setup); dist/bxrig is ready."
+fi
 echo
 echo "Ready. Next:"
 echo "  scripts/dev-build.sh            rebuild dist/bxrig"

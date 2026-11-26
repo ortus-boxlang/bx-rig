@@ -102,7 +102,7 @@ The full list (114 commands) is in the [command reference](https://bxrig.boxlang
 ## Development
 
 ```bash
-scripts/setup-local.sh                       # one time: asks stable, snapshot or a MatchBox branch, builds dist/bxrig, smoke test
+scripts/setup-local.sh                       # one time: MatchBox choice, build dist/bxrig, smoke test, set up this machine
 bash scripts/setup-local.sh --matchbox branch --matchbox-branch bxrig   # no question; any other branch or fork works the same
 scripts/dev-build.sh                         # rebuilds dist/bxrig with that MatchBox
 tests/run-all.sh                             # every test by discovery: *-test.sh with the binary, *_test.bxs with matchbox
@@ -110,6 +110,8 @@ bash tests/theme-test.sh dist/bxrig        # script tests, one per area (fake to
 (cd src && matchbox ../tests/init_plan_test.bxs)   # unit tests (35 `.bxs` files; they need no native build)
 bash tests/dry-test.sh                       # ratchet: patterns that must not come back
 ```
+
+After a successful build `setup-local.sh` runs the same `bootstrap/install.sh` stages as the web installer: packages, toolchains (installing the selected MatchBox), the fresh `dist/bxrig`, the core apps, then `bxrig init` at a terminal. `--no-setup` builds without provisioning, `--no-wizard` skips only `init`, and `--defaults` runs the wizard with its defaults when there is no terminal.
 
 Layout:
 
