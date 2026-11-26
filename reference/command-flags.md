@@ -299,6 +299,17 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `android` | `--data` | bool |  |
 | `android` | `--open` | bool |  |
 | `android` | `--vanilla` | bool |  |
+| `boxy` | `--birthday` | value |  |
+| `boxy` | `--color` | value |  |
+| `boxy` | `--dir` | value |  |
+| `boxy` | `--format` | value |  |
+| `boxy` | `--holidays` | value | `christmas` |
+| `boxy` | `--key` | value |  |
+| `boxy` | `--model` | value | `tts-1` |
+| `boxy` | `--name` | value |  |
+| `boxy` | `--outfit` | value | `auto` |
+| `boxy` | `--url` | value | `https` |
+| `boxy` | `--voice` | value | `alloy` |
 | `ai` | `--agent` | value |  |
 | `ai` | `--all` | bool |  |
 | `ai` | `--backend` | value |  |

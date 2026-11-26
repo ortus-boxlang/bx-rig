@@ -33,6 +33,7 @@
 - [Scheduler](https://bxcachy.boxlang.io/guides/scheduler.md) ([HTML](https://bxcachy.boxlang.io/guides/scheduler/index.html))
 - [Your NAS](https://bxcachy.boxlang.io/guides/nas.md) ([HTML](https://bxcachy.boxlang.io/guides/nas/index.html))
 - [BoxLang and MatchBox](https://bxcachy.boxlang.io/guides/boxlang.md) ([HTML](https://bxcachy.boxlang.io/guides/boxlang/index.html))
+- [Boxy's look and voice](https://bxcachy.boxlang.io/guides/boxy.md) ([HTML](https://bxcachy.boxlang.io/guides/boxy/index.html))
 - [Calendar and reminders](https://bxcachy.boxlang.io/guides/calendar.md) ([HTML](https://bxcachy.boxlang.io/guides/calendar/index.html))
 - [Developer tools](https://bxcachy.boxlang.io/guides/developer-tools.md) ([HTML](https://bxcachy.boxlang.io/guides/developer-tools/index.html))
 - [Updates and channels](https://bxcachy.boxlang.io/guides/updates.md) ([HTML](https://bxcachy.boxlang.io/guides/updates/index.html))
