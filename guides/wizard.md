@@ -36,7 +36,7 @@ When you press Enter on the review, the wizard stays on screen and installs. It 
 - **`v` opens the log** under the bar: every line every step prints, live, with the step it came from. Arrows, PgUp and PgDn scroll it; `End` follows the newest line again; `v` closes it.
 - **Ctrl+C asks first.** `y` stops: the running step is killed and the rest is not run.
 - **When it ends** the screen shows what worked and what failed, with the exit code and the last line of each failure. `r` runs the failed steps again; Enter leaves.
-- **Your password once.** The steps run in the background and cannot ask for it, so BxRig asks for the sudo password on the normal terminal just before the screen starts and keeps it fresh while it runs.
+- **Your password once, on the screen.** The steps run in the background and the screen owns the terminal, so a sudo prompt could neither be seen nor answered. When sudo would ask for a password, the screen asks for it first (typed hidden, three tries, Esc cancels before anything runs). The steps then run with no terminal and a small helper that gives `sudo` the password. It lives in one file only you can read (mode 600, in a private folder under `$XDG_RUNTIME_DIR`, which is memory, not disk), is never on a command line or in the log, and is deleted when the install ends. If you have no `$XDG_RUNTIME_DIR` or no `setsid`, BxRig asks on the normal terminal before the screen starts instead, and relies on sudo's ticket. With a valid sudo ticket or `NOPASSWD`, nothing is asked.
 
 A step that fails does not stop the others (a missing package should not cost you your keys and defaults): the plan goes on and the failure is shown at the end. Re-running the wizard repeats only what is still missing.
 
