@@ -506,17 +506,10 @@ From the owner's request on 2026-11-21 to review what BxRig is missing for devel
 | 11 | BoxLang agents with bx-agents: `bxrig ai agents` | merged (#34) |
 | 11b | Boxy, the desktop assistant: tools, approvals, skill review, Super+Period, bar tab | merged (#36) |
 | 12 | MCP for every agent, `bxrig privacy`, every major coding agent in the catalog | merged (#37) |
-| 13 | Sync (OneDrive, Dropbox, Google Drive, NAS) | **replaced** on 2026-11-26: use rclone's own GUI (`rclone gui`, rclone 1.74 and later) instead of building one; see 20.1 |
 | 14 | Android: Waydroid with Google Play, a Control Center page; opt-in, off by default | merged (#39) |
 | 15 | Boxy's character and voice: the antenna bot, outfits by season and holiday, hold-to-talk with Voxtype, optional speech, Chat, Web and Logs in the bar | merged (#40) |
 
-### 20.1 PR 13 Sync: replaced by rclone's own GUI (2026-11-26)
-
-The owner's call: rclone has a web GUI now, so BxRig does not build a sync manager of its own. What rclone says (rclone.org/gui and rclone.org/commands/rclone_gui, read 2026-11-26): `rclone gui` "starts an embedded web GUI for rclone and opens it in your default browser"; added in v1.74, when the GUI was redone and embedded in the binary; it runs an RC API and a GUI server on separate localhost ports with generated credentials (`--no-open-browser`, `--user`, `--pass`, `--addr`, `--api-addr`, `--no-auth`). It lists a dashboard, an explorer for local disks and remotes with transfers, mounts, serves and a settings page that edits `rclone.conf`. Its pages do not say it signs in to OneDrive, Dropbox or Google Drive, or that it runs or schedules `bisync`; check that on a real machine before promising either.
-
-What BxRig keeps: `bxrig cloud` (rclone remotes, configure, mounts) and `nas sync`. Open, not built: a `bxrig cloud gui` that runs `rclone gui` (and installs a new enough rclone), and the Storage page and the launcher linking to it.
-
-### 20.2 Other open items
+### 20.1 Other open items
 
 - **MCP filters:** `bxrig mcp serve` drops bx-ai's log lines and its reply to `notifications/initialized` from standard output. bx-ai fixed both in #345 (merged 2026-11-25, checked locally); its snapshot did not publish because 4 Mistral tests got HTTP 402 (no API budget on CI's account; the owner added budget and released it by hand on 2026-11-26, and bx-agents' own CI is being fixed). Remove the filters once bx-ai publishes and bx-agents ships a snapshot with it (bx-agents carries its own copy of bx-ai).
 - **bx-ai on MatchBox (bx-ai #341):** stdio serving did not work on 2026-11-25; switch `mcp serve` to it when it does.
