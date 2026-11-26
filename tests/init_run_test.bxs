@@ -74,5 +74,10 @@ try { throw( "boom" ); } catch ( any e ) { log4.error( "somewhere", e ); }
 t4 = fileRead( log4.file() );
 testkit.check( "log: an exception has where, message and a stack", find( "EXCEPTION in somewhere: boom", t4 ) > 0 );
 
+// the line that says why
+tx = new bxrig.util.Text();
+testkit.check( "reason: the first error line, else the last line", tx.reason( "resolving dependencies..." & nl & "error: target not found: foo" & nl & "more" ) == "error: target not found: foo" && tx.reason( "a" & nl & "b" & nl & nl ) == "b" && tx.reason( "" ) == "" );
+testkit.check( "reason: E: lines and long text", tx.reason( "E: Unable to locate package x" ) == "E: Unable to locate package x" && len( tx.reason( repeatString( "x", 400 ) ) ) <= 220 );
+
 directoryDelete( tmp, true );
 testkit.done();

@@ -417,7 +417,8 @@ class SetupPlan {
 		// each line carries its own newline, so the script needs no escape sequences
 		var write = [ "sudo", "sh", "-c", 'printf %s "$@" > "$0"', facts.stateFile ];
 		for ( var l in lines ) write.append( l & chr( 10 ) );
-		out.steps.append( { id: "backup", title: "keep a copy of SDDM's state file", kind: "sudo", commands: [ [ "sudo", "cp", "-f", facts.stateFile, facts.stateFile & ".bxrig.bak" ] ] } );
+		// (a state file that does not exist yet is not an error: there is nothing to keep, and the write below creates it)
+		out.steps.append( { id: "backup", title: "keep a copy of SDDM's state file (when there is one)", kind: "sudo", commands: [ [ "sudo", "sh", "-c", 'if [ -f "$0" ]; then cp -f "$0" "$0.bxrig.bak"; fi', facts.stateFile ] ] } );
 		out.steps.append( { id: "write", title: "preselect " & out.chosen & " at the login screen", kind: "sudo", commands: [ write ] } );
 		if ( len( facts.autologin ) ) out.warnings.append( "SDDM is set to log in automatically to " & facts.autologin & "; that setting wins over the preselected session" );
 		out.notes.append( "Takes effect at the next login screen. Log out with Super+Shift+Q to see it." );

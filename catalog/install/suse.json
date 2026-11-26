@@ -753,6 +753,12 @@
 				"konsole"
 			]
 		},
+		"yakuake": {
+			"source": "zypper",
+			"targets": [
+				"yakuake"
+			]
+		},
 		"kooha": {
 			"source": "flatpak",
 			"targets": [

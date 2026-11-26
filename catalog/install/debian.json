@@ -749,6 +749,12 @@
 				"konsole"
 			]
 		},
+		"yakuake": {
+			"source": "apt",
+			"targets": [
+				"yakuake"
+			]
+		},
 		"kooha": {
 			"source": "apt",
 			"targets": [

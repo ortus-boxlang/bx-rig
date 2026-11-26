@@ -19,6 +19,20 @@ class Packages {
 	}
 
 	// True when the app is on the system: every target installed, or the launcher file for a web app.
+	// An app whose catalog entry lists `conflicts` (packages it cannot be installed beside, such as timeshift and CachyOS's snapper support) is left
+	// out when one of them is installed, and reported as skipped with the reason, instead of failing the whole transaction.
+	function dropConflicts( res, names ) {
+		var keep = [];
+		for ( var a in arguments.res.selected ) {
+			var hit = "";
+			for ( var cf in ( a.conflicts ?: [] ) ) if ( structKeyExists( arguments.names, cf ) ) hit = cf;
+			if ( len( hit ) ) arguments.res.skipped.append( { id: a.id, reason: "conflicts with the installed " & hit & ": remove it first to install " & a.id } );
+			else keep.append( a );
+		}
+		arguments.res.selected = keep;
+		return arguments.res;
+	}
+
 	function isInstalled( app, names ) {
 		if ( app.source == "web" ) return fileExists( launcherPath( app.id ) );
 		if ( !structKeyExists( app, "targets" ) || !app.targets.len() ) return false;
@@ -96,7 +110,7 @@ class Packages {
 		var self = this;
 		req.installed = function( a ) { return self.isInstalled( a, names ); };
 		req.rootFs = rootFs();
-		var res = new bxrig.Resolver().resolve( variables.cat, req );
+		var res = dropConflicts( new bxrig.Resolver().resolve( variables.cat, req ), names );
 		if ( res.errors.len() ) {
 			for ( var e in res.errors ) println( "error: " & e );
 			return new bxrig.util.Exit().usage();
@@ -148,6 +162,7 @@ class Packages {
 		if ( !result.done.len() && !result.failed.len() ) println( "Nothing to install. Choose the desktop and apps with `bxrig init`." );
 		for ( var d in result.done ) println( "Installed: " & d.id & "  [" & d.source & "]" );
 		for ( var f in result.failed ) println( "Failed: " & f.id & "  [" & f.source & "]: " & f.error );
+		for ( var sk in res.skipped ) if ( sk.reason != "installed" ) println( "Skipped: " & sk.id & " (" & sk.reason & ")" );
 		return exit;
 	}
 

@@ -152,6 +152,12 @@ class Installer {
 	}
 
 	// Runs the steps in order. A failing step fails only its own apps; later steps still run.
+	// ": the line that says why" for a failed command, from what it printed ("" when it printed nothing).
+	function whyText( r ) {
+		var t = new bxrig.util.Text().reason( variables.procs.why( arguments.r ) );
+		return len( t ) ? ": " & t : "";
+	}
+
 	function run( steps ) {
 		var done = []; var failed = [];
 		for ( var step in steps ) {
@@ -165,7 +171,7 @@ class Installer {
 				if ( len( problem ) ) break;
 				var r = variables.procs.exec( cmd, 1800 );
 				if ( r.timeout ) problem = step.kind & " timed out";
-				else if ( r.exitCode != 0 ) problem = step.kind & " failed (exit " & r.exitCode & ")";
+				else if ( r.exitCode != 0 ) problem = step.kind & " failed (exit " & r.exitCode & ")" & whyText( r );
 			}
 			if ( structKeyExists( step, "dir" ) ) {
 				try { if ( directoryExists( step.dir ) ) directoryDelete( step.dir, true ); } catch ( any e ) {}
@@ -175,7 +181,7 @@ class Installer {
 			if ( len( problem ) && arrayFind( [ "pacman", "zypper", "apt" ], step.kind ) && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
 				for ( var id in step.ids ) {
 					var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
-					if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: step.kind, error: step.kind & " failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" } );
+					if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: step.kind, error: step.kind & " failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" & whyText( one ) } );
 					else done.append( { id: id, source: step.kind } );
 				}
 				continue;

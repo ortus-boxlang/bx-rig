@@ -51,7 +51,7 @@ class Catalog {
 			if ( ( a.source ?: "" ) == "web" ) { keep.append( a ); continue; }
 			if ( !structKeyExists( entries, a.id ) ) { gone.append( a.id ); continue; }
 			var e = entries[ a.id ];
-			for ( var k in [ "source", "targets", "repo", "pkgbuild", "aur_targets", "script", "verified_on", "tier", "note" ] ) if ( structKeyExists( e, k ) ) a[ k ] = e[ k ];
+			for ( var k in [ "source", "targets", "repo", "pkgbuild", "aur_targets", "script", "verified_on", "tier", "note", "conflicts" ] ) if ( structKeyExists( e, k ) ) a[ k ] = e[ k ];
 			keep.append( a );
 		}
 		arguments.cat.apps = keep;

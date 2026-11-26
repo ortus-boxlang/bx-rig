@@ -83,6 +83,44 @@ class Init {
 		return out;
 	}
 
+	// The apps step names only what this system's catalog has: a name that is not there (an app this distribution does not offer) would make
+	// `bxrig install` refuse the whole list. Those names are taken out and returned, to be reported as skipped; the rest installs.
+	function dropUnknown( plan ) {
+		var known = {};
+		for ( var a in new bxrig.Catalog().load().apps ) known[ a.id ] = true;
+		var unknown = [];
+		var keepSteps = [];
+		for ( var st in arguments.plan.steps ) {
+			if ( st.id != "apps" ) { keepSteps.append( st ); continue; }
+			var argv = [ st.argv[ 1 ], st.argv[ 2 ] ];
+			var ids = [];
+			for ( var i = 3; i <= st.argv.len(); i++ ) {
+				var id = st.argv[ i ];
+				if ( left( id, 2 ) == "--" ) argv.append( id );
+				else if ( structKeyExists( known, id ) ) { argv.append( id ); ids.append( id ); }
+				else unknown.append( id );
+			}
+			if ( !ids.len() ) continue;
+			st.argv = argv;
+			st.title = "install " & ids.toList( ", " );
+			keepSteps.append( st );
+		}
+		arguments.plan.steps = keepSteps;
+		arguments.plan.unknown = unknown;
+		return unknown;
+	}
+
+	// What the plan will run into on this machine, said before it starts: a step that cannot work here is reported as skipped at the end,
+	// and this says why up front.
+	function planNotes( plan ) {
+		var notes = [];
+		for ( var st in arguments.plan.steps ) {
+			if ( st.id == "docker-compat" && new bxrig.SystemState().appInstalled( "docker" ) ) notes.append( "the docker package is installed, so docker-compat will be skipped (it conflicts with podman-docker). Remove Docker first (sudo pacman -Rns docker) to use Podman as docker, or choose Docker as the engine." );
+			if ( st.id == "editor-lazyvim" && directoryExists( new bxrig.util.Env().xdgConfig( "nvim" ) ) ) notes.append( "~/.config/nvim already exists, so the LazyVim starter will be skipped (your config is left alone)." );
+		}
+		return notes;
+	}
+
 	// This program, to run the plan's own commands: BXRIG_SELF (tests, odd installs), else `bxrig` on PATH.
 	function selfPath() { return new bxrig.util.Env().named( "self", "bxrig" ); }
 
@@ -97,9 +135,12 @@ class Init {
 	// Runs the plan for these answers. yes/dryRun as every mutating command: no --yes prints it (exit 2), --dry-run exits 0.
 	function run( answers, yes, dryRun, asJson ) {
 		var plan = new bxrig.InitPlan().plan( arguments.answers, shellMap(), { theme: new bxrig.Palette().activeName() } );
+		var unknown = dropUnknown( plan );
 		var data = { steps: plan.steps, pending: plan.pending, errors: plan.errors, done: [], failed: [], skipped: [] };
+		for ( var un in unknown ) data.skipped.append( { id: un, reason: "not available on this system (no entry in its catalog)" } );
 		// what the install step would add and what is already there (left alone)
 		data.apps = appsSplit( plan );
+		data.notes = planNotes( plan );
 		if ( plan.errors.len() ) {
 			if ( arguments.asJson ) println( variables.cli.envelope( "init", 4, data ) );
 			else for ( var e in plan.errors ) println( "error: " & e );
@@ -112,6 +153,7 @@ class Init {
 			for ( var s in plan.steps ) println( "  " & s.id & ": " & s.title & "   (" & commandFor( s ).toList( " " ) & ")" );
 			if ( data.apps.new.len() || data.apps.installed.len() ) println( "  apps: " & data.apps.new.len() & " to install" & ( data.apps.new.len() ? " (" & data.apps.new.toList( ", " ) & ")" : "" ) & ", " & data.apps.installed.len() & " already installed and left alone" & ( data.apps.installed.len() ? " (" & data.apps.installed.toList( ", " ) & ")" : "" ) );
 			if ( plan.pending.len() ) println( "  not applied yet (saved, no command for them): " & plan.pending.toList( ", " ) );
+			for ( var nt in data.notes ) println( "  note: " & nt );
 			println( new bxrig.util.Mutation().footer( arguments.dryRun ) );
 			return code;
 		}
@@ -134,7 +176,8 @@ class Init {
 			if ( !arguments.asJson && len( r.output ) ) print( r.output );
 			if ( ( r.timeout || r.exitCode != 0 ) && ( step.optional ?: false ) ) {
 				// an optional step (typing a key) that could not run is reported, and the plan goes on
-				data.skipped.append( { id: step.id, reason: "could not run (exit " & ( r.timeout ? 124 : r.exitCode ) & "); do it later: " & commandFor( step ).toList( " " ) } );
+				var why = new bxrig.util.Text().reason( variables.inst.proc().why( r ) );
+				data.skipped.append( { id: step.id, reason: "could not run (exit " & ( r.timeout ? 124 : r.exitCode ) & ")" & ( len( why ) ? ": " & why : "" ) & "; do it later: " & commandFor( step ).toList( " " ) } );
 			} else if ( r.timeout || r.exitCode != 0 ) {
 				// the real error text (the last lines of what the step printed), not only its exit code
 				var bad = { id: step.id, exit: r.timeout ? 124 : r.exitCode, command: argv.toList( " " ) };
@@ -177,6 +220,7 @@ class Init {
 			for ( var e in plan.errors ) println( "error: " & e );
 			return new bxrig.util.Exit().precondition();
 		}
+		var unknown = dropUnknown( plan );
 		if ( !sudoReady() ) {
 			println( "error: sudo did not accept the password. Your answers are saved; run the install again with: bxrig init --rerun" );
 			return new bxrig.util.Exit().precondition();
@@ -206,6 +250,7 @@ class Init {
 		}
 		for ( var k in res.skipped ) println( "Skipped: " & k.id & " (" & k.reason & ")" );
 		for ( var sp in res.stopped ) println( "Not run (stopped): " & sp.id );
+		for ( var un in unknown ) { println( "Skipped: " & un & " (not available on this system: no entry in its catalog)" ); log.line( "skipped " & un & ": not in this system's catalog" ); }
 		if ( plan.pending.len() ) println( "Saved but not applied yet: " & plan.pending.toList( ", " ) );
 		println( "Log: " & log.file() );
 		return res.code;

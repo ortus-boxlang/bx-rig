@@ -40,6 +40,8 @@ When you press Enter on the review, the wizard stays on screen and installs. It 
 
 A step that fails does not stop the others (a missing package should not cost you your keys and defaults): the plan goes on and the failure is shown at the end. Re-running the wizard repeats only what is still missing.
 
+Some things are **skipped, not failed**, and the end says why and how to do them later: the LazyVim starter when `~/.config/nvim` already exists (your config is left alone), Podman's Docker compatibility when the `docker` package is installed (it conflicts with `podman-docker`: remove Docker first, or choose Docker as the engine), an app that conflicts with a package you have (timeshift next to CachyOS's `cachyos-snapper-support`), and an app your distribution's catalog does not offer. `bxrig init --dry-run` prints the first two as notes before anything runs.
+
 ### The log file
 
 Every install writes a log you can read later or send for debugging: `~/.local/state/bxrig/logs/init-YYYYMMDD-HHMMSS.log`. It has the BxRig version and the system, the plan, each step's command, every line it printed, its exit code and how long it took, and every exception with its message and stack. Next to it, a folder of the same name holds each step's raw output. The last 20 runs are kept. The path is printed when the install ends and shown on the screen.

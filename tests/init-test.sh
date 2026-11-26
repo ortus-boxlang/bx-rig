@@ -50,6 +50,10 @@ bxrig session set plasma --yes'
 printf '{"vpn":"tailscale","ai_agents":["kilo-cli"],"ai_default":"pi-agent"}' > "$tmp/old.json"
 run "$binary" init --answers="$tmp/old.json" --dry-run --json | jq -e '.ok and ([.data.steps[] | select(.id=="apps") | .title] | .[0] | test("tailscale") and test("kilo-cli") and test("pi-agent")) and ([.data.steps[].id] | index("vpn-nordvpn") == null)' >/dev/null || fail 'old string vpn and the new agents'
 
+# a name that is not in this system's catalog is taken out of the apps step and reported as skipped; the others still install
+printf '{"ai_orchestrators":["pane","not-an-app-xyz"]}' > "$tmp/unk.json"
+run "$binary" init --answers="$tmp/unk.json" --dry-run --json | jq -e '.ok and ([.data.steps[] | select(.id=="apps") | .argv | index("not-an-app-xyz")] | .[0] == null) and ([.data.steps[] | select(.id=="apps") | .argv | index("pane")] | .[0] != null) and (.data.skipped | map(.id) | index("not-an-app-xyz") != null)' >/dev/null || fail 'an unknown app is dropped from the install and reported as skipped'
+
 # a failing step is reported and the rest still run: exit 7 (some done, one failed), nothing skipped
 : > "$LOG"
 rc=0; FAIL_SHELL=1 run "$binary" init --answers="$tmp/a.json" --yes --json > "$tmp/out.json" || rc=$?

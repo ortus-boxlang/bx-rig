@@ -1377,6 +1377,21 @@
 			]
 		},
 		{
+			"id": "yakuake",
+			"name": "Yakuake",
+			"description": "KDE drop-down terminal (the pull-down AI shell on Plasma)",
+			"description_source": "curated",
+			"kind": "desktop",
+			"group": "terminal",
+			"category": "Terminal",
+			"tier": "optional",
+			"homepage": "https://apps.kde.org/yakuake/",
+			"macos": null,
+			"origin": [
+				"owner-request"
+			]
+		},
+		{
 			"id": "tabby",
 			"name": "Tabby",
 			"description": "A terminal for a more modern age",
