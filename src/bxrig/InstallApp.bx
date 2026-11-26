@@ -15,10 +15,24 @@ class InstallApp {
 		variables.outcome = "running";
 		variables.began = false;
 		variables.ticks = 0;
+		// sudo password, asked here once when sudo would ask for it (see util.Sudo): the run starts after it is accepted
+		variables.verify = arguments.opts.verify ?: "";
+		variables.phase = ( arguments.opts.passwordNeeded ?: false ) && !isSimpleValue( variables.verify ) ? "password" : "run";
+		variables.password = "";
+		variables.message = "";
+		variables.tries = 0;
+		variables.maxTries = 3;
+		variables.cancelled = false;
+		variables.user = arguments.opts.user ?: "";
 		return this;
 	}
 
 	function hasTick() { return true; }
+	function phase() { return variables.phase; }
+	function maskedPassword() { return repeatString( "•", len( variables.password ) ); }
+	function message() { return variables.message; }
+	function cancelled() { return variables.cancelled; }
+	function user() { return variables.user; }
 	function run() { return variables.run; }
 	function outcome() { return variables.outcome; }
 	function verbose() { return variables.verbose; }
@@ -28,6 +42,7 @@ class InstallApp {
 	// Every frame: start the run, let it look at its steps, and keep sudo's ticket fresh so a long step never asks for the password on the screen.
 	function onTick( tick ) {
 		variables.ticks++;
+		if ( variables.phase == "password" ) return this;
 		if ( !variables.began ) { variables.began = true; variables.run.begin(); }
 		variables.run.tick();
 		if ( !variables.run.finished() && !isSimpleValue( variables.keepAlive ) && variables.ticks mod variables.keepAliveTicks == 0 ) {
@@ -36,8 +51,31 @@ class InstallApp {
 		return this;
 	}
 
+	// The password box: typed characters are hidden, Enter checks it (up to three tries), Escape or Ctrl+C gives up.
+	function passwordKey( k ) {
+		if ( k == "Escape" || k == "Ctrl+c" ) { variables.cancelled = true; variables.outcome = "done"; return this; }
+		if ( k == "Backspace" ) { variables.password = len( variables.password ) > 1 ? left( variables.password, len( variables.password ) - 1 ) : ""; return this; }
+		if ( k == "Ctrl+u" ) { variables.password = ""; return this; }
+		if ( len( k ) == 1 ) { variables.password &= k; variables.message = ""; return this; }
+		if ( k == "Enter" && len( variables.password ) ) {
+			var r = variables.verify( variables.password );
+			variables.password = "";
+			if ( r.ok ) {
+				variables.run.setAskpass( r.askpass );
+				variables.phase = "run";
+				variables.message = "";
+			} else {
+				variables.tries++;
+				if ( variables.tries >= variables.maxTries ) { variables.cancelled = true; variables.outcome = "done"; variables.message = "sudo did not accept the password"; }
+				else variables.message = ( r.error == "wrong password" ? "That password was not accepted" : r.error ) & " (" & variables.tries & " of " & variables.maxTries & "). Try again.";
+			}
+		}
+		return this;
+	}
+
 	function onKey( key ) {
 		var k = arguments.key;
+		if ( variables.phase == "password" ) return passwordKey( k );
 		if ( variables.confirming ) {
 			if ( k == "y" || k == "Y" ) variables.run.stop();
 			variables.confirming = false;

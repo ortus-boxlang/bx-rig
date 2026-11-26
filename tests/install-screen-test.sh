@@ -8,6 +8,7 @@ cat > "$tmp/self" <<'FAKE'
 #!/usr/bin/env bash
 echo "bxrig $*" >> "$LOG"
 if [[ "$1 $2" == "setup shell" ]]; then echo "installing the shell"; echo "error: target not found: zsh-foo" >&2; exit 3; fi
+if [[ "$1 $2" == "setup xremap" ]] && command -v sudo >/dev/null && [[ -n "${FAKE_SUDO:-}" ]]; then sudo echo "sudo-ok-from-step"; echo "askpass=${SUDO_ASKPASS:+set}"; tty || echo "no-tty"; fi
 if [[ "$1" == "install" ]]; then echo "(1/3) installing alpha"; sleep 1; echo "(2/3) installing beta"; sleep "${APPS_SLEEP:-1}"; echo "(3/3) installing gamma"; exit 0; fi
 echo "ok $1 $2"
 FAKE
@@ -78,4 +79,33 @@ grep -q 'Stop the install?' "$tmp/s2.out" || fail 'Ctrl+C asks before stopping'
 log="$(ls "$tmp"/state/bxrig/logs/init-*.log | head -1)"
 grep -q 'stop requested' "$log" && grep -q 'stopped' "$log" || fail "the log says it was stopped: $(tail -8 "$log")"
 ! pgrep -f 'sleep 30' >/dev/null || fail 'the stopped step is still running'
+# the sudo password: sudo would ask, so the screen asks (hidden, three tries), then the steps run with no terminal and a helper that gives sudo
+# the password. A fake sudo wants the password "secret": from the screen's own check, and from a step (through SUDO_ASKPASS, as there is no terminal).
+cat > "$tmp/bin/sudo" <<'FAKESUDO'
+#!/usr/bin/env bash
+[[ "$1 $2" == "-n true" ]] && exit 1
+if [[ "$1" == "-S" ]]; then read -r pw; [[ "$pw" == secret ]] && exit 0; echo "Sorry, try again." >&2; exit 1; fi
+if [[ -n "${SUDO_ASKPASS:-}" ]] && [[ "$("$SUDO_ASKPASS")" == secret ]]; then exec "$@"; fi
+echo "sudo: a terminal is required to read the password" >&2; exit 1
+FAKESUDO
+chmod +x "$tmp/bin/sudo"; stub_id
+rm -rf "$tmp/state/bxrig/logs"; : > "$LOG"
+mkdir -p "$tmp/xdg"; chmod 700 "$tmp/xdg"
+export FAKE_SUDO=1 XDG_RUNTIME_DIR="$tmp/xdg"
+rc=0; screen "$tmp/s3.out" 'WAIT0.5|wrong\r|WAIT1.5|secret\r|WAIT12|\r' 1 || rc=$?
+grep -q 'sudo password' "$tmp/s3.out" || fail 'the screen asks for the sudo password'
+grep -q 'was not accepted' "$tmp/s3.out" || fail 'a wrong password is refused on the screen'
+! grep -q 'secret' "$tmp/s3.out" || fail 'the password is never drawn on the screen'
+[[ "$rc" == 7 ]] || fail "after the right password the install ran (exit 7, one step fails), got $rc"
+log="$(ls "$tmp"/state/bxrig/logs/init-*.log | head -1)"
+grep -q 'sudo-ok-from-step' "$log" || fail "a sudo inside a step got its password from the helper: $(grep -n 'xremap' "$log" | head)"
+grep -q 'no-tty' "$log" || fail 'the steps run with no terminal'
+! grep -rq 'secret' "$log" "$tmp"/state/bxrig/logs/ || fail 'the password is not in the log'
+[[ -z "$(ls "$tmp/xdg")" ]] || fail "the password folder is removed after the run: $(ls "$tmp/xdg")"
+# escape on the password box: nothing runs, exit 130
+rm -rf "$tmp/state/bxrig/logs"; : > "$LOG"
+rc=0; screen "$tmp/s4.out" 'WAIT0.5|\x1b' 1 || rc=$?
+[[ "$rc" == 130 ]] || fail "escape on the password box exits 130, got $rc"
+[[ ! -s "$LOG" ]] || fail 'nothing ran after escape'
+[[ -z "$(ls "$tmp/xdg")" ]] || fail 'no password folder is left after escape'
 echo "install-screen-test ok"

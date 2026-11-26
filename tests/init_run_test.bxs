@@ -80,6 +80,14 @@ try { throw( "boom" ); } catch ( any e ) { log4.error( "somewhere", e ); }
 t4 = fileRead( log4.file() );
 testkit.check( "log: an exception has where, message and a stack", find( "EXCEPTION in somewhere: boom", t4 ) > 0 );
 
+// a step with a sudo helper runs with no terminal and SUDO_ASKPASS set
+log5 = new bxrig.InitLog( tmp );
+ask = drive( new bxrig.InitRun( [ { id: "ask", title: "ask", argv: [ "sh", "-c", "echo ap=$SUDO_ASKPASS; tty; true" ] } ], log5, proc, { askpass: "/run/x/askpass.sh" } ) );
+askOut = ask.state().lines.map( function( l ) { return l.text; } ).toList( "|" );
+testkit.check( "askpass: the step has SUDO_ASKPASS and no terminal (so sudo uses the helper)", ask.state().steps[ 1 ].state == "done" && find( "ap=/run/x/askpass.sh", askOut ) > 0 && find( "not a tty", askOut ) > 0 );
+plain = drive( new bxrig.InitRun( [ { id: "plain", title: "plain", argv: [ "sh", "-c", "echo ap=[$SUDO_ASKPASS]" ] } ], new bxrig.InitLog( tmp ), proc, {} ) );
+testkit.check( "no askpass: the step is run as before", find( "ap=[]", plain.state().lines.map( function( l ) { return l.text; } ).toList( "|" ) ) > 0 );
+
 // the line that says why
 tx = new bxrig.util.Text();
 testkit.check( "reason: the first error line, else the last line", tx.reason( "resolving dependencies..." & nl & "error: target not found: foo" & nl & "more" ) == "error: target not found: foo" && tx.reason( "a" & nl & "b" & nl & nl ) == "b" && tx.reason( "" ) == "" );

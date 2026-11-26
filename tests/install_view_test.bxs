@@ -60,5 +60,38 @@ run.stop();
 app.onKey( "Enter" );
 testkit.check( "enter leaves once it is over", app.outcome() == "done" );
 
+// the sudo password: asked on the screen, typed hidden, checked, then the run starts with the helper
+pwLog = new bxrig.InitLog( tmp );
+pwRun = new bxrig.InitRun( [ { id: "one", title: "one", argv: [ "sh", "-c", "echo hi" ] } ], pwLog, new bxrig.util.Proc(), {} );
+asked = [];
+pwApp = new bxrig.InstallApp( pwRun, { passwordNeeded: true, user: "ada", verify: function( pw ) { asked.append( pw ); return pw == "secret" ? { ok: true, askpass: "/run/x/askpass.sh", error: "" } : { ok: false, askpass: "", error: "wrong password" }; } } );
+function pwShot( w = 120, h = 44 ) { view.paint( pwApp, 10, w, h ); return tui.render_to_string( w, h ); }
+pwApp.onTick( 1 );
+s = pwShot();
+testkit.check( "password: the screen asks, with the user's name, and the run has not started", pwApp.phase() == "password" && find( "sudo password", s ) > 0 && find( "Password for ada", s ) > 0 && pwRun.state().startedAt == 0 );
+for ( ch in [ "s", "e", "c" ] ) pwApp.onKey( ch );
+s = pwShot();
+testkit.check( "password: typed characters are shown as dots, never as text", find( "•••", s ) > 0 && find( "sec", s ) == 0 );
+pwApp.onKey( "Backspace" );
+testkit.check( "password: backspace removes one", pwApp.maskedPassword() == "••" );
+pwApp.onKey( "Enter" );
+testkit.check( "password: a wrong one is refused with how many tries are used, and the box stays", pwApp.phase() == "password" && find( "(1 of 3)", pwShot() ) > 0 && pwApp.maskedPassword() == "" );
+for ( ch in [ "s", "e", "c", "r", "e", "t" ] ) pwApp.onKey( ch );
+pwApp.onKey( "Enter" );
+testkit.check( "password: the right one starts the run and gives it the helper", pwApp.phase() == "run" && asked.toList( "," ) == "se,secret" && !pwApp.cancelled() );
+pwApp.onTick( 2 );
+for ( i = 1; i <= 100 && !pwRun.finished(); i++ ) { pwApp.onTick( i ); sleep( 50 ); }
+testkit.check( "password: then the run goes on as usual", pwRun.finished() && pwRun.counts().done == 1 );
+// three wrong tries, or escape, give up before anything runs
+pwRun2 = new bxrig.InitRun( [ { id: "one", title: "one", argv: [ "sh", "-c", "echo hi" ] } ], new bxrig.InitLog( tmp ), new bxrig.util.Proc(), {} );
+pwApp2 = new bxrig.InstallApp( pwRun2, { passwordNeeded: true, verify: function( pw ) { return { ok: false, askpass: "", error: "wrong password" }; } } );
+for ( n = 1; n <= 3; n++ ) { pwApp2.onKey( "x" ); pwApp2.onKey( "Enter" ); }
+testkit.check( "password: three wrong tries cancel the install before it starts", pwApp2.cancelled() && pwApp2.outcome() == "done" && pwRun2.state().startedAt == 0 && find( "did not accept", pwApp2.message() ) > 0 );
+pwApp3 = new bxrig.InstallApp( pwRun2, { passwordNeeded: true, verify: function( pw ) { return { ok: true, askpass: "", error: "" }; } } );
+pwApp3.onKey( "Escape" );
+testkit.check( "password: escape cancels", pwApp3.cancelled() && pwApp3.outcome() == "done" );
+noPw = new bxrig.InstallApp( pwRun2, {} );
+testkit.check( "no password needed (root, a ticket, NOPASSWD): straight to the run", noPw.phase() == "run" );
+
 directoryDelete( tmp, true );
 testkit.done();

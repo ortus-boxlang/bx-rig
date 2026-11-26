@@ -1,0 +1,66 @@
+// sudo's password for a screen that owns the terminal (the install screen). While it runs the terminal is in raw mode, so a sudo prompt on it
+// can neither be seen nor answered. So the screen asks for the password itself, once, checks it, and the steps run with no terminal and
+// SUDO_ASKPASS set: a sudo inside them reads the password from a helper script instead.
+//
+//   needed()             true when sudo is there, you are not root, and it would ask for a password now (no valid ticket, no NOPASSWD)
+//   verify( password )   checks it with `sudo -S -v`; { ok, askpass }. On ok the helper is ready: askpass is the script to give the steps
+//   cleanup()            removes the helper and the password file. Always call it when the install ends (it is also safe to call twice)
+//
+// Where the password lives: one file, mode 600, in a folder made for this run (mode 700) under $XDG_RUNTIME_DIR (a per-user tmpfs, so it is
+// never on disk), written while the run needs it and deleted when it ends. It is never on a command line or in an environment variable.
+class Sudo {
+	function init( proc = "", env = "" ) {
+		variables.proc = isSimpleValue( arguments.proc ) ? new bxrig.util.Proc() : arguments.proc;
+		variables.env = isSimpleValue( arguments.env ) ? new bxrig.util.Env() : arguments.env;
+		variables.dir = "";
+		return this;
+	}
+
+	function needed() {
+		if ( variables.proc.isRoot() || !variables.proc.has( "sudo" ) ) return false;
+		return variables.proc.exec( [ "sudo", "-n", "true" ], 10 ).exitCode != 0;
+	}
+
+	// The per-user runtime folder ("" when there is none: then nothing is stored and the screen cannot ask).
+	function runtimeDir() {
+		var d = variables.env.get( "XDG_RUNTIME_DIR", "" );
+		return len( d ) && directoryExists( d ) ? reReplace( d, "/+$", "" ) : "";
+	}
+
+	function available() { return len( runtimeDir() ) > 0 && variables.proc.has( "setsid" ); }
+
+	function user() { return variables.env.get( "USER", variables.env.get( "LOGNAME", "" ) ); }
+
+	// Makes the folder (700), the password file (600, created empty first so it is never readable by others) and the helper script (700).
+	function prepare( password ) {
+		cleanup();
+		var d = runtimeDir() & "/bxrig-sudo-" & left( createUUID(), 8 );
+		directoryCreate( d, true, true );
+		variables.proc.exec( [ "chmod", "700", d ], 5 );
+		var pw = d & "/pw";
+		fileWrite( pw, "" );
+		variables.proc.exec( [ "chmod", "600", pw ], 5 );
+		fileWrite( pw, arguments.password );
+		var ap = d & "/askpass.sh";
+		fileWrite( ap, "##!/bin/sh" & chr( 10 ) & "exec cat -- """ & pw & """" & chr( 10 ) );
+		variables.proc.exec( [ "chmod", "700", ap ], 5 );
+		variables.dir = d;
+		return { dir: d, pw: pw, askpass: ap };
+	}
+
+	function verify( password ) {
+		if ( !available() ) return { ok: false, askpass: "", error: "no private folder for the password ($XDG_RUNTIME_DIR) or no setsid" };
+		var info = prepare( arguments.password );
+		var r = variables.proc.exec( [ "sh", "-c", 'sudo -S -p "" -v < "$1"', "_", info.pw ], 30 );
+		if ( r.exitCode != 0 ) { cleanup(); return { ok: false, askpass: "", error: "wrong password" }; }
+		return { ok: true, askpass: info.askpass, error: "" };
+	}
+
+	function cleanup() {
+		if ( len( variables.dir ) && directoryExists( variables.dir ) ) {
+			try { directoryDelete( variables.dir, true ); } catch ( any e ) {}
+		}
+		variables.dir = "";
+		return this;
+	}
+}

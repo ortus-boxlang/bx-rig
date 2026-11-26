@@ -1,0 +1,47 @@
+// util.Sudo: the password for the install screen. The helper and the password file are private (700 and 600), the helper gives sudo the
+// password, a right password is accepted, a wrong one leaves nothing behind, and cleanup removes it all. A fake sudo (a shell script) stands
+// in for the real one; nothing real is asked. Run from src/: (cd src && matchbox ../tests/sudo_test.bxs)
+testkit = new lib.Check( "sudo" );
+tmp = "/tmp/bxrig-sudo-test-" & createUUID();
+directoryCreate( tmp & "/bin", true, true );
+directoryCreate( tmp & "/run", true, true );
+nl = chr( 10 );
+fileWrite( tmp & "/bin/sudo", "##!/bin/sh" & nl
+	& "case ""$*"" in ""-n true"") exit 1;; esac" & nl
+	& "if [ ""$1"" = -S ]; then read pw; [ ""$pw"" = secret ] && exit 0; echo Sorry 1>&2; exit 1; fi" & nl
+	& "exit 1" & nl );
+new bxrig.util.Proc().exec( [ "chmod", "755", tmp & "/bin/sudo" ], 5 );
+// a runner that finds the fake sudo first, and says the user is not root
+runner = function( argv, timeout ) {
+	if ( argv[ 1 ] == "id" ) return { exitCode: 0, output: "1000", timeout: false };
+	var a = [ "PATH=" & tmp & "/bin:/usr/bin:/bin" ];
+	for ( var p in argv ) a.append( p );
+	return systemExecute( "env", a, timeout, true );
+};
+proc = new bxrig.util.Proc( runner );
+sudo = new bxrig.util.Sudo( proc, new bxrig.util.Env( { XDG_RUNTIME_DIR: tmp & "/run", USER: "ada" } ) );
+
+testkit.check( "needed: sudo is there, you are not root, and it would ask", sudo.needed() );
+testkit.check( "available: a private runtime folder and setsid", sudo.available() && sudo.user() == "ada" );
+noRun = new bxrig.util.Sudo( proc, new bxrig.util.Env( { XDG_RUNTIME_DIR: "/nonexistent-dir" } ) );
+testkit.check( "without a runtime folder nothing is stored: not available", !noRun.available() && !noRun.verify( "secret" ).ok );
+
+info = sudo.prepare( "secret" );
+mode = function( path ) { return trim( new bxrig.util.Proc().exec( [ "stat", "-c", "%a", path ], 5 ).output ); };
+testkit.check( "the folder is 700, the password file 600, the helper 700", mode( info.dir ) == "700" && mode( info.pw ) == "600" && mode( info.askpass ) == "700" );
+testkit.check( "the folder is under the runtime folder", left( info.dir, len( tmp & "/run/bxrig-sudo-" ) ) == tmp & "/run/bxrig-sudo-" );
+testkit.check( "the helper prints the password for sudo", trim( new bxrig.util.Proc().exec( [ "sh", info.askpass ], 5 ).output ) == "secret" );
+sudo.cleanup();
+testkit.check( "cleanup removes the folder, the file and the helper", !directoryExists( info.dir ) );
+
+ok = sudo.verify( "secret" );
+testkit.check( "a right password is accepted and the helper is ready", ok.ok && fileExists( ok.askpass ) );
+dir = getDirectoryFromPath( ok.askpass );
+sudo.cleanup();
+testkit.check( "cleanup after a run removes the password", !directoryExists( dir ) );
+bad = sudo.verify( "nope" );
+leftover = directoryList( tmp & "/run", false, "name" );
+testkit.check( "a wrong password is refused and leaves nothing behind", !bad.ok && leftover.len() == 0 );
+
+directoryDelete( tmp, true );
+testkit.done();
