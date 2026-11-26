@@ -17,17 +17,17 @@ run() { env BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" BXRIG_SEL
 code() { set +e; run "$@" >/dev/null 2>&1; local c=$?; set -e; echo "$c"; }
 cat > "$tmp/a.json" <<'JSON'
 {"desktops":"both","login_session":"plasma","layout":"scrolling","terminal":"ghostty","terminals_extra":["kitty"],"shell":"zsh","mac_keys":true,
- "ai_orchestrators":["pane"],"git_name":"Ada Lovelace","git_email":"ada@example.com","vpn":"tailscale","databases":["postgres"],"ssh_key":true,"toolchains":["python"]}
+ "ai_orchestrators":["pane"],"git_name":"Ada Lovelace","git_email":"ada@example.com","vpn":["tailscale","nordvpn"],"databases":["postgres"],"ssh_key":true,"toolchains":["python"]}
 JSON
 
 # no --yes: the plan, exit 2, nothing run
 [[ "$(code "$binary" init --answers="$tmp/a.json")" == 2 ]] || fail 'no --yes exits 2'
 [[ ! -s "$LOG" ]] || fail 'the plan ran something'
-run "$binary" init --answers="$tmp/a.json" --dry-run --json | jq -e '.ok and (.data.steps | map(.id) == ["key-style","hyprland","plasma","terminal","icons","shell","xremap","toolchain-python","apps","default-terminal","db-postgres","git-name","git-email","ssh-key","session"]) and (.data.pending == [])' >/dev/null || fail 'dry-run --json plan'
+run "$binary" init --answers="$tmp/a.json" --dry-run --json | jq -e '.ok and (.data.steps | map(.id) == ["key-style","hyprland","plasma","terminal","icons","shell","xremap","toolchain-python","apps","vpn-nordvpn","default-terminal","db-postgres","git-name","git-email","ssh-key","session"]) and (.data.pending == [])' >/dev/null || fail 'dry-run --json plan'
 [[ ! -s "$LOG" ]] || fail 'dry-run ran something'
 
 # --yes: every step runs in order; our own commands get --yes, git does not
-run "$binary" init --answers="$tmp/a.json" --yes --json | jq -e '.ok and (.data.done | length == 15) and (.data.failed | length == 0)' >/dev/null || fail 'init --yes --json'
+run "$binary" init --answers="$tmp/a.json" --yes --json | jq -e '.ok and (.data.done | length == 16) and (.data.failed | length == 0)' >/dev/null || fail 'init --yes --json'
 expected='bxrig keys style mac --keyboard=pc --yes
 bxrig setup hyprland --terminal=ghostty --layout=scrolling --yes
 bxrig setup plasma --yes
@@ -36,7 +36,8 @@ bxrig appearance icons bxrig --yes
 bxrig setup shell --shell=zsh --yes
 bxrig setup xremap --build=hypr --yes
 bxrig profile-install python --yes
-bxrig install pane tailscale --yes
+bxrig install pane tailscale nordvpn --yes
+bxrig vpn nordvpn setup --yes
 bxrig default terminal ghostty --yes
 bxrig db start postgres --yes
 git config --global user.name Ada Lovelace
@@ -44,6 +45,10 @@ git config --global user.email ada@example.com
 bxrig ssh key --email=ada@example.com --yes
 bxrig session set plasma --yes'
 [[ "$(cat "$LOG")" == "$expected" ]] || fail "commands run were: $(cat "$LOG")"
+
+# the wizard's answers: an older file with one VPN as a string still works, and Kilo and Pi are agents like the rest
+printf '{"vpn":"tailscale","ai_agents":["kilo-cli"],"ai_default":"pi-agent"}' > "$tmp/old.json"
+run "$binary" init --answers="$tmp/old.json" --dry-run --json | jq -e '.ok and ([.data.steps[] | select(.id=="apps") | .title] | .[0] | test("tailscale") and test("kilo-cli") and test("pi-agent")) and ([.data.steps[].id] | index("vpn-nordvpn") == null)' >/dev/null || fail 'old string vpn and the new agents'
 
 # a failing step is reported and the rest still run: exit 7 (some done, one failed), nothing skipped
 : > "$LOG"

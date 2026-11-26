@@ -2182,9 +2182,14 @@
 					"id": "ai_agents",
 					"label": "Coding agents",
 					"default": [
-						"claude-code"
+						"pi-agent"
 					],
 					"options": [
+						{
+							"value": "pi-agent",
+							"label": "Pi",
+							"description": "A minimal, extensible coding agent for the terminal."
+						},
 						{
 							"value": "claude-code",
 							"label": "Claude Code",
@@ -2204,6 +2209,56 @@
 							"value": "opencode-cli",
 							"label": "OpenCode",
 							"description": "Open source coding agent; works with many providers."
+						},
+						{
+							"value": "kilo-cli",
+							"label": "Kilo Code",
+							"description": "Open source coding agent, a fork of OpenCode."
+						},
+						{
+							"value": "copilot-cli",
+							"label": "GitHub Copilot",
+							"description": "GitHub Copilot's coding agent in your terminal."
+						},
+						{
+							"value": "cursor-agent",
+							"label": "Cursor Agent",
+							"description": "Cursor's coding agent on the command line."
+						},
+						{
+							"value": "amp",
+							"label": "Amp",
+							"description": "Sourcegraph's agentic coding tool for the terminal."
+						},
+						{
+							"value": "crush",
+							"label": "Crush",
+							"description": "Charm's AI coding agent for the terminal."
+						},
+						{
+							"value": "goose",
+							"label": "Goose",
+							"description": "An open source, extensible AI agent."
+						},
+						{
+							"value": "kiro-cli",
+							"label": "Kiro",
+							"description": "Kiro's agent: prompt to code to deployment."
+						},
+						{
+							"value": "qwen-code",
+							"label": "Qwen Code",
+							"description": "An open source coding agent from the Qwen team."
+						},
+						{
+							"value": "grok-build",
+							"label": "Grok Build",
+							"description": "xAI's coding agent for the terminal."
+						},
+						{
+							"value": "antigravity",
+							"label": "Google Antigravity",
+							"description": "Google's multi-agent platform (desktop app)."
 						}
 					],
 					"help": "Terminal agents that write code with you. Pick the ones you use."
@@ -2213,12 +2268,17 @@
 					"id": "ai_default",
 					"label": "Default agent",
 					"help": "The one `bxrig ai launch` opens in your terminal. You can change it later.",
-					"default": "claude-code",
+					"default": "pi-agent",
 					"when": {
 						"id": "ai_agents",
 						"nonempty": true
 					},
 					"options": [
+						{
+							"value": "pi-agent",
+							"label": "Pi",
+							"description": "A minimal, extensible coding agent for the terminal."
+						},
 						{
 							"value": "claude-code",
 							"label": "Claude Code",
@@ -2238,6 +2298,51 @@
 							"value": "opencode-cli",
 							"label": "OpenCode",
 							"description": "Open source coding agent; works with many providers."
+						},
+						{
+							"value": "kilo-cli",
+							"label": "Kilo Code",
+							"description": "Open source coding agent, a fork of OpenCode."
+						},
+						{
+							"value": "copilot-cli",
+							"label": "GitHub Copilot",
+							"description": "GitHub Copilot's coding agent in your terminal."
+						},
+						{
+							"value": "cursor-agent",
+							"label": "Cursor Agent",
+							"description": "Cursor's coding agent on the command line."
+						},
+						{
+							"value": "amp",
+							"label": "Amp",
+							"description": "Sourcegraph's agentic coding tool for the terminal."
+						},
+						{
+							"value": "crush",
+							"label": "Crush",
+							"description": "Charm's AI coding agent for the terminal."
+						},
+						{
+							"value": "goose",
+							"label": "Goose",
+							"description": "An open source, extensible AI agent."
+						},
+						{
+							"value": "kiro-cli",
+							"label": "Kiro",
+							"description": "Kiro's agent: prompt to code to deployment."
+						},
+						{
+							"value": "qwen-code",
+							"label": "Qwen Code",
+							"description": "An open source coding agent from the Qwen team."
+						},
+						{
+							"value": "grok-build",
+							"label": "Grok Build",
+							"description": "xAI's coding agent for the terminal."
 						}
 					]
 				},
@@ -2568,16 +2673,13 @@
 			"intro": "A few more things that make a machine feel like yours.",
 			"questions": [
 				{
-					"type": "choice",
+					"type": "multi",
 					"id": "vpn",
 					"label": "VPN",
-					"default": "tailscale",
+					"default": [
+						"tailscale"
+					],
 					"options": [
-						{
-							"value": "none",
-							"label": "None",
-							"description": ""
-						},
 						{
 							"value": "tailscale",
 							"label": "Tailscale",

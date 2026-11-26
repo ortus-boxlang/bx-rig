@@ -26,8 +26,8 @@ testkit.check( "serve: --write tells the server", mcp.serveArgv( "/d", true )[ a
 testkit.check( "serve: only MCP messages reach the agent", find( "grep --line-buffered ""^{""", argv[ 3 ] ) && find( "Method not found: notifications/", argv[ 3 ] ) );
 
 // ---- the agents ----
-testkit.check( "agents: 16 agents and editors", lk.ids().len() == 16 );
-for ( id in [ "claude-code", "codex-cli", "gemini-cli", "opencode-cli", "pi-agent", "copilot-cli", "cursor-agent", "amp", "crush", "goose", "kiro-cli", "qwen-code", "grok-build", "antigravity", "zed", "vscode" ] ) testkit.check( "agents: " & id, !structIsEmpty( lk.byId( id ) ) );
+testkit.check( "agents: 17 agents and editors", lk.ids().len() == 17 );
+for ( id in [ "claude-code", "codex-cli", "gemini-cli", "opencode-cli", "pi-agent", "kilo-cli", "copilot-cli", "cursor-agent", "amp", "crush", "goose", "kiro-cli", "qwen-code", "grok-build", "antigravity", "zed", "vscode" ] ) testkit.check( "agents: " & id, !structIsEmpty( lk.byId( id ) ) );
 testkit.check( "agents: Claude Code and Codex by their own commands", lk.cliAdd( "claude-code", self, false ).toList( " " ) == "claude mcp add --transport stdio --scope user bxrig -- /usr/bin/bxrig mcp serve" && lk.cliAdd( "codex-cli", self, true ).toList( " " ) == "codex mcp add bxrig -- /usr/bin/bxrig mcp serve --write" );
 testkit.check( "agents: and removed the same way", lk.cliRemove( "claude-code" ).toList( " " ) == "claude mcp remove bxrig --scope user" && lk.cliRemove( "codex-cli" ).toList( " " ) == "codex mcp remove bxrig" );
 
@@ -45,6 +45,8 @@ testkit.check( "json: unlink takes only BxRig out", !structKeyExists( j.mcpServe
 testkit.check( "json: not linked reads as empty", lk.state( pi, had ) == "" && lk.state( pi, "" ) == "" );
 testkit.check( "json: a file with comments is refused", structKeyExists( lk.change( lk.byId( "gemini-cli" ), "{ // x" & nl & """a"":1 }", self, false, false ), "error" ) );
 testkit.check( "json: Amp's key has a dot in its name", structKeyExists( jsonDeserialize( lk.change( lk.byId( "amp" ), "", self, false, false ).text )[ "amp.mcpServers" ], "bxrig" ) );
+kc = jsonDeserialize( lk.change( lk.byId( "kilo-cli" ), "", self, true, false ).text ).mcp.bxrig;
+testkit.check( "json: Kilo Code is a local server under mcp, like OpenCode", kc.type == "local" && kc.command.toList( " " ) == "/usr/bin/bxrig mcp serve --write" && kc.enabled == true );
 oc = jsonDeserialize( lk.change( lk.byId( "opencode-cli" ), "", self, true, false ).text ).mcp.bxrig;
 testkit.check( "json: OpenCode is local, with the command and its arguments in one list", oc.type == "local" && oc.command.toList( " " ) == "/usr/bin/bxrig mcp serve --write" && oc.enabled );
 cp = jsonDeserialize( lk.change( lk.byId( "copilot-cli" ), "", self, false, false ).text ).mcpServers.bxrig;

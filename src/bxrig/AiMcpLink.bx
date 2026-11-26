@@ -27,6 +27,7 @@ class AiMcpLink {
 			{ id: "codex-cli", name: "Codex", kind: "cli", commands: [ "codex" ], file: h & "/.codex/config.toml" },
 			{ id: "gemini-cli", name: "Gemini CLI", kind: "json", commands: [ "gemini" ], file: h & "/.gemini/settings.json", path: [ "mcpServers" ], shape: "plain" },
 			{ id: "opencode-cli", name: "OpenCode", kind: "json", commands: [ "opencode" ], file: cfg & "/opencode/opencode.json", path: [ "mcp" ], shape: "opencode" },
+			{ id: "kilo-cli", name: "Kilo Code", kind: "json", commands: [ "kilo" ], file: cfg & "/kilo/" & ( fileExists( cfg & "/kilo/kilo.jsonc" ) ? "kilo.jsonc" : "kilo.json" ), path: [ "mcp" ], shape: "opencode", jsonc: true },
 			{ id: "pi-agent", name: "Pi", kind: "json", commands: [ "pi" ], file: h & "/.pi/agent/mcp.json", path: [ "mcpServers" ], shape: "plain" },
 			{ id: "copilot-cli", name: "GitHub Copilot", kind: "json", commands: [ "copilot" ], file: h & "/.copilot/mcp-config.json", path: [ "mcpServers" ], shape: "copilot" },
 			{ id: "cursor-agent", name: "Cursor and Cursor Agent", kind: "json", commands: [ "cursor-agent", "cursor" ], file: h & "/.cursor/mcp.json", path: [ "mcpServers" ], shape: "stdio" },

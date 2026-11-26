@@ -10,6 +10,7 @@ class AiAgents {
 			{ id: "gemini-cli", name: "Gemini CLI", command: "gemini", providers: [ "google" ] },
 			{ id: "opencode-cli", name: "OpenCode", command: "opencode", providers: many },
 			{ id: "pi-agent", name: "Pi", command: "pi", providers: many },
+			{ id: "kilo-cli", name: "Kilo Code", command: "kilo", providers: [] },
 			{ id: "copilot-cli", name: "GitHub Copilot", command: "copilot", providers: [] },
 			{ id: "cursor-agent", name: "Cursor Agent", command: "cursor-agent", providers: [] },
 			{ id: "amp", name: "Amp", command: "amp", providers: [] },

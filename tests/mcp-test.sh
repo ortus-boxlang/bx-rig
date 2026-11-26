@@ -5,7 +5,7 @@
 . "$(dirname "$0")/lib/harness.sh"
 export LOG="$tmp/log"; : > "$LOG"
 H="$tmp/home"; mkdir -p "$H/.config/zed" "$H/.config/goose" "$tmp/state"
-for c in pi gemini opencode copilot cursor-agent amp crush goose kiro-cli qwen grok antigravity zeditor code; do stub "$c" 'exit 0'; done
+for c in pi kilo gemini opencode copilot cursor-agent amp crush goose kiro-cli qwen grok antigravity zeditor code; do stub "$c" 'exit 0'; done
 for c in claude codex; do stub "$c" 'echo "'"$c"' $*" >> "$LOG"
 f="$STATE/'"$c"'"
 case "$2" in
@@ -34,10 +34,10 @@ mcp tools --json | jq -e '.data.read_only == 17 and .data.changing == 19 and (.d
 mcp tools | grep -q '^  theme_set' || fail 'tools text lists theme_set'
 
 # ---- status ----
-mcp --json | jq -e '.data.server_ready and (.data.agents | length) == 16 and ([.data.agents[] | select(.installed)] | length) == 16 and ([.data.agents[] | select(.linked != "")] | length) == 0' >/dev/null || fail "status: $(mcp --json)"
+mcp --json | jq -e '.data.server_ready and (.data.agents | length) == 17 and ([.data.agents[] | select(.installed)] | length) == 17 and ([.data.agents[] | select(.linked != "")] | length) == 0' >/dev/null || fail "status: $(mcp --json)"
 
 # ---- link: a plan first ----
-{ mcp link --json || true; } | tee "$tmp/plan.json" | jq -e '.data.write == false and (.data.agents | length) == 16' >/dev/null || fail "plan: $(jq -c ".data|{write,n:(.agents|length)}" "$tmp/plan.json")"
+{ mcp link --json || true; } | tee "$tmp/plan.json" | jq -e '.data.write == false and (.data.agents | length) == 17' >/dev/null || fail "plan: $(jq -c ".data|{write,n:(.agents|length)}" "$tmp/plan.json")"
 [[ ! -e "$H/.pi" ]] && ! grep -q ' mcp \(add\|remove\)' "$LOG" || fail 'the plan changed nothing'
 [[ "$(code "$binary" mcp link nobody --yes)" == 2 ]] || fail 'an unknown agent is a usage error'
 
@@ -51,9 +51,9 @@ mcp --json | jq -e '[.data.agents[] | select(.linked != "") | "\(.id)=\(.linked)
 # ---- link every installed one with --write; one BxRig can not change is left out, unless it was named ----
 mkdir -p "$H/.qwen"; printf '{ // a comment\n"x": 1 }\n' > "$H/.qwen/settings.json"
 mcp link --write --yes --json > "$tmp/all.json"
-jq -e '(.data.skipped | map(.agent)) == ["qwen-code"] and (.data.agents | length) == 15' "$tmp/all.json" >/dev/null || fail "all: $(cat "$tmp/all.json")"
+jq -e '(.data.skipped | map(.agent)) == ["qwen-code"] and (.data.agents | length) == 16' "$tmp/all.json" >/dev/null || fail "all: $(cat "$tmp/all.json")"
 [[ "$(code "$binary" mcp link qwen-code --yes)" == 4 ]] || fail 'a named agent that can not be changed is a precondition'
-mcp --json | jq -e '[.data.agents[] | select(.linked == "write")] | length == 15' >/dev/null || fail "all write: $(mcp --json)"
+mcp --json | jq -e '[.data.agents[] | select(.linked == "write")] | length == 16' >/dev/null || fail "all write: $(mcp --json)"
 jq -e '.mcpServers.bxrig.args == ["mcp","serve","--write"]' "$H/.pi/agent/mcp.json" >/dev/null || fail 'pi: write entry'
 [[ -f "$H/.pi/agent/mcp.json.bxrig-backup" ]] || fail 'the old file is kept'
 grep -q '// my settings' "$H/.config/zed/settings.json" || fail 'zed keeps its comments'
@@ -64,7 +64,7 @@ grep -q -- '--args mcp --args serve --args --write' "$H/.config/crush/crushrc" |
 grep -q 'codex mcp add bxrig -- /opt/bxrig mcp serve --write' "$LOG" || fail 'codex add with --write'
 
 # ---- unlink gives files back ----
-mcp unlink --yes --json | jq -e '(.data.agents | length) == 15' >/dev/null || fail 'unlink every linked one'
+mcp unlink --yes --json | jq -e '(.data.agents | length) == 16' >/dev/null || fail 'unlink every linked one'
 grep -q '// a comment' "$H/.qwen/settings.json" || fail 'the file BxRig left out is untouched'
 
 cmp -s "$H/.config/zed/settings.json" "$tmp/zed.orig" || fail "zed file back: $(cat "$H/.config/zed/settings.json")"

@@ -5,7 +5,7 @@
 . "$(dirname "$0")/lib/harness.sh"
 export LOG="$tmp/log"; : > "$LOG"
 H="$tmp/home"; mkdir -p "$H/.config/bxrig" "$H/.config/zed" "$H/.claude"
-for c in claude codex pi gemini opencode copilot cursor-agent amp crush goose qwen grok antigravity zeditor code; do stub "$c" 'exit 0'; done
+for c in claude codex pi kilo gemini opencode copilot cursor-agent amp crush goose qwen grok antigravity zeditor code; do stub "$c" 'exit 0'; done
 stub kiro-cli 'echo "kiro-cli $*" >> "$LOG"'
 echo '{ "active": "qwen3.5-4b", "models": { "qwen3.5-4b": { "kind": "chat" }, "nomic": { "kind": "embed" } }, "serve": { "listen": "127.0.0.1", "port": 8089 } }' > "$H/.config/bxrig/ai.json"
 printf '{\n  // my settings\n  "theme": "One Dark"\n}\n' > "$H/.config/zed/settings.json"; cp "$H/.config/zed/settings.json" "$tmp/zed.orig"
@@ -16,13 +16,13 @@ pv() { run "$binary" privacy "$@"; }
 
 # ---- the report ----
 pv --json > "$tmp/r.json"
-jq -e '.data.server.ready and .data.server.models == ["qwen3.5-4b"] and (.data.agents | length) == 16 and .data.cloud_agents == 16' "$tmp/r.json" >/dev/null || fail "report: $(jq -c '.data | {server, n: (.agents|length), cloud_agents}' "$tmp/r.json")"
+jq -e '.data.server.ready and .data.server.models == ["qwen3.5-4b"] and (.data.agents | length) == 17 and .data.cloud_agents == 17' "$tmp/r.json" >/dev/null || fail "report: $(jq -c '.data | {server, n: (.agents|length), cloud_agents}' "$tmp/r.json")"
 jq -e '[.data.keys[] | select(.name == "GROQ_API_KEY" and .where == "your environment")] | length == 1' "$tmp/r.json" >/dev/null || fail 'a key in the environment is listed by name'
 ! grep -q 'test-key' "$tmp/r.json" || fail 'a key value never appears'
 jq -e '[.data.mcp[] | select(.server == "github" and .where == "web: api.githubcopilot.com" and .agent == "Claude Code")] | length == 1' "$tmp/r.json" >/dev/null || fail "Claude Code's MCP server: $(jq -c .data.mcp "$tmp/r.json")"
 jq -e '[.data.agents[] | select(.id == "claude-code") | .local] == ["no"] and [.data.agents[] | select(.id == "pi-agent") | .local] == ["possible"]' "$tmp/r.json" >/dev/null || fail 'local: no for Claude Code, possible for Pi'
 jq -e '[.data.data[] | select(.path | endswith("/.claude"))] | length == 1' "$tmp/r.json" >/dev/null || fail 'the folder with Claude Code chats'
-pv | grep -q '16 of your agents send prompts to the cloud' || fail 'report text'
+pv | grep -q '17 of your agents send prompts to the cloud' || fail 'report text'
 
 # ---- telemetry off: a plan first ----
 { pv telemetry off --json || true; } > "$tmp/plan.json"
@@ -59,7 +59,7 @@ jq -e '.model == "bxrig/qwen3.5-4b"' "$H/.config/opencode/opencode.json" >/dev/n
 jq -e '.providers[0].name == "bxrig"' "$H/.copilot/providers.json" >/dev/null || fail 'Copilot provider'
 jq -e '.requires_auth == false' "$H/.config/goose/custom_providers/bxrig.json" >/dev/null || fail 'Goose custom provider'
 grep -q 'provider add bxrig' "$H/.config/crush/crushrc" || fail 'Crush provider'
-pv --json | jq -e '[.data.agents[] | select(.local == "on") | .id] == ["opencode-cli","pi-agent","copilot-cli","crush","goose"] and .data.cloud_agents == 11' >/dev/null || fail 'local in use'
+pv --json | jq -e '[.data.agents[] | select(.local == "on") | .id] == ["opencode-cli","pi-agent","copilot-cli","crush","goose"] and .data.cloud_agents == 12' >/dev/null || fail 'local in use'
 pv local-only --off --yes >/dev/null
 pv --json | jq -e '[.data.agents[] | select(.local == "on")] | length == 0' >/dev/null || fail 'local-only off'
 [[ ! -e "$H/.config/goose/custom_providers/bxrig.json" ]] || fail "Goose's provider file is gone"
