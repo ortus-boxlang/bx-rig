@@ -9,6 +9,7 @@ Install file (schema 1): `distro`, `title`, `packager`, optional `extends`, `def
 - `targets` (install file): package names, or Flathub application ids for `flatpak`.
 - `origin`: why the entry exists (`owner-pick`, `omarchy-desktop`, `omarchy-web`, `omarchy-shell-tool`, `gaming`, `owner-request`).
 - `macos`: suggested macOS equivalent. A suggestion, not a verified mapping.
+- `conflicts` (install file, optional): packages this one cannot be installed beside (timeshift and `cachyos-snapper-support`). When one of them is installed, `bxrig install` skips the app and says why, instead of failing the whole transaction.
 - `verified_on` (install file): date the package target was resolved against the CachyOS repos (cachyos, v3, v4), Arch (core, extra, multilib) and the AUR.
 
 Status: draft for testing. `pkgbuild.ref` is `master` and must be pinned to a commit before an installer uses it. The Omarchy app inventory comes from the unofficial store omarchyapps.com and the Omarchy 4.5 notes. Curation continues after testing.

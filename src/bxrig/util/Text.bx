@@ -38,6 +38,21 @@ class Text {
 		return len( t ) > arguments.maxChars ? "..." & right( t, arguments.maxChars ) : t;
 	}
 
+	// The line that says why a command failed: the first line that starts with "error", "fatal" or "E:" (any case), else the last line that is
+	// not empty. "" for no text; at most 220 characters.
+	function reason( s ) {
+		var pick = "";
+		var last = "";
+		for ( var l in lines( arguments.s ) ) {
+			var t = trim( l );
+			if ( !len( t ) ) continue;
+			last = t;
+			if ( !len( pick ) && reFindNoCase( "^(error|fatal|E:)", t ) ) pick = t;
+		}
+		var r = len( pick ) ? pick : last;
+		return len( r ) > 220 ? left( r, 219 ) & "…" : r;
+	}
+
 	function nl() {
 		return chr( 10 );
 	}

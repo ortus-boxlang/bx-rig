@@ -1173,6 +1173,14 @@
 			"repo": "extra",
 			"verified_on": "2026-11-10"
 		},
+		"yakuake": {
+			"source": "pacman",
+			"targets": [
+				"yakuake"
+			],
+			"repo": "extra",
+			"verified_on": "2026-11-26"
+		},
 		"kooha": {
 			"source": "pacman",
 			"targets": [
@@ -2343,7 +2351,10 @@
 				"timeshift"
 			],
 			"repo": "extra",
-			"verified_on": "2026-11-12"
+			"verified_on": "2026-11-12",
+			"conflicts": [
+				"cachyos-snapper-support"
+			]
 		},
 		"tldr": {
 			"source": "pacman",

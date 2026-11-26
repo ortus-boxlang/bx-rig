@@ -27,5 +27,10 @@ grep -qx 'User=dev' "$tmp/state.conf" || fail 'the other state lines were kept'
 [[ "$(code "$binary" session set plasma --yes)" == 0 ]] || fail 'set plasma --yes exits 0'
 grep -qx "Session=$tmp/sessions/plasma.desktop" "$tmp/state.conf" || fail 'state file preselects plasma again'
 run "$binary" session set hyprland --yes --json | jq -e '.ok and (.data.done | map(.id) == ["backup","write"])' >/dev/null || fail 'set --json is one envelope'
+# no state file yet (a fresh SDDM): nothing to back up, and the write creates it
+rm -f "$tmp/state.conf" "$tmp/state.conf.bxrig.bak"
+[[ "$(code "$binary" session set hyprland --yes)" == 0 ]] || fail 'no state file yet: set still works'
+grep -qx "Session=$tmp/sessions/hyprland-uwsm.desktop" "$tmp/state.conf" || fail 'the state file was created with the session'
+[[ ! -e "$tmp/state.conf.bxrig.bak" ]] || fail 'there was nothing to back up'
 [[ "$(code "$binary" session)" == 2 ]] || fail 'bare session exits 2'
 echo "session tests passed"

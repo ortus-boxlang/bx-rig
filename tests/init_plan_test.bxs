@@ -182,6 +182,7 @@ testkit.check( "tmux comes with the agents", cmd( ip.plan( { ai_agents: [ "claud
 p = ip.plan( { container_engine: "podman", docker_compat: true } );
 testkit.check( "Podman with docker compatibility adds the shim step after the containers profile", ids( p ) == "containers,docker-compat" && cmd( p, "docker-compat" ) == "bxrig containers docker-compat" );
 testkit.check( "no docker shim without the answer, or on Docker", find( "docker-compat", ids( ip.plan( { container_engine: "podman" } ) ) ) == 0 && find( "docker-compat", ids( ip.plan( { container_engine: "docker", docker_compat: true } ) ) ) == 0 );
+testkit.check( "the LazyVim starter and docker-compat are optional: when they cannot run they are skipped, not failures", ip.plan( { editor_starter: "lazyvim" } ).steps.filter( function( x ) { return x.id == "editor-lazyvim"; } )[ 1 ].optional == true && ip.plan( { container_engine: "podman", docker_compat: true } ).steps.filter( function( x ) { return x.id == "docker-compat"; } )[ 1 ].optional == true );
 testkit.check( "the LazyVim starter is a step", cmd( ip.plan( { editor_starter: "lazyvim" } ), "editor-lazyvim" ) == "bxrig editor lazyvim" && find( "editor-lazyvim", ids( ip.plan( { editor_starter: "none" } ) ) ) == 0 );
 p = ip.plan( { desktop_utilities: [ "cliphist", "wf-recorder", "playerctl" ] } );
 testkit.check( "desktop utilities are installed in the one apps step", cmd( p, "apps" ) == "bxrig install cliphist wf-recorder playerctl" );

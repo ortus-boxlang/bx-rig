@@ -190,7 +190,11 @@ class InitRun {
 		arguments.s.exit = arguments.code;
 		var secs = int( ( arguments.s.ended - arguments.s.started ) / 1000 );
 		if ( arguments.code == 0 ) arguments.s.state = "done";
-		else if ( arguments.s.optional ) { arguments.s.state = "skipped"; arguments.s.note = "could not run (exit " & arguments.code & "); do it later: " & arguments.s.argv.toList( " " ); }
+		else if ( arguments.s.optional ) {
+			arguments.s.state = "skipped";
+			var why = new bxrig.util.Text().reason( lastLines( arguments.s.n, 8 ) );
+			arguments.s.note = "could not run (exit " & arguments.code & ")" & ( len( why ) ? ": " & why : "" ) & "; do it later: " & arguments.s.argv.toList( " " );
+		}
 		else arguments.s.state = "failed";
 		variables.log.line( "    exit " & arguments.code & " after " & secs & " s: " & arguments.s.state );
 		variables.pending = "";

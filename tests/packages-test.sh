@@ -25,6 +25,17 @@ j() { run "$binary" "$@" --json; }
 touch "$tmp/home/.local/share/applications/bxrig-boxlang-docs.desktop"
 [[ "$(rc run "$binary" package-status boxlang-docs)" == 0 ]] || fail 'web app launcher counts as installed'
 
+# an app that conflicts with an installed package (timeshift and CachyOS's snapper support) is skipped with the reason, not failed
+cat > "$tmp/bin/pacman.conflict" <<'SH'
+#!/usr/bin/env bash
+[[ "$1" == "-Qq" ]] && { printf '%s\n' git cachyos-snapper-support; exit 0; }
+exit 1
+SH
+cp "$tmp/bin/pacman" "$tmp/bin/pacman.plain"; cp "$tmp/bin/pacman.conflict" "$tmp/bin/pacman"
+j install timeshift --dry-run | jq -e '(.data.would_install | length) == 0 and (.data.skipped | map(select(.id == "timeshift" and (.reason | contains("cachyos-snapper-support")))) | length) == 1' >/dev/null || fail "a conflict is skipped: $(j install timeshift --dry-run)"
+cp "$tmp/bin/pacman.plain" "$tmp/bin/pacman"
+j install timeshift --dry-run | jq -e '(.data.would_install | map(.id) == ["timeshift"])' >/dev/null || fail 'timeshift installs when nothing conflicts'
+
 # package-source reads the catalog
 [[ "$(j package-source vscode | jq -r '.data.source')" == aur ]] || fail 'vscode source aur'
 [[ "$(j package-source git | jq -r '.data.targets[0]')" == git ]] || fail 'git target'
