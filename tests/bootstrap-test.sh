@@ -292,11 +292,20 @@ if out="$(MOCK_UID=0 brun bash "$repo/bootstrap/install.sh" binary --yes 2>&1)";
 b_mocks; good="$tmp/good"; fake_bin "BxRig 9.9.9" > "$good"; chmod 755 "$good"
 out="$(brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$good" 2>&1)"; need "$out" 'Installed'; [[ "$("$dest" version)" == "BxRig 9.9.9" ]] || { echo 'FAIL: --binary not installed' >&2; exit 1; }
 need "$(brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$good" 2>&1)" 'identical'
+# The version check must not inherit interactive input (which makes bxrig print its banner first).
+cat > "$tmp/interactive-bin" <<'BIN'
+#!/usr/bin/env bash
+if [[ -t 0 ]] || read -r line; then echo "banner"; fi
+echo "BxRig 9.9.10"
+BIN
+chmod 755 "$tmp/interactive-bin"
+out="$(brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$tmp/interactive-bin" <<< 'interactive input' 2>&1)" || { echo "FAIL: binary version check inherited stdin: $out" >&2; exit 1; }
+need "$out" "Installed $dest (BxRig 9.9.10)"
 ln -sf "$good" "$tmp/link"; printf 'x' > "$tmp/plain"; fake_bin "BxRig" | sed 's/BxRig/Other/' > "$tmp/imp"; chmod 755 "$tmp/imp"
 for bad in "$tmp/link" "$tmp/plain" "$tmp/imp" "$tmp/missing"; do
 	if brun bash "$repo/bootstrap/install.sh" binary --yes --binary "$bad" >/dev/null 2>&1; then echo "FAIL: --binary accepted $bad" >&2; exit 1; fi
 done
-[[ "$("$dest" version)" == "BxRig 9.9.9" ]] || { echo 'FAIL: rejected --binary changed the install' >&2; exit 1; }
+[[ "$("$dest" version </dev/null)" == "BxRig 9.9.10" ]] || { echo 'FAIL: rejected --binary changed the install' >&2; exit 1; }
 # 6. Arguments.
 if brun bash "$repo/bootstrap/install.sh" binary >/dev/null 2>&1; then echo 'FAIL: binary without --yes' >&2; exit 1; fi
 if brun bash "$repo/bootstrap/install.sh" binary --yes --bogus >/dev/null 2>&1; then echo 'FAIL: unknown flag' >&2; exit 1; fi

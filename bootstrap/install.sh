@@ -630,7 +630,7 @@ if [[ "$mode" == --install-binary ]]; then
 	}
 	installed="$BIN_DIR/bxrig"
 	check_binary() {  # PATH -> prints its version line; fails unless it identifies itself as BxRig
-		local out; out="$("$1" version 2>&1 | head -n 1)" || true
+		local out; out="$("$1" version </dev/null 2>&1 | head -n 1)" || true
 		[[ "$out" == BxRig\ * ]] || { echo "Not a working bxrig binary: $1 (version printed: ${out:-nothing})" >&2; return 1; }
 		printf '%s\n' "$out"
 	}
