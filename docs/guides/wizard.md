@@ -32,7 +32,7 @@ The **Input** page asks about keyboard layouts, natural scrolling, and the short
 When you press Enter on the review, the wizard stays on screen and installs. It does not drop back to a scrolling terminal.
 
 - **Progress.** A bar in your theme's colours, `7 of 16 steps`, the step that runs now with a spinner and how long it has run, and the last line it printed. The apps step also shows its own count (`12 of 43`) while the package manager installs.
-- **It says when it is quiet.** A download or a package build can print nothing for minutes. After 8 seconds without output the line says `no output for 42 s, still working`, so a long step does not look stuck.
+- **It says when it is quiet.** A download or a package build can print nothing for minutes. After 8 seconds without output the line says `no output for 42 s` and what the step is running right now (for example `pacman -S ...`, `makepkg`, `curl`), so a long step does not look stuck. Package installs, AUR builds and install scripts print as they go, so you see them in the log (`v`) while they run; a step that waits for a password shows as `sudo`.
 - **`v` opens the log** under the bar: every line every step prints, live, with the step it came from. Arrows, PgUp and PgDn scroll it; `End` follows the newest line again; `v` closes it.
 - **Ctrl+C asks first.** `y` stops: the running step is killed and the rest is not run.
 - **When it ends** the screen shows what worked and what failed, with the exit code and the last line of each failure. `r` runs the failed steps again; Enter leaves.

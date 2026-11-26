@@ -162,7 +162,7 @@ class Packages {
 		if ( !result.done.len() && !result.failed.len() ) println( "Nothing to install. Choose the desktop and apps with `bxrig init`." );
 		for ( var d in result.done ) println( "Installed: " & d.id & "  [" & d.source & "]" );
 		for ( var f in result.failed ) println( "Failed: " & f.id & "  [" & f.source & "]: " & f.error );
-		for ( var sk in res.skipped ) if ( sk.reason != "installed" ) println( "Skipped: " & sk.id & " (" & sk.reason & ")" );
+		for ( var sk in res.skipped ) if ( left( sk.reason, 9 ) == "conflicts" ) println( "Skipped: " & sk.id & " (" & sk.reason & ")" );
 		return exit;
 	}
 

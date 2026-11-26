@@ -47,6 +47,12 @@ sleepy = new bxrig.InitRun( [ { id: "slow", title: "slow", argv: [ "sh", "-c", "
 sleepy.begin();
 for ( i = 1; i <= 30; i++ ) { sleepy.tick(); sleep( 50 ); }
 testkit.check( "a long step is running", sleepy.current().state == "running" );
+// a quiet step: after a moment the run looks at what it is running
+sleepy2 = new bxrig.InitRun( [ { id: "quiet", title: "quiet", argv: [ "sh", "-c", "sleep 20" ] } ], new bxrig.InitLog( tmp ), proc, { quietMs: 400 } );
+sleepy2.begin();
+for ( i = 1; i <= 80 && !len( sleepy2.state().leaf ); i++ ) { sleepy2.tick(); sleep( 50 ); }
+testkit.check( "a quiet step: what it is running now is known (its deepest child)", find( "sleep 20", sleepy2.state().leaf ) > 0 );
+sleepy2.stop();
 sleepy.stop();
 testkit.check( "stop kills it and does not run the rest", sleepy.finished() && sleepy.state().steps[ 1 ].state == "failed" && sleepy.state().steps[ 1 ].exit == 130 && sleepy.state().steps[ 2 ].state == "stopped" && sleepy.result().code == 130 );
 sleep( 300 );

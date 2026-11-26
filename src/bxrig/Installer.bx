@@ -158,6 +158,45 @@ class Installer {
 		return len( t ) ? ": " & t : "";
 	}
 
+	// Runs one command and prints what it prints while it runs, so a screen watching this process (the wizard's install screen) sees pacman,
+	// yay and the install scripts as they go instead of nothing until the whole step ends. The output goes to a file that is read and echoed
+	// every half second; stdin is closed (the package managers run with --noconfirm). A test runner replaces all of this and runs as before.
+	// Returns { exitCode, output, timeout }.
+	function execLive( cmd, timeoutSeconds, echo = "" ) {
+		var say = isSimpleValue( arguments.echo ) ? function( text ) { print( text ); } : arguments.echo;
+		if ( !isSimpleValue( variables.custom ) ) return variables.procs.exec( arguments.cmd, arguments.timeoutSeconds );
+		var base = new bxrig.util.Env().state( "run-" & left( createUUID(), 8 ) );
+		var out = base & ".out"; var st = base & ".exit"; var pid = base & ".pid";
+		directoryCreate( getDirectoryFromPath( out ), true, true );
+		fileWrite( out, "" );
+		var started = variables.procs.startTo( arguments.cmd, out, st, pid );
+		if ( started.exitCode != 0 ) return { exitCode: 127, output: started.output ?: "could not start", timeout: false };
+		var read = 0;
+		var t0 = getTickCount();
+		var timedOut = false;
+		while ( true ) {
+			var done = fileExists( st );
+			var all = fileExists( out ) ? fileRead( out ) : "";
+			if ( len( all ) > read ) {
+				// print the complete lines; the last piece waits for its newline (unless the command is done)
+				var fresh = mid( all, read + 1, len( all ) - read );
+				var cut = done ? len( fresh ) : ( find( chr( 10 ), reverse( fresh ) ) ? len( fresh ) - find( chr( 10 ), reverse( fresh ) ) + 1 : 0 );
+				if ( cut > 0 ) { say( left( fresh, cut ) & ( right( left( fresh, cut ), 1 ) == chr( 10 ) ? "" : chr( 10 ) ) ); read += cut; }
+			}
+			if ( done ) break;
+			if ( getTickCount() - t0 > arguments.timeoutSeconds * 1000 ) {
+				timedOut = true;
+				if ( fileExists( pid ) ) variables.procs.killTree( trim( fileRead( pid ) ) );
+				break;
+			}
+			sleep( 400 );
+		}
+		var code = timedOut ? 124 : int( val( trim( fileRead( st ) ) ) );
+		var text = fileExists( out ) ? fileRead( out ) : "";
+		for ( var f in [ out, st, pid ] ) if ( fileExists( f ) ) fileDelete( f );
+		return { exitCode: code, output: text, timeout: timedOut };
+	}
+
 	function run( steps ) {
 		var done = []; var failed = [];
 		for ( var step in steps ) {
@@ -169,7 +208,7 @@ class Installer {
 			}
 			for ( var cmd in step.commands ) {
 				if ( len( problem ) ) break;
-				var r = variables.procs.exec( cmd, 1800 );
+				var r = execLive( cmd, 1800 );
 				if ( r.timeout ) problem = step.kind & " timed out";
 				else if ( r.exitCode != 0 ) problem = step.kind & " failed (exit " & r.exitCode & ")" & whyText( r );
 			}
@@ -180,7 +219,7 @@ class Installer {
 			// so only the apps that really cannot be installed are reported failed
 			if ( len( problem ) && arrayFind( [ "pacman", "zypper", "apt" ], step.kind ) && step.ids.len() > 1 && structKeyExists( step, "pkgs" ) ) {
 				for ( var id in step.ids ) {
-					var one = variables.procs.exec( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
+					var one = execLive( variables.pacman.installArgv( step.pkgs[ id ], step.asRoot ), 1800 );
 					if ( one.timeout || one.exitCode != 0 ) failed.append( { id: id, source: step.kind, error: step.kind & " failed (exit " & ( one.timeout ? 124 : one.exitCode ) & ")" & whyText( one ) } );
 					else done.append( { id: id, source: step.kind } );
 				}
