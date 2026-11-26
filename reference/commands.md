@@ -65,10 +65,10 @@ Set up the machine, see where it stands, keep it current.
 
 ### `bxrig init` {#bxrig-init}
 
-The setup wizard: asks the questions, shows a review, then runs the matching commands.
+The setup wizard: asks the questions, shows a review, then installs on a progress screen (press v for the live log) and keeps a log file.
 
 ```text
-bxrig init [--from=FILE] [--fresh | --rerun] | init --answers=FILE [--yes] [--dry-run] [--json] | init --print-answers [--from-system] [--json] | init --export=FILE [--force]
+bxrig init [--from=FILE] [--fresh | --rerun] [--plain] | init --answers=FILE [--yes [--screen]] [--dry-run] [--json] | init --print-answers [--from-system] [--json] | init --export=FILE [--force]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
