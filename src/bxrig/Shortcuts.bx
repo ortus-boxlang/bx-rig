@@ -28,7 +28,7 @@ class Shortcuts {
 	// Valid key names besides single letters and digits.
 	function namedKeys() {
 		var out = [ "Space", "Tab", "Return", "Escape", "grave", "comma", "period", "slash", "minus", "equal", "Left", "Right", "Up", "Down",
-			"Delete", "Home", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
+			"Delete", "Home", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F23", "mouse_down", "mouse_up", "mouse:272", "mouse:273" ];
 		for ( var b in bareKeys() ) out.append( b );
 		return out;
 	}
