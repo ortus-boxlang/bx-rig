@@ -32,6 +32,7 @@ bxrig mcp unlink --yes
 | Pi | `~/.pi/agent/mcp.json` |
 | Gemini CLI | `~/.gemini/settings.json` |
 | OpenCode | `~/.config/opencode/opencode.json` |
+| Kilo Code | `~/.config/kilo/kilo.json` (or `kilo.jsonc` when you have that) |
 | GitHub Copilot CLI | `~/.copilot/mcp-config.json` |
 | Cursor and Cursor Agent | `~/.cursor/mcp.json` |
 | Amp | `~/.config/amp/settings.json` |
@@ -65,7 +66,7 @@ bxrig privacy local-only --yes        # OpenCode, Pi, Copilot CLI, Crush, Goose
 bxrig privacy local-only --off --yes
 ```
 
-OpenCode also makes your active model its default; in the others pick the BxRig provider. The rest can not use a local model, and the report says why: Claude Code, Gemini CLI, Antigravity and Kiro only offer their makers' models, and Cursor and Amp send every request through their own servers. Qwen Code, Grok Build, Zed, VS Code and Codex can be pointed at it by hand; the report says where (Codex needs the Responses API, which only recent llama.cpp builds offer).
+OpenCode also makes your active model its default; in the others pick the BxRig provider. The rest can not use a local model, and the report says why: Claude Code, Gemini CLI, Antigravity and Kiro only offer their makers' models, and Cursor and Amp send every request through their own servers. Kilo Code, Qwen Code, Grok Build, Zed, VS Code and Codex can be pointed at it by hand; the report says where (Codex needs the Responses API, which only recent llama.cpp builds offer).
 
 **Turn off telemetry.** Where the agent has a documented switch:
 
@@ -85,7 +86,7 @@ bxrig privacy telemetry on zed --yes   # one agent back to its own default
 | Zed | `telemetry.diagnostics` and `telemetry.metrics` off |
 | VS Code | `telemetry.telemetryLevel: off` |
 
-For the others the report says how, when there is a way: Crush with `CRUSH_DISABLE_METRICS=1` in your shell, Cursor with Privacy Mode in your account, Antigravity in its settings. OpenCode, Amp and Grok Build document no switch.
+For the others the report says how, when there is a way: Crush with `CRUSH_DISABLE_METRICS=1` in your shell, Cursor with Privacy Mode in your account, Antigravity in its settings. Kilo Code has one you set yourself: `KILO_TELEMETRY_LEVEL=off` in your environment. OpenCode, Amp and Grok Build document no switch.
 
 ## In the Control Center and the bar
 

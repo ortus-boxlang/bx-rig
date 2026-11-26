@@ -1801,6 +1801,24 @@
 			}
 		},
 		{
+			"id": "kilo-cli",
+			"name": "Kilo Code",
+			"description": "Open source coding agent for the terminal, a fork of OpenCode",
+			"description_source": "curated",
+			"kind": "tui",
+			"group": "ai",
+			"category": "Coding agents",
+			"tier": "optional",
+			"homepage": "https://kilo.ai/docs/cli",
+			"macos": null,
+			"profiles": {
+				"ai": "optional"
+			},
+			"origin": [
+				"owner-request"
+			]
+		},
+		{
 			"id": "kiro-cli",
 			"name": "Kiro CLI",
 			"description": "Kiro's agent: prompt to code to deployment in your terminal",

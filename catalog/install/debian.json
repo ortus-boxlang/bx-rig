@@ -709,6 +709,14 @@
 				"kio-gdrive"
 			]
 		},
+		"kilo-cli": {
+			"source": "script",
+			"script": {
+				"url": "https://kilo.ai/cli/install",
+				"shell": "bash"
+			},
+			"verified_on": "2026-11-26"
+		},
 		"kiro-cli": {
 			"source": "script",
 			"script": {

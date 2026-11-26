@@ -242,8 +242,10 @@ class InitPlan {
 		for ( var id in pick( a, "desktop_utilities", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );
 		if ( engine == "docker" ) apps.append( "docker" );
 		var vpnIds = { tailscale: "tailscale", wireguard: "wireguard", openvpn: "openvpn", mullvad: "mullvad", proton: "proton-vpn", nordvpn: "nordvpn", nordlayer: "nordlayer" };
-		var vpn = pick( a, "vpn" );
-		if ( structKeyExists( vpnIds, vpn ) ) apps.append( vpnIds[ vpn ] );
+		// the VPNs you ticked (an older answers file has one name as a string)
+		var vpns = pick( a, "vpn", [] );
+		if ( !isArray( vpns ) ) vpns = len( toString( vpns ) ) ? [ toString( vpns ) ] : [];
+		for ( var vp in vpns ) if ( structKeyExists( vpnIds, vp ) && !arrayFind( apps, vpnIds[ vp ] ) ) apps.append( vpnIds[ vp ] );
 		var pm = pick( a, "password_manager" );
 		if ( len( pm ) && pm != "none" ) apps.append( pm );
 		if ( pick( a, "gaming" ) == "steam" ) apps.append( "steam" );
@@ -262,7 +264,7 @@ class InitPlan {
 		}
 		if ( pick( a, "editor_starter" ) == "lazyvim" ) out.steps.append( { id: "editor-lazyvim", title: "install the LazyVim starter for Neovim with the BxRig layer and BoxLang syntax (an existing ~/.config/nvim is left alone)", argv: [ "bxrig", "editor", "lazyvim" ] } );
 		// NordVPN needs its service and your group after the install (sudo; optional so a missing password prompt never stops the plan)
-		if ( vpn == "nordvpn" ) out.steps.append( { id: "vpn-nordvpn", title: "enable the NordVPN service and add you to the nordvpn group (sudo)", argv: [ "bxrig", "vpn", "nordvpn", "setup" ], optional: true } );
+		if ( arrayFind( vpns, "nordvpn" ) ) out.steps.append( { id: "vpn-nordvpn", title: "enable the NordVPN service and add you to the nordvpn group (sudo)", argv: [ "bxrig", "vpn", "nordvpn", "setup" ], optional: true } );
 		// defaults: the browser and the terminal you picked (both are installed by now)
 		if ( len( fileManager ) ) out.steps.append( { id: "default-filemanager", title: "make " & fileManager & " your default file manager", argv: [ "bxrig", "default", "filemanager", fileManager ] } );
 		if ( fileManager == "strata" ) out.steps.append( { id: "strata-integrations", title: "add Strata's LocalSend and KDE Connect Send to providers", argv: [ "bxrig", "strata", "integrations" ], optional: true } );

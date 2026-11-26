@@ -1121,6 +1121,13 @@
 			"repo": "extra",
 			"verified_on": "2026-11-19"
 		},
+		"kilo-cli": {
+			"source": "aur",
+			"targets": [
+				"kilo-bin"
+			],
+			"verified_on": "2026-11-26"
+		},
 		"kiro-cli": {
 			"source": "aur",
 			"targets": [

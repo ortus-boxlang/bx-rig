@@ -8,7 +8,7 @@ summary: Coding agents, API keys in your keyring, local models, and skills for e
 
 ## Agents
 
-BxRig installs and launches coding agents (Pi, Claude Code, Codex, Gemini CLI, OpenCode, GitHub Copilot CLI, Cursor Agent, Amp, Crush, Goose, Kiro, Qwen Code, Grok Build) and orchestrators. Give any of them BxRig's own tools, and see what leaves your machine: [MCP and privacy](mcp-and-privacy.md).
+BxRig installs and launches coding agents (Pi, Claude Code, Codex, Gemini CLI, OpenCode, Kilo Code, GitHub Copilot CLI, Cursor Agent, Amp, Crush, Goose, Kiro, Qwen Code, Grok Build) and orchestrators. Give any of them BxRig's own tools, and see what leaves your machine: [MCP and privacy](mcp-and-privacy.md).
 
 ```bash
 bxrig ai list
