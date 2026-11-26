@@ -33,8 +33,17 @@ class Packages {
 		return arguments.res;
 	}
 
+	// An app installed by a script has no package to look up: its catalog entry may name the program it puts in ~/.local/bin (`provides`),
+	// and it counts as installed when that file or a program of that name is there (so a re-run does not run the installer into "already exists").
+	function providedBy( app ) {
+		var p = app.provides ?: "";
+		if ( !len( p ) ) return false;
+		return fileExists( new bxrig.util.Env().home() & "/.local/bin/" & p ) || new bxrig.util.Proc().has( p );
+	}
+
 	function isInstalled( app, names ) {
 		if ( app.source == "web" ) return fileExists( launcherPath( app.id ) );
+		if ( providedBy( app ) ) return true;
 		if ( !structKeyExists( app, "targets" ) || !app.targets.len() ) return false;
 		for ( var t in app.targets ) if ( !structKeyExists( names, t ) ) return false;
 		return true;

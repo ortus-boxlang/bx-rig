@@ -32,5 +32,10 @@ rm -f "$tmp/state.conf" "$tmp/state.conf.bxrig.bak"
 [[ "$(code "$binary" session set hyprland --yes)" == 0 ]] || fail 'no state file yet: set still works'
 grep -qx "Session=$tmp/sessions/hyprland-uwsm.desktop" "$tmp/state.conf" || fail 'the state file was created with the session'
 [[ ! -e "$tmp/state.conf.bxrig.bak" ]] || fail 'there was nothing to back up'
+# no SDDM state folder at all (another login manager): a precondition that says so, nothing is attempted
+out="$(run env BXRIG_SDDM_STATE="$tmp/no-sddm/state.conf" "$binary" session set hyprland --yes 2>&1)" || true
+[[ "$(code env BXRIG_SDDM_STATE="$tmp/no-sddm/state.conf" "$binary" session set hyprland --yes)" == 4 ]] || fail 'no SDDM folder exits 4'
+[[ "$out" == *"SDDM is not your login manager"* ]] || fail "the message says why: $out"
+[[ ! -e "$tmp/no-sddm" ]] || fail 'nothing was created'
 [[ "$(code "$binary" session)" == 2 ]] || fail 'bare session exits 2'
 echo "session tests passed"

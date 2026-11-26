@@ -23,6 +23,7 @@ class SystemState {
 	function appInstalled( id ) {
 		if ( !structKeyExists( variables.byId, arguments.id ) ) return false;
 		var app = variables.byId[ arguments.id ];
+		if ( ( app.provides ?: "" ) != "" && ( fileExists( new bxrig.util.Env().home() & "/.local/bin/" & app.provides ) || new bxrig.util.Proc().has( app.provides ) ) ) return true;
 		if ( app.source == "web" || !structKeyExists( app, "targets" ) || !app.targets.len() ) return false;
 		for ( var t in app.targets ) if ( !structKeyExists( variables.names, t ) ) return false;
 		return true;
