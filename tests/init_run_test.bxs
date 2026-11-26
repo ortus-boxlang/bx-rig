@@ -45,7 +45,8 @@ testkit.check( "log: the finish line", find( "finished: 2 done, 1 failed, 1 skip
 log2 = new bxrig.InitLog( tmp );
 sleepy = new bxrig.InitRun( [ { id: "slow", title: "slow", argv: [ "sh", "-c", "echo start; sleep 30; echo never" ] }, { id: "next", title: "next", argv: [ "sh", "-c", "echo x" ] } ], log2, proc );
 sleepy.begin();
-for ( i = 1; i <= 30; i++ ) { sleepy.tick(); sleep( 50 ); }
+// (up to 10 s for the first line: on a busy machine a step can take a while to start)
+for ( i = 1; i <= 200 && !sleepy.state().lines.len(); i++ ) { sleepy.tick(); sleep( 50 ); }
 testkit.check( "a long step is running", sleepy.current().state == "running" );
 sleepy.stop();
 testkit.check( "stop kills it and does not run the rest", sleepy.finished() && sleepy.state().steps[ 1 ].state == "failed" && sleepy.state().steps[ 1 ].exit == 130 && sleepy.state().steps[ 2 ].state == "stopped" && sleepy.result().code == 130 );

@@ -17,7 +17,8 @@ keptAlive = 0;
 function shot( w = 120, h = 36, tick = 10 ) { view.paint( app, tick, w, h ); return tui.render_to_string( w, h ); }
 function spin( n ) { for ( var i = 1; i <= n; i++ ) { app.onTick( i ); sleep( 50 ); } }
 
-spin( 30 );
+// (wait for the second step's own progress line, up to 10 s: a busy machine starts steps slowly)
+for ( i = 1; i <= 200 && run.state().steps[ 2 ].subDone != 7; i++ ) { app.onTick( i ); sleep( 50 ); }
 s = shot();
 testkit.check( "running: the title, the bar and the count", find( "Installing", s ) > 0 && find( "%", s ) > 0 && find( "1 of 3 steps", s ) > 0 );
 testkit.check( "running: the step that runs, its own progress (7 of 43) and the last line it printed", find( "install 43 apps", s ) > 0 && find( "7 of 43", s ) > 0 && find( "this line is red", s ) > 0 );
