@@ -116,7 +116,7 @@ The default file manager is **Strata**; Dolphin is the alternative (`bxrig dolph
 |---|---|
 | Dictation | `bxrig dictation setup superwhisper\|voxtype --yes` |
 | Databases | `bxrig db list\|start ENGINE\|stop\|status\|logs` (Podman first; HeidiSQL and DBeaver are in the catalog) |
-| Cloud storage as folders | `bxrig cloud remotes\|configure\|mount NAME\|status` (RClone Browser is the GUI) |
+| Cloud storage as folders | `bxrig cloud remotes\|configure\|mount NAME\|status` (rclone 1.74 and later has its own web GUI: `rclone gui`) |
 | VPN | `bxrig vpn list\|connect NAME\|disconnect\|locations NAME` (one list: saved network profiles, NordVPN, NordLayer, Tailscale, Mullvad), `bxrig vpn nordvpn setup` |
 | Containers | `bxrig containers doctor\|socket enable\|docker-compat\|list\|start\|stop\|restart\|logs` |
 | Editor | `bxrig editor lazyvim` |

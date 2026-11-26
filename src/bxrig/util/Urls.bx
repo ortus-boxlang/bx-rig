@@ -2,7 +2,7 @@
 class Urls {
 	function downloads() { return "https://downloads.ortussolutions.com/ortussolutions/bxrig"; }
 	function skillsHub() { return "https://skills.boxlang.io"; }
-	function docs() { return "https://bxcachy.boxlang.io/"; }
+	function docs() { return "https://bxrig.boxlang.io/"; }
 	function commandsReference() { return docs() & "reference/commands/"; }
 	function bvm() { return "https://install-bvm.boxlang.io"; }
 	function tryBoxLang() { return "https://try.boxlang.io"; }

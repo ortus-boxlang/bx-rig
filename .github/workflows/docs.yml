@@ -1,8 +1,8 @@
 name: Publish Docs
 
-# Builds the docs (docs/ + bxsites.yaml, with bxSites) and publishes site/ to GitHub Pages at https://bxcachy.boxlang.io
+# Builds the docs (docs/ + bxsites.yaml, with bxSites) and publishes site/ to GitHub Pages at https://bxrig.boxlang.io
 # on every push to development. Needs GitHub Pages enabled (Settings -> Pages -> Source: Deploy from a branch -> gh-pages, / root)
-# and the custom domain bxcachy.boxlang.io (a CNAME record for bxcachy.boxlang.io pointing at the GitHub Pages host).
+# and the custom domain bxrig.boxlang.io (a CNAME record for bxrig.boxlang.io pointing at the GitHub Pages host).
 # A pull request builds and audits the site without publishing it.
 on:
   push:
@@ -55,4 +55,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
           # Keeps the custom domain across a gh-pages wipe.
-          cname: bxcachy.boxlang.io
+          cname: bxrig.boxlang.io
