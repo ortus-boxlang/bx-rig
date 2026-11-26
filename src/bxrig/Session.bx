@@ -74,6 +74,11 @@ class Session {
 
 	// `session set hyprland|plasma`
 	function set( target, yes, dryRun, asJson ) {
+		// no /var/lib/sddm: SDDM is not this machine's login manager (or not installed), so there is no state file to preselect a session in
+		if ( !directoryExists( getDirectoryFromPath( stateFile() ) ) ) {
+			var msg = "SDDM's state folder " & getDirectoryFromPath( stateFile() ) & " does not exist, so SDDM is not your login manager here and there is no login-screen session to preselect. Choose the session at your login screen.";
+			return variables.cli.say( "session set " & arguments.target, "precondition", { error: msg }, arguments.asJson, [ "error: " & msg ] );
+		}
 		var facts = { isRoot: variables.inst.isRoot(), hasSudo: variables.inst.hasCommand( "sudo" ), sessions: sessions(), stateFile: stateFile(), stateLines: stateLines(), autologin: autologin(), workDir: "" };
 		var plan = new bxrig.SetupPlan().session( facts, arguments.target );
 		return new bxrig.Setup( variables.cli, variables.inst.runner() ).execute( "session set " & arguments.target, plan, facts, yes, dryRun, asJson );

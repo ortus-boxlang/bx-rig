@@ -439,7 +439,7 @@ class InitPlan {
 		// keyboard layouts for Plasma (Hyprland takes them through `setup hyprland --layouts`)
 		if ( wantsPlasma && pick( a, "layouts", [] ).len() ) out.steps.append( { id: "plasma-keyboard", title: "set the Plasma keyboard layouts (" & a.layouts.toList( ", " ) & "; takes effect at your next login)", argv: [ "bxrig", "setup", "keyboard", "--layouts=" & a.layouts.toList( "," ) ] } );
 		var sess = session( a );
-		if ( len( sess ) ) out.steps.append( { id: "session", title: "start on " & ( sess == "hyprland" ? "Hyprland" : "KDE Plasma" ) & " at the login screen", argv: [ "bxrig", "session", "set", sess ] } );
+		if ( len( sess ) ) out.steps.append( { id: "session", title: "start on " & ( sess == "hyprland" ? "Hyprland" : "KDE Plasma" ) & " at the login screen", argv: [ "bxrig", "session", "set", sess ], optional: true } );
 		if ( !wantsHypr ) for ( var key in hyprlandKeys() ) {
 			if ( key == "layouts" && wantsPlasma ) continue;
 			if ( structKeyExists( a, key ) && isSet( a[ key ] ) ) out.pending.append( key );

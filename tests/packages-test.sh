@@ -36,6 +36,12 @@ j install timeshift --dry-run | jq -e '(.data.would_install | length) == 0 and (
 cp "$tmp/bin/pacman.plain" "$tmp/bin/pacman"
 j install timeshift --dry-run | jq -e '(.data.would_install | map(.id) == ["timeshift"])' >/dev/null || fail 'timeshift installs when nothing conflicts'
 
+# an app installed by a script counts as installed when the program it puts in ~/.local/bin is there (strata), so a re-run does not hit "already exists"
+[[ "$(rc run "$binary" package-status strata)" == 1 ]] || fail 'strata is not installed before its program exists'
+mkdir -p "$tmp/home/.local/bin"; printf '#!/bin/sh\n' > "$tmp/home/.local/bin/strata"; chmod +x "$tmp/home/.local/bin/strata"
+[[ "$(rc run "$binary" package-status strata)" == 0 ]] || fail 'strata is installed once ~/.local/bin/strata exists'
+j install strata --dry-run | jq -e '(.data.would_install | length) == 0 and (.data.skipped | map(.id) | index("strata") != null)' >/dev/null || fail 'install skips an app whose program is already there'
+
 # package-source reads the catalog
 [[ "$(j package-source vscode | jq -r '.data.source')" == aur ]] || fail 'vscode source aur'
 [[ "$(j package-source git | jq -r '.data.targets[0]')" == git ]] || fail 'git target'
