@@ -86,6 +86,18 @@ Choice 3 asks for the repository (default `ortus-boxlang/matchbox`) and the bran
 
 After the choice the script probes the MatchBox twice: it creates the terminal UI canvas (`createObject( "rust", "tui.TUI" )`) and compiles two cross-referencing class files to check that class files are compiled once (MatchBox commit `e7812e6`, on the `bxrig` branch). The snapshot has bif-tui now but not the class-sharing fix: with ~200 classes it takes minutes and >50 GB and produces a 1.2 GB binary instead of ~20 MB. If either probe fails it stops with the reason, records nothing and never switches to another MatchBox by itself. Otherwise it saves the choice in `.cache/dev.env` (gitignored), builds `dist/bxrig` with `scripts/dev-build.sh` and runs a smoke test. `--no-build` only probes and saves the choice. Run it again to switch. `scripts/dev-build.sh` and `tests/run-all.sh` read `.cache/dev.env`; a `MATCHBOX=/path/to/matchbox` variable overrides it (use it for your own `../matchbox` checkout: build it with `cargo build --features bif-tui`, then `MATCHBOX=../matchbox/target/debug/matchbox scripts/dev-build.sh`).
 
+### Setting up the dev machine after the build
+
+A successful build also provisions the machine through the same `bootstrap/install.sh` stages the web installer runs, in the same order:
+
+1. `packages --yes` (missing packages, yay and Rust),
+2. `toolchains --yes` with `BXRIG_MATCHBOX_FILE` pointing at the MatchBox selected above, so the compiler the machine uses is the one that built `dist/bxrig`,
+3. `binary --yes --force --binary dist/bxrig`, so the installed `bxrig` is the binary just built (not a second compile and not a download),
+4. `core --yes` (the core app profile),
+5. `bxrig init` when there is a terminal.
+
+If a stage fails, the script stops with that stage's name; the build stays in `dist/bxrig`. The download, signature and checksum work of the web installer is skipped because this tree is already the source of truth. Use `--no-setup` to build without touching the machine, `--no-wizard` to skip only `bxrig init`, and `--defaults` to run `bxrig init --defaults --yes` when there is no terminal (without either, a non-interactive run prints `Run: bxrig init` and finishes). Packages stage steps that need sudo can ask for a password; `packages --yes` also upgrades the system on Arch, exactly as the installer does.
+
 `--matchbox edge` and `--matchbox source` were removed: use `--matchbox branch` (it builds the `bxrig` branch from source instead of downloading the published build).
 
 ### Testing with another MatchBox branch
