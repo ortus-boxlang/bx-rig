@@ -235,7 +235,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#look">Look</a></li><li class="toc-level-2"><a href="#your-conversations-and-logs">Your conversations and logs</a></li><li class="toc-level-2"><a href="#talk-to-it">Talk to it</a></li><li class="toc-level-2"><a href="#let-it-speak">Let it speak</a></li><li class="toc-level-2"><a href="#not-tested-on-real-hardware">Not tested on real hardware</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#look">Look</a></li><li class="toc-level-2"><a href="#your-conversations-and-logs">Your conversations and logs</a></li><li class="toc-level-2"><a href="#talk-to-it">Talk to it</a></li><li class="toc-level-2"><a href="#let-it-speak">Let it speak</a></li><li class="toc-level-3"><a href="#on-this-machine-in-english-and-spanish">On this machine, in English and Spanish</a></li><li class="toc-level-3"><a href="#with-a-server">With a server</a></li><li class="toc-level-2"><a href="#not-tested-on-real-hardware">Not tested on real hardware</a></li></ul></details>
 		
 
 		
@@ -270,13 +270,36 @@ bxrig boxy export                              # the four pictures
 <p>Install Voxtype (<code>bxrig dictation setup voxtype</code>), then <strong>hold Super+Comma, speak, let go</strong>. The Copilot key (Super+Shift+F23) does the same. In the Mac key style the key is Super+Ctrl+Slash, since Super+Comma is Preferences there. The bar's Boxy tab has a Talk button as well.</p>
 <p>Your words go to Boxy like a typed question. The answer comes as a notice. <strong>If Boxy wants to change something, it waits for you on screen: approving is never done by voice.</strong></p>
 <h2 id="let-it-speak"><a href="#let-it-speak" id="let-it-speak" name="let-it-speak" class="anchor"></a>Let it speak</h2>
-<p>Speech is off. To turn it on, point it at any OpenAI-compatible <code>/v1/audio/speech</code> server:</p>
+<p>Speech is off. There are two ways to turn it on.</p>
+<h3 id="on-this-machine-in-english-and-spanish"><a href="#on-this-machine-in-english-and-spanish" id="on-this-machine-in-english-and-spanish" name="on-this-machine-in-english-and-spanish" class="anchor"></a>On this machine, in English and Spanish</h3>
+<p>Boxy can speak with <a href="https://github.com/ortus-boxlang/bx-audio">bx-audio</a>, a BoxLang module that runs the voices on your own machine. Nothing Boxy says leaves it.</p>
+<pre><code class="language-bash">install-bx-module bx-audio
+bxrig boxy voice local                     # the plan: voices, accent, download size
+bxrig boxy voice local --yes               # English and Spanish, Latin American accent
+bxrig boxy voice test --lang=es
+</code></pre>
+<p>The first <code>--yes</code> downloads the speech engine and the voices (about 350 MB, once). Then:</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Option</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td><code>--lang=auto\|en\|es</code></td><td><code>auto</code> (the default) speaks each answer in the language it is written in. <code>en</code> or <code>es</code> always uses that language</td></tr>
+<tr><td><code>--voice=NAME</code></td><td>the voice for the language you name with <code>--lang=en</code> or <code>--lang=es</code>. <code>bxrig boxy voice list --lang=es</code> shows the choices (<code>dora</code>, <code>alex</code>, <code>santa_es</code>)</td></tr>
+<tr><td><code>--accent=latam\|castilian</code></td><td>how Spanish sounds: Latin American (the default, <code>z</code> and <code>ce</code>, <code>ci</code> as <code>s</code>) or Castilian (as <code>th</code>)</td></tr>
+<tr><td><code>--speed=N</code></td><td>1 is the voice's own pace, 1.2 faster, 0.85 slower</td></tr>
+<tr><td><code>--hear=auto\|en\|es</code></td><td>the language Voxtype listens for when you hold the key. Sets <code>language</code> in <code>[whisper]</code> of <code>~/.config/voxtype/config.toml</code>. For Spanish use a multilingual Voxtype model (not an <code>.en</code> one): <code>voxtype setup model</code></td></tr>
+</tbody>
+</table></div>
+<p>Boxy tells the language by its letters and its small words (<code>el</code>, <code>de</code>, <code>que</code>, <code>the</code>, <code>and</code>). Short or mixed text can be wrong: set <code>--lang=en</code> or <code>--lang=es</code> if you always use one.</p>
+<h3 id="with-a-server"><a href="#with-a-server" id="with-a-server" name="with-a-server" class="anchor"></a>With a server</h3>
+<p>Point it at any OpenAI-compatible <code>/v1/audio/speech</code> server:</p>
 <pre><code class="language-bash">bxrig secrets set OPENAI_API_KEY
 bxrig boxy voice set --url=https://api.openai.com/v1/audio/speech --model=tts-1 --voice=alloy --key=OPENAI_API_KEY
 bxrig boxy voice on
 bxrig boxy say &quot;hello&quot;
 </code></pre>
-<p>With a cloud server, each answer Boxy reads aloud is sent there: <code>bxrig boxy voice</code> and <code>bxrig privacy</code> both say where. A local speech server works the same way, with a <code>127.0.0.1</code> URL. It needs one of <code>pw-play</code>, <code>paplay</code>, <code>ffplay</code> or <code>mpv</code>.</p>
+<p>With a cloud server, each answer Boxy reads aloud is sent there: <code>bxrig boxy voice</code> and <code>bxrig privacy</code> both say where. A speech server on this machine works the same way, with a <code>127.0.0.1</code> URL. Either way it needs one of <code>pw-play</code>, <code>paplay</code>, <code>ffplay</code> or <code>mpv</code>. <code>bxrig boxy voice set</code> goes back to a server; <code>bxrig boxy voice local --yes</code> goes back to bx-audio.</p>
 <h2 id="not-tested-on-real-hardware"><a href="#not-tested-on-real-hardware" id="not-tested-on-real-hardware" name="not-tested-on-real-hardware" class="anchor"></a>Not tested on real hardware</h2>
 <p>The commands and the keys are tested with fake tools. The first real run (your microphone, Voxtype's service, the key release, and the picture in the bar) is on your machine.</p>
 
@@ -284,7 +307,7 @@ bxrig boxy say &quot;hello&quot;
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/boxy.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/boxy.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 26, 2026, 11&#x3a;34&#x3a;14 AM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Boxy%27s%20look%20and%20voice&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fguides%2Fboxy%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/guides/boxy.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/guides/boxy.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 26, 2026, 11&#x3a;48&#x3a;53 AM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Boxy%27s%20look%20and%20voice&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fguides%2Fboxy%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -328,7 +351,7 @@ bxrig boxy say &quot;hello&quot;
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#look">Look</a></li><li class="toc-level-2"><a href="#your-conversations-and-logs">Your conversations and logs</a></li><li class="toc-level-2"><a href="#talk-to-it">Talk to it</a></li><li class="toc-level-2"><a href="#let-it-speak">Let it speak</a></li><li class="toc-level-2"><a href="#not-tested-on-real-hardware">Not tested on real hardware</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#look">Look</a></li><li class="toc-level-2"><a href="#your-conversations-and-logs">Your conversations and logs</a></li><li class="toc-level-2"><a href="#talk-to-it">Talk to it</a></li><li class="toc-level-2"><a href="#let-it-speak">Let it speak</a></li><li class="toc-level-3"><a href="#on-this-machine-in-english-and-spanish">On this machine, in English and Spanish</a></li><li class="toc-level-3"><a href="#with-a-server">With a server</a></li><li class="toc-level-2"><a href="#not-tested-on-real-hardware">Not tested on real hardware</a></li></ul></nav>
 				</aside>
 			
 		</div>
