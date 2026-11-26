@@ -22,6 +22,7 @@ s = shot();
 testkit.check( "running: the title, the bar and the count", find( "Installing", s ) > 0 && find( "%", s ) > 0 && find( "1 of 3 steps", s ) > 0 );
 testkit.check( "running: the step that runs, its own progress (7 of 43) and the last line it printed", find( "install 43 apps", s ) > 0 && find( "7 of 43", s ) > 0 && find( "this line is red", s ) > 0 );
 testkit.check( "running: the list has a mark for each step", find( "✓", s ) > 0 && find( "make the first thing", s ) > 0 && find( "something after", s ) > 0 );
+testkit.check( "running: BXRIG in DOS Rebel (the brand font) when the window is tall, the small logo below that", find( "░░███░░░░░███░░███ ░░███ ░░███░░░░░███", shot( 120, 50 ) ) > 0 && find( "░░███░░░░░███░░███", shot( 120, 40 ) ) == 0 );
 testkit.check( "running: the logo is drawn when there is room", find( "▀", s ) > 0 || find( "█", s ) > 0 );
 testkit.check( "running: the key bar offers stop and the log", find( "ctrl-c", s ) > 0 && find( "show the log", s ) > 0 );
 testkit.check( "a quiet step says how long and that it works", find( "no output for", shot( 120, 36 ) ) == 0 );

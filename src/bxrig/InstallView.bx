@@ -80,7 +80,13 @@ class InstallView {
 		var phase = ( arguments.tick mod 90 ) / 90 * 1.4 - 0.2;
 		var verbose = arguments.app.verbose();
 		var top = 1;
-		if ( !verbose && arguments.height >= 32 ) {
+		// the logo: BXRIG in DOS Rebel (the brand font, as on the welcome screen) when the window is tall enough, the small block logo when it is
+		// a little shorter, none when it is short or the log is open
+		if ( !verbose && arguments.height >= 44 ) {
+			var big = new bxrig.Brand().lines( "large" );
+			var bw = 0; for ( var l in big ) bw = max( bw, len( l ) );
+			top += variables.kit.logo( int( ( arguments.width - bw ) / 2 ), top, "large", phase, variables.BASE ) + 1;
+		} else if ( !verbose && arguments.height >= 32 ) {
 			var logoLines = new bxrig.Brand().lines( "small" );
 			var lw = 0; for ( var l in logoLines ) lw = max( lw, len( l ) );
 			top += variables.kit.logo( int( ( arguments.width - lw ) / 2 ), top, "small", phase, variables.BASE ) + 1;
