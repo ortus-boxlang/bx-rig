@@ -2105,7 +2105,7 @@
 					"id": "launcher",
 					"label": "App launcher",
 					"help": "What opens your apps and commands. BxRig never changes your shortcuts.",
-					"default": "noctalia",
+					"default": "vicinae",
 					"when": {
 						"id": "desktops",
 						"in": [
@@ -2115,8 +2115,13 @@
 					},
 					"options": [
 						{
+							"value": "vicinae",
+							"label": "Vicinae (recommended)",
+							"description": "Fast, keyboard-first search for apps, files, your clipboard and BxRig's own actions, in your theme's colours."
+						},
+						{
 							"value": "noctalia",
-							"label": "Noctalia launcher (recommended)",
+							"label": "Noctalia launcher",
 							"description": "Built into the Noctalia shell, with app search and more. Opens with Super+Space."
 						},
 						{
@@ -2146,11 +2151,16 @@
 					"id": "menu",
 					"label": "Menu style",
 					"help": "What BxRig's own menus use.",
-					"default": "rofi",
+					"default": "vicinae",
 					"options": [
 						{
+							"value": "vicinae",
+							"label": "Vicinae (recommended)",
+							"description": "Vicinae's dmenu mode, in your theme's colours."
+						},
+						{
 							"value": "rofi",
-							"label": "Rofi (recommended)",
+							"label": "Rofi",
 							"description": "Icons and fast search."
 						},
 						{

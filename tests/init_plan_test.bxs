@@ -40,6 +40,10 @@ testkit.check( "launcher and menu: install what is needed, then record the choic
 p = ip.plan( { launcher: "noctalia", menu: "rofi" } );
 p = ip.plan( { launcher: "fuzzel", menu: "wofi" } );
 testkit.check( "Fuzzel and Wofi are installed from the catalog", cmd( p, "apps" ) == "bxrig install fuzzel wofi" );
+p = ip.plan( { launcher: "vicinae", menu: "vicinae" } );
+testkit.check( "Vicinae: installed, set up (theme, actions, file search), then recorded as the launcher and the menu", ids( p ) == "apps,launcher-setup,launcher,menu" && cmd( p, "apps" ) == "bxrig install vicinae" && cmd( p, "launcher-setup" ) == "bxrig launcher setup" && cmd( p, "launcher" ) == "bxrig runner set vicinae" && cmd( p, "menu" ) == "bxrig runner menu-set vicinae" && p.steps.filter( function( x ) { return x.id == "launcher-setup"; } )[ 1 ].optional == true );
+p = ip.plan( { launcher: "noctalia", menu: "vicinae" } );
+testkit.check( "Vicinae for menus only: set up first, so the launcher you picked is recorded after it", ids( p ) == "apps,launcher-setup,launcher,menu" && cmd( p, "launcher" ) == "bxrig runner set noctalia" && cmd( p, "menu" ) == "bxrig runner menu-set vicinae" );
 p = ip.plan( { launcher: "rofi", menu: "rofi", theme_name: "bxrig" } );
 testkit.check( "a chosen runner gets the BxRig theme even with the default theme", ids( p ) == "theme,apps,launcher,menu" && cmd( p, "theme" ) == "bxrig theme set bxrig" );
 p = ip.plan( { theme_name: "bxrig" } );

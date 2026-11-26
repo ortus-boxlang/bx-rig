@@ -6,7 +6,7 @@ summary: Vicinae as your launcher, in your theme's colours, with BxRig's actions
 
 # Launcher
 
-BxRig can make [Vicinae](https://github.com/vicinaehq/vicinae) your launcher: a fast, keyboard-first search for apps, files, your clipboard and BxRig's own actions, drawn in your BxRig theme.
+[Vicinae](https://github.com/vicinaehq/vicinae) is the launcher and the menu BxRig recommends, and the wizard's default (Noctalia's own launcher, Walker, Rofi, Fuzzel and Wofi are still choices). It is a launcher: a fast, keyboard-first search for apps, files, your clipboard and BxRig's own actions, drawn in your BxRig theme.
 
 ```bash
 bxrig pkg install vicinae

@@ -329,6 +329,9 @@ class InitPlan {
 		// Android apps with Waydroid: only when asked for (the wizard's answer defaults to no). Optional: a kernel without binder or an X11
 		// session stops it with a reason, and never stops the plan.
 		if ( pick( a, "android", "no" ) == "yes" ) out.steps.append( { id: "android", title: "set up Android apps with Waydroid (Google Play; downloads about 1.2 GB)", argv: [ "bxrig", "android", "setup", "--yes" ], optional: true } );
+		// Vicinae also gets its theme, BxRig's actions and file search, and its server. `launcher setup` makes Vicinae the launcher and the menu,
+		// so it runs first and the choices below are recorded after it (a mixed choice, such as Vicinae for menus only, keeps what you picked)
+		if ( pick( a, "launcher" ) == "vicinae" || pick( a, "menu" ) == "vicinae" ) out.steps.append( { id: "launcher-setup", title: "set up Vicinae: your theme, BxRig's actions and file search", argv: [ "bxrig", "launcher", "setup" ], optional: true } );
 		if ( len( pick( a, "launcher" ) ) ) out.steps.append( { id: "launcher", title: "use " & a.launcher & " as the app launcher (no shortcut is changed)", argv: [ "bxrig", "runner", "set", a.launcher ] } );
 		if ( len( pick( a, "menu" ) ) ) out.steps.append( { id: "menu", title: "use " & a.menu & " for BxRig menus", argv: [ "bxrig", "runner", "menu-set", a.menu ] } );
 		var gname = pick( a, "git_name" );
