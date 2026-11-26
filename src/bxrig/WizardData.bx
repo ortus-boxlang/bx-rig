@@ -1,7 +1,5 @@
 // The wizard's data (assets/wizard/, packed with BxRig as resources).
 class WizardData {
-	// The BxRig wordmark, as half-block pixel art (one string, lines joined by newlines).
-	function wordmark() { return new bxrig.util.Res().trimmed( "wizard/art-wordmark.txt" ); }
 	// The built-in pages (JSON, the format bxrig-wizard --pages reads).
 	function demoPages() { return new bxrig.util.Res().trimmed( "wizard/pages-demo.json" ); }
 }

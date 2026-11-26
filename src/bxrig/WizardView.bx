@@ -13,7 +13,8 @@ class WizardView {
 	function init( tui ) {
 		variables.tui = arguments.tui;
 		variables.data = new bxrig.WizardData();
-		variables.wordmark = listToArray( variables.data.wordmark(), chr( 10 ), true );
+		// the brand wordmark: BXRIG in the DOS Rebel font, the same as `bxrig ascii` and the logo everywhere else
+		variables.wordmark = new bxrig.Brand().large();
 		variables.kit = new bxrig.TuiKit( arguments.tui );
 		variables.look = new bxrig.LookPreview( variables.kit );
 		variables.bl = new bxrig.BarLayouts();
