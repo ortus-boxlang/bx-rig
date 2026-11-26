@@ -5,12 +5,12 @@ l = new bxrig.BoxyLook();
 h = chr( 35 );   // the hash sign, written so it is never read as an interpolation
 
 testkit.check( "states: idle, listening, working, speaking", l.states().toList( "," ) == "idle,listening,working,speaking" );
-testkit.check( "outfits: seven, each with an id and a name", l.outfits().len() == 7 && l.outfitIds().toList( "," ) == "beanie,flower,sunglasses,leaf,santa,witch,party" );
+testkit.check( "outfits: seven, each with an id and a name", l.outfits().len() == 7 && l.outfitIds().toList( "," ) == "beanie,flower,sunglasses,leaf,santa,pumpkin,party" );
 
 // the season, with every holiday off
 testkit.check( "season: winter beanie, spring flower, summer sunglasses, autumn leaf", l.outfitFor( "auto", [], "", 1, 15 ) == "beanie" && l.outfitFor( "auto", [], "", 4, 1 ) == "flower" && l.outfitFor( "auto", [], "", 7, 1 ) == "sunglasses" && l.outfitFor( "auto", [], "", 10, 1 ) == "leaf" && l.outfitFor( "auto", [], "", 12, 1 ) == "beanie" );
 testkit.check( "holidays are off until chosen", l.outfitFor( "auto", [], "", 12, 24 ) == "beanie" && l.outfitFor( "auto", [], "", 10, 31 ) == "leaf" );
-testkit.check( "holidays: christmas, halloween and new year once chosen", l.outfitFor( "auto", [ "christmas" ], "", 12, 24 ) == "santa" && l.outfitFor( "auto", [ "halloween" ], "", 10, 31 ) == "witch" && l.outfitFor( "auto", [ "newyear" ], "", 12, 31 ) == "party" && l.outfitFor( "auto", [ "newyear" ], "", 1, 2 ) == "party" );
+testkit.check( "holidays: christmas, halloween and new year once chosen", l.outfitFor( "auto", [ "christmas" ], "", 12, 24 ) == "santa" && l.outfitFor( "auto", [ "halloween" ], "", 10, 31 ) == "pumpkin" && l.outfitFor( "auto", [ "newyear" ], "", 12, 31 ) == "party" && l.outfitFor( "auto", [ "newyear" ], "", 1, 2 ) == "party" );
 testkit.check( "holidays: a holiday only on its own days", l.outfitFor( "auto", [ "christmas" ], "", 12, 27 ) == "beanie" && l.outfitFor( "auto", [ "halloween" ], "", 10, 23 ) == "leaf" );
 testkit.check( "birthday: the day you set", l.outfitFor( "auto", [], "03-09", 3, 9 ) == "party" && l.outfitFor( "auto", [], "03-09", 3, 10 ) == "flower" );
 testkit.check( "a fixed outfit stays, none means none", l.outfitFor( "santa", [], "", 7, 1 ) == "santa" && l.outfitFor( "none", [ "christmas" ], "", 12, 24 ) == "" && l.outfitFor( "bogus", [], "", 7, 1 ) == "" );

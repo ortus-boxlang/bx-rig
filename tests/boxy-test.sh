@@ -27,7 +27,7 @@ bx look --outfit=auto >/dev/null
 [[ "$(BXRIG_TODAY=2026-12-24 bx --json | jq -r .data.outfit)" == beanie ]] || fail 'holidays are off until chosen'
 bx look --holidays=christmas,halloween --birthday=03-09 >/dev/null
 [[ "$(BXRIG_TODAY=2026-12-24 bx --json | jq -r .data.outfit)" == santa ]] || fail 'christmas outfit once chosen'
-[[ "$(BXRIG_TODAY=2026-10-31 bx --json | jq -r .data.outfit)" == witch ]] || fail 'halloween outfit'
+[[ "$(BXRIG_TODAY=2026-10-31 bx --json | jq -r .data.outfit)" == pumpkin ]] || fail 'halloween outfit'
 [[ "$(BXRIG_TODAY=2026-03-09 bx --json | jq -r .data.outfit)" == party ]] || fail 'birthday outfit'
 bx look --outfit=none >/dev/null
 [[ "$(BXRIG_TODAY=2026-12-24 bx --json | jq -r .data.outfit)" == "" ]] || fail 'none means no outfit'

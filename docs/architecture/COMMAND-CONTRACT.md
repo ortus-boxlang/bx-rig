@@ -1245,7 +1245,7 @@ Everything is opt in. A default install shows Boxy in its own colours and does n
 | Command | Does |
 | --- | --- |
 | `boxy [--json]` | Boxy now: its text sprite, name, colour, outfit, state, the image for that state, and the speech setting |
-| `boxy look [--name=N] [--color=theme\|#RRGGBB] [--outfit=auto\|none\|ID] [--holidays=LIST\|none] [--birthday=MM-DD]` | changes how Boxy looks, saved in `~/.config/bxrig/boxy.json`. Bad values are exit 2. `--color=theme` (the default) follows the active theme's accent; an outfit ID is `beanie`, `flower`, `sunglasses`, `leaf`, `santa`, `witch` or `party` |
+| `boxy look [--name=N] [--color=theme\|#RRGGBB] [--outfit=auto\|none\|ID] [--holidays=LIST\|none] [--birthday=MM-DD]` | changes how Boxy looks, saved in `~/.config/bxrig/boxy.json`. Bad values are exit 2. `--color=theme` (the default) follows the active theme's accent; an outfit ID is `beanie`, `flower`, `sunglasses`, `leaf`, `santa`, `pumpkin` or `party` |
 | `boxy export [--dir=D]` | the four state images (`idle`, `listening`, `working`, `speaking`), as PNG when `rsvg-convert` or ImageMagick is there, else SVG |
 | `boxy state [--json]` | what Boxy is doing and the image for it (made again first when the look changed) |
 | `boxy listen start\|stop\|toggle` | hold to talk: `voxtype record start --output-file F`, then `voxtype record stop`, the words go to the default BoxLang agent (thread `bxrig-voice`), the answer comes as a desktop notice and, when speech is on, aloud. Exit 4 without Voxtype |

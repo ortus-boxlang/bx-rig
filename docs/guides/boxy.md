@@ -22,7 +22,7 @@ bxrig boxy export                              # the four pictures
 ## Look
 
 - **Colour** follows your theme's accent unless you pick one with `--color`.
-- **Outfits** follow the season in `auto`: a beanie in winter, a flower in spring, sunglasses in summer, a leaf in autumn. Holiday outfits (`christmas`, `halloween`, `newyear`) appear only for the holidays you list, and the party hat on your birthday. `--outfit=none` turns it all off, or pick one: `beanie`, `flower`, `sunglasses`, `leaf`, `santa`, `witch`, `party`.
+- **Outfits** follow the season in `auto`: a beanie in winter, a flower in spring, sunglasses in summer, a leaf in autumn. Holiday outfits (`christmas`, `halloween`, `newyear`) appear only for the holidays you list, and the party hat on your birthday. `--outfit=none` turns it all off, or pick one: `beanie`, `flower`, `sunglasses`, `leaf`, `santa`, `pumpkin`, `party`.
 - **Four pictures:** idle, listening, working (a BoxLang swirl above its head) and speaking. The bar shows the one for what Boxy is doing; `bxrig boxy export` writes them as PNG (SVG without `rsvg-convert` or ImageMagick).
 - **In a terminal** it is a small text sprite, like `[ •‿• ]`, with the outfit as a hat above.
 
