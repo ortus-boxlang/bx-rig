@@ -32,13 +32,22 @@ run "$binary" keys apply --yes >/dev/null; [[ "$(code "$binary" keys check)" == 
 run "$binary" keys check --json | jq -e '.ok and (.data.items | length) == 5' >/dev/null || fail 'check --json'
 run "$binary" config list | grep -q '^xremap: clean' || fail 'config list shows xremap'
 [[ "$(code "$binary" keys apply --yes)" == 0 ]] || fail 're-run exits 0'
-# hyprland.lua is never written; it is only checked for the load line
-mkdir -p "$tmp/cfg/hypr"; echo '-- mine' > "$tmp/cfg/hypr/hyprland.lua"
+# hyprland.lua: the load line is added once, the rest of the file is kept byte for byte, and a backup is made
+mkdir -p "$tmp/cfg/hypr"; printf -- '-- mine\n\thl.config({ x = 1 })' > "$tmp/cfg/hypr/hyprland.lua"
 [[ "$(code "$binary" keys check)" == 1 ]] || fail 'hyprland.lua without the load line exits 1'
-out="$(run "$binary" keys apply --yes)"; [[ "$out" == *'require("bxrig")'* ]] || fail 'apply prints the load line'
-[[ "$(cat "$tmp/cfg/hypr/hyprland.lua")" == '-- mine' ]] || fail 'hyprland.lua was modified'
-echo 'require("bxrig")' >> "$tmp/cfg/hypr/hyprland.lua"
+[[ "$(code "$binary" keys apply)" == 2 ]] || fail 'apply without --yes is a plan (exit 2) while the line is missing'
+[[ "$(cat "$tmp/cfg/hypr/hyprland.lua")" == $'-- mine\n\thl.config({ x = 1 })' ]] || fail 'the plan changed hyprland.lua'
+run "$binary" keys apply --yes --dry-run >/dev/null; [[ "$(grep -c 'require("bxrig")' "$tmp/cfg/hypr/hyprland.lua")" == 0 ]] || fail 'dry run changed hyprland.lua'
+run "$binary" keys apply --yes >/dev/null || fail 'apply adds the line'
+[[ "$(grep -c '^require("bxrig")$' "$tmp/cfg/hypr/hyprland.lua")" == 1 ]] || fail 'the load line is there once'
+head -c 31 "$tmp/cfg/hypr/hyprland.lua" | grep -q $'^-- mine\n\thl.config({ x = 1 })' || fail 'the file kept your text and tab'
+grep -q 'delete these two lines' "$tmp/cfg/hypr/hyprland.lua" || fail 'a comment says where the line came from'
+find "$tmp" -path '*backups/hyprland.lua/*' -name '*.bak' | grep -q . || fail 'a backup of hyprland.lua was made'
 [[ "$(code "$binary" keys check)" == 0 ]] || fail 'load line present exits 0'
+run "$binary" keys apply --yes >/dev/null; [[ "$(grep -c 'require("bxrig")' "$tmp/cfg/hypr/hyprland.lua")" == 1 ]] || fail 'a second apply does not add it again'
+printf -- '-- require("bxrig")\n' > "$tmp/cfg/hypr/hyprland.lua"
+[[ "$(code "$binary" keys check)" == 1 ]] || fail 'a commented line does not count'
+run "$binary" keys apply --yes >/dev/null; [[ "$(grep -c '^require("bxrig")$' "$tmp/cfg/hypr/hyprland.lua")" == 1 ]] || fail 'a commented line is not the load line'
 # drift
 echo '# mine' >> "$tmp/cfg/xremap/config.yml"
 [[ "$(code "$binary" keys check)" == 1 ]] || fail 'drifted file exits 1'
