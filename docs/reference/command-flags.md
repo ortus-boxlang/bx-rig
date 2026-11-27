@@ -13,8 +13,6 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | Command | Flag | Type | Default | What it does |
 |---|---|---|---|---|
 | `init` | `--answers` | value | `answers.json` | Run the install from this answers file, no wizard |
-| `init` | `--bucket` | any |  |  |
-| `init` | `--container` | any |  |  |
 | `init` | `--defaults` | any |  | Run the install with the wizard's default answers |
 | `init` | `--export` | value |  | Write a copy of your saved answers to this file |
 | `init` | `--fresh` | bool |  | Start the wizard from the defaults, not your saved answers |
@@ -22,23 +20,17 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `init` | `--from-system` | bool |  | With --print-answers, read answers from what this machine has |
 | `init` | `--plain` | bool |  | After the wizard, print the steps as they run, no progress screen |
 | `init` | `--print-answers` | bool |  | Print your saved answers and exit |
-| `init` | `--remote` | any |  |  |
 | `init` | `--rerun` | bool |  | Start the wizard from your saved answers only |
 | `init` | `--screen` | bool |  | With --answers --yes, show the install on the progress screen |
-| `init` | `--workspaces` | any |  |  |
 | `refresh` | `--starter` | bool |  | Also rewrite the starter config file (hyprland, noctalia) |
 | `reinstall` | `--answers` | any |  | Run the install from this answers file, no wizard |
-| `reinstall` | `--bucket` | any |  |  |
-| `reinstall` | `--container` | any |  |  |
 | `reinstall` | `--defaults` | any |  | Run the install with the wizard's default answers |
 | `reinstall` | `--export` | any |  | Write a copy of your saved answers to this file |
 | `reinstall` | `--fresh` | any |  | Start the wizard from the defaults, not your saved answers |
 | `reinstall` | `--from` | any |  | Start the wizard from answers exported on another machine |
 | `reinstall` | `--from-system` | any |  | With --print-answers, read answers from what this machine has |
 | `reinstall` | `--print-answers` | any |  | Print your saved answers and exit |
-| `reinstall` | `--remote` | any |  |  |
 | `reinstall` | `--rerun` | any |  | Always on for reinstall (starts from your saved answers) |
-| `reinstall` | `--workspaces` | any |  |  |
 | `wizard` | `--answers` | value |  | Start the pages from the answers in this JSON file |
 | `wizard` | `--demo` | bool |  | Show the built-in demo pages |
 | `wizard` | `--out` | value |  | Write the final answers to this JSON file |
@@ -60,18 +52,14 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `about` | `--wait` | bool |  | Wait for Enter before returning |
 | `about` | `--plain` | bool |  | Leave the colour out |
 | `banner` | `--plain` | bool |  | Leave the colour out |
-| `apps` | `--name` | any |  |  |
 | `help` | `--help` | bool |  | Show the help for the command |
 | `help` | `--h` | bool |  | Same as --help |
-| `install` | `--default` | any |  |  |
 | `install` | `--optional` | bool |  | Also include the optional apps of the selection |
 | `install` | `--profile` | any |  | Install the apps of this profile instead of the default set |
 | `install` | `--shell` | value |  | Pick apps for this shell: hyprland, plasma or all |
-| `remove` | `--name` | any |  |  |
 | `pkg` | `--aur` | bool |  | Install from the AUR, not the repositories |
 | `pkg` | `--explicit` | bool |  | List only packages you asked for, not dependencies |
 | `pkg` | `--limit` | value |  | Show at most this many search results (default 40) |
-| `pkg` | `--name` | any |  |  |
 | `pkg` | `--source` | value |  | Search the repos, the AUR or both: all, repo, aur |
 | `catalog` | `--distro` | value | `suse` | Show the catalog as seen on this distro (arch, suse, debian, ubuntu) |
 | `catalog` | `--write` | bool |  | Write the generated distro map to the catalog files |
@@ -80,69 +68,21 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `catalog` | `--kind` | value |  | Only list apps of this kind |
 | `catalog` | `--source` | value |  | Only list apps from this install source |
 | `catalog` | `--tier` | value | `default` | Only list apps in this tier: default or optional |
-| `catalog` | `--url` | any |  |  |
-| `plan` | `--default` | any |  |  |
 | `plan` | `--optional` | bool |  | Also include the optional apps of the selection |
 | `plan` | `--profile` | any |  | Plan the apps of this profile instead of the default set |
 | `plan` | `--shell` | value |  | Pick apps for this shell: hyprland, plasma or all |
-| `install-plan` | `--default` | any |  |  |
 | `install-plan` | `--optional` | bool |  | Also include the optional apps of the selection |
 | `install-plan` | `--profile` | any |  | Plan the apps of this profile instead of the default set |
 | `install-plan` | `--shell` | value |  | Pick apps for this shell: hyprland, plasma or all |
-| `optional-plan` | `--default` | any |  |  |
-| `optional-plan` | `--optional` | any |  |  |
-| `optional-plan` | `--profile` | any |  |  |
 | `optional-plan` | `--shell` | value |  | Shell name is checked, but named apps are chosen anyway |
-| `profile-plan` | `--default` | any |  |  |
 | `profile-plan` | `--optional` | bool |  | Also include the optional apps of the selection |
-| `profile-plan` | `--profile` | any |  |  |
 | `profile-plan` | `--shell` | value |  | Pick apps for this shell: hyprland, plasma or all |
-| `profile-install-plan` | `--default` | any |  |  |
 | `profile-install-plan` | `--optional` | bool |  | Also include the optional apps of the selection |
-| `profile-install-plan` | `--profile` | any |  |  |
 | `profile-install-plan` | `--shell` | value |  | Pick apps for this shell: hyprland, plasma or all |
-| `profile-install` | `--default` | any |  |  |
 | `profile-install` | `--optional` | bool |  | Also include the optional apps of the selection |
-| `profile-install` | `--profile` | any |  |  |
 | `profile-install` | `--shell` | value |  | Pick apps for this shell: hyprland, plasma or all |
-| `optional-install` | `--default` | any |  |  |
-| `optional-install` | `--optional` | any |  |  |
-| `optional-install` | `--profile` | any |  |  |
 | `optional-install` | `--shell` | value |  | Shell name is checked, but named apps are chosen anyway |
-| `profile-list` | `--default` | any |  |  |
-| `profile-list` | `--optional` | any |  |  |
-| `profile-list` | `--profile` | any |  |  |
-| `profile-list` | `--shell` | any |  |  |
-| `optional-list` | `--default` | any |  |  |
-| `optional-list` | `--optional` | any |  |  |
-| `optional-list` | `--profile` | any |  |  |
-| `optional-list` | `--shell` | any |  |  |
-| `desktop-list` | `--default` | any |  |  |
-| `desktop-list` | `--optional` | any |  |  |
-| `desktop-list` | `--profile` | any |  |  |
-| `desktop-list` | `--shell` | any |  |  |
-| `tui-list` | `--default` | any |  |  |
-| `tui-list` | `--optional` | any |  |  |
-| `tui-list` | `--profile` | any |  |  |
-| `tui-list` | `--shell` | any |  |  |
-| `web-list` | `--default` | any |  |  |
-| `web-list` | `--optional` | any |  |  |
-| `web-list` | `--profile` | any |  |  |
-| `web-list` | `--shell` | any |  |  |
-| `package-status` | `--default` | any |  |  |
-| `package-status` | `--optional` | any |  |  |
-| `package-status` | `--profile` | any |  |  |
-| `package-status` | `--shell` | any |  |  |
-| `package-source` | `--default` | any |  |  |
-| `package-source` | `--optional` | any |  |  |
-| `package-source` | `--profile` | any |  |  |
-| `package-source` | `--shell` | any |  |  |
 | `web` | `--browser` | value |  | Browser that opens the web app: brave, chromium, edge, firefox... |
-| `toolchain` | `--also` | any |  |  |
-| `toolchain` | `--build` | any |  |  |
-| `toolchain` | `--default` | any |  |  |
-| `toolchain` | `--keys` | any |  |  |
-| `toolchain` | `--shell` | any |  |  |
 | `setup` | `--also` | value | `a` | Extra terminals to install besides the default, comma separated |
 | `setup` | `--build` | value |  | Which xremap build to install: hypr or kde (default: by session) |
 | `setup` | `--default` | value | `ghostty` | Terminal to make the default (ghostty if not given) |
@@ -165,20 +105,12 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `runner` | `--prompt` | value |  | Prompt text shown in the menu for select |
 | `launcher` | `--yes` | bool |  | Apply the change instead of only showing the plan |
 | `launcher` | `--dry-run` | bool |  | Show what would change without changing anything |
-| `config` | `--theme` | any |  |  |
-| `config` | `--wallpaper` | any |  |  |
 | `theme` | `--keep-wallpaper` | bool |  | Apply the theme but leave the current wallpaper as it is |
 | `theme` | `--mode` | value | `dark` | Light or dark choice for this set: theme, dark, light or auto |
 | `theme` | `--name` | value | `mine` | Name to save an installed or imported theme under |
-| `appearance` | `--mode` | any |  |  |
 | `screensaver` | `--effect` | value |  | Run this one effect instead of letting the effects take turns |
 | `screensaver` | `--idle` | bool |  | Mark the start as coming from the idle watcher |
-| `time` | `--demo` | any |  |  |
-| `time` | `--host` | any |  |  |
 | `time` | `--list` | bool |  | With zone, print every available time zone |
-| `time` | `--local` | any |  |  |
-| `time` | `--packages` | any |  |  |
-| `time` | `--path` | any |  |  |
 | `calendar` | `--client-id` | value | `123.apps.googleusercontent.com` | Google OAuth client ID, needed to add a Google calendar |
 | `calendar` | `--client-secret-file` | value |  | File holding the Google OAuth client secret |
 | `calendar` | `--days` | value | `3` | How many days ahead the agenda shows (1 to 60, default 7) |
@@ -221,7 +153,6 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `backup` | `--credentials` | value |  | Service account JSON key file for a gs target |
 | `backup` | `--daily` | value |  | Number of daily backups to keep |
 | `backup` | `--deep` | bool |  | Also read a sample (5%) of the stored data to check it |
-| `backup` | `--default` | any |  |  |
 | `backup` | `--description` | value |  | Text to describe the new snapshot |
 | `backup` | `--endpoint` | value | `https` | Custom server address for an s3 target |
 | `backup` | `--from` | value | `usb` | Target to copy the backup from (default target if omitted) |
@@ -248,10 +179,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `backup` | `--weekly` | value |  | Number of weekly backups to keep |
 | `backup` | `--with-secrets` | bool |  | Include the encrypted secrets in the snapshot |
 | `timemachine` | `--demo` | bool |  | Show made-up backups; nothing is run |
-| `timemachine` | `--host` | any |  |  |
 | `timemachine` | `--local` | bool |  | Skip targets that are read over the network |
-| `timemachine` | `--packages` | any |  |  |
-| `timemachine` | `--path` | any |  |  |
 | `java` | `--versions` | value | `25` | Comma list of Java major versions to install |
 | `mail` | `--keep` | bool |  | Store the inbox on disk so it survives stop and start |
 | `mail` | `--keep-data` | bool |  | Keep the stored mail when removing the catcher |
@@ -265,12 +193,8 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `tui` | `--no-sidebar` | bool |  | Hide the sidebar |
 | `tui` | `--sidebar` | bool |  | Show the sidebar |
 | `bxtimemachine` | `--demo` | bool |  | Show made-up backups; nothing is run |
-| `bxtimemachine` | `--host` | any |  |  |
 | `bxtimemachine` | `--local` | bool |  | Skip targets that are read over the network |
-| `bxtimemachine` | `--packages` | any |  |  |
-| `bxtimemachine` | `--path` | any |  |  |
 | `privacy` | `--off` | bool |  | With local-only, turn local-only mode off |
-| `boxlang` | `--list` | any |  |  |
 | `boxlang` | `--no-open` | any |  | For welcome: write the page but do not open it in a browser |
 | `boxlang` | `--yes` | bool |  | Apply the change (update, install, remove, scan) instead of a plan |
 | `boxlang` | `--dry-run` | bool |  | Show what would change without changing anything |
@@ -291,7 +215,6 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `vm` | `--gpu` | value |  | Linux desktop GPU access: none, auto, intel, amd or nvidia |
 | `vm` | `--keep-data` | bool |  | On remove: keep the VM's data folder on disk |
 | `vm` | `--memory` | value |  | Linux desktop memory limit, such as 4G |
-| `vm` | `--name` | any |  |  |
 | `vm` | `--ram` | value |  | Windows memory size, such as 8G |
 | `vm` | `--share` | value |  | Host folder shared with the VM, or none to turn sharing off |
 | `vm` | `--show-password` | bool |  | On info: print the VM password instead of hiding it |

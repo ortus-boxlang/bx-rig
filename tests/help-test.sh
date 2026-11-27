@@ -33,6 +33,13 @@ for name in $(jq -r '.groups[].commands[].name' "$root/docs/reference/cli.json")
 	[[ "$("$binary" "$name" -h 2>&1)" == "$out" ]] || fail "$name -h is $name --help"
 done
 set +e; "$binary" nonsense --help >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "an unknown command with --help exits 2 (got $c)"
+# flags that no code reads are not listed, so they are a usage error (exit 2), not silently ignored
+for pair in "time --demo" "init --bucket" "timemachine --host" "profile-list --shell" "toolchain --keys"; do
+	set +e; "$binary" ${pair%% *} ${pair#* } >/dev/null 2>&1; c=$?; set -e
+	[[ $c == 2 ]] || fail "$pair is rejected as an unknown option (got $c)"
+done
+# every flag in cli.json has a description of at most 70 characters
+jq -e '[.groups[].commands[].flags[]? | select((.desc // "") == "" or (.desc | length) > 70)] | length == 0' "$root/docs/reference/cli.json" >/dev/null || fail 'a flag has no description or one that is too long'
 # the docs page and the embedded data are current
 bash "$root/bootstrap/gen-docs.sh" --check >/dev/null || fail 'docs/reference/commands.md or CommandFlagData.bx is stale'
 echo "help-test: ok"

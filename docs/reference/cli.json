@@ -25,14 +25,6 @@
 							"desc": "Run the install from this answers file, no wizard"
 						},
 						{
-							"name": "bucket",
-							"type": "any"
-						},
-						{
-							"name": "container",
-							"type": "any"
-						},
-						{
 							"name": "defaults",
 							"type": "any",
 							"desc": "Run the install with the wizard's default answers"
@@ -68,10 +60,6 @@
 							"desc": "Print your saved answers and exit"
 						},
 						{
-							"name": "remote",
-							"type": "any"
-						},
-						{
 							"name": "rerun",
 							"type": "bool",
 							"desc": "Start the wizard from your saved answers only"
@@ -80,10 +68,6 @@
 							"name": "screen",
 							"type": "bool",
 							"desc": "With --answers --yes, show the install on the progress screen"
-						},
-						{
-							"name": "workspaces",
-							"type": "any"
 						}
 					]
 				},
@@ -130,14 +114,6 @@
 							"desc": "Run the install from this answers file, no wizard"
 						},
 						{
-							"name": "bucket",
-							"type": "any"
-						},
-						{
-							"name": "container",
-							"type": "any"
-						},
-						{
 							"name": "defaults",
 							"type": "any",
 							"desc": "Run the install with the wizard's default answers"
@@ -168,17 +144,9 @@
 							"desc": "Print your saved answers and exit"
 						},
 						{
-							"name": "remote",
-							"type": "any"
-						},
-						{
 							"name": "rerun",
 							"type": "any",
 							"desc": "Always on for reinstall (starts from your saved answers)"
-						},
-						{
-							"name": "workspaces",
-							"type": "any"
 						}
 					]
 				},
@@ -477,12 +445,7 @@
 						"bxrig apps list"
 					],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "name",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "help",
@@ -531,10 +494,6 @@
 					"note": "With no name it installs the default set; without --yes it prints the plan and changes nothing.",
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
 							"type": "bool",
 							"desc": "Also include the optional apps of the selection"
@@ -563,12 +522,7 @@
 					],
 					"mutates": true,
 					"note": "Protected packages (the base system, the kernel, bxrig itself) are refused.",
-					"flags": [
-						{
-							"name": "name",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "pkg",
@@ -598,10 +552,6 @@
 							"name": "limit",
 							"type": "value",
 							"desc": "Show at most this many search results (default 40)"
-						},
-						{
-							"name": "name",
-							"type": "any"
 						},
 						{
 							"name": "source",
@@ -661,10 +611,6 @@
 							"name": "tier",
 							"type": "value",
 							"desc": "Only list apps in this tier: default or optional"
-						},
-						{
-							"name": "url",
-							"type": "any"
 						}
 					]
 				},
@@ -681,10 +627,6 @@
 					],
 					"mutates": false,
 					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
 						{
 							"name": "optional",
 							"type": "bool",
@@ -713,10 +655,6 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
 							"type": "bool",
 							"desc": "Also include the optional apps of the selection"
@@ -744,18 +682,6 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
 							"name": "shell",
 							"type": "value",
 							"desc": "Shell name is checked, but named apps are chosen anyway"
@@ -775,17 +701,9 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
 							"type": "bool",
 							"desc": "Also include the optional apps of the selection"
-						},
-						{
-							"name": "profile",
-							"type": "any"
 						},
 						{
 							"name": "shell",
@@ -805,17 +723,9 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
 							"type": "bool",
 							"desc": "Also include the optional apps of the selection"
-						},
-						{
-							"name": "profile",
-							"type": "any"
 						},
 						{
 							"name": "shell",
@@ -837,17 +747,9 @@
 					"mutates": true,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
 							"type": "bool",
 							"desc": "Also include the optional apps of the selection"
-						},
-						{
-							"name": "profile",
-							"type": "any"
 						},
 						{
 							"name": "shell",
@@ -867,18 +769,6 @@
 					"mutates": true,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
 							"name": "shell",
 							"type": "value",
 							"desc": "Shell name is checked, but named apps are chosen anyway"
@@ -894,24 +784,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "optional-list",
@@ -922,24 +795,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "desktop-list",
@@ -950,24 +806,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "tui-list",
@@ -978,24 +817,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "web-list",
@@ -1006,24 +828,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "package-status",
@@ -1036,24 +841,7 @@
 						"bxrig package-status lazygit"
 					],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "package-source",
@@ -1066,24 +854,7 @@
 						"bxrig package-source lazygit"
 					],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "dev-plan",
@@ -1150,28 +921,7 @@
 						"bxrig toolchain node --yes"
 					],
 					"mutates": true,
-					"flags": [
-						{
-							"name": "also",
-							"type": "any"
-						},
-						{
-							"name": "build",
-							"type": "any"
-						},
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "keys",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				}
 			]
 		},
@@ -1485,16 +1235,7 @@
 					],
 					"mutates": false,
 					"note": "BxRig never overwrites a file you edited; `config status` shows which ones are yours.",
-					"flags": [
-						{
-							"name": "theme",
-							"type": "any"
-						},
-						{
-							"name": "wallpaper",
-							"type": "any"
-						}
-					]
+					"flags": []
 				}
 			]
 		},
@@ -1589,12 +1330,7 @@
 					],
 					"mutates": false,
 					"note": "Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet. `icons` is the exception to \"act at once\": it installs papirus-icon-theme and writes the BxRig icon theme and settings files, so it prints a plan (exit 2) until --yes; `bxrig` (the default after setup) is the BxRig icons over Papirus-Dark, `papirus` is Papirus-Dark alone. `font` is the coding font (terminals, and the shell until an interface font is set); `ui-font` is the font of the bar, panels and GTK apps; `font-rendering` writes ~/.config/fontconfig/conf.d/60-bxrig-rendering.conf (`default` removes it unless you edited it).",
-					"flags": [
-						{
-							"name": "mode",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "screensaver",
@@ -1724,29 +1460,9 @@
 					"note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first. `time format` sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.",
 					"flags": [
 						{
-							"name": "demo",
-							"type": "any"
-						},
-						{
-							"name": "host",
-							"type": "any"
-						},
-						{
 							"name": "list",
 							"type": "bool",
 							"desc": "With zone, print every available time zone"
-						},
-						{
-							"name": "local",
-							"type": "any"
-						},
-						{
-							"name": "packages",
-							"type": "any"
-						},
-						{
-							"name": "path",
-							"type": "any"
 						}
 					]
 				},
@@ -2368,10 +2084,6 @@
 							"desc": "Also read a sample (5%) of the stored data to check it"
 						},
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "description",
 							"type": "value",
 							"desc": "Text to describe the new snapshot"
@@ -2519,21 +2231,9 @@
 							"desc": "Show made-up backups; nothing is run"
 						},
 						{
-							"name": "host",
-							"type": "any"
-						},
-						{
 							"name": "local",
 							"type": "bool",
 							"desc": "Skip targets that are read over the network"
-						},
-						{
-							"name": "packages",
-							"type": "any"
-						},
-						{
-							"name": "path",
-							"type": "any"
 						}
 					]
 				},
@@ -2691,21 +2391,9 @@
 							"desc": "Show made-up backups; nothing is run"
 						},
 						{
-							"name": "host",
-							"type": "any"
-						},
-						{
 							"name": "local",
 							"type": "bool",
 							"desc": "Skip targets that are read over the network"
-						},
-						{
-							"name": "packages",
-							"type": "any"
-						},
-						{
-							"name": "path",
-							"type": "any"
 						}
 					]
 				},
@@ -2766,10 +2454,6 @@
 					],
 					"mutates": false,
 					"flags": [
-						{
-							"name": "list",
-							"type": "any"
-						},
 						{
 							"name": "no-open",
 							"type": "any",
@@ -2935,10 +2619,6 @@
 							"name": "memory",
 							"type": "value",
 							"desc": "Linux desktop memory limit, such as 4G"
-						},
-						{
-							"name": "name",
-							"type": "any"
 						},
 						{
 							"name": "ram",
