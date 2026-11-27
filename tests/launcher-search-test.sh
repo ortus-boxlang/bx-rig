@@ -45,4 +45,15 @@ m | jq -e '[.data.entries[] | select(.title == "Remove")][0].tone == "error"' >/
 m "Trigger > Capture" | jq -e '.data.crumbs == ["Trigger","Capture"] and (.data.entries | length > 3) and ([.data.entries[] | select(.title == "Screenshot menu")][0].glyph == "camera") and ([.data.entries[] | select(.title == "Region")][0].glyph == "crop")' >/dev/null || fail 'a level has its crumbs and glyphs'
 m "Trigger > Capture" | jq -e '[.data.entries[] | select(.hasChildren | not)][0].id | length > 0' >/dev/null || fail 'a leaf has an id for launcher run'
 [[ "$(run "$binary" menu level "No > Such" >/dev/null 2>&1; echo $?)" == 4 ]] || fail 'an unknown section exits 4'
+# the app grid's data: group, glyph, tone, iconPath, uses
+cat > "$tmp/apps/term.desktop" <<'D'
+[Desktop Entry]
+Type=Application
+Name=Quiet Term
+Comment=A terminal
+Categories=System;TerminalEmulator;
+Exec=true
+D
+run "$binary" apps list --json 2>/dev/null | jq -e '[.data.apps[] | select(.name == "Quiet Term")][0] | .group == "Utilities" and .glyph == "terminal-2" and .tone == "secondary" and .comment == "A terminal" and (.uses | type) == "number" and has("iconPath")' >/dev/null || fail 'apps list carries group, glyph, tone, comment, uses and iconPath'
+run "$binary" apps list --json 2>/dev/null | jq -e '[.data.apps[] | select(.name == "Zebra Notes")][0].uses == 1' >/dev/null || fail 'apps list counts the uses the launcher recorded'
 echo "launcher search tests passed"
