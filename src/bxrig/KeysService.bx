@@ -89,7 +89,9 @@ class KeysService {
 		var keyStyle = new bxrig.KeyStyle();
 		if ( yes && !dryRun && !fileExists( keyStyle.file() ) ) keyStyle.write( {} );
 		var worst = 0;
+		var changed = false;
 		for ( var e in variables.sc.entries( variables.config.cfgHome() ) ) {
+			if ( variables.config.configState( e ) != "clean" ) changed = true;
 			var c = variables.config.configApply( e, yes, dryRun, force );
 			if ( c != 0 ) worst = max( worst, c );
 		}
@@ -108,8 +110,8 @@ class KeysService {
 			var hc = hyprlandAdd( yes, dryRun );
 			if ( hc != 0 ) worst = max( worst, hc );
 		}
-		// a running xremap reads its config only at start: restart it so the keys (and the Alt and Win swap) take effect now
-		if ( worst == 0 && yes && !dryRun ) {
+		// a running xremap reads its config only at start: when a key file changed, restart it so the keys (and the Alt and Win swap) take effect now
+		if ( worst == 0 && yes && !dryRun && changed ) {
 			var sd = new bxrig.util.Systemd( variables.inst.proc() );
 			if ( sd.isActive( "xremap", true ) ) {
 				var rr = variables.inst.proc().exec( sd.argv( "restart", [ "xremap.service" ], true ), 30 );
