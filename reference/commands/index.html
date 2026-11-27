@@ -1181,17 +1181,18 @@ bxrig timemachine --demo
 <p>It needs a terminal (also available as bxtimemachine). Restore, export, send and back up now show the plan first and change nothing until you press y. --local skips the network targets so it opens at once; --demo shows made-up data and runs nothing.</p>
 </blockquote>
 <h3 id="bxrig-java-bxrig-java"><a href="#bxrig-java-bxrig-java" id="bxrig-java-bxrig-java" name="bxrig-java-bxrig-java" class="anchor"></a><code>bxrig java</code> {#bxrig-java}</h3>
-<p>Your Java homes: list them, install a JDK (through SDKMAN when you have it), choose the default for new shells.</p>
-<pre><code class="language-text">bxrig java list | available | install MAJOR|IDENTIFIER [--yes] [--dry-run] | default ID|MAJOR [--yes] | default --unset [--yes] | remove ID [--yes] | env [ID|MAJOR] [--json]
+<p>Your Java versions: jenv switches them, SDKMAN or Temurin supplies them. 21 is always there.</p>
+<pre><code class="language-text">bxrig java setup [--versions=25,17] [--yes] | status | list | available | install MAJOR|IDENTIFIER [--yes] [--dry-run] | global ID|MAJOR [--yes] | local ID|MAJOR [--yes] | remove ID [--yes] [--json]
 </code></pre>
 <p>Changes the system: needs <code>--yes</code>. Without it you get the plan (exit 2); <code>--dry-run</code> shows it and exits 0.</p>
-<pre><code class="language-bash">bxrig java list
-bxrig java install 21 --yes
-bxrig java default 21 --yes
-bxrig java env 17
+<pre><code class="language-bash">bxrig java setup --yes
+bxrig java setup --versions=25,17 --yes
+bxrig java install 25 --yes
+bxrig java global 21 --yes
+bxrig java local 25 --yes
 </code></pre>
 <blockquote>
-<p>Homes come from SDKMAN, BxRig's own Temurin installs (~/.local/share/bxrig/java) and /usr/lib/jvm. With SDKMAN installed (bxrig sdk setup) installs and removals go through it: a major like 21 picks the newest Temurin, an identifier like 21.0.13.0+9-tem installs exactly that. Without it a Temurin JDK is downloaded straight from Adoptium. The system's own JDKs are never deleted. The default is written to java.sh and java.fish, which the shell starters source, so run bxrig refresh shell once on an existing setup.</p>
+<p>jenv (in ~/.jenv) only switches versions; the JDKs come from SDKMAN (when installed: bxrig sdk setup) or are downloaded as Temurin from Adoptium into ~/.local/share/bxrig/java. setup installs jenv, enables its export, maven and gradle plugins, installs JDK 21 plus any --versions, and makes 21 the global version. New shells load jenv through ~/.config/bxrig/jenv.sh and jenv.fish (run bxrig refresh shell once on an existing setup). global is <code>jenv global</code>, local is <code>jenv local</code>. The system's own JDKs are never deleted. default still works as the old name of global.</p>
 </blockquote>
 <h3 id="bxrig-sdk-bxrig-sdk"><a href="#bxrig-sdk-bxrig-sdk" id="bxrig-sdk-bxrig-sdk" name="bxrig-sdk-bxrig-sdk" class="anchor"></a><code>bxrig sdk</code> {#bxrig-sdk}</h3>
 <p>Java, Maven and Gradle through SDKMAN: install, switch, remove.</p>
@@ -1643,7 +1644,7 @@ bxrig wifi qr --out=wifi.png
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 4&#x3a;34&#x3a;35 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 4&#x3a;50&#x3a;24 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
