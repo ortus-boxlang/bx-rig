@@ -8,6 +8,8 @@ summary: Android apps on your desktop with Waydroid, Google Play by default. Off
 
 BxRig can run Android apps next to your desktop apps with [Waydroid](https://waydro.id): Android in a container, each app in its own window. **It is off until you turn it on.** A normal install and `bxrig init` do nothing about it (the wizard asks, and the answer is "Not now" unless you change it), and every command that changes something shows its plan first.
 
+## Try it
+
 ```bash
 bxrig android                       # is it set up? is it running? does this machine support it?
 bxrig android setup                 # the plan: what would be installed and downloaded
@@ -16,7 +18,7 @@ bxrig android setup --yes           # do it (Google Play); --vanilla for no Goog
 
 <video src="../assets/clips/android-cli.webm" poster="../assets/screenshots/android-cli.webp" autoplay loop muted playsinline width="100%"></video>
 
-## What you need
+## Check what you need
 
 - **A Wayland session.** Hyprland is one, and so is Plasma on Wayland. An X11 session does not work.
 - **The kernel's binder driver.** The CachyOS kernels have it. On another kernel, install `binder_linux-dkms` from the AUR and restart; BxRig never changes your kernel itself, and `setup` tells you when it is missing.
@@ -25,7 +27,15 @@ bxrig android setup --yes           # do it (Google Play); --vanilla for no Goog
 
 ## Set it up
 
-`bxrig android setup --yes` runs these steps, each one shown in the plan before anything happens:
+```mermaid
+flowchart LR
+  A["Add repo (Debian, Ubuntu)"] --> B["Install waydroid"]
+  B --> C["Download Android image"]
+  C --> D["Start waydroid-container"]
+  D --> E["Start your Android session"]
+```
+
+The diagram shows the steps `bxrig android setup --yes` runs. Each is shown in the plan before anything happens.
 
 1. On Debian and Ubuntu, add Waydroid's package repository (`repo.waydro.id`).
 2. Install `waydroid` (from the official repositories on Arch).
@@ -48,7 +58,11 @@ bxrig android start
 
 Apps also appear in your applications menu once they are installed. An `.apk` has to support x86_64: one built only for arm will not run. [F-Droid](https://f-droid.org) is a good place to get apps without Google.
 
-## Google Play
+The **Android** page (`bxrig tui android`) shows the state first. While it is off, the page says so and `S` shows the plan to set it up. Once it is on it lists your Android apps: `Enter` opens one, `s` starts or stops Android, `r` registers it for Google Play.
+
+![The Android page of the Control Center](../assets/screenshots/android-page.webp)
+
+## Fix "device not certified"
 
 Google Play shows "device not certified" until you register the device once:
 
@@ -68,10 +82,8 @@ bxrig android remove --data --yes   # and delete the images and everything in An
 
 Without `--data` the images and data stay on disk, so setting it up again is quick.
 
-## In the Control Center
-
-The **Android** page (`bxrig tui android`) shows the state first. While it is off, the page says so and `S` shows the plan to set it up. Once it is on it lists your Android apps: `Enter` opens one, `s` starts or stops Android, `r` registers it for Google Play.
-
-![The Android page of the Control Center](../assets/screenshots/android-page.webp)
+## Advanced
 
 Waydroid is also in the app catalog as an optional app on Arch (`bxrig install waydroid`), but `bxrig android setup` is the way to set it up properly.
+
+Next: [Virtual machines](databases-and-vms.md) · [Apps and web apps](../data/apps.md)

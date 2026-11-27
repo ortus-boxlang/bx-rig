@@ -1,5 +1,6 @@
 ---
 title: Control Center
+order: 3
 summary: One terminal for your whole machine, with a page for each job. Run bxrig tui.
 ---
 
@@ -7,15 +8,34 @@ summary: One terminal for your whole machine, with a page for each job. Run bxri
 
 `bxrig tui` opens one terminal screen with a list of pages on the left and the open page on the right.
 
-![The Control Center dashboard](../assets/screenshots/control-center-dashboard.webp)
+## Try it
 
 ```bash
 bxrig tui                   # opens on the Dashboard, sidebar open
 bxrig tui databases         # one page on its own, sidebar collapsed
 bxrig tui list              # every page id and title (--json for scripts)
-bxrig tui --demo            # made-up data, nothing is run
-bxrig tui dashboard --json  # the page's data, no terminal needed
 ```
+
+![The Control Center dashboard](../assets/screenshots/control-center-dashboard.webp)
+
+<video src="../assets/clips/control-center.webm" poster="../assets/screenshots/control-center-dashboard.webp" autoplay loop muted playsinline width="100%"></video>
+
+## Dashboard
+
+The first page shows what needs your attention, then the state of the machine:
+
+- **Needs attention:** updates waiting, a backup older than two days (or none yet), a disk over 85% full, a battery under 20%. Move to a line and press Enter, or press its key, to see the plan of the fix. Nothing changes until you press `y`.
+- **System:** CPU load, memory, disk and battery.
+- **Running:** your databases and VMs, with ports.
+- **Backups:** how fresh each place is. Enter opens BxTimeMachine, and you come back to the Dashboard when you leave it.
+
+Each part is read on its own. If one cannot be read, the rest still shows.
+
+
+| | |
+| --- | --- |
+| ![The Apps page: installed apps with details](../assets/screenshots/control-center-apps.webp)<br>**Apps** | ![The Maven page: every version, install with one key](../assets/screenshots/control-center-maven.webp)<br>**Maven** (Java, Gradle and BoxLang look the same) |
+
 
 ## One page at a time
 
@@ -29,10 +49,6 @@ You can open any page without a terminal open first:
 - **Application menu (optional):** `bxrig launchers on --yes` adds a "BxRig" submenu to your application menu: the Setup Wizard, the Runner Menu and the Control Center at the top, then Apps and Dashboard, then folders with their own icon (Develop, System, Look) holding one entry per page (menus without folders, like rofi, list them flat). `bxrig launchers status` shows them and `bxrig launchers off --yes` (or `bxrig remove launchers --yes`) takes them away. Entries you edited are kept. Nothing is added unless you ask.
 - **Shortcuts:** every page has an unbound shortcut (`tui-databases`, ...). Give it keys with `bxrig keys set tui-databases Super+Alt+B --yes`, then `bxrig keys apply --yes`.
 
-## Icons
-
-The page list and page headers carry Nerd Font icons when your terminal has the font (the BxRig wizard installs one for Starship). They are on when a Nerd Font is found, and you can force them: `bxrig tui --icons=on` or `--icons=off`, or set `BXRIG_ICONS`. Without the font they would show as boxes, so BxRig leaves them off. Emoji are not used, because terminals draw them two cells wide and the tables would not line up.
-
 ## Keys
 
 | Key | What it does |
@@ -45,24 +61,31 @@ The page list and page headers carry Nerd Font icons when your terminal has the 
 
 The key bar at the bottom shows the keys of the page you are on.
 
-## Dashboard
+## Look and Themes
 
-The first page shows what needs your attention, then the state of the machine:
+`bxrig tui look` shows the bar you have in a Preview box (the same text-chip pictures the wizard draws) and the settings below it in three groups: **Bar** (top bar layout, battery percentage, clock format, the bar toggle key), **Colors** (a link to the Themes page) and **Apps** (app grid style, dock). The values come from the read-only status commands (`bxrig appearance bar layout status`, `appearance appgrid status`, `appearance battery-percent status`, `time format`). A change is an ordinary command: the plan box shows it with `--dry-run`, and `y` runs it.
 
-- **Needs attention:** updates waiting, a backup older than two days (or none yet), a disk over 85% full, a battery under 20%. Move to a line and press Enter, or press its key, to see the plan of the fix. Nothing changes until you press `y`.
-- **System:** CPU load, memory, disk and battery.
-- **Running:** your databases and VMs, with ports.
-- **Backups:** how fresh each place is. Enter opens BxTimeMachine, and you come back to the Dashboard when you leave it.
+`bxrig tui themes` is the bigger selector: every theme, with `Enter` to apply it. The sidebar lists Look and Themes as two pages; the Look page has no theme list of its own.
 
-Each part is read on its own. If one cannot be read, the rest still shows.
+The whole Control Center is drawn in the colors of the theme you applied last (`~/.config/bxrig/theme.json`), at start and again within a second of applying another one from the Themes page. `--demo` keeps the BxRig colors.
 
-<video src="../assets/clips/control-center.webm" poster="../assets/screenshots/control-center-dashboard.webp" autoplay loop muted playsinline width="100%"></video>
+## Back into the wizard
 
-| | |
-| --- | --- |
-| ![The Apps page: installed apps with details](../assets/screenshots/control-center-apps.webp)<br>**Apps** | ![The Maven page: every version, install with one key](../assets/screenshots/control-center-maven.webp)<br>**Maven** (Java, Gradle and BoxLang look the same) |
+The setup wizard is one entry away from anywhere: "Setup wizard (re-run, prefilled)" in the runner menu (second row, after Apps), "BxRig Setup Wizard" in the application menu, `w` on the Control Center Dashboard, or `bxrig init`. It starts from your saved answers merged with what this machine already has, shows the review, and changes nothing until you confirm.
 
-## Pages
+## Advanced
+
+How a page works: every key that changes something shows a plan first, and `y` runs it.
+
+```mermaid
+flowchart LR
+  A["Menu, application menu or shortcut"] --> B["bxrig tui PAGE"]
+  B --> C["Page"]
+  C --> D["Plan box"]
+  D --> E["y runs the command"]
+```
+
+### Every page
 
 | Page | What it does |
 |---|---|
@@ -99,18 +122,15 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 
 In a table, `/` filters the rows (or searches, on Packages), Enter keeps it and Escape clears it. Every key that changes something shows a plan first.
 
-## How the pages fit together
+### Icons
+
+The page list and page headers carry Nerd Font icons when your terminal has the font (the BxRig wizard installs one for Starship). They are on when a Nerd Font is found, and you can force them: `bxrig tui --icons=on` or `--icons=off`, or set `BXRIG_ICONS`. Without the font they would show as boxes, so BxRig leaves them off. Emoji are not used, because terminals draw them two cells wide and the tables would not line up.
+
+### How the pages fit together
 
 Every screen shares one kit for lists, tabs, plan boxes and meters, so they look and behave the same. A page is a small class, which is also how new pages are added. A page can send you to a full screen such as BxTimeMachine and bring you back.
 
-## Look and Themes
 
-`bxrig tui look` shows the bar you have in a Preview box (the same text-chip pictures the wizard draws) and the settings below it in three groups: **Bar** (top bar layout, battery percentage, clock format, the bar toggle key), **Colors** (a link to the Themes page) and **Apps** (app grid style, dock). The values come from the read-only status commands (`bxrig appearance bar layout status`, `appearance appgrid status`, `appearance battery-percent status`, `time format`). A change is an ordinary command: the plan box shows it with `--dry-run`, and `y` runs it.
+`bxrig tui --demo` shows made-up data and runs nothing; `bxrig tui dashboard --json` prints the page's data, no terminal needed.
 
-`bxrig tui themes` is the bigger selector: every theme, with `Enter` to apply it. The sidebar lists Look and Themes as two pages; the Look page has no theme list of its own.
-
-The whole Control Center is drawn in the colors of the theme you applied last (`~/.config/bxrig/theme.json`), at start and again within a second of applying another one from the Themes page. `--demo` keeps the BxRig colors.
-
-## Back into the wizard
-
-The setup wizard is one entry away from anywhere: "Setup wizard (re-run, prefilled)" in the runner menu (second row, after Apps), "BxRig Setup Wizard" in the application menu, `w` on the Control Center Dashboard, or `bxrig init`. It starts from your saved answers merged with what this machine already has, shows the review, and changes nothing until you confirm.
+Next: [The menu](menu.md), [Themes](../customize/themes.md), [Apps](../data/apps.md).

@@ -1,12 +1,14 @@
 ---
 title: Boxy's look and voice
-order: 6
+order: 4
 summary: Give Boxy a name, a colour and seasonal outfits, and talk to it by holding a key. All of it is opt in.
 ---
 
 # Boxy's look and voice
 
-Boxy is the desktop assistant `bxrig ai agents setup` makes. This page is about how it looks and sounds. **Nothing here is on until you turn it on:** no microphone, no speech, no outfit other than the season's.
+Give Boxy, the desktop assistant `bxrig ai agents setup` makes, a name, a colour and outfits, and talk to it by holding a key. **Nothing here is on until you turn it on:** no microphone, no speech, no outfit other than the season's.
+
+## Try it
 
 ```bash
 bxrig boxy                                     # Boxy now, as text
@@ -50,9 +52,15 @@ Your words go to Boxy like a typed question. The answer comes as a notice. **If 
 
 ## Let it speak
 
-Speech is off. There are two ways to turn it on.
+Speech is off. Turn it on with a voice that runs on this machine (`bxrig boxy voice local --yes`) or with a server (`bxrig boxy voice set`). The details are under Advanced.
 
-### On this machine, in English and Spanish
+## Advanced
+
+### Speech setup
+
+There are two ways to turn speech on.
+
+#### On this machine, in English and Spanish
 
 Boxy can speak with [bx-audio](https://github.com/ortus-boxlang/bx-audio), a BoxLang module that runs the voices on your own machine. Nothing Boxy says leaves it.
 
@@ -75,7 +83,7 @@ The first `--yes` downloads the speech engine and the voices (about 350 MB, once
 
 Boxy tells the language by its letters and its small words (`el`, `de`, `que`, `the`, `and`). Short or mixed text can be wrong: set `--lang=en` or `--lang=es` if you always use one.
 
-### With a server
+#### With a server
 
 Point it at any OpenAI-compatible `/v1/audio/speech` server:
 
@@ -88,6 +96,8 @@ bxrig boxy say "hello"
 
 With a cloud server, each answer Boxy reads aloud is sent there: `bxrig boxy voice` and `bxrig privacy` both say where. A speech server on this machine works the same way, with a `127.0.0.1` URL. Either way it needs one of `pw-play`, `paplay`, `ffplay` or `mpv`. `bxrig boxy voice set` goes back to a server; `bxrig boxy voice local --yes` goes back to bx-audio.
 
-## Not tested on real hardware
+### Not tested on real hardware
 
 The commands and the keys are tested with fake tools. The first real run (your microphone, Voxtype's service, the key release, and the picture in the bar) is on your machine.
+
+Next: [Appearance](appearance.md), [BoxLang agents](../ai/boxlang-agents.md).

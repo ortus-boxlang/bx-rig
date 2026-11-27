@@ -1,10 +1,30 @@
 ---
 title: Displays, power and time
-order: 4
+order: 7
 summary: Monitors, laptop power, the time zone when you travel, DNS, kernels and stay awake.
 ---
 
 # Displays, power and time
+
+Set up your monitors, laptop power, time zone and network basics, and fix a stuck desktop piece, each with one command.
+
+## Try it
+
+```bash
+bxrig display list              # your screens and their names
+bxrig power status              # laptop charge, profile, lid actions
+bxrig time status               # the zone and clock
+```
+
+What each command family changes on your machine.
+
+```mermaid
+flowchart LR
+  A["bxrig display"] --> B["monitors.lua on Hyprland"]
+  A --> C["kscreen-doctor on Plasma"]
+  D["bxrig power"] --> E["profiles, lid, charge limit"]
+  F["bxrig time"] --> G["zone, NTP, auto zone"]
+```
 
 ## Displays
 
@@ -81,7 +101,9 @@ bxrig system restart bluetooth    # unblock the radio, adapter on
 
 Each shows a plan first; add `--yes` (the menu's Update > Restart does).
 
-## Password, firmware and speed
+## Advanced
+
+### Password, firmware and speed
 
 ```bash
 bxrig system password             # passwd, on this terminal
@@ -97,7 +119,7 @@ Only the last result of each test is kept (`~/.local/state/bxrig/speedtest-last.
 
 Firmware updates cover BIOS/UEFI, SSDs, docks and some keyboards and mice, from vendors that publish to LVFS (Dell, Lenovo, HP, Framework, Logitech and others). Many consumer laptops are not covered.
 
-## Hardware switches
+### Hardware switches
 
 ```bash
 bxrig input touchpad off          # and on, toggle, status (Hyprland); also touchscreen
@@ -109,3 +131,5 @@ bxrig default editor neovim --yes # the app for text files, and EDITOR / VISUAL
 ```
 
 `gpu mode` uses supergfxctl (supergfxd); log out or reboot after a switch. `share` needs LocalSend's command line, `localsend-cli` (LocalSend 1.18 and later); `bxrig share receive` opens the LocalSend app.
+
+Next: [Appearance](../customize/appearance.md), [Updates](../maintain/updates.md).

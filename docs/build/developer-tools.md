@@ -1,45 +1,44 @@
 ---
 title: Developer tools
-order: 6
+order: 2
 summary: API clients, cloud and Kubernetes CLIs, signed commits and a check of your developer setup.
 ---
 
 # Developer tools
 
-## API clients
+Use this page to install the tools around your code and to check that your developer setup is complete.
 
-Postman, Insomnia and Bruno are in the app picker under Development > API clients. On Arch they come from the AUR (`postman-bin`, `insomnia-bin`, `bruno-bin`); on Debian, Ubuntu and openSUSE from Flathub.
+## Try it
 
 ```bash
+bxrig doctor --dev
+bxrig git signing on --yes
 bxrig pkg install bruno --yes
 ```
 
-Bruno keeps its collections as plain files in your project, so they go into git with the code.
+<video src="../assets/clips/devtools-cli.webm" poster="../assets/screenshots/devtools-doctor.webp" autoplay loop muted playsinline width="100%"></video>
 
-## Cloud and Kubernetes
+## Check your setup
 
-The **Cloud and Kubernetes** profile installs kubectl, k9s, Helm and OpenTofu, and offers the AWS, Google Cloud and Azure CLIs.
+```bash
+bxrig doctor --dev
+```
 
-| Tool | Arch | Debian | Ubuntu | openSUSE |
-|---|---|---|---|---|
-| kubectl | extra | apt | not packaged | `kubernetes-client` |
-| k9s, Helm, OpenTofu | extra | not packaged | not packaged | zypper |
-| AWS CLI | `aws-cli-v2` | `awscli` | `awscli` | `aws-cli` (version 1) |
-| Google Cloud CLI | AUR | not packaged | not packaged | not packaged |
-| Azure CLI | extra | apt | not packaged | zypper |
+After the usual tool checks, `--dev` looks at your git name and email, the SSH key, the SSH agent, commit signing, a container engine and `EDITOR`. Each one that is missing prints `warn` with the command that fixes it. They are advice: the exit code stays 0.
 
-A tool that is not packaged on your distribution is not offered there.
+## Sign your commits
 
-![The cloud tools and API clients in the catalog](../assets/screenshots/devtools-catalog.webp)
+```mermaid
+flowchart LR
+  A["SSH key"] --> B["bxrig git signing on"]
+  B --> C["git signs commits and tags"]
+  B --> D["allowed_signers file"]
+  D --> E["git log shows verified"]
+  A --> F["Add as Signing key on GitHub"]
+  F --> G["Verified badge"]
+```
 
-## Shell helpers
-
-Two more in the picker, under Development > Shell:
-
-- **atuin**: shell history you can search, with the directory and exit code of every command. It stays on your machine unless you sign in to sync.
-- **just**: a `justfile` of project commands (`just test`, `just deploy`), simpler than make.
-
-## Signed commits
+The diagram shows what one SSH key does once signing is on.
 
 ```bash
 bxrig git signing on --yes      # sign commits and tags with ~/.ssh/id_ed25519
@@ -55,12 +54,41 @@ For GitHub's Verified badge, add the same public key to GitHub a second time, as
 
 The setup wizard offers this after the SSH key ("Sign commits with that key").
 
-## Check your setup
+## Install an API client
+
+Postman, Insomnia and Bruno are in the app picker under Development > API clients. On Arch they come from the AUR (`postman-bin`, `insomnia-bin`, `bruno-bin`); on Debian, Ubuntu and openSUSE from Flathub.
 
 ```bash
-bxrig doctor --dev
+bxrig pkg install bruno --yes
 ```
 
-After the usual tool checks, `--dev` looks at your git name and email, the SSH key, the SSH agent, commit signing, a container engine and `EDITOR`. Each one that is missing prints `warn` with the command that fixes it. They are advice: the exit code stays 0.
+Bruno keeps its collections as plain files in your project, so they go into git with the code.
 
-<video src="../assets/clips/devtools-cli.webm" poster="../assets/screenshots/devtools-doctor.webp" autoplay loop muted playsinline width="100%"></video>
+## Install cloud and Kubernetes tools
+
+The **Cloud and Kubernetes** profile installs kubectl, k9s, Helm and OpenTofu, and offers the AWS, Google Cloud and Azure CLIs.
+
+![The cloud tools and API clients in the catalog](../assets/screenshots/devtools-catalog.webp)
+
+A tool that is not packaged on your distribution is not offered there.
+
+## Shell helpers
+
+Two more in the picker, under Development > Shell:
+
+- **atuin**: shell history you can search, with the directory and exit code of every command. It stays on your machine unless you sign in to sync.
+- **just**: a `justfile` of project commands (`just test`, `just deploy`), simpler than make.
+
+## Advanced
+
+### Where each cloud tool comes from
+
+| Tool | Arch | Debian | Ubuntu | openSUSE |
+|---|---|---|---|---|
+| kubectl | extra | apt | not packaged | `kubernetes-client` |
+| k9s, Helm, OpenTofu | extra | not packaged | not packaged | zypper |
+| AWS CLI | `aws-cli-v2` | `awscli` | `awscli` | `aws-cli` (version 1) |
+| Google Cloud CLI | AUR | not packaged | not packaged | not packaged |
+| Azure CLI | extra | apt | not packaged | zypper |
+
+Next: [BoxLang and MatchBox](boxlang.md) · [Databases and virtual machines](databases-and-vms.md) · [Security](../maintain/security.md)

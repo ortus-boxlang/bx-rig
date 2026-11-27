@@ -1,12 +1,16 @@
 ---
 title: Accessibility
-order: 4
+order: 3
 summary: Zoom with the Mac keys, reduce motion, and three high-contrast themes. All off until you turn them on.
 ---
 
 # Accessibility
 
-Three settings, all off by default. Turn them on from the Control Center (`bxrig tui accessibility`), the menu (Appearance > Accessibility), the Quick panel (Zoom) or the command line.
+Zoom, reduce motion and three high-contrast themes, all off until you turn them on.
+
+## Try it
+
+Turn them on from the Control Center (`bxrig tui accessibility`), the menu (Appearance > Accessibility), the Quick panel (Zoom) or the command line.
 
 ```bash
 bxrig accessibility                       # what is on
@@ -16,6 +20,15 @@ bxrig accessibility contrast dark         # dark, light, colorblind, or off to g
 ```
 
 They are settings: they act at once, and `--dry-run` shows the commands first.
+
+The three settings and what they switch:
+
+```mermaid
+flowchart LR
+  A["bxrig accessibility"] --> B["Zoom keys"]
+  A --> C["Reduce motion"]
+  A --> D["Contrast theme"]
+```
 
 <video src="../assets/clips/accessibility-page.webm" poster="../assets/screenshots/accessibility-page.webp" autoplay loop muted playsinline width="100%"></video>
 
@@ -50,3 +63,5 @@ Turns off the animations of windows and workspaces (Hyprland), of the bar and pa
 ![BxRig Colorblind in the Themes page](../assets/screenshots/theme-colorblind.webp)
 
 Every text colour in them is at least 7:1 against the background (WCAG AAA); a test checks it. Their wallpapers are plain, and Neovim gets the matching high-contrast or colour-blind GitHub colorscheme. `bxrig accessibility contrast off` goes back to the theme you had before. They are ordinary themes too: `bxrig theme set bxrig-colorblind` works.
+
+Next: [Themes](themes.md), [Shortcuts](../desktop/shortcuts.md), [Boxy's look and voice](boxy-look.md).

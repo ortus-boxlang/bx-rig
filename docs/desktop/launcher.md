@@ -1,12 +1,14 @@
 ---
 title: Launcher
-order: 2
+order: 5
 summary: Vicinae as your launcher, in your theme's colours, with BxRig's actions and file search.
 ---
 
 # Launcher
 
-[Vicinae](https://github.com/vicinaehq/vicinae) is the launcher and the menu BxRig recommends, and the wizard's default (Noctalia's own launcher, Walker, Rofi, Fuzzel and Wofi are still choices). It is a launcher: a fast, keyboard-first search for apps, files, your clipboard and BxRig's own actions, drawn in your BxRig theme.
+Search apps, files, your clipboard and BxRig's own actions from one keyboard-first box. [Vicinae](https://github.com/vicinaehq/vicinae) is the launcher and menu BxRig recommends and the wizard's default (Noctalia's own launcher, Walker, Rofi, Fuzzel and Wofi are still choices), drawn in your BxRig theme.
+
+## Try it
 
 ```bash
 bxrig pkg install vicinae
@@ -25,13 +27,13 @@ bxrig launcher                  # what is set up
 
 Vicinae's own `settings.json` is never edited.
 
-## The theme
+## It follows your theme
 
 Every `bxrig theme set` rewrites `~/.local/share/vicinae/themes/bxrig.toml` from the theme's colours: the background, the text, the accent for selection and focus, and the theme's red, green, yellow, blue, magenta and cyan. Vicinae watches that folder, so the change shows at once. When Vicinae is your launcher, BxRig also selects the theme.
 
 ![The Vicinae theme BxRig writes](../assets/screenshots/launcher-theme.webp)
 
-## BxRig in Vicinae's search
+## Run BxRig from the search
 
 | Command | What it does |
 |---|---|
@@ -49,7 +51,7 @@ Every `bxrig theme set` rewrites `~/.local/share/vicinae/themes/bxrig.toml` from
 
 They live in `~/.local/share/vicinae/scripts/bxrig`. Vicinae reads its script folders when it starts, every 15 minutes, and when you run **Reload Script Directories**. `bxrig launcher scripts --yes` writes them again, and `bxrig launcher scripts remove --yes` deletes them. Script commands of your own in other folders are not touched.
 
-## File search
+## Search your files
 
 Vicinae indexes your home folder in the background and keeps the index up to date.
 
@@ -57,3 +59,5 @@ Vicinae indexes your home folder in the background and keeps the index up to dat
 bxrig launcher files            # Vicinae's file search
 bxrig launcher files invoice    # with "invoice" already typed
 ```
+
+Next: [The menu](menu.md), [Themes](../customize/themes.md).

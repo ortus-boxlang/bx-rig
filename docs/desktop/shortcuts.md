@@ -1,30 +1,30 @@
 ---
 title: Shortcuts and Mac keys
-order: 3
+order: 4
 summary: One table drives xremap, Hyprland and Plasma, in two styles.
 ---
 
 # Shortcuts and Mac keys
 
-BxRig keeps one shortcut table (`src/bxrig/Shortcuts.bx`) and renders it for xremap (Cmd-style keys, on both desktops), the Hyprland module (`~/.config/hypr/bxrig.lua`) and Plasma. Every key BxRig binds is a row, including the window, workspace, arrow, mouse, volume and brightness keys, and each row has a key for each style. xremap is always installed: copy, paste, cut and select all (`Super+C V X A`) are remaps in both styles. Press `Super+K` (or run `bxrig keys sheet`) to see every shortcut in your menu program.
+One shortcut table drives every key BxRig binds, in two styles: Traditional (classic Super-key tiling) or Mac (Cmd-style keys).
 
-## Two styles
+## Try it
 
-| | Traditional | Mac |
-|---|---|---|
-| Idea | Classic Super-key tiling keys | Cmd-style keys for apps |
-| `Super+C V X A` | copy, paste, cut, select all (terminal aware) | same |
-| `Super+Z S F T N O P R W L B I U` and `Super+,` | plain Super keys | send the Ctrl version (Undo, Save, Find, ...) |
-| Browser | `Super+B`, `Super+Shift+Return` | `Super+Shift+Return` |
-| Private browser window | `Super+Alt+Shift+B` | `Super+Shift+N` |
-| File manager | `Super+Shift+F` | `Super+E` |
-| Full screen | `Super+F` | `Super+Ctrl+F` |
-| Float or tile | `Super+T` | `Super+Alt+T` |
-| Window to workspace 3, 4, 5 | `Super+Shift+3/4/5` | `Super+Alt+Shift+3/4/5` |
-| Close window | `Super+Q`, `Super+W` | `Super+Q` (`Super+W` is Close tab) |
-| Input language | `Super+I`, `Super+Shift+I` | `Super+Alt+I`, `Super+Alt+Shift+I` |
+```bash
+bxrig keys sheet                   # the cheat sheet (Super+K)
+bxrig keys search screenshot       # find a shortcut by words, keys or id
+bxrig keys style mac --yes         # switch to the Mac style
+```
 
-On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option; the left keys only, Right Alt stays AltGr). An Apple keyboard never swaps. The choice is saved in `~/.config/bxrig/keystyle.json` (`bxrig keys style mac --keyboard=pc|apple --swap=on|off --yes`; the wizard asks the same). Keys in the table are what Hyprland sees after the swap, so with the swap on a PC keyboard `Super+Alt+D` is the Win and Alt keys in the places where Option and Cmd sit on a Mac. See `docs/architecture/SHORTCUTS-DECISIONS.md` for every decision.
+```mermaid
+flowchart LR
+  A["Shortcut table"] --> B["Traditional or Mac style"]
+  B --> C["xremap: Cmd keys"]
+  B --> D["Hyprland: bxrig.lua"]
+  B --> E["Plasma"]
+```
+
+The table is `src/bxrig/Shortcuts.bx`. Every key BxRig binds is a row, including the window, workspace, arrow, mouse, volume and brightness keys, and each row has a key for each style. xremap is always installed: copy, paste, cut and select all (`Super+C V X A`) are remaps in both styles. Press `Super+K` to see every shortcut in your menu program.
 
 ## Change a shortcut
 
@@ -43,7 +43,26 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 
 `Super+Space` opens the menu; its Shortcuts section lists every shortcut, searches them (`bxrig keys search TEXT`), rebinds one (it asks which one and for the new keys, then runs `keys set`), runs the command a shortcut stands for (`bxrig keys run ID`), writes the keys to Hyprland and Plasma, and switches the style. `Super+Escape`, `Super+Ctrl+C`, `Super+Ctrl+O`, `Super+Ctrl+H` and `Super+Shift+Ctrl+A` open the System, Capture, Toggle, Hardware and Agent menus on their own (`bxrig menu open system`).
 
+## Two styles
+
+| | Traditional | Mac |
+|---|---|---|
+| Idea | Classic Super-key tiling keys | Cmd-style keys for apps |
+| `Super+C V X A` | copy, paste, cut, select all (terminal aware) | same |
+| `Super+Z S F T N O P R W L B I U` and `Super+,` | plain Super keys | send the Ctrl version (Undo, Save, Find, ...) |
+| Browser | `Super+B`, `Super+Shift+Return` | `Super+Shift+Return` |
+| Private browser window | `Super+Alt+Shift+B` | `Super+Shift+N` |
+| File manager | `Super+Shift+F` | `Super+E` |
+| Full screen | `Super+F` | `Super+Ctrl+F` |
+| Float or tile | `Super+T` | `Super+Alt+T` |
+| Window to workspace 3, 4, 5 | `Super+Shift+3/4/5` | `Super+Alt+Shift+3/4/5` |
+| Close window | `Super+Q`, `Super+W` | `Super+Q` (`Super+W` is Close tab) |
+| Input language | `Super+I`, `Super+Shift+I` | `Super+Alt+I`, `Super+Alt+Shift+I` |
+
+
 ## The main ones
+
+The keys you will use most, in the Traditional style unless noted:
 
 | Keys | Does |
 |---|---|
@@ -97,3 +116,10 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Ctrl+Shift+Comma` | Dismiss all notifications |
 | Play, Pause, Next, Previous keys | Media control (playerctl) |
 | Keyboard backlight keys | Keyboard backlight up / down |
+
+## Advanced
+
+On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option; the left keys only, Right Alt stays AltGr). An Apple keyboard never swaps. The choice is saved in `~/.config/bxrig/keystyle.json` (`bxrig keys style mac --keyboard=pc|apple --swap=on|off --yes`; the wizard asks the same). Keys in the table are what Hyprland sees after the swap, so with the swap on a PC keyboard `Super+Alt+D` is the Win and Alt keys in the places where Option and Cmd sit on a Mac. See `docs/architecture/SHORTCUTS-DECISIONS.md` for every decision.
+
+
+Next: [The desktop](desktop.md), [The menu](menu.md), [Your own config](../customize/your-own-config.md).
