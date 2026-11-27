@@ -1,0 +1,197 @@
+/**
+ * Progress bars drawn in text, in several styles, with a gradient across the bar, partial cells for sub-cell precision, an indeterminate
+ * (moving) bar and stacked segment bars. Reach it through `ui.bar()`, `ui.indeterminate()` and `ui.segments()`.
+ *
+ * Styles: smooth (partial blocks, 1/8 of a cell), line (thick and thin line), blocks, dots, braille, arrow ([====>----]), thin and ascii.
+ * Without unicode every style falls back to ascii.
+ */
+class Bar {
+	/**
+	 * @ui The Ui toolkit the bar takes its colours, glyphs and unicode setting from.
+	 */
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		return this;
+	}
+
+	/**
+	 * The glyph sets of the styles: the full cell, the empty cell, the head (or "") and the partial cells from a little to almost full.
+	 *
+	 * @return A struct by style name: { full, empty, head, partial: [ ... ] }.
+	 */
+	function styles() {
+		return {
+			smooth: { full: "█", empty: "░", head: "", partial: [ "▏", "▎", "▍", "▌", "▋", "▊", "▉" ] },
+			blocks: { full: "█", empty: "░", head: "", partial: [] },
+			line: { full: "━", empty: "─", head: "", partial: [ "╸" ] },
+			thin: { full: "▬", empty: "▭", head: "", partial: [] },
+			dots: { full: "●", empty: "○", head: "", partial: [] },
+			braille: { full: "⣿", empty: "⣀", head: "", partial: [ "⡀", "⣀", "⣄", "⣤", "⣦", "⣶", "⣷" ] },
+			arrow: { full: "=", empty: "-", head: ">", partial: [] },
+			ascii: { full: "##", empty: "-", head: "", partial: [] }
+		};
+	}
+
+	/**
+	 * The names of the bar styles.
+	 *
+	 * @return An array of style names.
+	 */
+	function names() {
+		return structKeyArray( styles() );
+	}
+
+	/**
+	 * The colour at a position along a gradient, as "#rrggbb".
+	 *
+	 * @t Where along the gradient, 0 to 1.
+	 * @stops The colours, as roles or hex ("accent", "#00ff78"); two or more.
+	 *
+	 * @return The interpolated colour as "#RRGGBB".
+	 */
+	function colorAt( t, stops ) {
+		var pts = [];
+		for ( var s in arguments.stops ) { var c = variables.ui.theme().rgb( s ); if ( c.len() ) pts.append( c ); }
+		if ( pts.len() < 2 ) return pts.len() ? "##" & hexOf( pts[ 1 ] ) : "##FFFFFF";
+		var pos = max( 0, min( 1, arguments.t ) ) * ( pts.len() - 1 );
+		var seg = min( int( pos ), pts.len() - 2 );
+		var f = pos - seg;
+		var a = pts[ seg + 1 ];
+		var b = pts[ seg + 2 ];
+		return "##" & hexOf( [ a[ 1 ] + ( b[ 1 ] - a[ 1 ] ) * f, a[ 2 ] + ( b[ 2 ] - a[ 2 ] ) * f, a[ 3 ] + ( b[ 3 ] - a[ 3 ] ) * f ] );
+	}
+
+	/**
+	 * Six hex digits for an RGB triple.
+	 *
+	 * @rgb Three numbers, each 0 to 255.
+	 *
+	 * @return The digits, uppercase, without a "#".
+	 */
+	function hexOf( rgb ) {
+		var out = "";
+		for ( var v in arguments.rgb ) out &= uCase( right( "0" & formatBaseN( max( 0, min( 255, round( v ) ) ), 16 ), 2 ) );
+		return out;
+	}
+
+	/**
+	 * One cell of a bar in its colour: along a gradient when there are stops, a single role otherwise.
+	 *
+	 * @ch The glyph.
+	 * @pos The cell's position in the bar, 0 to 1 (for the gradient).
+	 * @opts The bar options (see render).
+	 *
+	 * @return The styled glyph.
+	 */
+	function cell( ch, pos, opts ) {
+		var stops = arguments.opts.gradient ?: "";
+		if ( isArray( stops ) ) return variables.ui.style( arguments.ch, colorAt( arguments.pos, stops ) );
+		if ( stops == true ) return variables.ui.style( arguments.ch, colorAt( arguments.pos, [ "accent", "accent2" ] ) );
+		return variables.ui.style( arguments.ch, arguments.opts.role ?: "accent" );
+	}
+
+	/**
+	 * A bar for a ratio.
+	 *
+	 * @ratio How far, 0 to 1 (values outside are clamped).
+	 * @width The width in cells (the bar only, not the percent).
+	 * @opts style (smooth, line, blocks, thin, dots, braille, arrow, ascii; default smooth), role (colour of the filled part, "accent"), gradient
+	 * (true for accent to accent2, or an array of colours, spread over the whole bar), track (colour of the empty part, "dim"), percent (true),
+	 * ends (a pair of strings around the bar, like "[]"), label (text after).
+	 *
+	 * @return The bar as one string.
+	 */
+	function render( ratio, width = 24, opts = {} ) {
+		var o = arguments.opts;
+		var r = max( 0, min( 1, arguments.ratio ) );
+		var w = max( 1, arguments.width );
+		var name = variables.ui.unicode() ? ( o.style ?: "smooth" ) : "ascii";
+		var st = structKeyExists( styles(), name ) ? styles()[ name ] : styles().smooth;
+		var cells = r * w;
+		var full = int( floor( cells + 0.000001 ) );
+		var frac = cells - full;
+		var out = [];
+		var ascii = name == "ascii";
+		for ( var i = 1; i <= w; i++ ) {
+			var pos = w == 1 ? 0 : ( i - 1 ) / ( w - 1 );
+			if ( i <= full ) out.append( cell( ascii ? "#" : st.full, pos, o ) );
+			else if ( i == full + 1 && r < 1 && len( st.head ) ) out.append( cell( st.head, pos, o ) );
+			else if ( i == full + 1 && r < 1 && st.partial.len() && frac > 0 ) {
+				var k = max( 1, min( st.partial.len(), int( round( frac * ( st.partial.len() + 1 ) ) ) ) );
+				out.append( cell( st.partial[ k ], pos, o ) );
+			} else out.append( variables.ui.style( ascii ? "-" : st.empty, o.track ?: "dim" ) );
+		}
+		var s = out.toList( "" );
+		if ( structKeyExists( o, "ends" ) && len( o.ends ) >= 2 ) s = left( o.ends, 1 ) & s & mid( o.ends, 2, 1 );
+		if ( o.percent ?: true ) s &= " " & right( "  " & int( round( r * 100 ) ), 3 ) & "%";
+		if ( len( o.label ?: "" ) ) s &= " " & o.label;
+		return s;
+	}
+
+	/**
+	 * A bar for work of unknown length: a bright stretch that moves back and forth.
+	 *
+	 * @tick A counter that grows by one for each redraw.
+	 * @width The width in cells.
+	 * @opts role, gradient (as in render), track, style (line or smooth), span (width of the bright stretch in cells, default a fifth of the bar).
+	 *
+	 * @return The bar as one string.
+	 */
+	function indeterminate( tick, width = 24, opts = {} ) {
+		var o = arguments.opts;
+		var w = max( 4, arguments.width );
+		var span = o.span ?: max( 3, int( w / 5 ) );
+		var travel = w - span;
+		var period = travel * 2;
+		var p = period > 0 ? arguments.tick mod period : 0;
+		var head = p <= travel ? p : period - p;
+		var name = variables.ui.unicode() ? ( o.style ?: "line" ) : "ascii";
+		var st = structKeyExists( styles(), name ) ? styles()[ name ] : styles().line;
+		var out = [];
+		for ( var i = 0; i < w; i++ ) {
+			var on = i >= head && i < head + span;
+			if ( on ) out.append( cell( name == "ascii" ? "=" : st.full, ( i - head ) / max( 1, span - 1 ), o ) );
+			else out.append( variables.ui.style( name == "ascii" ? "-" : st.empty, o.track ?: "dim" ) );
+		}
+		return out.toList( "" );
+	}
+
+	/**
+	 * A stacked bar of parts (a disk, a budget) with a legend under it.
+	 *
+	 * @parts An array of { label, value, role } (role optional: the roles cycle through accent, accent2, info, warn, err).
+	 * @width The width of the bar in cells.
+	 * @opts total (the value that fills the bar; default the sum), format (a function( value ) that returns the text in the legend).
+	 *
+	 * @return An array of lines: the bar, then one legend line per part with its share.
+	 */
+	function segments( parts, width = 40, opts = {} ) {
+		var roles = [ "accent", "accent2", "info", "warn", "err", "magenta" ];
+		var sum = 0;
+		for ( var p in arguments.parts ) sum += p.value;
+		var total = arguments.opts.total ?: sum;
+		if ( total <= 0 ) total = 1;
+		var w = max( 1, arguments.width );
+		var cells = [];
+		var used = 0;
+		var i = 0;
+		// in colour every part is a solid block; without colour the parts get different glyphs so they can still be told apart
+		var glyphs = variables.ui.color() ? [ "█" ] : ( variables.ui.unicode() ? [ "█", "▓", "▒", "░", "▞", "▚" ] : [ "##", "=", "+", "o", "x", "%" ] );
+		var legend = [];
+		for ( var part in arguments.parts ) {
+			i++;
+			var role = part.role ?: roles[ ( ( i - 1 ) mod roles.len() ) + 1 ];
+			var n = i == arguments.parts.len() && sum >= total ? w - used : int( round( part.value / total * w ) );
+			n = max( 0, min( n, w - used ) );
+			var glyph = glyphs[ ( ( i - 1 ) mod glyphs.len() ) + 1 ];
+			cells.append( variables.ui.style( repeatString( glyph, n ), role ) );
+			used += n;
+			var shown = structKeyExists( arguments.opts, "format" ) ? arguments.opts.format( part.value ) : part.value;
+			legend.append( variables.ui.style( glyph, role ) & " " & part.label & "  " & shown & "  " & variables.ui.style( int( round( part.value / total * 100 ) ) & "%", "dim" ) );
+		}
+		cells.append( variables.ui.style( repeatString( variables.ui.unicode() ? "░" : "-", w - used ), "dim" ) );
+		var out = [ cells.toList( "" ) ];
+		for ( var l in legend ) out.append( l );
+		return out;
+	}
+}

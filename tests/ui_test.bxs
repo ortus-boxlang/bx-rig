@@ -180,6 +180,42 @@ testkit.check( "panel: title and subtitle alignment", u.panel( "x", { title: "R"
 stl = u.styled().bold().red();
 testkit.check( "Style builds by chaining, applies, copies and patches", stl.spec() == "bold red" && stl.apply( "x" ) == "x" && stl.copy().onBlue().spec() == "bold red bg:blue" && stl.spec() == "bold red" && u.styled().dim().patch( u.styled().green() ).spec() == "dim green" );
 
+// ---- progress bars ----
+bu = mk( 80 );
+testkit.check( "bar: smooth shows a partial cell, 0 and 100 are empty and full", bu.bar( 0.07, 20 ) == "█▍░░░░░░░░░░░░░░░░░░   7%" && bu.bar( 0, 4 ) == "░░░░   0%" && bu.bar( 1, 4 ) == "████ 100%" && bu.bar( 5, 4 ) == "████ 100%" );
+testkit.check( "bar: the other styles", bu.bar( 0.43, 20, { style: "line", percent: false } ) == "━━━━━━━━╸───────────" && bu.bar( 0.43, 20, { style: "arrow", percent: false } ) == "========>-----------" && bu.bar( 0.43, 20, { style: "dots", percent: false } ) == "●●●●●●●●○○○○○○○○○○○○" && bu.bar( 0.5, 10, { style: "braille", percent: false } ) == "⣿⣿⣿⣿⣿⣀⣀⣀⣀⣀" );
+testkit.check( "bar: ends and a label", bu.bar( 0.5, 10, { ends: "[]", percent: false } ) == "[█████░░░░░]" && bu.bar( 1, 4, { percent: false, label: "done" } ) == "████ done" );
+testkit.check( "bar: ascii without unicode, whatever the style", mk( 80, false, { unicode: false } ).bar( 0.5, 10, { style: "line", percent: false } ) == repeatString( chr( 35 ), 10 ) || mk( 80, false, { unicode: false } ).bar( 0.5, 10, { percent: false } ) contains "-" );
+gb = mk( 80, true ).bar( 0.5, 10, { gradient: true, percent: false } );
+testkit.check( "bar: a gradient colours every cell differently and keeps the width", mk( 80, true ).textWidth( gb ) == 10 && listLen( gb, esc ) > 6 );
+ib0 = bu.indeterminate( 0, 20 ); ib8 = bu.indeterminate( 8, 20 );
+testkit.check( "an indeterminate bar moves a bright stretch back and forth", bu.textWidth( ib0 ) == 20 && ib0 != ib8 && left( ib0, 4 ) == "━━━━" && bu.indeterminate( 0, 20 ) == bu.indeterminate( 32, 20 ) );
+sg = bu.segments( [ { label: "System", value: 42 }, { label: "Home", value: 18 }, { label: "Free", value: 40 } ], 40, { format: function( v ) { return v & " GB"; } } );
+testkit.check( "segments: a stacked bar and a legend with each share", sg.len() == 4 && bu.textWidth( sg[ 1 ] ) == 40 && sg[ 2 ] contains "System  42 GB  42%" && sg[ 4 ] contains "Free  40 GB  40%" );
+testkit.check( "spinners: names, frames, ASCII fallback", bu.spinner().spinners().len() >= 12 && bu.spinner().frame( 0, "accent", "line" ) == "|" && bu.spinner().frame( 1, "accent", "arc" ) == "◠" && mk( 80, false, { unicode: false } ).spinner().frame( 0, "accent", "arc" ) == "|" );
+tt = 0;
+clk = function() { return tt; };
+m = bu.meter( 1000, { clock: clk } ).label( "Downloading" ).unit( "bytes" );
+tt = 1000; m.advance( 250 ); tt = 2000; m.advance( 250 );
+testkit.check( "meter: ratio, rate over the last updates, ETA", m.ratio() == 0.5 && m.rate() == 250 && m.eta() == 2 && m.elapsed() == 2 );
+testkit.check( "meter: the line has spinner, label, bar, percent, sizes, rate and ETA", m.line() == "⠋ Downloading ███████████████░░░░░░░░░░░░░░░ 50% 500 B/1000 B 250 B/s ETA 2s" );
+testkit.check( "meter: a count unit and a template", bu.meter( 10, { clock: clk } ).template( "{label} {pos}/{total} {percent}" ).label( "files" ).advance( 4 ).line() == "files 4/10 40%" && bu.meter( 10, { clock: clk } ).template( "{bar:10}" ).advance( 5 ).line() == "█████░░░░░" );
+testkit.check( "meter: unknown total shows the elapsed time and a moving bar", bu.meter( 0, { clock: clk } ).label( "x" ).line() contains "x" && bu.meter( 0, { clock: clk } ).line() contains "█" );
+testkit.check( "meter: durations", m.duration( 42 ) == "42s" && m.duration( 125 ) == "2m 05s" && m.duration( 4000 ) == "1h 06m" && m.duration( -1 ) == "--" );
+testkit.check( "meter: the line never goes past the terminal width", mk( 40 ).meter( 1000, { clock: clk } ).label( "A long label that wants a lot of room" ).unit( "bytes" ).advance( 500 ).line().len() <= 40 );
+fm = bu.meter( 4, { clock: clk } ).label( "x" );
+fm.advance( 1 ).finish( "done" );
+testkit.check( "meter: finish fills the bar and marks it done", fm.finished() && fm.ratio() == 1 && fm.line() contains "✓" && fm.line() contains "100%" );
+mp = bu.multi( { clock: clk } );
+ma = mp.add( 10, "alpha" ); mb = mp.add( 10, "beta" ).style( "line" );
+ma.advance( 5 ); mb.advance( 8 );
+ml = mp.lines();
+testkit.check( "multi: one line for each meter, labels lined up", ml.len() == 2 && find( "█", ml[ 1 ] ) == find( "━", ml[ 2 ] ) );
+cm = mk( 80, true ).meter( 100, { clock: clk } ).label( "x" ).gradient().advance( 30 );
+testkit.check( "meter: in colour it draws in place (a Live) and keeps escapes out of the width", find( esc, cm.line() ) > 0 && mk( 80, true ).textWidth( cm.line() ) <= 79 );
+pb = bu.printer().bar( 0.5, 10 ).segments( [ { label: "a", value: 1 } ], 10 ).toString();
+testkit.check( "the print helper adds bars and segments", pb contains "█████░░░░░  50%" && pb contains "a  1  100%" );
+
 // ---- Out: one call, two outputs ----
 cli = new bxrig.util.Cli( "1.0" );
 out = cli.scoped( "demo" );

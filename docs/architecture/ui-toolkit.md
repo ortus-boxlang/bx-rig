@@ -75,6 +75,30 @@ The toolkit itself speaks the same language and returns a styled string: `ui.bol
 
 `ui.styled()` builds a reusable style by chaining: `warn = ui.styled().boldYellow(); warn.apply( "careful" )`; `copy()` and `patch()` combine styles.
 
+## Progress bars
+
+`ui.bar( ratio, width, opts )` draws a bar; `ui.meter( total )` tracks a task with a rate and an ETA; `ui.multi()` stacks several meters under one display.
+
+```boxlang
+ui.bar( 0.62, 40, { style: "smooth", gradient: true } )            // █████████████████████████░░░░░░░░░░░░░░░  62%
+ui.indeterminate( tick, 40 )                                        // a bright stretch that moves back and forth
+ui.segments( [ { label: "System", value: 41 }, { label: "Free", value: 59 } ], 60, { format: v => v & " GB" } )
+
+m = ui.meter( 480000000 ).label( "Downloading Java 25" ).unit( "bytes" ).gradient();
+m.advance( chunk ).draw();                                          // ⠋ Downloading Java 25 ███████▌░░░ 31% 148 MB/458 MB 95 MB/s ETA 3s
+m.finish( "Installed" );
+
+mp = ui.multi();  java = mp.add( 480, "Java 25" ).unit( "bytes" );  node = mp.add( 120, "Node 24" ).style( "line" );
+java.advance( 60 );  mp.draw();
+```
+
+- **Styles** (`style`): `smooth` (partial blocks, an eighth of a cell), `line` (thick and thin line), `blocks`, `thin`, `dots`, `braille`, `arrow` (`[====>----]`) and `ascii`. Without unicode every style is ascii.
+- **Colour**: `role` for one colour, or `gradient: true` (accent to accent2) or `gradient: [ "ok", "info" ]`, spread over the whole bar so the colour at a cell never changes as it fills. `track` colours the empty part. `ends: "[]"`, `percent`, `label`.
+- **Meter**: `label`, `message`, `unit( "bytes" )` (sizes and speeds as `1.4 MB` and `3.2 MB/s`), `style`, `gradient`, `color`, `width`, `total` (when the size becomes known), `advance`, `set`, `template`, `draw`, `finish`, and `ratio()`, `rate()` (over the last updates), `eta()`, `elapsed()`. The default template follows the unit and fits the terminal: the bar takes what the other tokens leave. A template uses `{spinner} {label} {bar} {bar:30} {pos} {total} {percent} {rate} {eta} {elapsed} {message} {bytes} {total_bytes}`. A task with no total shows the elapsed time and a moving bar.
+- **In place or in a log**: on a colour terminal `draw()` redraws one line (a `Live`); elsewhere it prints a line each time the percent moves 10 points, so a log stays short. `Multi` keeps a finished meter's line with a check mark.
+- **Spinners**: `ui.spinner().frame( tick, "accent", "arc" )`; sixteen sets (`dots dots2 line arc bounce arrows pulse grow box triangle square hamburger star toggle balloon rain`).
+- **Time**: pass `clock: function() { return ms; }` to `meter()` or `multi()` to test without the real clock.
+
 ## Ideas taken from ratatui
 
 | Call | Result |

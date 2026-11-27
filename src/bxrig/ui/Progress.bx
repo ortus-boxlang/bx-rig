@@ -5,24 +5,70 @@ class Progress {
 		return this;
 	}
 
-	// ---- spinner ----
-	function frames() { return variables.ui.unicode() ? [ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" ] : [ "|", "/", "-", "\\" ]; }
-	// The frame for a tick count (0, 1, 2 ...), coloured.
-	function frame( tick, role = "accent" ) { var f = frames(); return variables.ui.style( f[ ( arguments.tick mod f.len() ) + 1 ], arguments.role ); }
+	/**
+	 * The spinner animations by name, as arrays of frames.
+	 *
+	 * @return A struct: dots, dots2, line, arc, bounce, arrows, pulse, grow, box, triangle, square, hamburger, star, toggle, balloon, rain.
+	 */
+	function spinners() {
+		return {
+			dots: [ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" ],
+			dots2: [ "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" ],
+			line: [ "|", "/", "-", "\\" ],
+			arc: [ "◜", "◠", "◝", "◞", "◡", "◟" ],
+			bounce: [ "⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈" ],
+			arrows: [ "←", "↖", "↑", "↗", "→", "↘", "↓", "↙" ],
+			pulse: [ "█", "▓", "▒", "░", "▒", "▓" ],
+			grow: [ "▁", "▃", "▄", "▅", "▆", "▇", "█", "▇", "▆", "▅", "▄", "▃" ],
+			box: [ "▖", "▘", "▝", "▗" ],
+			triangle: [ "◢", "◣", "◤", "◥" ],
+			square: [ "◰", "◳", "◲", "◱" ],
+			hamburger: [ "☱", "☲", "☴" ],
+			star: [ "✶", "✸", "✹", "✺", "✹", "✷" ],
+			toggle: [ "⊶", "⊷" ],
+			balloon: [ ".", "o", "O", "@", "*" ],
+			rain: [ "⡀", "⡄", "⡆", "⡇", "⣇", "⣧", "⣷", "⣿" ]
+		};
+	}
 
-	// ---- bar ----
-	// A bar for a ratio 0..1 of `width` cells, then the percent. opts: percent (true), role ("accent"), gradient (false), label.
+	/**
+	 * The frames of a spinner (the plain ASCII set when the terminal has no unicode).
+	 *
+	 * @name A spinner name from spinners(); default "dots".
+	 *
+	 * @return An array of frames.
+	 */
+	function frames( name = "dots" ) {
+		if ( !variables.ui.unicode() ) return [ "|", "/", "-", "\\" ];
+		var all = spinners();
+		return structKeyExists( all, arguments.name ) ? all[ arguments.name ] : all.dots;
+	}
+
+	/**
+	 * One frame of a spinner for a tick count, coloured.
+	 *
+	 * @tick A counter that grows by one for each redraw (0, 1, 2 ...).
+	 * @role The colour role.
+	 * @name The spinner name (see spinners()).
+	 *
+	 * @return The frame.
+	 */
+	function frame( tick, role = "accent", name = "dots" ) {
+		var f = frames( arguments.name );
+		return variables.ui.style( f[ ( arguments.tick mod f.len() ) + 1 ], arguments.role );
+	}
+
+	/**
+	 * A bar for a ratio (see Bar.render for the options: style, role, gradient, track, percent, ends, label).
+	 *
+	 * @ratio How far, 0 to 1.
+	 * @width The width in cells.
+	 * @opts The bar options.
+	 *
+	 * @return The bar as one string.
+	 */
 	function bar( ratio, width = 24, opts = {} ) {
-		var r = max( 0, min( 1, arguments.ratio ) );
-		var full = int( round( r * arguments.width ) );
-		var f = variables.ui.glyph( "full" );
-		var e = variables.ui.glyph( "empty" );
-		var filled = repeatString( f, full );
-		var body = ( arguments.opts.gradient ?: false ) ? variables.ui.gradient( filled ) : variables.ui.style( filled, arguments.opts.role ?: "accent" );
-		var out = body & variables.ui.style( repeatString( e, arguments.width - full ), "dim" );
-		if ( arguments.opts.percent ?: true ) out &= " " & right( "  " & int( round( r * 100 ) ), 3 ) & "%";
-		if ( len( arguments.opts.label ?: "" ) ) out &= " " & arguments.opts.label;
-		return out;
+		return new bxrig.ui.Bar( variables.ui ).render( arguments.ratio, arguments.width, arguments.opts );
 	}
 
 	// ---- sparkline ----

@@ -1,0 +1,328 @@
+/**
+ * A progress meter for one task, in the style of indicatif or tqdm: a total, a position, a label, a spinner, a bar, a rate and an ETA, drawn from a
+ * template and redrawn in place. Build it with `ui.meter( total )`; chain the settings; call `advance()` as work is done; `finish()` at the end.
+ *
+ * ```
+ * m = ui.meter( 480 ).label( "Downloading Java 25" ).unit( "bytes" ).style( "smooth" ).gradient();
+ * m.advance( 64 ).draw();   // ...later...   m.finish( "Installed" );
+ * ```
+ *
+ * Template tokens: {spinner} {label} {bar} {bar:30} {pos} {total} {percent} {rate} {eta} {elapsed} {message} {bytes} {total_bytes}.
+ * The default template is chosen from the unit and fits the terminal width: the bar takes what the other tokens leave.
+ * Without a terminal colour (or when it is not redrawn in place) `draw()` prints a line only when the percent changes by 10 points, so a log stays short.
+ * Time comes from `opts.clock` (a function that returns milliseconds) so tests do not depend on the real clock.
+ */
+class Meter {
+	/**
+	 * @ui The Ui toolkit.
+	 * @total The amount of work in the unit (0 or less: unknown, the bar then moves back and forth).
+	 * @opts clock (a function that returns milliseconds; default the system tick count), live (a Live to draw on; default its own), redraw (a function
+	 * to call instead of drawing this meter alone: a Multi uses it to redraw the whole display).
+	 */
+	function init( ui, total = 0, opts = {} ) {
+		variables.ui = arguments.ui;
+		variables.totalWork = arguments.total;
+		variables.pos = 0;
+		variables.labelText = "";
+		variables.msg = "";
+		variables.unitName = "";
+		variables.barStyle = "smooth";
+		variables.role = "accent";
+		variables.grad = "";
+		variables.tpl = "";
+		variables.barWidth = 0;
+		variables.tickCount = 0;
+		variables.done = false;
+		variables.clock = arguments.opts.clock ?: function() { return getTickCount(); };
+		variables.started = variables.clock();
+		variables.ended = 0;
+		variables.live = arguments.opts.live ?: arguments.ui.live();
+		variables.redraw = arguments.opts.redraw ?: "";
+		variables.lastPrinted = -1;
+		variables.samples = [];
+		return this;
+	}
+
+	/**
+	 * Sets the text shown before the bar.
+	 *
+	 * @text The label.
+	 *
+	 * @return This meter, for chaining.
+	 */
+	function label( text ) { variables.labelText = arguments.text; return this; }
+
+	/**
+	 * Sets a short message shown after the bar ("{message}"), for what is happening now.
+	 *
+	 * @text The message.
+	 *
+	 * @return This meter.
+	 */
+	function message( text ) { variables.msg = arguments.text; return this; }
+
+	/**
+	 * Sets the unit of the work: "bytes" shows sizes and speeds as 1.4 MB and 3.2 MB/s; anything else is shown as a plain count.
+	 *
+	 * @name The unit, for example "bytes" or "files".
+	 *
+	 * @return This meter.
+	 */
+	function unit( name ) { variables.unitName = arguments.name; return this; }
+
+	/**
+	 * Sets the bar style (see Bar.styles: smooth, line, blocks, thin, dots, braille, arrow, ascii).
+	 *
+	 * @name The style name.
+	 *
+	 * @return This meter.
+	 */
+	function style( name ) { variables.barStyle = arguments.name; return this; }
+
+	/**
+	 * Colours the bar along a gradient across its width.
+	 *
+	 * @stops The colours (roles or hex); default accent to accent2.
+	 *
+	 * @return This meter.
+	 */
+	function gradient( stops = true ) { variables.grad = arguments.stops; return this; }
+
+	/**
+	 * Sets the colour role of the filled part (when there is no gradient).
+	 *
+	 * @name A colour role or hex.
+	 *
+	 * @return This meter.
+	 */
+	function color( name ) { variables.role = arguments.name; return this; }
+
+	/**
+	 * Sets the layout from a template of tokens.
+	 *
+	 * @text For example "{spinner} {label} {bar:30} {percent} {eta}".
+	 *
+	 * @return This meter.
+	 */
+	function template( text ) { variables.tpl = arguments.text; return this; }
+
+	/**
+	 * Fixes the width of the bar in cells (default: what the terminal leaves after the other tokens).
+	 *
+	 * @cells The width.
+	 *
+	 * @return This meter.
+	 */
+	function width( cells ) { variables.barWidth = arguments.cells; return this; }
+
+	/**
+	 * Changes the total work (for example when a download's size becomes known).
+	 *
+	 * @n The new total.
+	 *
+	 * @return This meter.
+	 */
+	function total( n ) { variables.totalWork = arguments.n; return this; }
+
+	/**
+	 * Adds to the position.
+	 *
+	 * @n How much work was done (default 1).
+	 *
+	 * @return This meter.
+	 */
+	function advance( n = 1 ) { return set( variables.pos + arguments.n ); }
+
+	/**
+	 * Sets the position.
+	 *
+	 * @n The work done so far.
+	 *
+	 * @return This meter.
+	 */
+	function set( n ) {
+		variables.pos = max( 0, variables.totalWork > 0 ? min( arguments.n, variables.totalWork ) : arguments.n );
+		variables.samples.append( { t: variables.clock(), p: variables.pos } );
+		if ( variables.samples.len() > 12 ) variables.samples.deleteAt( 1 );
+		return this;
+	}
+
+	/**
+	 * How far along the work is.
+	 *
+	 * @return 0 to 1; 0 when the total is unknown.
+	 */
+	function ratio() { return variables.totalWork > 0 ? min( 1, variables.pos / variables.totalWork ) : 0; }
+
+	/**
+	 * The seconds since the meter was made (or until it finished).
+	 *
+	 * @return Seconds, with decimals.
+	 */
+	function elapsed() { return ( ( variables.done ? variables.ended : variables.clock() ) - variables.started ) / 1000; }
+
+	/**
+	 * The speed in units per second over the last few updates (the whole run when there are fewer).
+	 *
+	 * @return Units per second; 0 when there is nothing to measure yet.
+	 */
+	function rate() {
+		var s = variables.samples;
+		if ( s.len() < 2 ) { var e = elapsed(); return e > 0 ? variables.pos / e : 0; }
+		var dt = ( s[ s.len() ].t - s[ 1 ].t ) / 1000;
+		return dt > 0 ? ( s[ s.len() ].p - s[ 1 ].p ) / dt : 0;
+	}
+
+	/**
+	 * The seconds left at the current speed.
+	 *
+	 * @return Seconds; -1 when it cannot be known (no total, no speed yet).
+	 */
+	function eta() {
+		var r = rate();
+		if ( variables.totalWork <= 0 || r <= 0 ) return -1;
+		return max( 0, ( variables.totalWork - variables.pos ) / r );
+	}
+
+	/**
+	 * A time as text: "42s", "3m 05s", "1h 02m".
+	 *
+	 * @seconds The seconds; negative gives "--".
+	 *
+	 * @return The text.
+	 */
+	function duration( seconds ) {
+		var s = arguments.seconds;
+		if ( s < 0 ) return "--";
+		s = int( round( s ) );
+		if ( s < 60 ) return s & "s";
+		if ( s < 3600 ) return int( s / 60 ) & "m " & right( "0" & ( s mod 60 ), 2 ) & "s";
+		return int( s / 3600 ) & "h " & right( "0" & int( ( s mod 3600 ) / 60 ), 2 ) & "m";
+	}
+
+	/**
+	 * An amount in the meter's unit: sizes for "bytes", a count otherwise.
+	 *
+	 * @n The amount.
+	 *
+	 * @return The text.
+	 */
+	function amount( n ) {
+		return variables.unitName == "bytes" ? new bxrig.util.Fmt().bytes( arguments.n ) : toString( int( arguments.n ) );
+	}
+
+	/**
+	 * The template to use when none was set: it depends on the unit and on whether the total is known.
+	 *
+	 * @return The template text.
+	 */
+	function defaultTemplate() {
+		if ( variables.totalWork <= 0 ) return "{spinner} {label} {bar} {elapsed}";
+		if ( variables.unitName == "bytes" ) return "{spinner} {label} {bar} {percent} {bytes}/{total_bytes} {rate} ETA {eta}";
+		return "{spinner} {label} {bar} {percent} {pos}/{total} ETA {eta}";
+	}
+
+	/**
+	 * The text of one token.
+	 *
+	 * @name The token name, without braces.
+	 *
+	 * @return The text ("" for a name that is not known).
+	 */
+	function token( name ) {
+		var n = arguments.name;
+		var done = variables.done;
+		if ( n == "spinner" ) return done ? variables.ui.style( variables.ui.glyph( "ok" ), "ok" ) : variables.ui.spinner().frame( variables.tickCount );
+		if ( n == "label" ) return variables.labelText;
+		if ( n == "pos" ) return amount( variables.pos );
+		if ( n == "total" ) return amount( variables.totalWork );
+		if ( n == "bytes" ) return new bxrig.util.Fmt().bytes( variables.pos );
+		if ( n == "total_bytes" ) return new bxrig.util.Fmt().bytes( variables.totalWork );
+		if ( n == "percent" ) return right( "  " & int( round( ratio() * 100 ) ), 3 ) & "%";
+		if ( n == "rate" ) { var r = rate(); return r > 0 ? ( variables.unitName == "bytes" ? new bxrig.util.Fmt().bytes( r ) & "/s" : numberFormat( r, "0.#" ) & "/s" ) : ""; }
+		if ( n == "eta" ) return done ? "0s" : duration( eta() );
+		if ( n == "elapsed" ) return duration( elapsed() );
+		if ( n == "message" ) return variables.msg;
+		return "";
+	}
+
+	/**
+	 * One line for the current state, fitted to the terminal width.
+	 *
+	 * @return The line.
+	 */
+	function line() {
+		var tpl = len( variables.tpl ) ? variables.tpl : defaultTemplate();
+		var avail = variables.ui.width() - 1;
+		var barOpts = { style: variables.barStyle, role: variables.role, percent: false };
+		if ( variables.grad != "" ) barOpts.gradient = variables.grad;
+		var bar = variables.ui.ansi();
+		// the text without the bar decides how wide the bar can be
+		var rest = reReplace( tpl, "\{bar(:[0-9]+)?\}", "", "all" );
+		var text = renderTokens( rest );
+		var want = variables.barWidth > 0 ? variables.barWidth : max( 8, min( 40, avail - bar.width( text ) - 2 ) );
+		var m = reFind( "\{bar:([0-9]+)\}", tpl, 1, true );
+		if ( m.pos[ 1 ] ) want = int( val( mid( tpl, m.pos[ 2 ], m.len[ 2 ] ) ) );
+		var barText = variables.totalWork > 0 || variables.done
+		? variables.ui.bar( variables.done ? 1 : ratio(), want, barOpts )
+		: new bxrig.ui.Bar( variables.ui ).indeterminate( variables.tickCount, want, barOpts );
+		var out = renderTokens( reReplace( tpl, "\{bar(:[0-9]+)?\}", chr( 1 ), "all" ) );
+		out = replace( out, chr( 1 ), barText, "all" );
+		out = reReplace( out, "[ \t]{2,}", " ", "all" );
+		return trim( bar.width( out ) > avail ? bar.truncate( out, avail ) : out );
+	}
+
+	/**
+	 * Replaces the tokens of a template (except the bar) with their text.
+	 *
+	 * @tpl The template.
+	 *
+	 * @return The text.
+	 */
+	function renderTokens( tpl ) {
+		var out = arguments.tpl;
+		for ( var t in [ "spinner", "label", "pos", "total_bytes", "total", "bytes", "percent", "rate", "eta", "elapsed", "message" ] ) out = replace( out, "{" & t & "}", token( t ), "all" );
+		return out;
+	}
+
+	/**
+	 * Draws the meter in place on a terminal; elsewhere prints a line only when the percent has moved by 10 points.
+	 *
+	 * @return This meter.
+	 */
+	function draw() {
+		variables.tickCount++;
+		if ( !isSimpleValue( variables.redraw ) ) variables.redraw();
+		else if ( variables.ui.color() ) variables.live.update( [ line() ] );
+		else {
+			var step = int( ratio() * 10 );
+			if ( step != variables.lastPrinted || variables.done ) { variables.lastPrinted = step; println( line() ); }
+		}
+		return this;
+	}
+
+	/**
+	 * Marks the work done, shows a final line and leaves it on screen.
+	 *
+	 * @msg A closing message to show instead of the bar's ETA, for example "Installed Java 25".
+	 *
+	 * @return This meter.
+	 */
+	function finish( msg = "" ) {
+		if ( variables.totalWork > 0 ) variables.pos = variables.totalWork;
+		variables.done = true;
+		variables.ended = variables.clock();
+		if ( len( arguments.msg ) ) variables.msg = arguments.msg;
+		if ( !isSimpleValue( variables.redraw ) ) variables.redraw();
+		else if ( variables.ui.color() ) { variables.live.update( [ line() ] ); variables.live.finish(); }
+		else println( line() );
+		return this;
+	}
+
+	/**
+	 * Whether the work is finished.
+	 *
+	 * @return True after finish().
+	 */
+	function finished() { return variables.done; }
+}

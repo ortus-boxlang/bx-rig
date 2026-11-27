@@ -1,0 +1,88 @@
+/**
+ * Several progress meters drawn together, stacked, each redrawn in place under one display (after indicatif's MultiProgress). Build it with
+ * `ui.multi()`, add a meter for each task, advance them as the work goes, and call `draw()` after each change.
+ *
+ * ```
+ * mp = ui.multi();
+ * java = mp.add( 480, "Java 25" ).unit( "bytes" );
+ * node = mp.add( 120, "Node 24" ).unit( "bytes" ).style( "line" );
+ * java.advance( 60 ); mp.draw();
+ * ```
+ *
+ * A finished meter keeps its line (with a check mark) so the list shows what is done. Without a terminal colour nothing is redrawn: each meter prints
+ * its own line when it finishes.
+ */
+class Multi {
+	/**
+	 * @ui The Ui toolkit.
+	 * @opts clock (a function that returns milliseconds; passed on to every meter).
+	 */
+	function init( ui, opts = {} ) {
+		variables.ui = arguments.ui;
+		variables.opts = arguments.opts;
+		variables.meters = [];
+		variables.live = arguments.ui.live();
+		return this;
+	}
+
+	/**
+	 * Adds a meter to the display.
+	 *
+	 * @total The amount of work (0 or less: unknown).
+	 * @label The text before the bar.
+	 *
+	 * @return The new Meter, to configure and advance. Its own draw() draws the whole display.
+	 */
+	function add( total, label = "" ) {
+		var m = new bxrig.ui.Meter( variables.ui, arguments.total, { clock: variables.opts.clock ?: function() { return getTickCount(); }, live: variables.live, redraw: function() { draw(); } } );
+		m.label( arguments.label );
+		variables.meters.append( m );
+		return m;
+	}
+
+	/**
+	 * The meters, in the order they were added.
+	 *
+	 * @return An array of Meter.
+	 */
+	function meters() { return variables.meters; }
+
+	/**
+	 * The lines of the display: one for each meter, padded so the labels line up.
+	 *
+	 * @return An array of lines.
+	 */
+	function lines() {
+		var out = [];
+		var w = 0;
+		for ( var m in variables.meters ) w = max( w, variables.ui.textWidth( m.token( "label" ) ) );
+		for ( var m2 in variables.meters ) {
+			// padded with no-break spaces: the meter squeezes runs of ordinary spaces
+			m2.label( replace( variables.ui.align( m2.token( "label" ), w ), " ", chr( 160 ), "all" ) );
+			out.append( m2.line() );
+		}
+		return out;
+	}
+
+	/**
+	 * Draws all the meters in place (or, without a terminal colour, prints the lines of the meters that just finished).
+	 *
+	 * @return This display.
+	 */
+	function draw() {
+		if ( variables.ui.color() ) variables.live.update( lines() );
+		else for ( var m in variables.meters ) if ( m.finished() && !( m.printed ?: false ) ) { println( m.line() ); m.printed = true; }
+		return this;
+	}
+
+	/**
+	 * Ends the display and leaves the last lines on screen.
+	 *
+	 * @return This display.
+	 */
+	function finish() {
+		for ( var m in variables.meters ) if ( !m.finished() ) m.finish();
+		if ( variables.ui.color() ) { variables.live.update( lines() ); variables.live.finish(); }
+		return this;
+	}
+}
