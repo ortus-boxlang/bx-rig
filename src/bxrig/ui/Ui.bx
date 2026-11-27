@@ -121,6 +121,10 @@ class Ui {
 	function tabs( titles, selected = 1, opts = {} ) { return new bxrig.ui.Progress( this ).tabs( arguments.titles, arguments.selected, arguments.opts ); }
 	function styled() { return new bxrig.ui.Style( this ); }
 	function spinner() { return new bxrig.ui.Progress( this ); }
+	function indeterminate( tick, width = 24, opts = {} ) { return new bxrig.ui.Bar( this ).indeterminate( arguments.tick, arguments.width, arguments.opts ); }
+	function segments( parts, width = 40, opts = {} ) { return new bxrig.ui.Bar( this ).segments( arguments.parts, arguments.width, arguments.opts ); }
+	function meter( total = 0, opts = {} ) { return new bxrig.ui.Meter( this, arguments.total, arguments.opts ); }
+	function multi( opts = {} ) { return new bxrig.ui.Multi( this, arguments.opts ); }
 	function steps( items, opts = {} ) { return new bxrig.ui.Progress( this ).steps( arguments.items, arguments.opts ); }
 	function live() { return new bxrig.ui.Live( this ); }
 }
