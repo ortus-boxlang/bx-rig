@@ -143,7 +143,7 @@ testkit.check( "the app grid choices are Launchpad and Terminal-style", gridPage
 themeValues = themePage.questions[ 1 ].options.map( function( o ) { return o.value; } );
 bundled = new bxrig.ThemeData().names();
 testkit.check( "the Theme page lists every theme in themes/ (" & bundled.len() & ")", themeValues.len() == bundled.len() && bundled.filter( function( n ) { return arrayFind( themeValues, n ) > 0; } ).len() == bundled.len() );
-testkit.check( "the Theme page asks no icon set", themePage.questions.len() == 1 );
+testkit.check( "the Theme page asks no icon set: the theme, then the optional wallpaper packs", themePage.questions.len() == 2 && themePage.questions[ 1 ].id == "theme_name" && themePage.questions[ 2 ].id == "wallpaper_packs" );
 
 a = started(); a.gotoPage( 3 );
 testkit.check( "the page opens on the chosen option (Standard), so Enter keeps it", a.rows()[ a.focus() ].kind == "opt" && a.rows()[ a.focus() ].i == 2 );
