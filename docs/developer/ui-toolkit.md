@@ -1,8 +1,23 @@
 ---
 title: The terminal UI toolkit
+order: 80
+summary: Build tables, panels, badges and progress bars for command output with one small BoxLang toolkit.
 ---
 
 # The terminal UI toolkit (`bxrig.ui`)
+
+New to it? When your command prints something for people, do not join strings by hand. Ask the toolkit for a table, a panel or a status line and print the result. It handles color, width and plain output for you, and the same call gives data for `--json`.
+
+This diagram shows the path from your data to the screen or to a pipe.
+
+```mermaid
+flowchart LR
+  D["Your rows or values"] --> U["bxrig.ui helper"]
+  U --> T{"Terminal?"}
+  T -->|"yes"| C["Color, unicode, width"]
+  T -->|"piped or NO_COLOR"| P["Plain text"]
+  D --> O["Out: --json data"]
+```
 
 Commands that print (not the full-screen TUI) build their output with `bxrig.ui`. One call gives tables, panels, badges, key-value lists, trees, columns, status lines, progress bars, sparklines, bar charts, step checklists, gradients and hyperlinks. Every helper returns text or an array of lines; nothing prints until you call `print`.
 

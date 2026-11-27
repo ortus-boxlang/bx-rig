@@ -99,7 +99,7 @@ flowchart LR
 
    Wallpapers are not packed into the binary. `bxrig.Wallpapers` finds a copy, checks its SHA-256 and copies it to `~/Pictures/BxRig/sunset.jpg`, or downloads it from the release site when missing. A theme without a wallpaper leaves the user's own.
 
-6. Update the two counts in `tests/theme-test.sh` (the `length == 24` checks and the `22` file counts only change if you add generated files) and, if your theme is light, the list of light names.
+6. Update `tests/theme-test.sh`: the theme count (`length == 24`, twice in the `list` check) goes up by one, and a light theme must be added to the list of light names. The `22` generated files per theme do not change.
 
 ## See it working
 
