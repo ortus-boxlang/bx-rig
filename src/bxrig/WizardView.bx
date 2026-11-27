@@ -230,25 +230,32 @@ class WizardView {
 	}
 
 	/**
-	 * A small BxRig laptop (the About logo, sampled down to 13 columns and 4 rows), drawn when the sidebar has room.
-	 * @x Column of the left edge.
+	 * A small BxRig laptop (the About logo sampled down to 20 columns and 7 rows) with BX on its screen, centred on a column.
+	 * @cx The column to centre on.
 	 * @y Row of the top edge.
+	 * @phase The animation phase of the BX letters.
 	 * @bg Background colour under it.
 	 */
-	function miniLaptop( x, y, bg ) {
+	function miniLaptop( cx, y, phase, bg ) {
 		var logo = new bxrig.AboutLogo();
 		var pal = logo.palette( {} );
-		for ( var r = 0; r < 4; r++ ) {
-			for ( var c = 0; c < 13; c++ ) {
-				var px = 1 + c * 3;
-				var top = logo.pixelColour( pal, px, 1 + r * 7 );
-				var low = logo.pixelColour( pal, px, 1 + r * 7 + 3 );
+		var left = arguments.cx - 10;
+		var tall = 29;
+		for ( var r = 0; r < 7; r++ ) {
+			for ( var c = 0; c < 20; c++ ) {
+				var px = c * 2 + 1;
+				var y1 = 1 + r * 4;
+				var y2 = y1 + 2;
+				var top = y1 < tall ? logo.pixelColour( pal, px, y1 ) : "";
+				var low = y2 < tall ? logo.pixelColour( pal, px, y2 ) : "";
 				if ( !len( top ) && !len( low ) ) continue;
-				if ( len( top ) && len( low ) ) variables.kit.put( arguments.x + c, arguments.y + r, "▀", variables.kit.c( top ), variables.kit.c( low ) );
-				else if ( len( top ) ) variables.kit.put( arguments.x + c, arguments.y + r, "▀", variables.kit.c( top ), arguments.bg );
-				else variables.kit.put( arguments.x + c, arguments.y + r, "▄", variables.kit.c( low ), arguments.bg );
+				if ( len( top ) && len( low ) ) variables.kit.put( left + c, arguments.y + r, "▀", variables.kit.c( top ), variables.kit.c( low ) );
+				else if ( len( top ) ) variables.kit.put( left + c, arguments.y + r, "▀", variables.kit.c( top ), arguments.bg );
+				else variables.kit.put( left + c, arguments.y + r, "▄", variables.kit.c( low ), arguments.bg );
 			}
 		}
+		// BX on the screen, in the brand gradient
+		variables.kit.gtext( left + 9, arguments.y + 2, "BX", true, arguments.phase, pal.screen );
 	}
 
 	function sidebar( app, x, y, w, h, phase ) {
@@ -256,8 +263,8 @@ class WizardView {
 		var cx = arguments.x + int( arguments.w / 2 );
 		poweredBy( cx, arguments.y + arguments.h - 4, arguments.phase, variables.MANTLE, variables.OVERLAY, variables.SURFACE1 );
 		var vis = app.visiblePages();
-		// the laptop sits bottom left, above Powered by BoxLang, when the step list leaves room for it
-		if ( vis.len() + 3 < arguments.h - 11 && arguments.w >= 17 ) miniLaptop( arguments.x + 3, arguments.y + arguments.h - 9, variables.MANTLE );
+		// the laptop sits centred above Powered by BoxLang when the step list leaves room for it
+		if ( vis.len() + 3 < arguments.h - 15 && arguments.w >= 24 ) miniLaptop( cx, arguments.y + arguments.h - 13, arguments.phase, variables.MANTLE );
 		var n = app.pageCount();
 		var current = app.screen() == "page" ? app.pageIndex() : 0;
 		var steps = [];
