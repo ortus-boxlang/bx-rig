@@ -2,7 +2,7 @@
 //   v            the log under the bar: every line the steps print, live
 //   Up Down PageUp PageDown Home End   scroll the log (End or scrolling to the bottom follows it again)
 //   Ctrl+C       asks to stop; y stops (the running step is killed, the rest is not run), anything else goes on
-//   when it is over:  Enter or q leaves,  r runs the failed steps again,  v the log
+//   when it is over:  Enter or q leaves,  r runs the failed steps again,  v the log,  l logs out or b reboots (after y) when the steps made it worth it
 // outcome() is "running" until the person leaves after the run has finished.
 class InstallApp {
 	function init( run, opts = {} ) {
@@ -24,6 +24,10 @@ class InstallApp {
 		variables.maxTries = 3;
 		variables.cancelled = false;
 		variables.user = arguments.opts.user ?: "";
+		// what the finish screen offers: log out or reboot (see InitFinish.advice); action is what was chosen and confirmed
+		variables.adv = { relogin: false, reboot: false, action: "" };
+		variables.advGiven = false;
+		variables.asking = "";
 		return this;
 	}
 
@@ -38,6 +42,20 @@ class InstallApp {
 	function verbose() { return variables.verbose; }
 	function scroll() { return variables.scroll; }
 	function confirming() { return variables.confirming; }
+	// The finish screen's offer: { relogin, reboot, action }. Worked out once the run is over, from the steps that were done.
+	function advice() {
+		if ( !variables.advGiven && variables.run.finished() ) {
+			variables.advGiven = true;
+			var ids = [];
+			for ( var d in variables.run.result().done ) ids.append( d.id );
+			var a = new bxrig.InitFinish().advice( ids );
+			variables.adv.relogin = a.relogin;
+			variables.adv.reboot = a.reboot;
+		}
+		return variables.adv;
+	}
+	// "logout" or "reboot" while its question is on the screen, "" otherwise.
+	function asking() { return variables.asking; }
 
 	// Every frame: start the run, let it look at its steps, and keep sudo's ticket fresh so a long step never asks for the password on the screen.
 	function onTick( tick ) {
@@ -76,6 +94,11 @@ class InstallApp {
 	function onKey( key ) {
 		var k = arguments.key;
 		if ( variables.phase == "password" ) return passwordKey( k );
+		if ( len( variables.asking ) ) {
+			if ( k == "y" || k == "Y" ) { variables.adv.action = variables.asking; variables.outcome = "done"; }
+			variables.asking = "";
+			return this;
+		}
 		if ( variables.confirming ) {
 			if ( k == "y" || k == "Y" ) variables.run.stop();
 			variables.confirming = false;
@@ -90,6 +113,9 @@ class InstallApp {
 		if ( variables.run.finished() ) {
 			if ( k == "Enter" || k == "q" || k == "Escape" ) { variables.outcome = "done"; return this; }
 			if ( k == "r" ) { variables.run.retry(); return this; }
+			// log out when the session, groups or keys changed; reboot only when the boot, the login screen or a driver did
+			if ( k == "l" && advice().relogin && !advice().reboot ) { variables.asking = "logout"; return this; }
+			if ( k == "b" && advice().reboot ) { variables.asking = "reboot"; return this; }
 		}
 		if ( variables.verbose ) {
 			switch ( k ) {

@@ -35,12 +35,40 @@ When you press Enter on the review, the wizard stays on screen and installs. It 
 - **It says when it is quiet.** A download or a package build can print nothing for minutes. After 8 seconds without output the line says `no output for 42 s` and what the step is running right now (for example `pacman -S ...`, `makepkg`, `curl`), so a long step does not look stuck. Package installs, AUR builds and install scripts print as they go, so you see them in the log (`v`) while they run; a step that waits for a password shows as `sudo`.
 - **`v` opens the log** under the bar: every line every step prints, live, with the step it came from. Arrows, PgUp and PgDn scroll it; `End` follows the newest line again; `v` closes it.
 - **Ctrl+C asks first.** `y` stops: the running step is killed and the rest is not run.
-- **When it ends** the screen shows what worked and what failed, with the exit code and the last line of each failure. `r` runs the failed steps again; Enter leaves.
+- **When it ends** the screen shows what worked and what failed, with the exit code and the last line of each failure, and where the log and your answers are saved. `r` runs the failed steps again; Enter leaves. When the steps changed your session, groups or keys, `l` offers to log out (after a `y`); when they changed the boot screen, the login screen or a driver, `b` offers to reboot instead. Nothing happens without the `y`.
 - **Your password once, on the screen.** The steps run in the background and the screen owns the terminal, so a sudo prompt could neither be seen nor answered. When sudo would ask for a password, the screen asks for it first (typed hidden, three tries, Esc cancels before anything runs). The steps then run with no terminal and a small helper that gives `sudo` the password. It lives in one file only you can read (mode 600, in a private folder under `$XDG_RUNTIME_DIR`, which is memory, not disk), is never on a command line or in the log, and is deleted when the install ends. If you have no `$XDG_RUNTIME_DIR` or no `setsid`, BxRig asks on the normal terminal before the screen starts instead, and relies on sudo's ticket. With a valid sudo ticket or `NOPASSWD`, nothing is asked.
 
 A step that fails does not stop the others (a missing package should not cost you your keys and defaults): the plan goes on and the failure is shown at the end. Re-running the wizard repeats only what is still missing.
 
 Some things are **skipped, not failed**, and the end says why and how to do them later: the LazyVim starter when `~/.config/nvim` already exists (your config is left alone), Podman's Docker compatibility when the `docker` package is installed (it conflicts with `podman-docker`: remove Docker first, or choose Docker as the engine), an app that conflicts with a package you have (timeshift next to CachyOS's `cachyos-snapper-support`), and an app your distribution's catalog does not offer. `bxrig init --dry-run` prints the first two as notes before anything runs.
+
+### What it says when it ends
+
+After you leave the screen the terminal keeps a summary:
+
+```
+Done: 29 steps
+
+Already in place (nothing to do):
+  editor-lazyvim  /home/you/.config/nvim already exists, so it was left alone. ...
+                  later: bxrig editor lazyvim --yes
+Needs your decision:
+  docker-compat   the docker package is installed and conflicts with podman-docker. ...
+                  later: bxrig containers docker-compat --yes
+Skipped:
+  session         SDDM's state folder /var/lib/sddm/ does not exist, so SDDM is not your login manager here. ...
+
+Saved:
+  Your answers  ~/.config/bxrig/answers.json   (run them again: bxrig reinstall)
+  The log       ~/.local/state/bxrig/logs/init-20261127-160037.log
+
+Next:
+  1. Log out and back in, and pick Hyprland at the login screen: ... Log out now with: bxrig system logout --yes
+  2. Open a new terminal to get the new shell and prompt.
+  3. See what is set up on this machine: bxrig status        Change anything later: bxrig menu
+```
+
+Something that is already there (Boxy, a Neovim config of yours) is **in place**, not an error. A conflict (the `docker` package against Podman's Docker compatibility) **needs your decision**. Anything else that could not run here is **skipped**, each with the command to do it later. Your answers are saved in `~/.config/bxrig/answers.json`; run them again with `bxrig reinstall`, or change them and import the file with `bxrig init --from=FILE`.
 
 ### The log file
 
