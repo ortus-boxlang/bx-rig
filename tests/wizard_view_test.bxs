@@ -14,7 +14,7 @@ testkit.check( "welcome: the BXRIG wordmark in DOS Rebel (the brand font), tagli
 app.onKey( "Enter" );
 s = shot();
 testkit.check( "page: title, options, selected marker", find( "Desktop", s ) > 0 && find( "Hyprland + Noctalia", s ) > 0 && find( "●  Hyprland + Noctalia (recommended)", s ) > 0 );
-testkit.check( "page: the sidebar lists the steps and Powered by BoxLang", find( "Steps", s ) > 0 && find( "Review", s ) > 0 && find( "Powered by BoxLang", s ) > 0 && find( "step 1 of 17", s ) > 0 );
+testkit.check( "page: the sidebar lists the steps and Powered by BoxLang", find( "Steps", s ) > 0 && find( "Review", s ) > 0 && find( "Powered by BoxLang", s ) > 0 && find( "step 1 of 16", s ) > 0 );
 testkit.check( "page: footer key hints", find( "ctrl-c", s ) > 0 && find( "space", s ) > 0 );
 testkit.check( "page: the focused option shows its description", find( "A fast tiling desktop", s ) > 0 );
 testkit.check( "page: number field shows its range", find( "1 to 10", s ) > 0 );
@@ -57,16 +57,16 @@ testkit.check( "a new screen fades in (first frame is dimmer, same text)", find(
 spec2 = new bxrig.AppPages().inject( jsonDeserialize( new bxrig.WizardData().demoPages() ), new bxrig.Catalog().load() );
 app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" );
 t = ""; view.paint( app, 100, 120, 36 ); t = tui.render_to_string( 120, 36 );
-testkit.check( "Basic mode: 16 pages and the review, no app group pages in the sidebar", find( "step 1 of 17", t ) > 0 && find( "Everyday", t ) == 0 );
+testkit.check( "Basic mode: 15 pages and the review, no app group pages in the sidebar", find( "step 1 of 16", t ) > 0 && find( "Everyday", t ) == 0 );
 app = new bxrig.WizardApp( spec2, { app_mode: "custom" } ); app.onKey( "Enter" );
 view.paint( app, 100, 120, 36 ); t = tui.render_to_string( 120, 36 );
-testkit.check( "Customize mode: 27 pages and the review, with the group pages in the sidebar", find( "step 1 of 28", t ) > 0 && find( "Everyday", t ) > 0 && find( "Development", t ) > 0 );
+testkit.check( "Customize mode: 26 pages and the review, with the group pages in the sidebar", find( "step 1 of 27", t ) > 0 && find( "Everyday", t ) > 0 && find( "Development", t ) > 0 );
 app.gotoPage( 14 );
 view.paint( app, 100, 120, 36 ); t = tui.render_to_string( 120, 36 );
 testkit.check( "a generated page lists a category with ticked defaults and descriptions", find( "Development", t ) > 0 && find( "◆", t ) > 0 && find( "◇", t ) > 0 && find( "▸", t ) > 0 );
 
 // ---- a long help text wraps under its question (it used to run past the panel edge) ----
-app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" ); for ( i = 1; i <= 13; i++ ) app.onKey( "Tab" );
+app = new bxrig.WizardApp( spec2 ); app.onKey( "Enter" ); for ( i = 1; i <= 12; i++ ) app.onKey( "Tab" );
 // the AI page lists every agent twice (to tick, and the default), so the keys question is far down: move to it
 for ( i = 1; i <= 33; i++ ) app.onKey( "Down" );
 view.paint( app, 100, 100, 44 ); t = tui.render_to_string( 100, 44 );
@@ -84,7 +84,7 @@ spec3 = jsonDeserialize( new bxrig.WizardData().demoPages() );
 app = new bxrig.WizardApp( spec3 ); app.onKey( "Enter" ); app.gotoPage( 3 );
 t = pageShot( app );
 testkit.check( "bar page: the three layouts, each with its bar", find( "Minimal", t ) > 0 && find( "Standard", t ) > 0 && find( "Dense", t ) > 0 && find( "recommended, default", t ) > 0 && find( "Nov 5 - 04:00", t ) > 0 && find( "☁ 11°", t ) > 0 );
-testkit.check( "bar page: the dock line with the grid button first", find( "Dock", t ) > 0 && find( "▦", t ) > 0 && find( "step 3 of 17", t ) > 0 );
+testkit.check( "bar page: the dock line with the grid button first", find( "Dock", t ) > 0 && find( "▦", t ) > 0 && find( "step 3 of 16", t ) > 0 );
 testkit.check( "bar page: the focused option's description is in the detail strip", find( "Standard: the recommended bar", t ) > 0 && find( "bxrig appearance bar layout standard", t ) > 0 );
 app.onKey( "Down" );
 t = pageShot( app );
@@ -103,9 +103,9 @@ testkit.check( "grid page: still readable at 100 x 30, with the previews (one ro
 n92 = pageShot( app, 92, 30 );
 testkit.check( "grid page: and at 92 x 30", find( "Search apps...", n92 ) > 0 );
 head76 = pageShot( app, 76, 24 );
-testkit.check( "76 columns: the header notice and the step counter no longer overlap", find( "step 4 of 17", head76 ) > 0 && find( "Powered by Bo", head76 ) == 0 );
+testkit.check( "76 columns: the header notice and the step counter no longer overlap", find( "step 4 of 16", head76 ) > 0 && find( "Powered by Bo", head76 ) == 0 );
 head90 = pageShot( app, 90, 30 );
-testkit.check( "90 columns: Powered by BoxLang fits beside the progress", find( "Powered by BoxLang", head90 ) > 0 && find( "step 4 of 17", head90 ) > 0 );
+testkit.check( "90 columns: Powered by BoxLang fits beside the progress", find( "Powered by BoxLang", head90 ) > 0 && find( "step 4 of 16", head90 ) > 0 );
 tiny = pageShot( app, 76, 24 );
 testkit.check( "grid page: and at the smallest size, with no preview cut mid-way", find( "App grid style", tiny ) > 0 && find( "Terminal-style grid", tiny ) > 0 );
 

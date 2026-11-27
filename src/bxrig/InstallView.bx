@@ -95,18 +95,28 @@ class InstallView {
 		var x = 2;
 		var w = arguments.width - 4;
 		// how tall the top panel is: the list of steps when the log is closed, a one-line strip when it is open
+		// the summary page: once the run is over (and the log and the step list are closed), what happened and what to do next
+		var summaryOn = st.finished && !verbose && !arguments.app.details();
+		var rows = summaryOn ? summaryRows( arguments.app, st, run, w - 6 ) : [];
 		var listRows = verbose ? 1 : min( st.steps.len(), max( 3, arguments.height - top - 14 ) );
-		var failedRows = st.finished && counts.failed > 0 && !verbose ? min( 5, counts.failed * 2 ) + 1 : 0;
+		var failedRows = st.finished && counts.failed > 0 && !verbose && !summaryOn ? min( 5, counts.failed * 2 ) + 1 : 0;
 		var ph = 9 + listRows + failedRows + ( failedRows ? 1 : 0 );
-		variables.kit.panel( x, top, w, ph, st.finished ? "Finished" : "Installing", true, phase );
+		if ( summaryOn ) ph = min( arguments.height - top - 2, 8 + rows.len() );
+		variables.kit.panel( x, top, w, ph, summaryOn ? "Summary" : ( st.finished ? "Finished" : "Installing" ), true, phase );
 		var ix = x + 3; var iw = w - 6; var iy = top + 1;
 		header( st, counts, ix, iy, iw );
 		bar( st, ix, iy + 2, iw );
 		status( st, counts, ix, iy + 3, iw );
-		running( st, run, arguments.tick, ix, iy + 5, iw );
-		if ( verbose ) strip( st, arguments.tick, ix, iy + 7, iw );
-		else steplist( st, arguments.tick, ix, iy + 7, iw, listRows );
-		if ( failedRows ) failures( st, run, ix, iy + 8 + listRows, iw, failedRows );
+		if ( summaryOn ) {
+			var room = ph - 6;
+			for ( var r = 1; r <= min( rows.len(), room ); r++ ) variables.kit.put( ix, iy + 4 + r, variables.kit.trunc( rows[ r ].text, iw ), rows[ r ].color, variables.MANTLE, rows[ r ].bold );
+			if ( rows.len() > room ) variables.kit.put( ix, iy + 4 + room, "…  d shows everything, v the log", variables.OVERLAY, variables.MANTLE );
+		} else {
+			running( st, run, arguments.tick, ix, iy + 5, iw );
+			if ( verbose ) strip( st, arguments.tick, ix, iy + 7, iw );
+			else steplist( st, arguments.tick, ix, iy + 7, iw, listRows );
+			if ( failedRows ) failures( st, run, ix, iy + 8 + listRows, iw, failedRows );
+		}
 		var by = top + ph;
 		if ( verbose ) logPane( arguments.app, st, x, by, w, arguments.height - by - 2 );
 		keys( arguments.app, st, arguments.width, arguments.height );
@@ -143,6 +153,60 @@ class InstallView {
 		var cx = variables.kit.put( arguments.x, arguments.y, t, variables.SUB, variables.MANTLE );
 		if ( arguments.counts.failed ) cx = variables.kit.put( cx, arguments.y, "   " & arguments.counts.failed & " failed", variables.RED, variables.MANTLE, true );
 		if ( arguments.counts.skipped ) cx = variables.kit.put( cx, arguments.y, "   " & arguments.counts.skipped & " skipped", variables.YELLOW, variables.MANTLE );
+	}
+
+	/**
+	 * The lines of the summary page: what failed, what to do next, what needs a decision, what was skipped (with the command to do it
+	 * later) and where the answers and the log are saved.
+	 * @app The install app.
+	 * @st The run state.
+	 * @run The run.
+	 * @w The width of the text area.
+	 * @return Array of { text, color, bold }.
+	 */
+	function summaryRows( app, st, run, w ) {
+		var rows = [];
+		var tw = arguments.w;
+		var sum = arguments.app.summary();
+		var heading = function( t ) { rows.append( { text: "", color: variables.TEXT, bold: false } ); rows.append( { text: ucase( t ), color: variables.CYAN, bold: true } ); };
+		var wrapped = function( prefix, text, color ) {
+			var first = true;
+			for ( var ln in variables.kit.wrap( text, max( 20, tw - len( prefix ) ) ) ) {
+				rows.append( { text: ( first ? prefix : repeatString( " ", len( prefix ) ) ) & ln, color: color, bold: false } );
+				first = false;
+			}
+		};
+		var failed = arguments.st.steps.filter( function( s ) { return s.state == "failed"; } );
+		if ( failed.len() ) {
+			heading( "What failed" );
+			for ( var f in failed ) {
+				rows.append( { text: "✗ " & f.title & " (exit " & f.exit & ")", color: variables.RED, bold: true } );
+				var last = listToArray( arguments.run.lastLines( f.n, 1 ), chr( 10 ), true );
+				if ( last.len() && len( trim( last[ 1 ] ) ) ) rows.append( { text: "    " & last[ 1 ], color: variables.SUB, bold: false } );
+			}
+			rows.append( { text: "  r retries the failed steps", color: variables.OVERLAY, bold: false } );
+		}
+		heading( "Next" );
+		var n = 0;
+		for ( var nx in sum.next ) { n++; wrapped( n & ". ", nx, variables.TEXT ); }
+		if ( sum.needsYou.len() ) {
+			heading( "Needs your decision" );
+			for ( var d in sum.needsYou ) { wrapped( "• ", d.id & ": " & d.why, variables.YELLOW ); if ( len( d.fix ) ) wrapped( "    later: ", d.fix, variables.SUB ); }
+		}
+		if ( sum.skipped.len() ) {
+			heading( "Skipped" );
+			for ( var sk in sum.skipped ) { wrapped( "• ", sk.id & ": " & sk.why, variables.SUB ); if ( len( sk.fix ) ) wrapped( "    later: ", sk.fix, variables.OVERLAY ); }
+		}
+		if ( sum.inPlace.len() ) {
+			var names = []; for ( var ip in sum.inPlace ) names.append( ip.id );
+			heading( "Already in place" );
+			wrapped( "", names.toList( ", " ), variables.SUB );
+		}
+		heading( "Saved" );
+		var answers = replace( new bxrig.util.Env().home() & "/.config/bxrig/answers.json", new bxrig.util.Env().home(), "~" );
+		rows.append( { text: "Answers  " & answers & "   (run them again: bxrig reinstall)", color: variables.CYAN, bold: false } );
+		rows.append( { text: "Log      " & arguments.st.logFile, color: variables.CYAN, bold: false } );
+		return rows;
 	}
 
 	// The step that is running: spinner, title, its own progress and how long it has run; below it the last thing it printed and, when it is
@@ -259,6 +323,7 @@ class InstallView {
 		var pairs = [];
 		if ( arguments.st.finished ) {
 			pairs.append( [ "enter", "leave" ] );
+			pairs.append( [ "d", arguments.app.details() ? "summary" : "every step" ] );
 			if ( arguments.app.run().counts().failed || arguments.app.run().counts().stopped ) pairs.append( [ "r", "retry the failed steps" ] );
 			if ( arguments.app.advice().reboot ) pairs.append( [ "b", "reboot" ] );
 			else if ( arguments.app.advice().relogin ) pairs.append( [ "l", "log out" ] );

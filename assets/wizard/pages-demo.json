@@ -27,7 +27,7 @@
 						{
 							"value": "plasma",
 							"label": "KDE Plasma with BxRig tiling only",
-							"description": "Keep Plasma and add HyprKwin tiling on top. Toggle it any time with: bxrig tiling on|off."
+							"description": "Keep Plasma and add HyprKwin tiling on top. Toggle it any time with: `bxrig tiling on|off`."
 						}
 					]
 				},
@@ -147,7 +147,7 @@
 					"type": "choice",
 					"id": "plasma_panels",
 					"label": "Plasma panels",
-					"help": "BxRig layout: a top status panel (launcher, workspaces, active window, clock, media, system vitals, tray, in rounded islands) and a bottom dock. Your current panels are backed up first and can be restored with: bxrig plasma panels undo.",
+					"help": "BxRig layout: a top status panel (launcher, workspaces, active window, clock, media, system vitals, tray, in rounded islands) and a bottom dock. Your current panels are backed up first and can be restored with: `bxrig plasma panels undo`.",
 					"default": "bxrig",
 					"when": {
 						"id": "desktops",
@@ -242,7 +242,7 @@
 					"id": "dock",
 					"label": "Dock",
 					"default": true,
-					"help": "A dock of your apps at the bottom of the screen (Noctalia). Change it later: bxrig appearance dock on|off.",
+					"help": "A dock of your apps at the bottom of the screen (Noctalia). Change it later: `bxrig appearance dock on|off`.",
 					"when": {
 						"id": "desktops",
 						"in": [
@@ -307,7 +307,7 @@
 						"id": "world_clock",
 						"equals": "true"
 					},
-					"help": "Change them later: bxrig time world add|remove ZONE.",
+					"help": "Change them later: `bxrig time world add|remove ZONE`.",
 					"options": [
 						{
 							"value": "America/Los_Angeles",
@@ -427,7 +427,7 @@
 							"both"
 						]
 					},
-					"help": "BXRIG art in the theme's colours on every monitor after a while idle, then the lock. Any key or mouse move closes it. Try it: bxrig screensaver preview.",
+					"help": "BXRIG art in the theme's colours on every monitor after a while idle, then the lock. Any key or mouse move closes it. Try it: `bxrig screensaver preview`.",
 					"options": [
 						{
 							"value": "150",
@@ -477,17 +477,17 @@
 						{
 							"value": "minimal",
 							"label": "Minimal",
-							"description": "Minimal: the fewest icons. Everything else is one click away in the logo menu and the control center. Change it later: bxrig appearance bar layout minimal."
+							"description": "Minimal: the fewest icons. Everything else is one click away in the logo menu and the control center. Change it later: `bxrig appearance bar layout minimal`."
 						},
 						{
 							"value": "standard",
 							"label": "Standard",
-							"description": "Standard: the recommended bar, the one you get if you just press Enter. Change it later: bxrig appearance bar layout standard."
+							"description": "Standard: the recommended bar, the one you get if you just press Enter. Change it later: `bxrig appearance bar layout standard`."
 						},
 						{
 							"value": "dense",
 							"label": "Dense",
-							"description": "Dense: for developers with a wide screen; a small one hides some icons. Change it later: bxrig appearance bar layout dense."
+							"description": "Dense: for developers with a wide screen; a small one hides some icons. Change it later: `bxrig appearance bar layout dense`."
 						}
 					]
 				},
@@ -524,12 +524,12 @@
 						{
 							"value": "launchpad",
 							"label": "Launchpad grid",
-							"description": "Big colored icon tiles on a soft rounded card, with a grid button first in the dock. Change it later: bxrig appearance appgrid launchpad."
+							"description": "Big colored icon tiles on a soft rounded card, with a grid button first in the dock. Change it later: `bxrig appearance appgrid launchpad`."
 						},
 						{
 							"value": "terminal",
 							"label": "Terminal-style grid",
-							"description": "Small flat glyphs on a square card with key hints and monospace labels. Change it later: bxrig appearance appgrid terminal."
+							"description": "Small flat glyphs on a square card with key hints and monospace labels. Change it later: `bxrig appearance appgrid terminal`."
 						}
 					]
 				}
@@ -545,7 +545,7 @@
 					"id": "theme_name",
 					"label": "Color theme",
 					"default": "bxrig",
-					"help": "Change it any time: bxrig theme set NAME, or the Themes page of the Control Center.",
+					"help": "Change it any time: `bxrig theme set NAME`, or the Themes page of the Control Center.",
 					"options": [
 						{
 							"value": "bxrig",
@@ -744,7 +744,7 @@
 					"id": "mac_keys",
 					"label": "Mac-style Super keys",
 					"default": true,
-					"help": "On: Super+Z S F T N O P R W L B I U and Super+Tab behave like Cmd. Off keeps the Traditional (Omarchy-like) keys. Super+C, V, X and A copy, paste, cut and select all either way."
+					"help": "On: Super+Z S F T N O P R W L B I U and Super+Tab behave like Cmd. Off keeps the Traditional keys. Super+C, V, X and A copy, paste, cut and select all either way."
 				},
 				{
 					"type": "choice",
@@ -800,7 +800,7 @@
 					"id": "input_devices",
 					"label": "Input devices (Apple Magic, Logitech)",
 					"default": "detect",
-					"help": "Magic Mouse and Magic Trackpad work through the kernel. This installs the helpers around them: Solaar for Logitech (the Linux Logi Options+), libratbag and Piper for gaming mice, upower for batteries, trackpad swipes on Hyprland. Undo: bxrig input undo.",
+					"help": "Magic Mouse and Magic Trackpad work through the kernel. This installs the helpers around them: Solaar for Logitech (the Linux Logi Options+), libratbag and Piper for gaming mice, upower for batteries, trackpad swipes on Hyprland. Undo: `bxrig input undo`.",
 					"when": {
 						"any": [
 							{
@@ -876,7 +876,7 @@
 				{
 					"type": "info",
 					"label": "Hot corners",
-					"help": "Move the pointer into a corner to run an action. Change them later: bxrig hotcorners set top-left overview."
+					"help": "Move the pointer into a corner to run an action. Change them later: `bxrig hotcorners set top-left overview`."
 				},
 				{
 					"type": "choice",
@@ -1208,22 +1208,21 @@
 			"questions": [
 				{
 					"type": "info",
-					"label": "Always installed: BoxLang",
-					"help": "BoxLang with Java 21 (switched with jenv), its version managers (bvm, mvm) and MatchBox, so BxRig and your BoxLang tools always work."
+					"label": "Always installed: BoxLang, Java 21 and Rust",
+					"help": "BoxLang with its version managers (bvm, mvm) and MatchBox, Java 21 (switched with jenv) and Rust (rustup, stable), so BxRig and your BoxLang tools always work."
 				},
 				{
 					"type": "multi",
 					"id": "toolchains",
 					"label": "Add toolchains",
 					"default": [
-						"java",
-						"rust"
+						"java"
 					],
 					"options": [
 						{
 							"value": "java",
-							"label": "Java with Gradle and Maven",
-							"description": "Gradle and Maven (Java 21 and jenv are always installed)."
+							"label": "Gradle and Maven",
+							"description": "The Java build tools. Java 21 and jenv are always installed."
 						},
 						{
 							"value": "php",
@@ -1241,11 +1240,6 @@
 							"description": "The Go toolchain."
 						},
 						{
-							"value": "rust",
-							"label": "Rust",
-							"description": "rustup with the stable toolchain (also builds MatchBox)."
-						},
-						{
 							"value": "javascript",
 							"label": "JavaScript",
 							"description": "Node.js (with nvm), Bun or Deno. You pick the runtimes next."
@@ -1260,10 +1254,6 @@
 					"default": [
 						"25"
 					],
-					"when": {
-						"id": "toolchains",
-						"has": "java"
-					},
 					"options": [
 						{
 							"value": "25",
@@ -1286,7 +1276,7 @@
 							"description": "Legacy."
 						}
 					],
-					"help": "Java 21 is always installed and is the global version (BoxLang needs it). jenv switches between them: bxrig java global, bxrig java local."
+					"help": "Java 21 is always installed and is the global version (BoxLang needs it). jenv switches between them: `bxrig java global`, `bxrig java local`."
 				},
 				{
 					"type": "multi",
@@ -1318,10 +1308,50 @@
 					]
 				},
 				{
+					"type": "multi",
+					"id": "ides",
+					"label": "IDEs and editors",
+					"default": [
+						"vscode"
+					],
+					"options": [
+						{
+							"value": "vscode",
+							"label": "Visual Studio Code",
+							"description": "The popular editor, with the BoxLang extension offered below."
+						},
+						{
+							"value": "intellij",
+							"label": "IntelliJ IDEA Community",
+							"description": "The JetBrains IDE for Java, Kotlin and Groovy."
+						},
+						{
+							"value": "zed",
+							"label": "Zed",
+							"description": "A fast, modern editor with built in collaboration."
+						},
+						{
+							"value": "cursor",
+							"label": "Cursor",
+							"description": "VS Code with AI built in."
+						},
+						{
+							"value": "sublime-text",
+							"label": "Sublime Text",
+							"description": "A light, fast text editor."
+						}
+					],
+					"help": "Pick as many as you like. Neovim has its own question on the Developer page."
+				},
+				{
 					"type": "confirm",
 					"id": "boxlang_vscode",
 					"label": "BoxLang extension for VS Code",
 					"default": true,
+					"when": {
+						"id": "ides",
+						"has": "vscode"
+					},
 					"help": "Installs ortus-solutions.vscode-boxlang and the developer pack into VS Code."
 				}
 			]
@@ -1432,7 +1462,7 @@
 							"description": "Search and analytics. Needs vm.max_map_count 262144 and about 1 GB of memory."
 						}
 					],
-					"help": "Local containers on 127.0.0.1, with generated passwords. Nothing starts unless you pick it. Manage them with: bxrig db"
+					"help": "Local containers on 127.0.0.1, with generated passwords. Nothing starts unless you pick it. Manage them with: `bxrig db`"
 				},
 				{
 					"type": "choice",
@@ -1448,7 +1478,7 @@
 						{
 							"value": "generate",
 							"label": "Generated (recommended)",
-							"description": "A strong random password for each, kept in a private file. Show it any time with: bxrig db info ENGINE --show-password"
+							"description": "A strong random password for each, kept in a private file. Show it any time with: `bxrig db info ENGINE --show-password`"
 						},
 						{
 							"value": "ask",
@@ -1462,7 +1492,7 @@
 					"id": "mail_catcher",
 					"label": "Mail catcher",
 					"default": false,
-					"help": "A local inbox for the mail your apps send while you develop (Mailpit in a container, SMTP on 127.0.0.1:1025, inbox at http://127.0.0.1:8025). Mail is thrown away when it stops. Manage it with: bxrig mail"
+					"help": "A local inbox for the mail your apps send while you develop (Mailpit in a container, SMTP on 127.0.0.1:1025, inbox at http://127.0.0.1:8025). Mail is thrown away when it stops. Manage it with: `bxrig mail`"
 				},
 				{
 					"type": "choice",
@@ -1572,12 +1602,12 @@
 					"id": "android",
 					"label": "Android apps",
 					"default": "no",
-					"help": "Run Android apps on your desktop with Waydroid (Google Play by default). It needs a Wayland session and the kernel's binder driver, downloads about 1.2 GB and asks for your password. Later works too: bxrig android setup.",
+					"help": "Run Android apps on your desktop with Waydroid (Google Play by default). It needs a Wayland session and the kernel's binder driver, downloads about 1.2 GB and asks for your password. Later works too: `bxrig android setup`.",
 					"options": [
 						{
 							"value": "no",
 							"label": "Not now",
-							"description": "Nothing is installed. Run bxrig android setup --yes whenever you want it."
+							"description": "Nothing is installed. Run `bxrig android setup --yes` whenever you want it."
 						},
 						{
 							"value": "yes",
@@ -1598,7 +1628,7 @@
 					"id": "nas_use",
 					"label": "I have a NAS to connect",
 					"default": false,
-					"help": "You can add more later with bxrig nas add."
+					"help": "You can add more later with `bxrig nas add`."
 				},
 				{
 					"type": "text",
@@ -1616,7 +1646,7 @@
 					"id": "nas_host",
 					"label": "Address of the NAS",
 					"placeholder": "ds920.local or 192.168.1.20",
-					"help": "Find it with: bxrig nas discover",
+					"help": "Find it with: `bxrig nas discover`",
 					"when": {
 						"id": "nas_use",
 						"equals": "true"
@@ -1688,10 +1718,111 @@
 			]
 		},
 		{
-			"id": "remote",
-			"title": "Remote backups",
-			"intro": "Back up somewhere else too: another computer over SSH, an rclone remote (FTP, WebDAV, Dropbox and more) or the cloud. Access keys are typed in the terminal while the setup runs and go straight to your keyring.",
+			"id": "backups",
+			"title": "Backups",
+			"intro": "Three layers, any of them, and a copy somewhere else if you want. BxRig keeps the passwords and keys in your keyring and shows a plan before it changes anything.",
 			"questions": [
+				{
+					"type": "multi",
+					"id": "backup_layers",
+					"label": "What do you want protected?",
+					"default": [
+						"config"
+					],
+					"options": [
+						{
+							"value": "config",
+							"label": "My BxRig setup",
+							"description": "A small snapshot of your settings and config files before every update, init and refresh, so a mistake is one command to undo."
+						},
+						{
+							"value": "snapshots",
+							"label": "The whole system",
+							"description": "Snapshots with snapper on Btrfs (one before and after every update), Timeshift on other filesystems."
+						},
+						{
+							"value": "data",
+							"label": "My files",
+							"description": "Projects, Documents and your SSH config, encrypted with restic, to the NAS and the place above."
+						}
+					]
+				},
+				{
+					"type": "multi",
+					"id": "backups",
+					"label": "Backup apps",
+					"default": [],
+					"options": [
+						{
+							"value": "timeshift",
+							"label": "Timeshift",
+							"description": "System snapshots you can roll back to."
+						},
+						{
+							"value": "snapper",
+							"label": "Snapper",
+							"description": "Btrfs snapshots, with a snapshot before and after every package change."
+						},
+						{
+							"value": "restic",
+							"label": "restic",
+							"description": "Fast, encrypted, deduplicated backups of your files."
+						},
+						{
+							"value": "borg",
+							"label": "BorgBackup",
+							"description": "Encrypted, deduplicated backups."
+						},
+						{
+							"value": "pika-backup",
+							"label": "Pika Backup",
+							"description": "A simple desktop app for backing up your files."
+						},
+						{
+							"value": "rclone",
+							"label": "rclone",
+							"description": "Sync with FTP, WebDAV, Dropbox and dozens of clouds."
+						},
+						{
+							"value": "rclone-browser",
+							"label": "RClone Browser",
+							"description": "A window for browsing and copying files over rclone."
+						}
+					],
+					"help": "Install the tools you like. BxRig shows a plan before it changes anything."
+				},
+				{
+					"type": "choice",
+					"id": "backup_schedule",
+					"label": "How often do your files go?",
+					"default": "daily",
+					"when": {
+						"id": "backup_layers",
+						"has": "data"
+					},
+					"options": [
+						{
+							"value": "daily",
+							"label": "Every day",
+							"description": "Skips on battery and catches up after the computer was off."
+						},
+						{
+							"value": "hourly",
+							"label": "Every hour",
+							"description": "For a lot of changing work."
+						},
+						{
+							"value": "off",
+							"label": "Only when I ask",
+							"description": "`bxrig backup data run`, or the Time Machine screen."
+						}
+					]
+				},
+				{
+					"type": "info",
+					"label": "Somewhere else too?",
+					"help": "Another computer over SSH, an rclone remote (FTP, WebDAV, Dropbox and more) or the cloud. Access keys are typed in the terminal while the setup runs and go straight to your keyring."
+				},
 				{
 					"type": "choice",
 					"id": "remote_type",
@@ -1731,7 +1862,7 @@
 						{
 							"value": "rclone",
 							"label": "An rclone remote (FTP and more)",
-							"description": "Set it up first with bxrig cloud configure."
+							"description": "Set it up first with `bxrig cloud configure`."
 						},
 						{
 							"value": "local",
@@ -1891,70 +2022,11 @@
 							"local"
 						]
 					}
-				}
-			]
-		},
-		{
-			"id": "backups",
-			"title": "Backups",
-			"intro": "Three layers, any of them. BxRig keeps the passwords and keys in your keyring and shows a plan before it changes anything.",
-			"questions": [
-				{
-					"type": "multi",
-					"id": "backup_layers",
-					"label": "What do you want protected?",
-					"default": [
-						"config"
-					],
-					"options": [
-						{
-							"value": "config",
-							"label": "My BxRig setup",
-							"description": "A small snapshot of your settings and config files before every update, init and refresh, so a mistake is one command to undo."
-						},
-						{
-							"value": "snapshots",
-							"label": "The whole system",
-							"description": "Snapshots with snapper on Btrfs (one before and after every update), Timeshift on other filesystems."
-						},
-						{
-							"value": "data",
-							"label": "My files",
-							"description": "Projects, Documents and your SSH config, encrypted with restic, to the NAS and the place above."
-						}
-					]
-				},
-				{
-					"type": "choice",
-					"id": "backup_schedule",
-					"label": "How often do your files go?",
-					"default": "daily",
-					"when": {
-						"id": "backup_layers",
-						"has": "data"
-					},
-					"options": [
-						{
-							"value": "daily",
-							"label": "Every day",
-							"description": "Skips on battery and catches up after the computer was off."
-						},
-						{
-							"value": "hourly",
-							"label": "Every hour",
-							"description": "For a lot of changing work."
-						},
-						{
-							"value": "off",
-							"label": "Only when I ask",
-							"description": "bxrig backup data run, or the Time Machine screen."
-						}
-					]
 				},
 				{
 					"type": "info",
 					"label": "Look at them any time",
-					"help": "bxrig timemachine shows every backup on one timeline, with browse, restore, export and send."
+					"help": "`bxrig timemachine` shows every backup on one timeline, with browse, restore, export and send."
 				}
 			]
 		},
@@ -2029,7 +2101,7 @@
 					"type": "choice",
 					"id": "dictation",
 					"label": "Voice dictation",
-					"help": "Hold a key, speak, release: the text is typed where you are. Superwhisper holds Right Alt; Voxtype holds F9 (Omarchy's choice).",
+					"help": "Hold a key, speak, release: the text is typed where you are. Superwhisper holds Right Alt; Voxtype holds F9. Pick one: they would fight over the same keys.",
 					"default": "superwhisper",
 					"options": [
 						{
@@ -2058,7 +2130,7 @@
 						{
 							"value": "hype",
 							"label": "Hype",
-							"description": "Slides from Markdown, exports PDF and PowerPoint (Omarchy's)."
+							"description": "Slides from Markdown, exports PDF and PowerPoint."
 						},
 						{
 							"value": "onlyoffice",
@@ -2123,7 +2195,7 @@
 						{
 							"value": "walker",
 							"label": "Walker",
-							"description": "Modern, fast launcher, popular with Omarchy."
+							"description": "Modern, fast launcher."
 						},
 						{
 							"value": "rofi",
@@ -2392,7 +2464,7 @@
 						{
 							"value": "later",
 							"label": "Add them later",
-							"description": "Nothing is asked now. Later: bxrig secrets set NAME."
+							"description": "Nothing is asked now. Later: `bxrig secrets set NAME`."
 						},
 						{
 							"value": "now",
@@ -2575,7 +2647,7 @@
 					"type": "choice",
 					"id": "ai_local_setup",
 					"label": "BxRig local AI",
-					"help": "BxRig runs models on this machine with llama.cpp, with OpenAI and Anthropic compatible APIs on 127.0.0.1:8089. It checks your hardware and picks models that fit. Later works too: bxrig ai setup.",
+					"help": "BxRig runs models on this machine with llama.cpp, with OpenAI and Anthropic compatible APIs on 127.0.0.1:8089. It checks your hardware and picks models that fit. Later works too: `bxrig ai setup`.",
 					"default": "now",
 					"options": [
 						{
@@ -2586,7 +2658,7 @@
 						{
 							"value": "later",
 							"label": "Later",
-							"description": "Skip it; run bxrig ai setup or open the AI page of the Control Center when you want it."
+							"description": "Skip it; run `bxrig ai setup` or open the AI page of the Control Center when you want it."
 						}
 					]
 				},
@@ -2618,7 +2690,7 @@
 					"id": "ai_local_tune",
 					"label": "Tune for this machine",
 					"default": false,
-					"help": "Benchmarks each model for about a minute to find the best threads, batch size and flash attention here. Run it later with bxrig ai models tune.",
+					"help": "Benchmarks each model for about a minute to find the best threads, batch size and flash attention here. Run it later with `bxrig ai models tune`.",
 					"when": {
 						"id": "ai_local_setup",
 						"equals": "now"
@@ -2628,7 +2700,7 @@
 					"type": "choice",
 					"id": "boxy",
 					"label": "Boxy, your desktop assistant",
-					"help": "Boxy is an AI agent built with bx-agents that knows this machine: ask it how the battery is doing, to switch the theme, add a reminder or install an app. It runs on your local model, and anything it changes waits for your OK. Super+Period opens a chat with it. Later works too: bxrig ai agents setup.",
+					"help": "Boxy is an AI agent built with bx-agents that knows this machine: ask it how the battery is doing, to switch the theme, add a reminder or install an app. It runs on your local model, and anything it changes waits for your OK. Super+Period opens a chat with it. Later works too: `bxrig ai agents setup`.",
 					"default": "now",
 					"options": [
 						{
@@ -2639,7 +2711,7 @@
 						{
 							"value": "later",
 							"label": "Later",
-							"description": "Skip it; run bxrig ai agents install --yes and bxrig ai agents setup --yes when you want it."
+							"description": "Skip it; run `bxrig ai agents install --yes` and `bxrig ai agents setup --yes` when you want it."
 						}
 					]
 				},
@@ -2647,7 +2719,7 @@
 					"type": "multi",
 					"id": "agent_skills",
 					"label": "Agent skills",
-					"help": "Skills teach your coding agents (Claude Code, Codex, Gemini, OpenCode) how to use BxRig, BoxLang and MatchBox. They are stored once in ~/.agents/skills and linked into each agent. Find more with: bxrig skills search TEXT (the skills.boxlang.io hub).",
+					"help": "Skills teach your coding agents (Claude Code, Codex, Gemini, OpenCode) how to use BxRig, BoxLang and MatchBox. They are stored once in ~/.agents/skills and linked into each agent. Find more with: `bxrig skills search TEXT` (the skills.boxlang.io hub).",
 					"default": [
 						"bxrig",
 						"boxlang",
@@ -2908,7 +2980,7 @@
 					"id": "update_notifications",
 					"label": "Notify me about updates",
 					"default": true,
-					"help": "A daily check; you get a desktop notification when BxRig or the system has updates. Turn off with: bxrig update notifications off."
+					"help": "A daily check; you get a desktop notification when BxRig or the system has updates. Turn off with: `bxrig update notifications off`."
 				},
 				{
 					"type": "confirm",
@@ -2935,7 +3007,7 @@
 				{
 					"type": "info",
 					"label": "How it works",
-					"help": "BxRig detects whether the repository uses chezmoi, yadm, stow or plain files. Nothing is replaced without asking: files you already have are listed, and each one is backed up first. Undo any time with: bxrig dotfiles undo."
+					"help": "BxRig detects whether the repository uses chezmoi, yadm, stow or plain files. Nothing is replaced without asking: files you already have are listed, and each one is backed up first. Undo any time with: `bxrig dotfiles undo`."
 				}
 			]
 		}

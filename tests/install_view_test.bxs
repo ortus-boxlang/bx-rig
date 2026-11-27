@@ -52,7 +52,11 @@ testkit.check( "y stops: the running step failed (130), the rest not run", run.f
 
 // the end
 s = shot();
-testkit.check( "finished: what failed with the exit code, and where the log is", find( "Finished", s ) > 0 && find( "What failed", s ) > 0 && find( "(exit 130)", s ) > 0 && find( log.file(), s ) > 0 );
+testkit.check( "finished: what failed with the exit code, and where the log is", find( "Summary", s ) > 0 && find( "WHAT FAILED", s ) > 0 && find( "NEXT", s ) > 0 && find( "(exit 130)", s ) > 0 && find( log.file(), s ) > 0 );
+app.onKey( "d" );
+s2 = shot();
+testkit.check( "finished: d shows every step, d again the summary", app.details() && find( "Finished", s2 ) > 0 );
+app.onKey( "d" );
 testkit.check( "finished: retry and leave are offered", find( "retry the failed steps", s ) > 0 && find( "leave", s ) > 0 );
 app.onKey( "r" );
 testkit.check( "r runs the failed and stopped steps again", !run.finished() && run.counts().pending == 2 );

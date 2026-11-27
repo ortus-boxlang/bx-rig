@@ -1,9 +1,9 @@
 // InitPlan: wizard answers to ordered commands (pure). Run from src/: (cd src && matchbox ../tests/init_plan_test.bxs)
 testkit = new lib.Check( "init plan" );
 ip = new bxrig.InitPlan();
-function first( p ) { return p.steps.filter( function( s ) { return s.id != "java"; } )[ 1 ]; }
-// the always-present java step is left out here and tested on its own below
-function ids( p ) { return p.steps.filter( function( s ) { return s.id != "java"; } ).map( function( s ) { return s.id; } ).toList( "," ); }
+function first( p ) { return p.steps.filter( function( s ) { return s.id != "java" && s.id != "toolchain-rust"; } )[ 1 ]; }
+// the always-present java and rust steps are left out here and tested on their own below
+function ids( p ) { return p.steps.filter( function( s ) { return s.id != "java" && s.id != "toolchain-rust"; } ).map( function( s ) { return s.id; } ).toList( "," ); }
 function cmd( p, id ) { for ( var s in p.steps ) if ( s.id == id ) return s.argv.toList( " " ); return ""; }
 
 p = ip.plan( {} );
@@ -99,7 +99,7 @@ testkit.check( "JavaScript: Node through nvm, Bun and Deno as catalog apps", ids
 testkit.check( "JavaScript without a runtime answer means Node", cmd( ip.plan( { toolchains: [ "javascript" ] } ), "toolchain-node" ) == "bxrig toolchain node" );
 testkit.check( "Bun only is just the catalog app", ids( ip.plan( { toolchains: [ "javascript" ], js_runtimes: [ "bun" ] } ) ) == "apps" );
 testkit.check( "python is the python profile", cmd( ip.plan( { toolchains: [ "python" ] } ), "toolchain-python" ) == "bxrig profile-install python" );
-testkit.check( "no toolchains: only the java setup (jenv and 21)", ids( ip.plan( { toolchains: [] } ) ) == "" && cmd( ip.plan( { toolchains: [] } ), "java" ) == "bxrig java setup" );
+testkit.check( "no toolchains: only the always-on java and rust steps", ids( ip.plan( { toolchains: [] } ) ) == "" && cmd( ip.plan( { toolchains: [] } ), "java" ) == "bxrig java setup --versions=25" );
 
 testkit.check( "Podman is the containers profile", cmd( ip.plan( { container_engine: "podman" } ), "containers" ) == "bxrig profile-install containers" );
 testkit.check( "Docker is one extra package", cmd( ip.plan( { container_engine: "docker" } ), "apps" ) == "bxrig install docker" && find( "containers", ids( ip.plan( { container_engine: "docker" } ) ) ) == 0 );
@@ -143,10 +143,10 @@ idl = p.steps.map( function( s ) { return s.id; } );
 testkit.check( "BoxLang is installed once, before the steps that run it", arrayFind( idl, "boxlang" ) > 0 && arrayFind( idl, "boxlang" ) < arrayFind( idl, "boxlang-vscode" ) && arrayFind( idl, "boxlang" ) < arrayFind( idl, "scheduler" ) && idl.filter( function( i ) { return i == "boxlang"; } ).len() == 1 );
 testkit.check( "Java comes right before BoxLang", arrayFind( idl, "java" ) > 0 && arrayFind( idl, "java" ) + 1 == arrayFind( idl, "boxlang" ) );
 p = ip.plan( { toolchains: [] } );
-testkit.check( "Java is always set up: jenv and 21, no extra versions unless Java is a toolchain", cmd( p, "java" ) == "bxrig java setup" );
+testkit.check( "Java and Rust are always set up: jenv and 21 (plus the wizard default 25 only when answered), rustup stable", cmd( p, "java" ) == "bxrig java setup --versions=25" && cmd( p, "toolchain-rust" ) == "rustup default stable" );
 p = ip.plan( { toolchains: [ "java" ], java_versions: [ "25", "17" ] } );
 testkit.check( "Java versions picked in the wizard go to java setup", cmd( p, "java" ) == "bxrig java setup --versions=25,17" );
-testkit.check( "Java 25 is the default extra when Java is a toolchain", cmd( ip.plan( { toolchains: [ "java" ] } ), "java" ) == "bxrig java setup --versions=25" );
+testkit.check( "an empty Java versions answer is just 21", cmd( ip.plan( { toolchains: [], java_versions: [] } ), "java" ) == "bxrig java setup" );
 testkit.check( "no BoxLang step when nothing needs it", arrayFind( ip.plan( { app_mode: "defaults" } ).steps.map( function( s ) { return s.id; } ), "boxlang" ) == 0 );
 p = ip.plan( { app_mode: "defaults", agent_skills: [ "bxrig", "boxlang" ] } );
 testkit.check( "agent skills are one optional step", cmd( p, "agent-skills" ) == "bxrig skills install bxrig boxlang" );
@@ -266,3 +266,9 @@ testkit.check( "bxrig chosen again while nord is applied runs theme set bxrig", 
 testkit.check( "the theme step is `theme set X` for KDE only too (the theme page is for every desktop)", cmd( ip.plan( { desktops: "plasma", theme_name: "nord" } ), "theme" ) == "bxrig theme set nord" );
 
 testkit.done( "all passed" );
+
+// IDEs: every ticked one is installed; the BoxLang extension only with VS Code
+p = ip.plan( { toolchains: [], ides: [ "intellij", "zed" ], boxlang_vscode: true } );
+testkit.check( "IDEs join the install, no VS Code means no BoxLang extension", cmd( p, "apps" ) == "bxrig install intellij zed" && cmd( p, "boxlang-vscode" ) == "" );
+p = ip.plan( { toolchains: [], ides: [ "vscode", "sublime-text" ], boxlang_vscode: true } );
+testkit.check( "VS Code ticked: the extension step follows", cmd( p, "apps" ) == "bxrig install vscode sublime-text" && cmd( p, "boxlang-vscode" ) == "bxrig boxlang vscode" );

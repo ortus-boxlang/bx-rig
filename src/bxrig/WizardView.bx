@@ -229,11 +229,35 @@ class WizardView {
 		else page( app, arguments.tick, mx, by, mw, bh, arguments.phase );
 	}
 
+	/**
+	 * A small BxRig laptop (the About logo, sampled down to 13 columns and 4 rows), drawn when the sidebar has room.
+	 * @x Column of the left edge.
+	 * @y Row of the top edge.
+	 * @bg Background colour under it.
+	 */
+	function miniLaptop( x, y, bg ) {
+		var logo = new bxrig.AboutLogo();
+		var pal = logo.palette( {} );
+		for ( var r = 0; r < 4; r++ ) {
+			for ( var c = 0; c < 13; c++ ) {
+				var px = 1 + c * 3;
+				var top = logo.pixelColour( pal, px, 1 + r * 7 );
+				var low = logo.pixelColour( pal, px, 1 + r * 7 + 3 );
+				if ( !len( top ) && !len( low ) ) continue;
+				if ( len( top ) && len( low ) ) variables.kit.put( arguments.x + c, arguments.y + r, "▀", variables.kit.c( top ), variables.kit.c( low ) );
+				else if ( len( top ) ) variables.kit.put( arguments.x + c, arguments.y + r, "▀", variables.kit.c( top ), arguments.bg );
+				else variables.kit.put( arguments.x + c, arguments.y + r, "▄", variables.kit.c( low ), arguments.bg );
+			}
+		}
+	}
+
 	function sidebar( app, x, y, w, h, phase ) {
 		variables.kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "Steps", false, arguments.phase );
 		var cx = arguments.x + int( arguments.w / 2 );
 		poweredBy( cx, arguments.y + arguments.h - 4, arguments.phase, variables.MANTLE, variables.OVERLAY, variables.SURFACE1 );
 		var vis = app.visiblePages();
+		// the laptop sits bottom left, above Powered by BoxLang, when the step list leaves room for it
+		if ( vis.len() + 3 < arguments.h - 11 && arguments.w >= 17 ) miniLaptop( arguments.x + 3, arguments.y + arguments.h - 9, variables.MANTLE );
 		var n = app.pageCount();
 		var current = app.screen() == "page" ? app.pageIndex() : 0;
 		var steps = [];
@@ -279,12 +303,33 @@ class WizardView {
 		return 0;
 	}
 
+	/**
+	 * Draws one line of help text where `backticked` words are code: drawn in the accent colour on a darker strip, without the backticks.
+	 * @x Column.
+	 * @y Row.
+	 * @line The text.
+	 * @col Colour of the normal text.
+	 * @bg Background colour.
+	 * @inCode True when the previous line ended inside a code span.
+	 * @return True when this line ends inside a code span.
+	 */
+	function rich( x, y, line, col, bg, inCode ) {
+		var cx = arguments.x;
+		var code = arguments.inCode;
+		for ( var part in listToArray( arguments.line, chr( 96 ), true ) ) {
+			if ( len( part ) ) cx = code ? variables.kit.put( cx, arguments.y, " " & part & " ", variables.CYAN, variables.CRUST ) : variables.kit.put( cx, arguments.y, part, arguments.col, arguments.bg );
+			code = !code;
+		}
+		// the toggle ran once per piece, one more than the number of backticks
+		return !code;
+	}
+
 	// Lines a row takes on the page.
 	function rowHeight( pg, row, width ) {
-		if ( row.kind == "heading" ) return 1 + variables.kit.wrap( pg.questions[ row.q ].help ?: "", width ).len();
+		if ( row.kind == "heading" ) return 2 + variables.kit.wrap( pg.questions[ row.q ].help ?: "", width ).len();
 		if ( row.kind == "info" ) {
 			var q = pg.questions[ row.q ];
-			return 1 + variables.kit.wrap( q.help ?: "", width ).len() + ( ( q.preview ?: "" ) == "dock" ? 1 : 0 );
+			return 2 + variables.kit.wrap( q.help ?: "", width ).len() + ( ( q.preview ?: "" ) == "dock" ? 1 : 0 );
 		}
 		if ( row.kind == "preview" ) return 1 + variables.look.gridHeight( variables.gridRows );
 		if ( row.kind == "opt" && ( pg.questions[ row.q ].preview ?: "" ) == "bar" ) {
@@ -299,10 +344,11 @@ class WizardView {
 		var rws = app.rows();
 		var kind = previewKind( pg );
 		variables.kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, pg.title, true, arguments.phase );
-		var ix = arguments.x + 3; var iy = arguments.y + 1; var iw = arguments.w - 6; var ih = arguments.h - 2;
+		var ix = arguments.x + 4; var iy = arguments.y + 1; var iw = arguments.w - 8; var ih = arguments.h - 2;
 		var cy = iy + 1;
 		if ( len( pg.intro ?: "" ) ) {
-			for ( var line in variables.kit.wrap( pg.intro, iw ) ) { variables.kit.put( ix, cy, line, variables.SUB, variables.MANTLE ); cy++; }
+			var inCode = false;
+			for ( var line in variables.kit.wrap( pg.intro, iw ) ) { inCode = rich( ix, cy, line, variables.SUB, variables.MANTLE, inCode ); cy++; }
 			cy++;
 		}
 		var listTop = cy;
@@ -331,14 +377,16 @@ class WizardView {
 				variables.kit.put( ix, ry, qn.label, variables.TEXT, variables.MANTLE, true );
 				// a long help text wraps under the question instead of running past the panel
 				var hk = 1;
-				for ( var hline in variables.kit.wrap( qn.help ?: "", ww ) ) { variables.kit.put( ix, ry + hk, hline, variables.OVERLAY, variables.MANTLE ); hk++; }
+				var hc = false;
+				for ( var hline in variables.kit.wrap( qn.help ?: "", ww ) ) { hc = rich( ix, ry + hk, hline, variables.OVERLAY, variables.MANTLE, hc ); hk++; }
 			} else if ( row.kind == "group" ) {
 				variables.kit.put( ix + 2, ry, ucase( row.group ), variables.OVERLAY, variables.MANTLE, true );
 			} else if ( row.kind == "info" ) {
 				var qn = pg.questions[ row.q ];
 				variables.kit.put( ix, ry, qn.label, variables.TEXT, variables.MANTLE, true );
 				var k = 0;
-				for ( var line in variables.kit.wrap( qn.help ?: "", iw ) ) { variables.kit.put( ix, ry + 1 + k, line, variables.SUB, variables.MANTLE ); k++; }
+				var ic = false;
+				for ( var line in variables.kit.wrap( qn.help ?: "", iw ) ) { ic = rich( ix, ry + 1 + k, line, variables.SUB, variables.MANTLE, ic ); k++; }
 				if ( ( qn.preview ?: "" ) == "dock" ) variables.look.dock( ix, ry + 1 + k, min( iw, 44 ), true );
 			} else if ( row.kind == "preview" ) {
 				drawGrids( app, rws, row, pg, ix, ry, iw );

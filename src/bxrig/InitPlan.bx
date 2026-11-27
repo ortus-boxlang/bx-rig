@@ -146,11 +146,7 @@ class InitPlan {
 		var jsApps = [];
 		for ( var tc in [ "java", "php", "python", "go", "rust", "javascript" ] ) {
 			if ( !arrayFind( chosen, tc ) ) continue;
-			if ( tc == "rust" ) {
-				// rustup itself comes with the install; this picks the stable toolchain (a failure is skipped, the plan goes on)
-				out.steps.append( { id: "toolchain-rust", title: "set up Rust (rustup, stable toolchain)", argv: [ "rustup", "default", "stable" ], optional: true } );
-				continue;
-			}
+			if ( tc == "rust" ) continue;
 			if ( tc == "javascript" ) {
 				// runtimes: Node comes through nvm (`toolchain node`); Bun and Deno are catalog apps
 				for ( var rt in pick( a, "js_runtimes", [ "node" ] ) ) {
@@ -162,10 +158,11 @@ class InitPlan {
 			out.steps.append( { id: "toolchain-" & tc, title: "install the " & tc & " toolchain", argv: [ "bxrig", "profile-install", profiles[ tc ] ] } );
 			if ( tc == "php" ) out.steps.append( { id: "laravel", title: "install the Laravel installer (composer global)", argv: [ "composer", "global", "require", "laravel/installer" ] } );
 		}
+		// Rust is always set up (part of the stack): rustup itself comes with the install; this picks the stable toolchain (a failure is skipped)
+		if ( structKeyExists( a, "toolchains" ) ) out.steps.append( { id: "toolchain-rust", title: "set up Rust (rustup, stable toolchain)", argv: [ "rustup", "default", "stable" ], optional: true } );
 		// Java is always set up: jenv, JDK 21 (BoxLang needs it) and the versions picked under toolchains, 21 global
 		var javaArgv = [ "bxrig", "java", "setup" ];
 		var extraJava = pick( a, "java_versions", [ "25" ] );
-		if ( !arrayFind( chosen, "java" ) ) extraJava = [];
 		if ( extraJava.len() ) { javaArgv.append( "--versions=" & extraJava.toList( "," ) ); }
 		// (only once the Toolchains page was answered: a plan without it does nothing here)
 		if ( structKeyExists( a, "toolchains" ) ) out.steps.append( { id: "java", title: "set up Java (jenv, JDK 21" & ( extraJava.len() ? ", " & extraJava.toList( ", " ) : "" ) & ")", argv: javaArgv, optional: true } );
@@ -181,7 +178,8 @@ class InitPlan {
 			out.steps.append( { id: "agent-skills", title: "give your coding agents skills (" & skillPick.toList( ", " ) & ")", argv: skArgv, optional: true } );
 		}
 		// the BoxLang extension for VS Code (optional: a failure is skipped, the plan goes on)
-		if ( pick( a, "boxlang_vscode", false ) ) out.steps.append( { id: "boxlang-vscode", title: "add the BoxLang extension to VS Code", argv: [ "bxrig", "boxlang", "vscode" ], optional: true } );
+		// (the extension needs VS Code: ticked in the IDEs, or an older answers file that has no IDEs question)
+		if ( pick( a, "boxlang_vscode", false ) && ( !structKeyExists( a, "ides" ) || arrayFind( pick( a, "ides", [] ), "vscode" ) ) ) out.steps.append( { id: "boxlang-vscode", title: "add the BoxLang extension to VS Code", argv: [ "bxrig", "boxlang", "vscode" ], optional: true } );
 		// containers: Podman is the engine the containers profile is built around; Docker is one extra package
 		var engine = pick( a, "container_engine" );
 		var vmWin = pick( a, "vm_windows" );
@@ -242,6 +240,8 @@ class InitPlan {
 		}
 		// local model apps you ticked (BxRig's own local AI is the ai-setup step below)
 		for ( var id in pick( a, "ai_local", [] ) ) apps.append( id );
+		// the IDEs you ticked
+		for ( var ide in pick( a, "ides", [] ) ) if ( !arrayFind( apps, ide ) ) apps.append( ide );
 		if ( pick( a, "cloud_storage", false ) == true ) { apps.append( "rclone" ); apps.append( "fuse3" ); }
 		for ( var id in pick( a, "remote_desktop", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );
 		for ( var id in pick( a, "desktop_utilities", [] ) ) if ( !arrayFind( apps, id ) ) apps.append( id );

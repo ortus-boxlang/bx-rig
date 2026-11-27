@@ -36,7 +36,7 @@ The diagram shows the three layers and that BxTimeMachine shows them together. C
 | **The whole system** | Snapshots of the system before and after every update | snapper on Btrfs, Timeshift on other filesystems |
 | **My files** | Projects, Documents and your SSH config, encrypted | restic, to a NAS, a disk or the cloud |
 
-Everything shows a plan first and needs `--yes`. The setup wizard has a **NAS** page, a **Remote backups** page and a **Backups** page, in that order.
+Everything shows a plan first and needs `--yes`. The setup wizard has a **NAS** page and a **Backups** page (local layers, backup apps and the copy somewhere else together).
 
 ## See the status
 
