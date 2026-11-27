@@ -17,6 +17,17 @@ class {
 		// (Only built when there are flags: the registry is parsed from JSON, and most runs have none.)
 		// `ai agents new` and `ai agents NAME VERB` hand their flags to bxAgents, so they are not checked either.
 		var agentsPass = cmd == "ai" && p.len() >= 3 && p[ 2 ] == "agents" && ( p[ 3 ] == "new" || !arrayFind( new bxrig.AiAgentHub( cli ).reserved(), p[ 3 ] ) );
+		// bxrig --version (-v) and bxrig [COMMAND] --help (-h) work everywhere, before anything looks at the other flags. The commands that hand their own
+		// flags to another program (secrets run, ai agents NAME VERB, scheduler add ... --) keep them.
+		var passes = agentsPass || ( cmd == "secrets" && p.len() >= 2 && p[ 2 ] == "run" ) || ( cmd == "scheduler" && p.len() >= 2 && p[ 2 ] == "add" && arrayFind( rawArgs, "--" ) );
+		if ( !passes && !p.len() && ( structKeyExists( args.options, "version" ) || structKeyExists( args.options, "v" ) || structKeyExists( args.options, "V" ) ) ) {
+			if ( asJson ) println( cli.envelope( "version", 0, { version: appVersion } ) );
+			else println( "bxrig " & appVersion );
+			CLIExit( xit.ok() );
+		}
+		if ( !passes && ( structKeyExists( args.options, "help" ) || structKeyExists( args.options, "h" ) ) ) {
+			CLIExit( new bxrig.Help( cli ).run( p.len() ? [ p[ 1 ] ] : [], asJson ) );
+		}
 		if ( !structIsEmpty( args.options ) && !agentsPass && !( cmd == "secrets" && p.len() >= 2 && p[ 2 ] == "run" ) && !( cmd == "scheduler" && p.len() >= 2 && p[ 2 ] == "add" && arrayFind( rawArgs, "--" ) ) ) {
 			var spec = new bxrig.CommandSpec();
 			if ( spec.knows( cmd ) ) {

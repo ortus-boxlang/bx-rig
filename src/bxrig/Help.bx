@@ -29,7 +29,7 @@ class Help {
 			println( new bxrig.Brand().description() );
 			println( "" );
 			println( "Usage: bxrig COMMAND [OPTIONS]" );
-			println( "Every command takes --json. Changes to the system need --yes; --dry-run shows the plan." );
+			println( "Every command takes --json and --help. Changes to the system need --yes; --dry-run shows the plan. bxrig --version prints the version." );
 			for ( var gr in variables.data.groups ) {
 				println( "" );
 				println( gr.title & ": " & gr.blurb );
