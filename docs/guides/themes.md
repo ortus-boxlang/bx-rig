@@ -36,7 +36,7 @@ Setting a theme acts at once. `--dry-run` shows what would be written without ch
 | Qt apps | qt6ct and qt5ct color schemes (set the style to qt6ct in your environment) |
 | tmux, fzf | `theme/tmux.conf` and `theme/fzf.sh`, with a one-line hint to source them |
 | rofi, fuzzel, wofi | a rofi theme (and a `config.rasi` stub when you have none), `fuzzel.ini`, wofi `style.css` |
-| Wallpaper | a BxRig theme brings one of our wallpapers; use `--keep-wallpaper` to skip it |
+| Wallpaper | a theme brings its own wallpaper (3840x2400, drawn by code so it is sharp on a high-density screen); use `--keep-wallpaper` to skip it. BxRig also ships a collection of extra wallpapers in `~/Pictures/BxRig` (`bxrig-tron`, `bxrig-neon`, `bxrig-city`, `bxrig-aurora`, `bxrig-orbit`, `bxrig-circuit`, `bxrig-rain`, `bxrig-waves`) to pick by hand |
 
 A theme can name a font with a `font = "ID"` line in its `colors.toml` (an id of `bxrig appearance font list`; other tools ignore the line). `bxrig-retro` names `sharetech`, Share Tech Mono Nerd (Arch package `ttf-sharetech-mono-nerd`): once it is installed (`bxrig appearance font install sharetech --yes`) `theme set` makes it the shell and terminal font, and until then the plan says so. Other themes leave your font alone.
 
