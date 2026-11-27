@@ -20,7 +20,7 @@ hit = h.find( "java" );
 page = h.pageLines( hit, [] ).toList( nl );
 testkit.check( "page: title, usage one form per line, flags, examples, notes", find( "bxrig java", page ) > 0 && find( "  USAGE", page ) > 0 && find( "    bxrig java setup", page ) > 0 && find( "    bxrig java global", page ) > 0 && find( "  FLAGS", page ) > 0 && find( "--versions=VALUE", page ) > 0 && find( "  EXAMPLES", page ) > 0 && find( "  NOTES", page ) > 0 );
 testkit.check( "page: a command that changes the system says so", find( "Changes the system", page ) > 0 );
-testkit.check( "page: --json, --yes and --dry-run are listed as global", find( "--json --yes --dry-run --force --quiet", page ) > 0 );
+testkit.check( "page: --json, --yes, --dry-run and --force are listed with what they do", find( "--dry-run", page ) > 0 && find( "show the plan and change nothing", page ) > 0 );
 narrow = h.pageLines( hit, [ "global" ] ).toList( nl );
 testkit.check( "page: words after the command narrow the usage", find( "bxrig java global", narrow ) > 0 && find( "    bxrig java setup [", narrow ) == 0 );
 for ( w in [ 40, 60, 80, 120 ] ) {
@@ -28,4 +28,8 @@ for ( w in [ 40, 60, 80, 120 ] ) {
 	testkit.check( "ai page fits " & w & " columns", fits( ui, mk( w ).pageLines( mk( w ).find( "ai" ), [] ), w ) );
 }
 testkit.check( "an unknown command is not found", structIsEmpty( h.find( "nonsense" ) ) );
+
+// flag descriptions: a row per flag, with what it does
+recp = h.pageLines( h.find( "record" ), [] ).toList( nl );
+testkit.check( "page: a flag with a description shows it beside the flag", find( "--webcam-size=VALUE", recp ) > 0 && find( "Size of the webcam picture", recp ) > 0 );
 testkit.done();

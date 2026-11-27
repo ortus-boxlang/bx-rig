@@ -84,7 +84,7 @@ class Pkg {
 
 	function search( text, source, limit, asJson ) {
 		var cmd = "pkg search";
-		if ( !len( trim( arguments.text ) ) || !validText( arguments.text ) ) return variables.cli.fail( cmd, "usage", "Usage: bxrig pkg search TEXT [--source=all|repo|aur] [--limit=N] (letters, digits and . _ + - only)", arguments.asJson );
+		if ( !len( trim( arguments.text ) ) || !validText( arguments.text ) ) return variables.cli.fail( cmd, "usage", "Usage: bxrig pkg search TEXT [--source=all|repo|aur] [--limit=N]" & chr( 10 ) & "  TEXT: letters, digits and . _ + - only", arguments.asJson );
 		if ( !arrayFind( [ "all", "repo", "aur" ], arguments.source ) ) return variables.cli.fail( cmd, "usage", "--source must be all, repo or aur", arguments.asJson );
 		var inst = installedSet();
 		var rows = [];

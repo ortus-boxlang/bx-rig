@@ -101,6 +101,14 @@ class Help {
 	}
 
 	/**
+	 * How a flag is written: --name, or --name=VALUE when it takes a value.
+	 * @f A flag entry of cli.json.
+	 */
+	function flagLabel( f ) {
+		return "--" & arguments.f.name & ( arguments.f.type == "value" ? "=VALUE" : "" );
+	}
+
+	/**
 	 * The page of one command.
 	 * @hit The result of find().
 	 * @sub The words after the command name (narrow the usage to them).
@@ -124,13 +132,23 @@ class Help {
 		var flags = structKeyExists( cmd, "flags" ) ? cmd.flags : [];
 		out.append( "" );
 		out.append( ui.style( "  FLAGS", "bold accent2" ) );
-		if ( flags.len() ) {
-			var items = [];
-			for ( var fl in flags ) items.append( "--" & fl.name & ( fl.type == "value" ? "=VALUE" : "" ) );
-			for ( var cl in ui.columns( items, "", { width: w } ) ) out.append( "    " & cl );
-			out.append( "" );
+		// a flag with a description is a row: the flag, then what it does (wrapped under itself)
+		var shown = flags.filter( function( f ) { return len( f.desc ?: "" ) > 0 && !arrayFind( [ "json", "yes", "dry-run", "force", "quiet" ], f.name ); } );
+		var fw = 0;
+		for ( var fx in shown ) fw = max( fw, len( flagLabel( fx ) ) );
+		var dw = max( 16, w - fw - 4 );
+		for ( var fl in shown ) {
+			var dl = ui.wrap( fl.desc, dw );
+			for ( var di = 1; di <= dl.len(); di++ ) out.append( "    " & ( di == 1 ? ui.style( ui.align( flagLabel( fl ), fw ), "info" ) : repeatString( " ", fw ) ) & "  " & ui.style( dl[ di ], "dim" ) );
 		}
-		for ( var gl in ui.wrap( "--json --yes --dry-run --force --quiet (every command)", w ) ) out.append( "    " & ui.style( gl, "dim" ) );
+		if ( shown.len() ) out.append( "" );
+		// the flags every command takes
+		var globals = [ [ "--json", "print the result as JSON" ], [ "--yes", "apply the change (without it you get the plan)" ], [ "--dry-run", "show the plan and change nothing" ], [ "--force", "overwrite what is there, where a command allows it" ] ];
+		for ( var gf in globals ) {
+			var gw = ui.wrap( gf[ 2 ], max( 12, w - 12 ) );
+			for ( var gi = 1; gi <= gw.len(); gi++ ) out.append( "    " & ( gi == 1 ? ui.style( ui.align( gf[ 1 ], 10 ), "info" ) : repeatString( " ", 10 ) ) & "  " & ui.style( gw[ gi ], "dim" ) );
+		}
+		out.append( "    " & ui.style( "(these work on every command)", "dim" ) );
 		if ( cmd.mutates ) {
 			out.append( "" );
 			for ( var cl2 in new bxrig.ui.Blocks( ui ).callout( "warn", "Changes the system: needs --yes. Without it you get the plan (exit 2); --dry-run shows it and exits 0.", { width: w } ) ) out.append( "  " & cl2 );

@@ -39,6 +39,8 @@ for g in d['groups']:
         if not c['summary'].endswith('.'): problems.append('the summary of %s should end with a full stop'%c['name'])
         if not c.get('brief') or len(c['brief'])>60: problems.append('%s needs a brief of at most 60 characters (the one line in bxrig help)'%c['name'])
         if '—' in json.dumps(c,ensure_ascii=False): problems.append('em dash in '+c['name'])
+        for f in c.get('flags',[]):
+            if len(f.get('desc',''))>70: problems.append('the description of %s --%s is longer than 70 characters'%(c['name'],f['name']))
 if problems:
     sys.stderr.write('\n'.join(problems)+'\n'); sys.exit(1)
 
@@ -84,7 +86,7 @@ F=['---','title: Command flags','order: 2','summary: The flags each command acce
 '# Command flags','',
 'Generated from `docs/reference/cli.json`. These flags work on every command: `--json`, `--yes`, `--dry-run`, `--force`, `--quiet`. Any other flag must be listed for the command; an unknown flag is a usage error (exit 2) and nothing runs.','',
 'Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was found in the command code but is not in its usage line yet: add it to the usage, or remove it if the code no longer reads it.','',
-'| Command | Flag | Type | Default |','|---|---|---|---|']
+'| Command | Flag | Type | Default | What it does |','|---|---|---|---|---|']
 def default_of(c,name):
     for u in c['usage']+c['examples']:
         m=re.search(r'--'+re.escape(name)+r'=([a-z0-9._-]+)(?![A-Za-z|])',u)
@@ -92,7 +94,7 @@ def default_of(c,name):
     return ''
 for g in d['groups']:
     for c in g['commands']:
-        for f in c.get('flags',[]): F.append('| `%s` | `--%s` | %s | %s |'%(c['name'],f['name'],f['type'],('`'+default_of(c,f['name'])+'`') if default_of(c,f['name']) else ''))
+        for f in c.get('flags',[]): F.append('| `%s` | `--%s` | %s | %s | %s |'%(c['name'],f['name'],f['type'],('`'+default_of(c,f['name'])+'`') if default_of(c,f['name']) else '',f.get('desc','')))
 open(out+'/command-flags.md','w').write('\n'.join(F)+'\n')
 open(out+'/commands.md','w').write('\n'.join(L).rstrip('\n')+'\n')
 fl=';'.join(c['name']+':'+','.join(f['name'] for f in c.get('flags',[])) for g in d['groups'] for c in g['commands'])
