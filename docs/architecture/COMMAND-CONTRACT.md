@@ -869,7 +869,7 @@ The wizard asks the window layout once per desktop you set up: Hyprland (`layout
 
 ### 14.2 `bxrig init`
 
-A full-screen terminal wizard that asks the questions below, shows a review screen, then runs the matching commands. Answers are saved to `~/.config/bxrig/answers.json` (mode 600, written atomically); a re-run starts from the saved answers.
+A full-screen terminal wizard that asks the questions below, shows a review screen, then runs the matching commands. After the welcome screen it asks **how to begin** (decided with the owner 2026-11-27): a new install (the whole wizard from the defaults), answers imported from a file (a path typed on the screen, checked by `Init.importAnswers`; the answers go over the defaults and the review follows, with a notice that counts what was imported and what this version does not use), or, when there are saved answers, those. `--fresh`, `--rerun` and `--from=FILE` skip the question. `WizardApp` takes `opts.start`, `opts.presets` (`new`, `saved`) and `opts.importer`. Answers are saved to `~/.config/bxrig/answers.json` (mode 600, written atomically); a re-run starts from the saved answers.
 
 ```
 bxrig init                          the wizard (needs a terminal)

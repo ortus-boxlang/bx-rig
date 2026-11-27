@@ -48,6 +48,18 @@ Every install writes a log you can read later or send for debugging: `~/.local/s
 
 `bxrig init --plain` keeps the old streaming output instead of the screen, and `bxrig init --answers=FILE --yes --screen` runs a saved answers file on the screen. Both write the same log.
 
+## How do you want to start?
+
+After the welcome screen the wizard asks how to begin:
+
+| Choice | What happens |
+|---|---|
+| **New install** | The whole wizard, page by page, from the defaults (what this machine already has is still marked `✓ installed`). |
+| **Import answers from a file** | You type the path of an answers file (`bxrig init --export=FILE` makes one; `~/` works). The answers go on top of the defaults and you land on the **review**, ready to go. Esc on the review goes back to the pages if you want to change something. A file that is not there, or is not an answers file, is an error on the screen; keys this version does not ask are ignored and counted ("Imported 24 answers from ... (2 not used by this version)"). |
+| **Use my saved answers** | Shown only when you have run the wizard before: your last answers plus what the machine has, straight to the review. |
+
+`bxrig init --fresh`, `--rerun` and `--from=FILE` already say how to begin, so they skip this question.
+
 ## Run it again
 
 On a machine that is already set up the wizard starts from your saved answers plus what it finds on the system, and marks installed options with `✓ installed`.

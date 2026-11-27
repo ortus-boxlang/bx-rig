@@ -4,8 +4,8 @@
 //
 //   result = new bxrig.Wizard( spec, preset ).run();   // { outcome: "done"|"cancelled", answers: {...} }
 class Wizard {
-	function init( spec, preset = {} ) {
-		variables.app = new bxrig.WizardApp( arguments.spec, arguments.preset );
+	function init( spec, preset = {}, opts = {} ) {
+		variables.app = new bxrig.WizardApp( arguments.spec, arguments.preset, arguments.opts );
 		return this;
 	}
 

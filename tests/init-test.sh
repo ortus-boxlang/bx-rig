@@ -93,6 +93,44 @@ run "$binary" init --export="$tmp/exported-answers.json" | grep -q 'bxrig init -
 run "$binary" init --export="$tmp/exported-answers.json" --force >/dev/null || fail 'export --force'
 rm -f "$tmp/cfg/bxrig/answers.json"
 
+# the start screen in a pty: Enter on the welcome, Down to "Import answers from a file", Enter, type the path of an answers file, Enter: the review
+# (with "Imported N answers") straight away, then Enter: the plan of the imported answers (--dry-run). Nothing is asked page by page.
+rm -f "$tmp/cfg/bxrig/answers.json"
+printf '{"desktops":"hyprland","terminal":"kitty","shell":"fish","ai_orchestrators":["pane"]}' > "$tmp/mine.json"
+python3 - "$binary" "$tmp" > "$tmp/start.out" <<'PY'
+import os, pty, select, sys, time, struct, fcntl, termios, re
+binary, tmp = sys.argv[1:3]
+env = dict(os.environ, BXRIG_CONFIG_HOME=tmp + '/cfg', BXRIG_STATE_HOME=tmp + '/state', BXRIG_SELF=tmp + '/self', HOME=tmp + '/home', PATH=tmp + '/bin:' + os.environ['PATH'], LOG=tmp + '/log')
+pid, fd = pty.fork()
+if pid == 0:
+    os.execve(binary, [binary, 'init', '--dry-run'], env)
+fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
+buf = b''
+def pump(t):
+    global buf
+    end = time.time() + t
+    while time.time() < end:
+        r, _, _ = select.select([fd], [], [], 0.05)
+        if r:
+            try:
+                d = os.read(fd, 65536)
+                if not d: return
+                buf += d
+            except OSError: return
+pump(2.5)
+for k in [b'\r', b'\x1b[B', b'\r', tmp.encode() + b'/mine.json', b'\r', b'\r']:
+    os.write(fd, k); pump(0.6)
+pump(2.0)
+_, status = os.waitpid(pid, 0)
+txt = re.sub(rb'\x1b\[[0-9;?]*[A-Za-z]|\x1b[()][0-9A-B]|\x1b[=>]', b'', buf).decode('utf8', 'replace')
+sys.stdout.write(txt)
+sys.exit(os.WEXITSTATUS(status) if os.WIFEXITED(status) else 1)
+PY
+grep -q 'How do you want to start' "$tmp/start.out" || fail 'the start screen is shown'
+grep -q 'Imported 4 answers' "$tmp/start.out" || fail "the import goes to the review with its notice: $(tail -c 600 "$tmp/start.out")"
+grep -q 'kitty' "$tmp/start.out" && grep -q 'init, ' "$tmp/start.out" || fail 'the imported answers reach the plan'
+[[ -f "$tmp/cfg/bxrig/answers.json" ]] && jq -e '.terminal == "kitty" and .shell == "fish"' "$tmp/cfg/bxrig/answers.json" >/dev/null || fail 'the imported answers were saved'
+
 # the wizard in a pty: Enter on the welcome screen, Tab through the pages to the review, Enter. The answers are saved (mode 600).
 : > "$LOG"
 python3 - "$binary" "$tmp" <<'PY'
