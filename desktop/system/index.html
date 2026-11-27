@@ -1,0 +1,452 @@
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Displays, power and time - BxRig</title>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="BxRig">
+	<meta property="og:title" content="Displays, power and time">
+
+	
+	
+
+	
+	
+		<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxrig.boxlang.io&#x2f;desktop&#x2f;system&#x2f;index.html">
+	
+
+	
+	
+		<meta name="description" content="Monitors, laptop power, the time zone when you travel, DNS, kernels and stay awake.">
+		<meta property="og:description" content="Monitors, laptop power, the time zone when you travel, DNS, kernels and stay awake.">
+	
+
+	
+	
+
+	
+	
+		<link rel="icon" href="/assets/favicon.png">
+	
+
+	
+	<script>
+		( function () {
+			var configuredMode = "dark";
+			var stored = localStorage.getItem( "bxsites-theme" );
+			var prefersDark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+			var wantsDark = stored ? stored === "dark" : ( configuredMode === "dark" || ( configuredMode === "auto" && prefersDark ) );
+			if ( wantsDark ) {
+				document.documentElement.setAttribute( "data-theme", "dark" );
+			}
+		} )();
+	</script>
+
+	
+	<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+	<link rel="stylesheet" href="/assets/vendor/highlight/github.min.css">
+	<link rel="stylesheet" href="/assets/theme/style.a70338f7.css">
+
+	
+	
+
+	
+	
+		<style>
+			
+			
+				:root {
+					--bxsites-accent: #00C853;
+					--bxsites-link: #00C853;
+					--bxsites-link-hover: color-mix( in srgb, #00C853 85%, black );
+				}
+			
+			
+			
+				[data-theme="dark"] {
+					--bxsites-accent: #00FF78;
+					--bxsites-link: #00FF78;
+					--bxsites-link-hover: color-mix( in srgb, #00FF78 85%, white );
+				}
+			
+		</style>
+	
+
+	
+	
+		<style>
+			.bxsites-nav-nested {
+				border-inline-start: 2px solid var(--bxsites-accent, var(--bxsites-border));
+				margin-inline-start: 0.2rem;
+				padding-inline-start: 0.85rem;
+			}
+		</style>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+		<script>window.__BXSITES_BASE_PATH__ = "/";</script>
+		<script>window.__BXSITES_SEARCH_NO_RESULTS__ = "No\x20results\x20found.";</script>
+		<script src="/assets/vendor/minisearch/minisearch.js"></script>
+		<script src="/assets/search.f14e08a2.js" defer></script>
+	
+
+	
+	
+
+	
+	
+
+	<script src="/assets/vendor/alpine/cdn.min.js" defer></script>
+</head>
+
+
+<body
+	x-data="{ dark: document.documentElement.getAttribute( 'data-theme' ) === 'dark', navOpen: window.matchMedia( '(min-width: 992px)' ).matches ? ( localStorage.getItem( 'bxsites-nav-open' ) !== null ? localStorage.getItem( 'bxsites-nav-open' ) === 'true' : true ) : false }"
+	x-init="$watch( 'dark', v => { document.documentElement.setAttribute( 'data-theme', v ? 'dark' : 'light' ); localStorage.setItem( 'bxsites-theme', v ? 'dark' : 'light' ) } ); $watch( 'navOpen', v => { if ( window.matchMedia( '(min-width: 992px)' ).matches ) localStorage.setItem( 'bxsites-nav-open', v ) } )">
+	
+	<nav class="navbar navbar-expand-lg brand-navbar">
+		<div class="container-fluid navbar-row">
+			
+			<button
+				class="navbar-toggler"
+				type="button"
+				@click="navOpen = !navOpen"
+				:aria-expanded="navOpen.toString()"
+				aria-controls="bxsites-sidebar"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			
+			<a class="navbar-brand brand-mark" href="/"><img class="brand-logo" src="/assets/bxrig-logo.svg" alt=""><span class="brand-name">BxRig</span></a>
+
+			
+			<div class="navbar-controls">
+				
+				
+					
+
+	<div class="bxsites-search position-relative">
+		<input
+			type="search"
+			id="bxsites-search-input"
+			class="form-control"
+			placeholder="Search..."
+			aria-label="Search">
+		<kbd class="bxsites-search-kbd" aria-hidden="true">Ctrl K</kbd>
+		<ul id="bxsites-search-results" class="bxsites-search-results list-unstyled"></ul>
+	</div>
+
+
+
+				
+
+				
+				
+
+				
+				
+					<a
+						class="repo-link"
+						href="https://github.com/ortus-boxlang/bxrig"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Repository"
+						title="Repository">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg>
+					</a>
+				
+
+				
+				<button
+					type="button"
+					class="theme-toggle"
+					@click="dark = !dark"
+					aria-label="Toggle dark mode">
+					<span x-show="!dark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
+					<span x-show="dark" x-cloak><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
+				</button>
+			</div>
+			
+		</div>
+		
+	</nav>
+
+	
+	<div class="container-fluid">
+		
+		<div class="row" :class="{ 'bxsites-nav-collapsed' : !navOpen }">
+			
+			<aside class="col-lg-3 col-xl-2 sidebar" id="bxsites-sidebar" x-show="navOpen" x-cloak>
+				
+				
+				<ul class="nav flex-column"><li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/start/index.html">Start here</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Start here section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/start/distributions/index.html">Distributions</a></li><li class="nav-item"><a class="nav-link" href="/start/install/index.html">Install</a></li><li class="nav-item"><a class="nav-link" href="/start/wizard/index.html">The setup wizard</a></li><li class="nav-item"><a class="nav-link" href="/start/first-hour/index.html">Your first hour</a></li><li class="nav-item"><a class="nav-link" href="/start/install-advanced/index.html">Install options</a></li><li class="nav-item"><a class="nav-link" href="/start/troubleshooting/index.html">Troubleshooting</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/desktop/index.html">Daily desktop</a><button type="button" class="nav-toggle" aria-expanded="true" aria-label="Toggle Daily desktop section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested"><li class="nav-item"><a class="nav-link" href="/desktop/desktop/index.html">The desktop</a></li><li class="nav-item"><a class="nav-link" href="/desktop/menu/index.html">The menu</a></li><li class="nav-item"><a class="nav-link" href="/desktop/control-center/index.html">Control Center</a></li><li class="nav-item"><a class="nav-link" href="/desktop/shortcuts/index.html">Shortcuts and Mac keys</a></li><li class="nav-item"><a class="nav-link" href="/desktop/launcher/index.html">Launcher</a></li><li class="nav-item"><a class="nav-link" href="/desktop/input/index.html">Mice, trackpads and keyboards</a></li><li class="nav-item"><a class="nav-link active" href="/desktop/system/index.html">Displays, power and time</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/customize/index.html">Customize</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Customize section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/customize/themes/index.html">Themes</a></li><li class="nav-item"><a class="nav-link" href="/customize/appearance/index.html">Appearance</a></li><li class="nav-item"><a class="nav-link" href="/customize/accessibility/index.html">Accessibility</a></li><li class="nav-item"><a class="nav-link" href="/customize/boxy-look/index.html">Boxy&#x27;s look and voice</a></li><li class="nav-item"><a class="nav-link" href="/customize/your-own-config/index.html">Your own config</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/build/index.html">Build software</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Build software section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/build/boxlang/index.html">BoxLang and MatchBox</a></li><li class="nav-item"><a class="nav-link" href="/build/developer-tools/index.html">Developer tools</a></li><li class="nav-item"><a class="nav-link" href="/build/databases-and-vms/index.html">Databases and virtual machines</a></li><li class="nav-item"><a class="nav-link" href="/build/mail/index.html">Mail catcher</a></li><li class="nav-item"><a class="nav-link" href="/build/android/index.html">Android apps</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/ai/index.html">AI on your machine</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle AI on your machine section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/ai/agents/index.html">AI agents and skills</a></li><li class="nav-item"><a class="nav-link" href="/ai/local-ai/index.html">Local AI</a></li><li class="nav-item"><a class="nav-link" href="/ai/boxlang-agents/index.html">BoxLang agents</a></li><li class="nav-item"><a class="nav-link" href="/ai/mcp-and-privacy/index.html">MCP and privacy</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/data/index.html">Apps and your data</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Apps and your data section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/data/apps/index.html">Apps and web apps</a></li><li class="nav-item"><a class="nav-link" href="/data/backups/index.html">Backups and BxTimeMachine</a></li><li class="nav-item"><a class="nav-link" href="/data/nas/index.html">Your NAS</a></li><li class="nav-item"><a class="nav-link" href="/data/scheduler/index.html">Scheduler</a></li><li class="nav-item"><a class="nav-link" href="/data/calendar/index.html">Calendar and reminders</a></li><li class="nav-item"><a class="nav-link" href="/data/export-import/index.html">Move to another machine</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/maintain/index.html">Keep it healthy</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Keep it healthy section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/maintain/updates/index.html">Updates and channels</a></li><li class="nav-item"><a class="nav-link" href="/maintain/security/index.html">Security</a></li><li class="nav-item"><a class="nav-link" href="/maintain/images/index.html">Pictures in the terminal</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/developer/index.html">Extend BxRig</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Extend BxRig section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/developer/architecture/index.html">How it fits together</a></li><li class="nav-item"><a class="nav-link" href="/developer/setup/index.html">Set up your dev machine</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-command/index.html">Add a command</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-theme/index.html">Add a theme</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-an-app/index.html">Add an app</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-shortcut/index.html">Add a shortcut</a></li><li class="nav-item"><a class="nav-link" href="/developer/wizard-pages/index.html">Wizard pages</a></li><li class="nav-item"><a class="nav-link" href="/developer/noctalia-plugins/index.html">Noctalia plugins</a></li><li class="nav-item"><a class="nav-link" href="/developer/skills-mcp-agents/index.html">Skills, MCP and agents</a></li><li class="nav-item"><a class="nav-link" href="/developer/ui-toolkit/index.html">The terminal UI toolkit</a></li><li class="nav-item"><a class="nav-link" href="/developer/tests/index.html">Tests</a></li><li class="nav-item"><a class="nav-link" href="/developer/code-rules/index.html">Code rules</a></li><li class="nav-item"><a class="nav-link" href="/developer/release-and-docs/index.html">Releases and docs</a></li><li class="nav-item"><a class="nav-link" href="/developer/screenshots-wanted/index.html">Screenshots wanted</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/architecture/index.html">Design records</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Design records section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/architecture/COMMAND-CONTRACT/index.html">Command contract</a></li><li class="nav-item"><a class="nav-link" href="/architecture/MATCHBOX-PARITY/index.html">MatchBox parity</a></li><li class="nav-item"><a class="nav-link" href="/architecture/SHORTCUTS-DECISIONS/index.html">SHORTCUTS DECISIONS</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">reference</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle reference section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/reference/commands/index.html">Command reference</a></li><li class="nav-item"><a class="nav-link" href="/reference/command-flags/index.html">Command flags</a></li><li class="nav-item"><a class="nav-link" href="/reference/config-files/index.html">Files and folders</a></li></ul></li></ul>
+				<a class="bxsites-powered-by" href="https://bxsites.io" target="_blank" rel="noopener noreferrer">
+					<img class="bxsites-powered-by__logo" src="/assets/bxsites-logo.svg" alt="" aria-hidden="true"> <span>Powered by BxSites</span>
+				</a>
+			</aside>
+
+			
+			<main class="col-lg-9 col-xl-8 content">
+					
+
+	
+	<article class="page-content">
+		
+		
+		
+		
+		
+		
+			<nav class="breadcrumb-nav mb-3" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/desktop/index.html">Daily desktop</a></li><li class="breadcrumb-item active" aria-current="page">Displays, power and time</li></ol></nav>
+		
+		
+		<h1 class="page-title" id="page-title">
+			<a href="#page-title" id="page-title" class="anchor"></a>
+			
+			Displays, power and time
+		</h1>
+		
+		
+			<p class="page-summary">Monitors, laptop power, the time zone when you travel, DNS, kernels and stay awake.</p>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#displays">Displays</a></li><li class="toc-level-2"><a href="#laptop-power">Laptop power</a></li><li class="toc-level-2"><a href="#time-zone-and-travel">Time zone and travel</a></li><li class="toc-level-2"><a href="#dns-kernels-and-stay-awake">DNS, kernels and stay awake</a></li><li class="toc-level-2"><a href="#when-something-is-stuck">When something is stuck</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li><li class="toc-level-3"><a href="#password-firmware-and-speed">Password, firmware and speed</a></li><li class="toc-level-3"><a href="#hardware-switches">Hardware switches</a></li></ul></details>
+		
+
+		
+		<h1 id="displays-power-and-time"><a href="#displays-power-and-time" id="displays-power-and-time" name="displays-power-and-time" class="anchor"></a>Displays, power and time</h1>
+<p>Set up your monitors, laptop power, time zone and network basics, and fix a stuck desktop piece, each with one command.</p>
+<h2 id="try-it"><a href="#try-it" id="try-it" name="try-it" class="anchor"></a>Try it</h2>
+<pre><code class="language-bash">bxrig display list              # your screens and their names
+bxrig power status              # laptop charge, profile, lid actions
+bxrig time status               # the zone and clock
+</code></pre>
+<p>What each command family changes on your machine.</p>
+<pre><code class="language-mermaid">flowchart LR
+  A[&quot;bxrig display&quot;] --&gt; B[&quot;monitors.lua on Hyprland&quot;]
+  A --&gt; C[&quot;kscreen-doctor on Plasma&quot;]
+  D[&quot;bxrig power&quot;] --&gt; E[&quot;profiles, lid, charge limit&quot;]
+  F[&quot;bxrig time&quot;] --&gt; G[&quot;zone, NTP, auto zone&quot;]
+</code></pre>
+<h2 id="displays"><a href="#displays" id="displays" name="displays" class="anchor"></a>Displays</h2>
+<pre><code class="language-bash">bxrig display list
+bxrig display scale DP-2 1.5          # auto or 0.5 to 4
+bxrig display rotate DP-2 90
+bxrig display mode DP-2 2560x1440@144
+bxrig display position DP-2 2880x0
+bxrig display mirror on               # the laptop panel on every external monitor
+bxrig display laptop off              # refused when no other monitor would be on
+bxrig display brightness up           # down, or set 40
+bxrig display apply                   # push what is saved again
+</code></pre>
+<p>The starter <code>hyprland.lua</code> that <code>bxrig setup hyprland</code> writes gives each connected screen a first scale from its resolution, so a high-density laptop panel does not start too big: it aims at the room of a 1200 pixel high screen (2880x1800 gets 1.5, 3840x2160 gets 2, 1920x1080 stays at 1) and only uses a scale that divides the resolution evenly; otherwise it leaves Hyprland's own <code>auto</code>. The file is yours after that. On a machine that already has a <code>hyprland.lua</code>, set it yourself: <code>bxrig display scale eDP-1 1.5 --yes</code> (<code>bxrig display list</code> shows the names).</p>
+<p>On Hyprland the settings are one generated file, <code>~/.config/bxrig/theme/monitors.lua</code>, loaded after your own <code>hyprland.lua</code>, and Hyprland reloads. On Plasma they go through <code>kscreen-doctor</code>.</p>
+<h2 id="laptop-power"><a href="#laptop-power" id="laptop-power" name="laptop-power" class="anchor"></a>Laptop power</h2>
+<p>CachyOS does not ship laptop power tools, so BxRig adds them.</p>
+<pre><code class="language-bash">bxrig power status                    # charge, state, time left, watts, health, cycles, profile, lid actions
+bxrig power setup --yes               # power-profiles-daemon and upower; nothing happens on a desktop
+bxrig power profile saver             # performance, balanced, saver
+bxrig power lid lock --yes            # suspend, hibernate, lock or ignore when the lid closes (battery and AC)
+bxrig power lid battery hibernate --yes   # only on battery
+bxrig power lid ac lock --yes             # only on AC power
+bxrig power hibernate --yes           # save to disk and power off (exit 4 until swap and resume are ready)
+bxrig power charge-limit 80 --yes     # stop charging at 80 percent (laptops whose battery supports it)
+bxrig power charge-limit off --yes    # back to a full charge
+bxrig power doctor                    # daemons, the lid, zram, swap, resume and the kernel for hibernation, the charge limit
+</code></pre>
+<p>The lid setting is a logind drop-in and applies from the next login. Hibernation is not configured for you: <code>power hibernate</code> and <code>doctor</code> tell you what is missing (disk swap at least the size of RAM, zram does not count; <code>resume=</code> on the kernel command line, with <code>resume_offset=</code> for a swap file; a kernel without secure boot lockdown). The charge limit uses the kernel attribute <code>charge_control_end_threshold</code>, kept across reboots and suspends by a small systemd unit; many laptops (ThinkPad, ASUS, Framework and others) have it, some do not, and then the command exits 4. The charge limit and hibernation are not verified on real hardware yet.</p>
+<p>The bar's battery widget opens a Power panel with these settings (see Quick settings and Power in the appearance guide).</p>
+<h2 id="time-zone-and-travel"><a href="#time-zone-and-travel" id="time-zone-and-travel" name="time-zone-and-travel" class="anchor"></a>Time zone and travel</h2>
+<pre><code class="language-bash">bxrig time status
+bxrig time zone Europe/Madrid --yes   # set it (bxrig time zone --list shows them all)
+bxrig time sync --yes                 # after you land: set the zone from your IP address
+bxrig time auto on --yes              # or follow your location by itself
+bxrig time ntp on --yes
+</code></pre>
+<p><code>time auto on</code> installs GeoClue and <code>automatic-timezoned</code>, writes the service and the GeoClue settings it needs, and enables it. <strong>GeoClue looks your location up online (the Wi-Fi networks around you or your IP address)</strong>, so the plan says so before you agree. <code>time auto off</code> removes everything it wrote. If the zone does not follow you, read <code>journalctl -u automatic-timezoned</code>.</p>
+<h2 id="dns-kernels-and-stay-awake"><a href="#dns-kernels-and-stay-awake" id="dns-kernels-and-stay-awake" name="dns-kernels-and-stay-awake" class="anchor"></a>DNS, kernels and stay awake</h2>
+<pre><code class="language-bash">bxrig dns                              # the servers in use
+bxrig dns cloudflare --yes             # google, quad9, custom 9.9.9.10, dhcp
+bxrig dns bench                        # time each provider and see the fastest
+bxrig kernel list
+bxrig kernel install linux-cachyos-lts --yes
+bxrig toggle stay-awake                # keep the screen from idling (Noctalia)
+</code></pre>
+<p><code>dns</code> changes the active NetworkManager connections. <code>dns bench</code> asks Cloudflare, Quad9, Google, your router and your own servers (when you use some) the same five names twice with <code>dig</code> and shows the median of the second round, the one in use marked; it needs <code>dig</code> (<code>bind</code> on Arch, <code>bind9-dnsutils</code> on Debian and Ubuntu, <code>bind-utils</code> on openSUSE). <code>kernel</code> installs or removes kernel packages with their headers; it never edits the bootloader, never removes the running or the last kernel, and you pick the kernel in the boot menu. Stay awake needs Noctalia (Hyprland); on Plasma use System Settings.</p>
+<h2 id="when-something-is-stuck"><a href="#when-something-is-stuck" id="when-something-is-stuck" name="when-something-is-stuck" class="anchor"></a>When something is stuck</h2>
+<pre><code class="language-bash">bxrig system restart shell        # Noctalia (or Plasma's shell)
+bxrig system restart audio        # PipeWire and WirePlumber
+bxrig system restart wifi         # unblock the radio, Wi-Fi on, rescan
+bxrig system restart bluetooth    # unblock the radio, adapter on
+</code></pre>
+<p>Each shows a plan first; add <code>--yes</code> (the menu's Update &gt; Restart does).</p>
+<h2 id="advanced"><a href="#advanced" id="advanced" name="advanced" class="anchor"></a>Advanced</h2>
+<h3 id="password-firmware-and-speed"><a href="#password-firmware-and-speed" id="password-firmware-and-speed" name="password-firmware-and-speed" class="anchor"></a>Password, firmware and speed</h3>
+<pre><code class="language-bash">bxrig system password             # passwd, on this terminal
+bxrig system firmware             # firmware updates your vendors offer (fwupd, from LVFS)
+bxrig system firmware update --yes
+bxrig system speedtest network    # speedtest-cli: ping, download, upload
+bxrig system speedtest disk       # write and read 1 GiB in ~/.cache
+bxrig system speedtest dns        # the same as dns bench
+bxrig system speedtest last       # the last result of each
+</code></pre>
+<p>Only the last result of each test is kept (<code>~/.local/state/bxrig/speedtest-last.json</code>), so the panels can show it when they open. On the bar, the System panel's Network tab has the Wi-Fi (with Share Wi-Fi, a QR code a phone scans), the speed and disk tests and a DNS list to pick from; the Quick panel has Share Wi-Fi and Control Center buttons at the top. The Control Center has the same on its Network page.</p>
+<p>Firmware updates cover BIOS/UEFI, SSDs, docks and some keyboards and mice, from vendors that publish to LVFS (Dell, Lenovo, HP, Framework, Logitech and others). Many consumer laptops are not covered.</p>
+<h3 id="hardware-switches"><a href="#hardware-switches" id="hardware-switches" name="hardware-switches" class="anchor"></a>Hardware switches</h3>
+<pre><code class="language-bash">bxrig input touchpad off          # and on, toggle, status (Hyprland); also touchscreen
+bxrig gpu mode                    # a laptop with two GPUs: the current mode
+bxrig gpu mode integrated --yes   # the dedicated GPU off (battery); hybrid turns it back on
+bxrig wifi qr                     # a QR code a phone scans to join your network
+bxrig share file report.pdf       # LocalSend: a file, a folder or the clipboard to a device nearby
+bxrig default editor neovim --yes # the app for text files, and EDITOR / VISUAL
+</code></pre>
+<p><code>gpu mode</code> uses supergfxctl (supergfxd); log out or reboot after a switch. <code>share</code> needs LocalSend's command line, <code>localsend-cli</code> (LocalSend 1.18 and later); <code>bxrig share receive</code> opens the LocalSend app.</p>
+<p>Next: <a href="/customize/appearance/index.html">Appearance</a>, <a href="/maintain/updates/index.html">Updates</a>.</p>
+
+	
+
+	
+	
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/desktop/system.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/desktop/system.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 4&#x3a;56&#x3a;05 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Displays%2C%20power%20and%20time&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdesktop%2Fsystem%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+	
+</article>
+
+
+
+
+
+
+	<nav class="page-nav d-flex justify-content-between" aria-label="Page navigation">
+		
+		
+			<a class="page-nav__card page-nav__card--prev" href="/desktop/input/index.html">
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+				<span class="page-nav__text">
+					<span class="page-nav__label">Previous</span>
+					<span class="page-nav__title">Mice, trackpads and keyboards</span>
+				</span>
+			</a>
+		
+		
+		
+		
+		
+			<a class="page-nav__card page-nav__card--next" href="/customize/index.html">
+				<span class="page-nav__text">
+					<span class="page-nav__label">Next</span>
+					<span class="page-nav__title">Customize</span>
+				</span>
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+			</a>
+		
+	</nav>
+
+
+
+
+
+
+			</main>
+
+			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#displays">Displays</a></li><li class="toc-level-2"><a href="#laptop-power">Laptop power</a></li><li class="toc-level-2"><a href="#time-zone-and-travel">Time zone and travel</a></li><li class="toc-level-2"><a href="#dns-kernels-and-stay-awake">DNS, kernels and stay awake</a></li><li class="toc-level-2"><a href="#when-something-is-stuck">When something is stuck</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li><li class="toc-level-3"><a href="#password-firmware-and-speed">Password, firmware and speed</a></li><li class="toc-level-3"><a href="#hardware-switches">Hardware switches</a></li></ul></nav>
+				</aside>
+			
+		</div>
+		
+	</div>
+	
+
+	
+	
+		<footer class="bxsites-footer">
+			<div class="container-fluid bxsites-footer__inner">
+				
+				<div class="bxsites-footer__copy">&copy; 2026 BxRig</div>
+				
+				
+					<div class="bxsites-footer__social"><a class="social-link" href="https://github.com/ortus-boxlang/BoxLang" target="_blank" rel="noopener noreferrer" aria-label="BoxLang on GitHub" title="BoxLang on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg></a><a class="social-link" href="https://www.boxlang.io" target="_blank" rel="noopener noreferrer" aria-label="BoxLang" title="BoxLang"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a></div>
+				
+				
+				<div class="bxsites-footer__credit">Built with <a href="https://bxsites.io" target="_blank" rel="noopener noreferrer">BxSites</a></div>
+			</div>
+		</footer>
+	
+
+	
+	<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+	<script src="/assets/vendor/highlight/highlight.min.js"></script>
+	<script src="/assets/highlight-boxlang.c59b5de4.js"></script>
+	<script>hljs.highlightAll();</script>
+	<script src="/assets/code-lines.66ad0c90.js"></script>
+	<script src="/assets/copy-code.a5acc8cc.js" defer></script>
+	<script src="/assets/admonition-collapse.df9b134e.js" defer></script>
+	<script src="/assets/nav-toggle.6bc5dbe8.js" defer></script>
+	<script src="/assets/toc-collapse.cb73e778.js" defer></script>
+	<script src="/assets/tabs.24dffad6.js" defer></script>
+	<script src="/assets/conditional-content-init.9ef1e0f9.js" defer></script>
+	<script src="/assets/course-progress.3813411a.js" defer></script>
+	<script src="/assets/prompt-init.774781de.js" defer></script>
+	<script src="/assets/contact-form-init.7f7be308.js" defer></script>
+
+	
+	
+
+	
+	
+		<script src="/assets/vendor/mermaid/mermaid.min.js"></script>
+		<script src="/assets/mermaid-init.b2f3ed5c.js"></script>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+</body>
+</html>
+

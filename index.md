@@ -8,7 +8,7 @@ summary: BxRig brings an opinionated, beautiful and efficient desktop to Linux, 
 
 **BxRig** brings an opinionated, beautiful and efficient desktop to Linux, built for developers. It turns a fresh CachyOS or Arch install into a finished developer rig: Hyprland with Noctalia (KDE Plasma stays installed beside it), BoxLang and MatchBox, your apps, your shell, your AI agents, all chosen in one guided setup. It is a single native program written in [BoxLang](https://boxlang.io) and compiled with [MatchBox](https://matchbox.boxlang.io).
 
-**Supported: CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13.** See [Distributions](guides/distributions.md) for what each one offers.
+**Supported: CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13.** See [Distributions](start/distributions.md) for what each one offers.
 
 *This is the documentation for version {{ version }}.*
 
@@ -16,7 +16,34 @@ summary: BxRig brings an opinionated, beautiful and efficient desktop to Linux, 
 
 <video src="assets/clips/theme-switcher.webm" poster="assets/screenshots/panel-theme-switcher.webp" autoplay loop muted playsinline width="100%"></video>
 
-Twenty themes, each with its own wallpaper: see them all in [Themes](guides/themes.md).
+Twenty-four themes, each with its own wallpaper: see them all in [Themes](customize/themes.md).
+
+## Pick your path
+
+```mermaid
+flowchart LR
+    A["New here"] --> B["Start here"]
+    B --> C["Daily desktop"]
+    C --> D["Customize"]
+    D --> E["Build, AI, data, maintain"]
+    E --> F["Developer: extend BxRig"]
+```
+
+::: card title="I am new" href="start/index.md"
+Install in one command, answer the wizard, take the first-hour tour.
+:::
+
+::: card title="Make it mine" href="customize/index.md"
+Themes, bar, fonts, shortcuts and your own config files, from the first tweak to deep tweaking.
+:::
+
+::: card title="Use it every day" href="desktop/index.md"
+The control center, shortcuts, launcher and system settings.
+:::
+
+::: card title="Extend BxRig" href="developer/index.md"
+Add a command, a theme, an app, a shortcut, a wizard page, a bar plugin or an agent skill.
+:::
 
 ## Install
 
@@ -24,41 +51,21 @@ Twenty themes, each with its own wallpaper: see them all in [Themes](guides/them
 curl -fsSL {{ installUrl }} | bash
 ```
 
-It checks your machine, downloads and verifies the release, installs everything, then starts the setup wizard. See [Getting started](getting-started.md).
+It checks your machine, downloads and verifies the release, installs everything, then starts the setup wizard. See [Install](start/install.md).
 
 ## What you get
 
-::: card title="A desktop that is ready" href="guides/desktop.md"
-Hyprland and Noctalia, or Plasma with tiling and a status panel. Mac-style keys, screenshots, notifications, night shift.
-:::
-
-::: card title="One menu for everything" href="guides/menu.md"
-The control center: search every setting, install any package, change the look, monitors, power, time zone and DNS.
-:::
-
-::: card title="BxTimeMachine" href="guides/backups.md"
-Your setup, your system and your files, backed up to a NAS or the cloud, and one screen to go back through time.
-:::
-
-::: card title="Control Center" href="guides/control-center.md"
-One terminal for your machine: what needs attention, what runs and how fresh your backups are.
-:::
-
-::: card title="Mail catcher" href="guides/mail.md"
-A local inbox for the mail your apps send while you develop. One command, nothing leaves your machine.
-:::
-
-::: card title="Every app, your choice" href="guides/apps.md"
-A curated catalog of about 290 apps and web apps, with one-click Google, Microsoft and Apple suites.
-:::
-
-::: card title="BoxLang, ready" href="guides/boxlang.md"
-BoxLang, MatchBox, their version managers, VS Code with the extension, and modules from ForgeBox.
-:::
-
-::: card title="AI agents that know the machine" href="guides/ai.md"
-Claude Code, Codex, Gemini and more, with keys in your keyring and skills that teach them BxRig.
-:::
+| Section | What is in it |
+|---|---|
+| [Start here](start/index.md) | Install, the wizard, your first hour, troubleshooting |
+| [Daily desktop](desktop/index.md) | Hyprland and Noctalia, the menu, shortcuts, the launcher, monitors and power |
+| [Customize](customize/index.md) | Themes, bar and dock, fonts, accessibility, Boxy's look, your own config |
+| [Build software](build/index.md) | BoxLang and MatchBox, developer tools, databases, VMs, the mail catcher, Android |
+| [AI](ai/index.md) | Coding agents, local models, your own BoxLang agents, MCP and privacy |
+| [Apps and your data](data/index.md) | The app catalog, BxTimeMachine backups, NAS, the scheduler |
+| [Keep it healthy](maintain/index.md) | Updates and channels, security, caches |
+| [Developer](developer/index.md) | Architecture, tutorials for every extension point, tests, releases |
+| [Reference](reference/commands.md) | Every command and flag, config files |
 
 ## How it behaves
 

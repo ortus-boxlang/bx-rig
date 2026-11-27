@@ -1,0 +1,488 @@
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>The setup wizard - BxRig</title>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="BxRig">
+	<meta property="og:title" content="The setup wizard">
+
+	
+	
+
+	
+	
+		<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxrig.boxlang.io&#x2f;start&#x2f;wizard&#x2f;index.html">
+	
+
+	
+	
+		<meta name="description" content="One guided form for every choice. Re-run it any time.">
+		<meta property="og:description" content="One guided form for every choice. Re-run it any time.">
+	
+
+	
+	
+
+	
+	
+		<link rel="icon" href="/assets/favicon.png">
+	
+
+	
+	<script>
+		( function () {
+			var configuredMode = "dark";
+			var stored = localStorage.getItem( "bxsites-theme" );
+			var prefersDark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+			var wantsDark = stored ? stored === "dark" : ( configuredMode === "dark" || ( configuredMode === "auto" && prefersDark ) );
+			if ( wantsDark ) {
+				document.documentElement.setAttribute( "data-theme", "dark" );
+			}
+		} )();
+	</script>
+
+	
+	<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+	<link rel="stylesheet" href="/assets/vendor/highlight/github.min.css">
+	<link rel="stylesheet" href="/assets/theme/style.a70338f7.css">
+
+	
+	
+
+	
+	
+		<style>
+			
+			
+				:root {
+					--bxsites-accent: #00C853;
+					--bxsites-link: #00C853;
+					--bxsites-link-hover: color-mix( in srgb, #00C853 85%, black );
+				}
+			
+			
+			
+				[data-theme="dark"] {
+					--bxsites-accent: #00FF78;
+					--bxsites-link: #00FF78;
+					--bxsites-link-hover: color-mix( in srgb, #00FF78 85%, white );
+				}
+			
+		</style>
+	
+
+	
+	
+		<style>
+			.bxsites-nav-nested {
+				border-inline-start: 2px solid var(--bxsites-accent, var(--bxsites-border));
+				margin-inline-start: 0.2rem;
+				padding-inline-start: 0.85rem;
+			}
+		</style>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+		<script>window.__BXSITES_BASE_PATH__ = "/";</script>
+		<script>window.__BXSITES_SEARCH_NO_RESULTS__ = "No\x20results\x20found.";</script>
+		<script src="/assets/vendor/minisearch/minisearch.js"></script>
+		<script src="/assets/search.f14e08a2.js" defer></script>
+	
+
+	
+	
+
+	
+	
+
+	<script src="/assets/vendor/alpine/cdn.min.js" defer></script>
+</head>
+
+
+<body
+	x-data="{ dark: document.documentElement.getAttribute( 'data-theme' ) === 'dark', navOpen: window.matchMedia( '(min-width: 992px)' ).matches ? ( localStorage.getItem( 'bxsites-nav-open' ) !== null ? localStorage.getItem( 'bxsites-nav-open' ) === 'true' : true ) : false }"
+	x-init="$watch( 'dark', v => { document.documentElement.setAttribute( 'data-theme', v ? 'dark' : 'light' ); localStorage.setItem( 'bxsites-theme', v ? 'dark' : 'light' ) } ); $watch( 'navOpen', v => { if ( window.matchMedia( '(min-width: 992px)' ).matches ) localStorage.setItem( 'bxsites-nav-open', v ) } )">
+	
+	<nav class="navbar navbar-expand-lg brand-navbar">
+		<div class="container-fluid navbar-row">
+			
+			<button
+				class="navbar-toggler"
+				type="button"
+				@click="navOpen = !navOpen"
+				:aria-expanded="navOpen.toString()"
+				aria-controls="bxsites-sidebar"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			
+			<a class="navbar-brand brand-mark" href="/"><img class="brand-logo" src="/assets/bxrig-logo.svg" alt=""><span class="brand-name">BxRig</span></a>
+
+			
+			<div class="navbar-controls">
+				
+				
+					
+
+	<div class="bxsites-search position-relative">
+		<input
+			type="search"
+			id="bxsites-search-input"
+			class="form-control"
+			placeholder="Search..."
+			aria-label="Search">
+		<kbd class="bxsites-search-kbd" aria-hidden="true">Ctrl K</kbd>
+		<ul id="bxsites-search-results" class="bxsites-search-results list-unstyled"></ul>
+	</div>
+
+
+
+				
+
+				
+				
+
+				
+				
+					<a
+						class="repo-link"
+						href="https://github.com/ortus-boxlang/bxrig"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Repository"
+						title="Repository">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg>
+					</a>
+				
+
+				
+				<button
+					type="button"
+					class="theme-toggle"
+					@click="dark = !dark"
+					aria-label="Toggle dark mode">
+					<span x-show="!dark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
+					<span x-show="dark" x-cloak><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
+				</button>
+			</div>
+			
+		</div>
+		
+	</nav>
+
+	
+	<div class="container-fluid">
+		
+		<div class="row" :class="{ 'bxsites-nav-collapsed' : !navOpen }">
+			
+			<aside class="col-lg-3 col-xl-2 sidebar" id="bxsites-sidebar" x-show="navOpen" x-cloak>
+				
+				
+				<ul class="nav flex-column"><li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/start/index.html">Start here</a><button type="button" class="nav-toggle" aria-expanded="true" aria-label="Toggle Start here section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested"><li class="nav-item"><a class="nav-link" href="/start/distributions/index.html">Distributions</a></li><li class="nav-item"><a class="nav-link" href="/start/install/index.html">Install</a></li><li class="nav-item"><a class="nav-link active" href="/start/wizard/index.html">The setup wizard</a></li><li class="nav-item"><a class="nav-link" href="/start/first-hour/index.html">Your first hour</a></li><li class="nav-item"><a class="nav-link" href="/start/install-advanced/index.html">Install options</a></li><li class="nav-item"><a class="nav-link" href="/start/troubleshooting/index.html">Troubleshooting</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/desktop/index.html">Daily desktop</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Daily desktop section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/desktop/desktop/index.html">The desktop</a></li><li class="nav-item"><a class="nav-link" href="/desktop/menu/index.html">The menu</a></li><li class="nav-item"><a class="nav-link" href="/desktop/control-center/index.html">Control Center</a></li><li class="nav-item"><a class="nav-link" href="/desktop/shortcuts/index.html">Shortcuts and Mac keys</a></li><li class="nav-item"><a class="nav-link" href="/desktop/launcher/index.html">Launcher</a></li><li class="nav-item"><a class="nav-link" href="/desktop/input/index.html">Mice, trackpads and keyboards</a></li><li class="nav-item"><a class="nav-link" href="/desktop/system/index.html">Displays, power and time</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/customize/index.html">Customize</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Customize section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/customize/themes/index.html">Themes</a></li><li class="nav-item"><a class="nav-link" href="/customize/appearance/index.html">Appearance</a></li><li class="nav-item"><a class="nav-link" href="/customize/accessibility/index.html">Accessibility</a></li><li class="nav-item"><a class="nav-link" href="/customize/boxy-look/index.html">Boxy&#x27;s look and voice</a></li><li class="nav-item"><a class="nav-link" href="/customize/your-own-config/index.html">Your own config</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/build/index.html">Build software</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Build software section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/build/boxlang/index.html">BoxLang and MatchBox</a></li><li class="nav-item"><a class="nav-link" href="/build/developer-tools/index.html">Developer tools</a></li><li class="nav-item"><a class="nav-link" href="/build/databases-and-vms/index.html">Databases and virtual machines</a></li><li class="nav-item"><a class="nav-link" href="/build/mail/index.html">Mail catcher</a></li><li class="nav-item"><a class="nav-link" href="/build/android/index.html">Android apps</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/ai/index.html">AI on your machine</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle AI on your machine section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/ai/agents/index.html">AI agents and skills</a></li><li class="nav-item"><a class="nav-link" href="/ai/local-ai/index.html">Local AI</a></li><li class="nav-item"><a class="nav-link" href="/ai/boxlang-agents/index.html">BoxLang agents</a></li><li class="nav-item"><a class="nav-link" href="/ai/mcp-and-privacy/index.html">MCP and privacy</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/data/index.html">Apps and your data</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Apps and your data section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/data/apps/index.html">Apps and web apps</a></li><li class="nav-item"><a class="nav-link" href="/data/backups/index.html">Backups and BxTimeMachine</a></li><li class="nav-item"><a class="nav-link" href="/data/nas/index.html">Your NAS</a></li><li class="nav-item"><a class="nav-link" href="/data/scheduler/index.html">Scheduler</a></li><li class="nav-item"><a class="nav-link" href="/data/calendar/index.html">Calendar and reminders</a></li><li class="nav-item"><a class="nav-link" href="/data/export-import/index.html">Move to another machine</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/maintain/index.html">Keep it healthy</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Keep it healthy section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/maintain/updates/index.html">Updates and channels</a></li><li class="nav-item"><a class="nav-link" href="/maintain/security/index.html">Security</a></li><li class="nav-item"><a class="nav-link" href="/maintain/images/index.html">Pictures in the terminal</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/developer/index.html">Extend BxRig</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Extend BxRig section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/developer/architecture/index.html">How it fits together</a></li><li class="nav-item"><a class="nav-link" href="/developer/setup/index.html">Set up your dev machine</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-command/index.html">Add a command</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-theme/index.html">Add a theme</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-an-app/index.html">Add an app</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-shortcut/index.html">Add a shortcut</a></li><li class="nav-item"><a class="nav-link" href="/developer/wizard-pages/index.html">Wizard pages</a></li><li class="nav-item"><a class="nav-link" href="/developer/noctalia-plugins/index.html">Noctalia plugins</a></li><li class="nav-item"><a class="nav-link" href="/developer/skills-mcp-agents/index.html">Skills, MCP and agents</a></li><li class="nav-item"><a class="nav-link" href="/developer/ui-toolkit/index.html">The terminal UI toolkit</a></li><li class="nav-item"><a class="nav-link" href="/developer/tests/index.html">Tests</a></li><li class="nav-item"><a class="nav-link" href="/developer/code-rules/index.html">Code rules</a></li><li class="nav-item"><a class="nav-link" href="/developer/release-and-docs/index.html">Releases and docs</a></li><li class="nav-item"><a class="nav-link" href="/developer/screenshots-wanted/index.html">Screenshots wanted</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/architecture/index.html">Design records</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Design records section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/architecture/COMMAND-CONTRACT/index.html">Command contract</a></li><li class="nav-item"><a class="nav-link" href="/architecture/MATCHBOX-PARITY/index.html">MatchBox parity</a></li><li class="nav-item"><a class="nav-link" href="/architecture/SHORTCUTS-DECISIONS/index.html">SHORTCUTS DECISIONS</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">reference</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle reference section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/reference/commands/index.html">Command reference</a></li><li class="nav-item"><a class="nav-link" href="/reference/command-flags/index.html">Command flags</a></li><li class="nav-item"><a class="nav-link" href="/reference/config-files/index.html">Files and folders</a></li></ul></li></ul>
+				<a class="bxsites-powered-by" href="https://bxsites.io" target="_blank" rel="noopener noreferrer">
+					<img class="bxsites-powered-by__logo" src="/assets/bxsites-logo.svg" alt="" aria-hidden="true"> <span>Powered by BxSites</span>
+				</a>
+			</aside>
+
+			
+			<main class="col-lg-9 col-xl-8 content">
+					
+
+	
+	<article class="page-content">
+		
+		
+		
+		
+		
+		
+			<nav class="breadcrumb-nav mb-3" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/start/index.html">Start here</a></li><li class="breadcrumb-item active" aria-current="page">The setup wizard</li></ol></nav>
+		
+		
+		<h1 class="page-title" id="page-title">
+			<a href="#page-title" id="page-title" class="anchor"></a>
+			
+			The setup wizard
+		</h1>
+		
+		
+			<p class="page-summary">One guided form for every choice. Re-run it any time.</p>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-look-pages">The look pages</a></li><li class="toc-level-2"><a href="#the-install-screen">The install screen</a></li><li class="toc-level-3"><a href="#what-it-says-when-it-ends">What it says when it ends</a></li><li class="toc-level-3"><a href="#the-log-file">The log file</a></li><li class="toc-level-2"><a href="#how-do-you-want-to-start">How do you want to start&#x3f;</a></li><li class="toc-level-2"><a href="#run-it-again">Run it again</a></li><li class="toc-level-2"><a href="#without-a-terminal">Without a terminal</a></li><li class="toc-level-2"><a href="#defaults-worth-knowing">Defaults worth knowing</a></li></ul></details>
+		
+
+		
+		<h1 id="the-setup-wizard"><a href="#the-setup-wizard" id="the-setup-wizard" name="the-setup-wizard" class="anchor"></a>The setup wizard</h1>
+<p>The wizard asks for your choices once, shows the commands it will run, and does nothing until you confirm. Re-run it any time with <code>bxrig init</code>.</p>
+<pre><code class="language-mermaid">flowchart LR
+    A[&quot;Answer the pages&quot;] --&gt; B[&quot;Review: the exact commands&quot;]
+    B --&gt; C{&quot;Confirm?&quot;}
+    C --&gt;|&quot;yes&quot;| D[&quot;Install screen&quot;]
+    C --&gt;|&quot;no&quot;| E[&quot;Nothing changed&quot;]
+    D --&gt; F[&quot;Summary and saved answers&quot;]
+</code></pre>
+<p><code>bxrig init</code> opens a full-screen form with these pages: <strong>Desktop</strong>, <strong>Look</strong>, <strong>Top bar layout</strong>, <strong>App grid style</strong>, <strong>Theme</strong>, <strong>Input</strong>, <strong>Developer</strong>, <strong>Toolchains</strong>, <strong>Containers</strong>, <strong>NAS</strong>, <strong>Remote backups</strong>, <strong>Backups</strong>, <strong>Apps</strong>, <strong>AI</strong>, <strong>Extras</strong> and <strong>Import</strong>, then a review screen that lists exactly the commands it will run. With the Customize choice on the Apps page there is one more page per catalog group. Nothing runs until you confirm.</p>
+<p><video src="../assets/clips/wizard.webm" poster="../assets/screenshots/wizard-welcome.webp" autoplay loop muted playsinline width="100%"></video></p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th> </th><th> </th></tr>
+</thead>
+<tbody>
+<tr><td><img src="/assets/screenshots/wizard-welcome.webp"  alt="The welcome screen" /><br><strong>Welcome</strong></td><td><img src="/assets/screenshots/wizard-look.webp"  alt="The Look page: dark or light, dock and bar position" /><br><strong>Look:</strong> dark or light, dock, bar position</td></tr>
+<tr><td><img src="/assets/screenshots/wizard-world-clock.webp"  alt="The Look page: the world clock and its time zones" /><br><strong>Look:</strong> the world clock and its time zones</td><td><img src="/assets/screenshots/wizard-input.webp"  alt="The Input page: keyboard layouts, scrolling, the Mac-style keys" /><br><strong>Input:</strong> layouts, scrolling, shortcut style</td></tr>
+</tbody>
+</table></div>
+<h2 id="the-look-pages"><a href="#the-look-pages" id="the-look-pages" name="the-look-pages" class="anchor"></a>The look pages</h2>
+<p>After <strong>Look</strong> (dark, light or auto, the dock, where the bar sits, the world clock) come three pages that show what you are choosing:</p>
+<ul>
+<li><strong>Top bar layout</strong> (Hyprland and Both): Minimal, Standard (the default and the recommendation) or Dense. Each option draws its bar as a strip of text chips with the dock line below the list. Standard has the capture icon, Minimal does not, Dense adds brightness and weather. The arrow keys select as they move, so the strips and the description follow your cursor and Enter keeps what is highlighted. Later: <code>bxrig appearance bar layout minimal|standard|dense</code> or the Look page of the Control Center.</li>
+<li><strong>App grid style</strong> (Hyprland and Both): Launchpad (the default, big colored tiles on a rounded card) or Terminal-style (flat glyphs, key hints, square corners). Both grids are drawn side by side and the arrow keys switch. Later: <code>bxrig appearance appgrid launchpad|terminal</code>.</li>
+<li><strong>Theme</strong> (every desktop): every theme in <code>themes/</code> on a row with a swatch, <code>BxRig</code> the default. A pane next to the list shows the palette of the highlighted theme, read from its <code>colors.toml</code>, and a sample terminal in those colors. The wizard itself is drawn in the highlighted theme, so what you see is what the desktop will get. The icon set is not asked: BxRig's own icons are used. Later: <code>bxrig theme set NAME</code> or the Themes page of the Control Center.</li>
+</ul>
+<p>On a terminal narrower than 92 columns (no step list) the Theme page keeps the list and the pane side by side; between 92 and 96 columns the pane is dropped and the rows keep their swatches.</p>
+<p>The <strong>Input</strong> page asks about keyboard layouts, natural scrolling, and the shortcut style: &quot;Mac-style Super keys&quot; (on by default) and, when it is on, &quot;Which keyboard do you type on?&quot; (PC: Alt and Win are swapped so Alt acts as Cmd; Apple: no swap). When an Apple Magic or Logitech device is paired or plugged in (or the Mac-style keys are on) it also asks &quot;Input devices&quot; (default: detect); the answer becomes the optional step <code>bxrig input offer</code>, see <a href="/desktop/input/index.html">Mice, trackpads and keyboards</a>. Off keeps the Traditional keys (classic Super-key tiling keys). The answers become <code>bxrig keys style</code> and the xremap setup, which is installed either way because copy, paste, cut and select all are remaps in both styles. See <a href="/desktop/shortcuts/index.html">Shortcuts</a>.</p>
+<h2 id="the-install-screen"><a href="#the-install-screen" id="the-install-screen" name="the-install-screen" class="anchor"></a>The install screen</h2>
+<p>When you press Enter on the review, the wizard stays on screen and installs. It does not drop back to a scrolling terminal.</p>
+<ul>
+<li><strong>Progress.</strong> A bar in your theme's colours, <code>7 of 16 steps</code>, the step that runs now with a spinner and how long it has run, and the last line it printed. The apps step also shows its own count (<code>12 of 43</code>) while the package manager installs.</li>
+<li><strong>It says when it is quiet.</strong> A download or a package build can print nothing for minutes. After 8 seconds without output the line says <code>no output for 42 s</code> and what the step is running right now (for example <code>pacman -S ...</code>, <code>makepkg</code>, <code>curl</code>), so a long step does not look stuck. Package installs, AUR builds and install scripts print as they go, so you see them in the log (<code>v</code>) while they run; a step that waits for a password shows as <code>sudo</code>.</li>
+<li><strong><code>v</code> opens the log</strong> under the bar: every line every step prints, live, with the step it came from. Arrows, PgUp and PgDn scroll it; <code>End</code> follows the newest line again; <code>v</code> closes it.</li>
+<li><strong>Ctrl+C asks first.</strong> <code>y</code> stops: the running step is killed and the rest is not run.</li>
+<li><strong>When it ends</strong> the screen shows what worked and what failed, with the exit code and the last line of each failure, and where the log and your answers are saved. <code>r</code> runs the failed steps again; Enter leaves. When the steps changed your session, groups or keys, <code>l</code> offers to log out (after a <code>y</code>); when they changed the boot screen, the login screen or a driver, <code>b</code> offers to reboot instead. Nothing happens without the <code>y</code>.</li>
+<li><strong>Your password once, on the screen.</strong> The steps run in the background and the screen owns the terminal, so a sudo prompt could neither be seen nor answered. When sudo would ask for a password, the screen asks for it first (typed hidden, three tries, Esc cancels before anything runs). The steps then run with no terminal and a small helper that gives <code>sudo</code> the password. It lives in one file only you can read (mode 600, in a private folder under <code>&#x24;XDG_RUNTIME_DIR&#x60;, which is memory, not disk&#x29;, is never on a command line or in the log, and is deleted when the install ends. If you have no &#x60;&#x24;XDG_RUNTIME_DIR</code> or no <code>setsid</code>, BxRig asks on the normal terminal before the screen starts instead, and relies on sudo's ticket. With a valid sudo ticket or <code>NOPASSWD</code>, nothing is asked.</li>
+</ul>
+<p>A step that fails does not stop the others (a missing package should not cost you your keys and defaults): the plan goes on and the failure is shown at the end. Re-running the wizard repeats only what is still missing.</p>
+<p>Some things are <strong>skipped, not failed</strong>, and the end says why and how to do them later: the LazyVim starter when <code>~/.config/nvim</code> already exists (your config is left alone), Podman's Docker compatibility when the <code>docker</code> package is installed (it conflicts with <code>podman-docker</code>: remove Docker first, or choose Docker as the engine), an app that conflicts with a package you have (timeshift next to CachyOS's <code>cachyos-snapper-support</code>), and an app your distribution's catalog does not offer. <code>bxrig init --dry-run</code> prints the first two as notes before anything runs.</p>
+<h3 id="what-it-says-when-it-ends"><a href="#what-it-says-when-it-ends" id="what-it-says-when-it-ends" name="what-it-says-when-it-ends" class="anchor"></a>What it says when it ends</h3>
+<p>After you leave the screen the terminal keeps a summary:</p>
+<pre><code>Done: 29 steps
+
+Already in place (nothing to do):
+  editor-lazyvim  /home/you/.config/nvim already exists, so it was left alone. ...
+                  later: bxrig editor lazyvim --yes
+Needs your decision:
+  docker-compat   the docker package is installed and conflicts with podman-docker. ...
+                  later: bxrig containers docker-compat --yes
+Skipped:
+  session         SDDM's state folder /var/lib/sddm/ does not exist, so SDDM is not your login manager here. ...
+
+Saved:
+  Your answers  ~/.config/bxrig/answers.json   (run them again: bxrig reinstall)
+  The log       ~/.local/state/bxrig/logs/init-20261127-160037.log
+
+Next:
+  1. Log out and back in, and pick Hyprland at the login screen: ... Log out now with: bxrig system logout --yes
+  2. Open a new terminal to get the new shell and prompt.
+  3. See what is set up on this machine: bxrig status        Change anything later: bxrig menu
+</code></pre>
+<p>Something that is already there (Boxy, a Neovim config of yours) is <strong>in place</strong>, not an error. A conflict (the <code>docker</code> package against Podman's Docker compatibility) <strong>needs your decision</strong>. Anything else that could not run here is <strong>skipped</strong>, each with the command to do it later. Your answers are saved in <code>~/.config/bxrig/answers.json</code>; run them again with <code>bxrig reinstall</code>, or change them and import the file with <code>bxrig init --from=FILE</code>.</p>
+<h3 id="the-log-file"><a href="#the-log-file" id="the-log-file" name="the-log-file" class="anchor"></a>The log file</h3>
+<p>Every install writes a log you can read later or send for debugging: <code>~/.local/state/bxrig/logs/init-YYYYMMDD-HHMMSS.log</code>. It has the BxRig version and the system, the plan, each step's command, every line it printed, its exit code and how long it took, and every exception with its message and stack. Next to it, a folder of the same name holds each step's raw output. The last 20 runs are kept. The path is printed when the install ends and shown on the screen.</p>
+<p><code>bxrig init --plain</code> keeps the old streaming output instead of the screen, and <code>bxrig init --answers=FILE --yes --screen</code> runs a saved answers file on the screen. Both write the same log.</p>
+<h2 id="how-do-you-want-to-start"><a href="#how-do-you-want-to-start" id="how-do-you-want-to-start" name="how-do-you-want-to-start" class="anchor"></a>How do you want to start?</h2>
+<p>After the welcome screen the wizard asks how to begin:</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Choice</th><th>What happens</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>New install</strong></td><td>The whole wizard, page by page, from the defaults (what this machine already has is still marked <code>✓ installed</code>).</td></tr>
+<tr><td><strong>Import answers from a file</strong></td><td>You type the path of an answers file (<code>bxrig init --export=FILE</code> makes one; <code>~/</code> works). The answers go on top of the defaults and you land on the <strong>review</strong>, ready to go. Esc on the review goes back to the pages if you want to change something. A file that is not there, or is not an answers file, is an error on the screen; keys this version does not ask are ignored and counted (&quot;Imported 24 answers from ... (2 not used by this version)&quot;).</td></tr>
+<tr><td><strong>Use my saved answers</strong></td><td>Shown only when you have run the wizard before: your last answers plus what the machine has, straight to the review.</td></tr>
+</tbody>
+</table></div>
+<p><code>bxrig init --fresh</code>, <code>--rerun</code> and <code>--from=FILE</code> already say how to begin, so they skip this question.</p>
+<h2 id="run-it-again"><a href="#run-it-again" id="run-it-again" name="run-it-again" class="anchor"></a>Run it again</h2>
+<p>On a machine that is already set up the wizard starts from your saved answers plus what it finds on the system, and marks installed options with <code>✓ installed</code>.</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Command</th><th>Starts from</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bxrig init</code></td><td>your saved answers and what the system has (tune)</td></tr>
+<tr><td><code>bxrig init --rerun</code></td><td>your saved answers only</td></tr>
+<tr><td><code>bxrig init --fresh</code></td><td>the defaults</td></tr>
+<tr><td><code>bxrig init --from=FILE</code></td><td>an answers file from another machine</td></tr>
+</tbody>
+</table></div>
+<p>Nothing the machine already has is ever removed. <code>bxrig status</code> shows the same scan without opening the wizard.</p>
+<h2 id="without-a-terminal"><a href="#without-a-terminal" id="without-a-terminal" name="without-a-terminal" class="anchor"></a>Without a terminal</h2>
+<pre><code class="language-bash">bxrig init --answers=answers.json --yes     # apply an answers file
+bxrig init --defaults --yes                  # the wizard's default answers
+bxrig init --dry-run                         # show the plan only
+bxrig init --export=answers.json             # save your answers for another machine
+</code></pre>
+<p>Answers are saved in <code>~/.config/bxrig/answers.json</code> (mode 600). They never contain secrets.</p>
+<h2 id="defaults-worth-knowing"><a href="#defaults-worth-knowing" id="defaults-worth-knowing" name="defaults-worth-knowing" class="anchor"></a>Defaults worth knowing</h2>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Question</th><th>Default</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Desktop</td><td>Hyprland + Noctalia</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Shortcut style</td><td>Mac-style Super keys on a PC keyboard (Alt and Win swapped)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Top bar layout</td><td>Standard</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>App grid style</td><td>Launchpad</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Color theme</td><td>BxRig</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Default browser</td><td>Brave</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Launcher, menu program</td><td>Vicinae, Vicinae</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Workspaces</td><td>4</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Shell</td><td>zsh with the Starship prompt (Catppuccin Powerline)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Terminal</td><td>Ghostty</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>File manager</td><td>Strata</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Toolchains</td><td>Java and Rust</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Containers</td><td>Podman (with <code>docker</code> commands mapped to it)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dictation</td><td>Superwhisper (Voxtype is the alternative)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Updates</td><td>stable channel, daily notification</td></tr>
+</tbody>
+</table></div>
+
+	
+
+	
+	
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/start/wizard.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/start/wizard.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 4&#x3a;56&#x3a;05 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20setup%20wizard&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fstart%2Fwizard%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+	
+</article>
+
+
+
+
+
+
+	<nav class="page-nav d-flex justify-content-between" aria-label="Page navigation">
+		
+		
+			<a class="page-nav__card page-nav__card--prev" href="/start/install/index.html">
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+				<span class="page-nav__text">
+					<span class="page-nav__label">Previous</span>
+					<span class="page-nav__title">Install</span>
+				</span>
+			</a>
+		
+		
+		
+		
+		
+			<a class="page-nav__card page-nav__card--next" href="/start/first-hour/index.html">
+				<span class="page-nav__text">
+					<span class="page-nav__label">Next</span>
+					<span class="page-nav__title">Your first hour</span>
+				</span>
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+			</a>
+		
+	</nav>
+
+
+
+
+
+
+			</main>
+
+			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#the-look-pages">The look pages</a></li><li class="toc-level-2"><a href="#the-install-screen">The install screen</a></li><li class="toc-level-3"><a href="#what-it-says-when-it-ends">What it says when it ends</a></li><li class="toc-level-3"><a href="#the-log-file">The log file</a></li><li class="toc-level-2"><a href="#how-do-you-want-to-start">How do you want to start&#x3f;</a></li><li class="toc-level-2"><a href="#run-it-again">Run it again</a></li><li class="toc-level-2"><a href="#without-a-terminal">Without a terminal</a></li><li class="toc-level-2"><a href="#defaults-worth-knowing">Defaults worth knowing</a></li></ul></nav>
+				</aside>
+			
+		</div>
+		
+	</div>
+	
+
+	
+	
+		<footer class="bxsites-footer">
+			<div class="container-fluid bxsites-footer__inner">
+				
+				<div class="bxsites-footer__copy">&copy; 2026 BxRig</div>
+				
+				
+					<div class="bxsites-footer__social"><a class="social-link" href="https://github.com/ortus-boxlang/BoxLang" target="_blank" rel="noopener noreferrer" aria-label="BoxLang on GitHub" title="BoxLang on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg></a><a class="social-link" href="https://www.boxlang.io" target="_blank" rel="noopener noreferrer" aria-label="BoxLang" title="BoxLang"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a></div>
+				
+				
+				<div class="bxsites-footer__credit">Built with <a href="https://bxsites.io" target="_blank" rel="noopener noreferrer">BxSites</a></div>
+			</div>
+		</footer>
+	
+
+	
+	<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+	<script src="/assets/vendor/highlight/highlight.min.js"></script>
+	<script src="/assets/highlight-boxlang.c59b5de4.js"></script>
+	<script>hljs.highlightAll();</script>
+	<script src="/assets/code-lines.66ad0c90.js"></script>
+	<script src="/assets/copy-code.a5acc8cc.js" defer></script>
+	<script src="/assets/admonition-collapse.df9b134e.js" defer></script>
+	<script src="/assets/nav-toggle.6bc5dbe8.js" defer></script>
+	<script src="/assets/toc-collapse.cb73e778.js" defer></script>
+	<script src="/assets/tabs.24dffad6.js" defer></script>
+	<script src="/assets/conditional-content-init.9ef1e0f9.js" defer></script>
+	<script src="/assets/course-progress.3813411a.js" defer></script>
+	<script src="/assets/prompt-init.774781de.js" defer></script>
+	<script src="/assets/contact-form-init.7f7be308.js" defer></script>
+
+	
+	
+
+	
+	
+		<script src="/assets/vendor/mermaid/mermaid.min.js"></script>
+		<script src="/assets/mermaid-init.b2f3ed5c.js"></script>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+</body>
+</html>
+

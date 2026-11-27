@@ -1,47 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<url><loc>https://bxrig.boxlang.io/ai/agents/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/apps/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/build/boxlang/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/architecture/COMMAND-CONTRACT/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/reference/commands/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/distributions/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/wizard/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/architecture/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/desktop/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/customize/themes/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/maintain/updates/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/customize/appearance/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/backups/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/reference/command-flags/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/build/developer-tools/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/reference/config-files/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/getting-started/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/launcher/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/install/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/ai/local-ai/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/architecture/MATCHBOX-PARITY/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/menu/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/desktop/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/appearance/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/shortcuts/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/architecture/wizard/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/themes/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/accessibility/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/apps/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/system/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/vms/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/ai/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/android/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/backups/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/boxlang-agents/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/local-ai/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/mcp-and-privacy/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/input/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/scheduler/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/nas/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/boxlang/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/boxy/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/calendar/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/developer-tools/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/updates/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/settings/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/security/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/troubleshooting/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/contributing/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/distributions/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/maintain/security/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/setup/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/menu/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/customize/accessibility/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/add-a-command/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/ai/boxlang-agents/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/control-center/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/build/databases-and-vms/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/maintain/images/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/wizard/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/nas/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/add-a-theme/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/customize/boxy-look/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/build/mail/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/ai/mcp-and-privacy/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/scheduler/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/shortcuts/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/first-hour/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/add-an-app/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/build/android/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/calendar/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/install-advanced/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/launcher/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/customize/your-own-config/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/add-a-shortcut/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/input/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/export-import/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/troubleshooting/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/system/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/wizard-pages/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/noctalia-plugins/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/skills-mcp-agents/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/start/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/ui-toolkit/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/tests/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/code-rules/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/release-and-docs/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/screenshots-wanted/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/desktop/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/customize/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/build/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/ai/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/data/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/maintain/index.html</loc></url>
+	<url><loc>https://bxrig.boxlang.io/developer/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/architecture/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/control-center/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/mail/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/guides/images/index.html</loc></url>
 	<url><loc>https://bxrig.boxlang.io/architecture/SHORTCUTS-DECISIONS/index.html</loc></url>
-	<url><loc>https://bxrig.boxlang.io/architecture/ui-toolkit/index.html</loc></url>
 </urlset>

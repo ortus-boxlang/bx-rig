@@ -1,0 +1,532 @@
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Appearance - BxRig</title>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="BxRig">
+	<meta property="og:title" content="Appearance">
+
+	
+	
+
+	
+	
+		<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxrig.boxlang.io&#x2f;customize&#x2f;appearance&#x2f;index.html">
+	
+
+	
+	
+		<meta name="description" content="The bar layouts, dock, app grid, windows, animations, fonts and backgrounds, one setting at a time.">
+		<meta property="og:description" content="The bar layouts, dock, app grid, windows, animations, fonts and backgrounds, one setting at a time.">
+	
+
+	
+	
+
+	
+	
+		<link rel="icon" href="/assets/favicon.png">
+	
+
+	
+	<script>
+		( function () {
+			var configuredMode = "dark";
+			var stored = localStorage.getItem( "bxsites-theme" );
+			var prefersDark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+			var wantsDark = stored ? stored === "dark" : ( configuredMode === "dark" || ( configuredMode === "auto" && prefersDark ) );
+			if ( wantsDark ) {
+				document.documentElement.setAttribute( "data-theme", "dark" );
+			}
+		} )();
+	</script>
+
+	
+	<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+	<link rel="stylesheet" href="/assets/vendor/highlight/github.min.css">
+	<link rel="stylesheet" href="/assets/theme/style.a70338f7.css">
+
+	
+	
+
+	
+	
+		<style>
+			
+			
+				:root {
+					--bxsites-accent: #00C853;
+					--bxsites-link: #00C853;
+					--bxsites-link-hover: color-mix( in srgb, #00C853 85%, black );
+				}
+			
+			
+			
+				[data-theme="dark"] {
+					--bxsites-accent: #00FF78;
+					--bxsites-link: #00FF78;
+					--bxsites-link-hover: color-mix( in srgb, #00FF78 85%, white );
+				}
+			
+		</style>
+	
+
+	
+	
+		<style>
+			.bxsites-nav-nested {
+				border-inline-start: 2px solid var(--bxsites-accent, var(--bxsites-border));
+				margin-inline-start: 0.2rem;
+				padding-inline-start: 0.85rem;
+			}
+		</style>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+		<script>window.__BXSITES_BASE_PATH__ = "/";</script>
+		<script>window.__BXSITES_SEARCH_NO_RESULTS__ = "No\x20results\x20found.";</script>
+		<script src="/assets/vendor/minisearch/minisearch.js"></script>
+		<script src="/assets/search.f14e08a2.js" defer></script>
+	
+
+	
+	
+
+	
+	
+
+	<script src="/assets/vendor/alpine/cdn.min.js" defer></script>
+</head>
+
+
+<body
+	x-data="{ dark: document.documentElement.getAttribute( 'data-theme' ) === 'dark', navOpen: window.matchMedia( '(min-width: 992px)' ).matches ? ( localStorage.getItem( 'bxsites-nav-open' ) !== null ? localStorage.getItem( 'bxsites-nav-open' ) === 'true' : true ) : false }"
+	x-init="$watch( 'dark', v => { document.documentElement.setAttribute( 'data-theme', v ? 'dark' : 'light' ); localStorage.setItem( 'bxsites-theme', v ? 'dark' : 'light' ) } ); $watch( 'navOpen', v => { if ( window.matchMedia( '(min-width: 992px)' ).matches ) localStorage.setItem( 'bxsites-nav-open', v ) } )">
+	
+	<nav class="navbar navbar-expand-lg brand-navbar">
+		<div class="container-fluid navbar-row">
+			
+			<button
+				class="navbar-toggler"
+				type="button"
+				@click="navOpen = !navOpen"
+				:aria-expanded="navOpen.toString()"
+				aria-controls="bxsites-sidebar"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			
+			<a class="navbar-brand brand-mark" href="/"><img class="brand-logo" src="/assets/bxrig-logo.svg" alt=""><span class="brand-name">BxRig</span></a>
+
+			
+			<div class="navbar-controls">
+				
+				
+					
+
+	<div class="bxsites-search position-relative">
+		<input
+			type="search"
+			id="bxsites-search-input"
+			class="form-control"
+			placeholder="Search..."
+			aria-label="Search">
+		<kbd class="bxsites-search-kbd" aria-hidden="true">Ctrl K</kbd>
+		<ul id="bxsites-search-results" class="bxsites-search-results list-unstyled"></ul>
+	</div>
+
+
+
+				
+
+				
+				
+
+				
+				
+					<a
+						class="repo-link"
+						href="https://github.com/ortus-boxlang/bxrig"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Repository"
+						title="Repository">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg>
+					</a>
+				
+
+				
+				<button
+					type="button"
+					class="theme-toggle"
+					@click="dark = !dark"
+					aria-label="Toggle dark mode">
+					<span x-show="!dark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
+					<span x-show="dark" x-cloak><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
+				</button>
+			</div>
+			
+		</div>
+		
+	</nav>
+
+	
+	<div class="container-fluid">
+		
+		<div class="row" :class="{ 'bxsites-nav-collapsed' : !navOpen }">
+			
+			<aside class="col-lg-3 col-xl-2 sidebar" id="bxsites-sidebar" x-show="navOpen" x-cloak>
+				
+				
+				<ul class="nav flex-column"><li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/start/index.html">Start here</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Start here section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/start/distributions/index.html">Distributions</a></li><li class="nav-item"><a class="nav-link" href="/start/install/index.html">Install</a></li><li class="nav-item"><a class="nav-link" href="/start/wizard/index.html">The setup wizard</a></li><li class="nav-item"><a class="nav-link" href="/start/first-hour/index.html">Your first hour</a></li><li class="nav-item"><a class="nav-link" href="/start/install-advanced/index.html">Install options</a></li><li class="nav-item"><a class="nav-link" href="/start/troubleshooting/index.html">Troubleshooting</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/desktop/index.html">Daily desktop</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Daily desktop section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/desktop/desktop/index.html">The desktop</a></li><li class="nav-item"><a class="nav-link" href="/desktop/menu/index.html">The menu</a></li><li class="nav-item"><a class="nav-link" href="/desktop/control-center/index.html">Control Center</a></li><li class="nav-item"><a class="nav-link" href="/desktop/shortcuts/index.html">Shortcuts and Mac keys</a></li><li class="nav-item"><a class="nav-link" href="/desktop/launcher/index.html">Launcher</a></li><li class="nav-item"><a class="nav-link" href="/desktop/input/index.html">Mice, trackpads and keyboards</a></li><li class="nav-item"><a class="nav-link" href="/desktop/system/index.html">Displays, power and time</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/customize/index.html">Customize</a><button type="button" class="nav-toggle" aria-expanded="true" aria-label="Toggle Customize section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested"><li class="nav-item"><a class="nav-link" href="/customize/themes/index.html">Themes</a></li><li class="nav-item"><a class="nav-link active" href="/customize/appearance/index.html">Appearance</a></li><li class="nav-item"><a class="nav-link" href="/customize/accessibility/index.html">Accessibility</a></li><li class="nav-item"><a class="nav-link" href="/customize/boxy-look/index.html">Boxy&#x27;s look and voice</a></li><li class="nav-item"><a class="nav-link" href="/customize/your-own-config/index.html">Your own config</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/build/index.html">Build software</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Build software section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/build/boxlang/index.html">BoxLang and MatchBox</a></li><li class="nav-item"><a class="nav-link" href="/build/developer-tools/index.html">Developer tools</a></li><li class="nav-item"><a class="nav-link" href="/build/databases-and-vms/index.html">Databases and virtual machines</a></li><li class="nav-item"><a class="nav-link" href="/build/mail/index.html">Mail catcher</a></li><li class="nav-item"><a class="nav-link" href="/build/android/index.html">Android apps</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/ai/index.html">AI on your machine</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle AI on your machine section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/ai/agents/index.html">AI agents and skills</a></li><li class="nav-item"><a class="nav-link" href="/ai/local-ai/index.html">Local AI</a></li><li class="nav-item"><a class="nav-link" href="/ai/boxlang-agents/index.html">BoxLang agents</a></li><li class="nav-item"><a class="nav-link" href="/ai/mcp-and-privacy/index.html">MCP and privacy</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/data/index.html">Apps and your data</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Apps and your data section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/data/apps/index.html">Apps and web apps</a></li><li class="nav-item"><a class="nav-link" href="/data/backups/index.html">Backups and BxTimeMachine</a></li><li class="nav-item"><a class="nav-link" href="/data/nas/index.html">Your NAS</a></li><li class="nav-item"><a class="nav-link" href="/data/scheduler/index.html">Scheduler</a></li><li class="nav-item"><a class="nav-link" href="/data/calendar/index.html">Calendar and reminders</a></li><li class="nav-item"><a class="nav-link" href="/data/export-import/index.html">Move to another machine</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/maintain/index.html">Keep it healthy</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Keep it healthy section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/maintain/updates/index.html">Updates and channels</a></li><li class="nav-item"><a class="nav-link" href="/maintain/security/index.html">Security</a></li><li class="nav-item"><a class="nav-link" href="/maintain/images/index.html">Pictures in the terminal</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/developer/index.html">Extend BxRig</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Extend BxRig section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/developer/architecture/index.html">How it fits together</a></li><li class="nav-item"><a class="nav-link" href="/developer/setup/index.html">Set up your dev machine</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-command/index.html">Add a command</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-theme/index.html">Add a theme</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-an-app/index.html">Add an app</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-shortcut/index.html">Add a shortcut</a></li><li class="nav-item"><a class="nav-link" href="/developer/wizard-pages/index.html">Wizard pages</a></li><li class="nav-item"><a class="nav-link" href="/developer/noctalia-plugins/index.html">Noctalia plugins</a></li><li class="nav-item"><a class="nav-link" href="/developer/skills-mcp-agents/index.html">Skills, MCP and agents</a></li><li class="nav-item"><a class="nav-link" href="/developer/ui-toolkit/index.html">The terminal UI toolkit</a></li><li class="nav-item"><a class="nav-link" href="/developer/tests/index.html">Tests</a></li><li class="nav-item"><a class="nav-link" href="/developer/code-rules/index.html">Code rules</a></li><li class="nav-item"><a class="nav-link" href="/developer/release-and-docs/index.html">Releases and docs</a></li><li class="nav-item"><a class="nav-link" href="/developer/screenshots-wanted/index.html">Screenshots wanted</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/architecture/index.html">Design records</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Design records section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/architecture/COMMAND-CONTRACT/index.html">Command contract</a></li><li class="nav-item"><a class="nav-link" href="/architecture/MATCHBOX-PARITY/index.html">MatchBox parity</a></li><li class="nav-item"><a class="nav-link" href="/architecture/SHORTCUTS-DECISIONS/index.html">SHORTCUTS DECISIONS</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">reference</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle reference section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/reference/commands/index.html">Command reference</a></li><li class="nav-item"><a class="nav-link" href="/reference/command-flags/index.html">Command flags</a></li><li class="nav-item"><a class="nav-link" href="/reference/config-files/index.html">Files and folders</a></li></ul></li></ul>
+				<a class="bxsites-powered-by" href="https://bxsites.io" target="_blank" rel="noopener noreferrer">
+					<img class="bxsites-powered-by__logo" src="/assets/bxsites-logo.svg" alt="" aria-hidden="true"> <span>Powered by BxSites</span>
+				</a>
+			</aside>
+
+			
+			<main class="col-lg-9 col-xl-8 content">
+					
+
+	
+	<article class="page-content">
+		
+		
+		
+		
+		
+		
+			<nav class="breadcrumb-nav mb-3" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/customize/index.html">Customize</a></li><li class="breadcrumb-item active" aria-current="page">Appearance</li></ol></nav>
+		
+		
+		<h1 class="page-title" id="page-title">
+			<a href="#page-title" id="page-title" class="anchor"></a>
+			
+			Appearance
+		</h1>
+		
+		
+			<p class="page-summary">The bar layouts, dock, app grid, windows, animations, fonts and backgrounds, one setting at a time.</p>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#pick-a-bar">Pick a bar</a></li><li class="toc-level-2"><a href="#change-the-dock-windows-and-layout">Change the dock, windows and layout</a></li><li class="toc-level-2"><a href="#change-the-fonts">Change the fonts</a></li><li class="toc-level-2"><a href="#change-the-background">Change the background</a></li><li class="toc-level-2"><a href="#icons">Icons</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li><li class="toc-level-3"><a href="#every-setting">Every setting</a></li><li class="toc-level-3"><a href="#the-bars-widgets-in-detail">The bar&#x27;s widgets in detail</a></li><li class="toc-level-3"><a href="#text-in-large-letters">Text in large letters</a></li><li class="toc-level-3"><a href="#about-this-rig">About this rig</a></li></ul></details>
+		
+
+		
+		<h1 id="appearance"><a href="#appearance" id="appearance" name="appearance" class="anchor"></a>Appearance</h1>
+<p>Change how the shell and the windows look, one setting at a time. Each change acts at once, is remembered, and can be shown first with <code>--dry-run</code>. For colors, see <a href="/customize/themes/index.html">Themes</a>.</p>
+<h2 id="try-it"><a href="#try-it" id="try-it" name="try-it" class="anchor"></a>Try it</h2>
+<pre><code class="language-bash">bxrig appearance bar layout minimal       # minimal, standard (the default), dense, status
+bxrig appearance dock off                 # on, off, toggle
+bxrig appearance font cascadia            # the coding font
+bxrig appearance background random        # or: list, set NAME, next
+</code></pre>
+<p><img src="/assets/screenshots/font-specimen.webp"  alt="The coding fonts and Inter" /></p>
+<p><code>bxrig appearance status</code> shows what you have chosen, and <code>bxrig appearance apply</code> pushes it all again. The menu has all of this under Appearance.</p>
+<h2 id="pick-a-bar"><a href="#pick-a-bar" id="pick-a-bar" name="pick-a-bar" class="anchor"></a>Pick a bar</h2>
+<p><code>bxrig appearance bar layout</code> picks one of three bars. Standard is the default. They all end with quick settings and then the control center, and they use bare icons coloured by the theme: only the logo button and the Launchpad grid carry a plate (a tile with an outline, so it stays visible on dark and Retro bars).</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Layout</th><th>Start</th><th>Center</th><th>End</th></tr>
+</thead>
+<tbody>
+<tr><td>Minimal</td><td>logo, workspaces, active window</td><td>clock</td><td>tray, network, volume, battery*, notifications, quick settings, control center</td></tr>
+<tr><td>Standard</td><td>logo, workspaces, active window</td><td>clock, media</td><td>agents, capture, system, developer, VPN, tray, clipboard history, network, Bluetooth, volume, battery*, notifications, quick settings, control center</td></tr>
+<tr><td>Dense</td><td>as Standard</td><td>clock, weather, media</td><td>as Standard, plus brightness</td></tr>
+</tbody>
+</table></div>
+<p>* The battery widget is written only when a battery is found (a laptop). It shows the percentage; <code>appearance battery-percent off</code> hides the number.</p>
+<p>What each layout holds, in short:</p>
+<pre><code class="language-mermaid">flowchart LR
+  A[&quot;Minimal&quot;] --&gt; B[&quot;Logo, workspaces, clock, tray, status icons&quot;]
+  C[&quot;Standard&quot;] --&gt; D[&quot;Minimal plus media, agents, capture, system, developer, VPN, clipboard, Bluetooth&quot;]
+  E[&quot;Dense&quot;] --&gt; F[&quot;Standard plus weather and brightness&quot;]
+</code></pre>
+<h2 id="change-the-dock-windows-and-layout"><a href="#change-the-dock-windows-and-layout" id="change-the-dock-windows-and-layout" name="change-the-dock-windows-and-layout" class="anchor"></a>Change the dock, windows and layout</h2>
+<pre><code class="language-bash">bxrig appearance dock mode autohide       # always, autohide, off
+bxrig appearance windows gaps off         # no gaps and no borders
+bxrig appearance windows corners sharp    # theme, rounded, sharp
+bxrig appearance windows opacity glassy   # opaque, glassy
+bxrig appearance animations off
+bxrig appearance layout columns           # dwindle, master, columns, scrolling, monocle, floating
+bxrig appearance windows snap off         # floating windows stop snapping to edges (on by default)
+</code></pre>
+<h2 id="change-the-fonts"><a href="#change-the-fonts" id="change-the-fonts" name="change-the-fonts" class="anchor"></a>Change the fonts</h2>
+<p><video src="../assets/clips/fonts-look.webm" poster="../assets/screenshots/look-fonts.webp" autoplay loop muted playsinline width="100%"></video></p>
+<pre><code class="language-bash">bxrig appearance font list
+bxrig appearance font install cascadia --yes
+bxrig appearance font cascadia            # the coding font: terminals (and the shell, until you pick an interface font)
+bxrig appearance ui-font inter            # the interface font: bar, panels and GTK apps
+bxrig appearance font-rendering smooth    # default, smooth, crisp, sharp
+</code></pre>
+<p>Fonts are in three parts, also on the Look page of the Control Center (Fonts):</p>
+<ul>
+<li><strong>Coding font</strong>, one of fifteen Nerd Fonts (<code>appearance font list</code>). JetBrains Mono is the default. Geist Mono, Monaspace Neon, IBM Plex Mono, Commit Mono and Atkinson Hyperlegible Mono (made for low vision) are new. Changing it updates the terminal configs BxRig wrote, but never one you edited (it tells you which).</li>
+<li><strong>Interface font</strong> (<code>appearance ui-font list</code>): Inter, Noto Sans or IBM Plex Sans, for the bar, the panels and GTK apps. Inter is made for screens and is the closest to the Mac's system font. Until you pick one the shell uses the coding font. Plasma keeps its own font (System Settings &gt; Text &amp; Fonts).</li>
+<li><strong>Rendering</strong>: <code>smooth</code> (no hinting, the Mac look, best on HiDPI), <code>crisp</code> (slight hinting, sharper on 1x screens), <code>sharp</code> (full hinting and subpixel, for low-resolution LCDs) or <code>default</code> (your distribution's). BxRig writes <code>~/.config/fontconfig/conf.d/60-bxrig-rendering.conf</code> and GTK's hinting settings; <code>default</code> removes the file unless you edited it. Open apps pick it up when they restart.</li>
+</ul>
+<h2 id="change-the-background"><a href="#change-the-background" id="change-the-background" name="change-the-background" class="anchor"></a>Change the background</h2>
+<p>Backgrounds are read from <code>~/Pictures/BxRig</code>, <code>~/Pictures</code> and the current theme's folder.</p>
+<p>The menu has all of this under Appearance.</p>
+<h2 id="icons"><a href="#icons" id="icons" name="icons" class="anchor"></a>Icons</h2>
+<p>BxRig has its own icon theme, <strong>BxRig</strong>: superellipse tiles with a vertical glow and a white Phosphor duotone glyph, one color per kind (develop green, system blue, look purple, control indigo, utility amber). It covers what BxRig itself owns: the BxRig laptop and the app grid, the Develop, System and Look folders, the Setup Wizard, Runner menu, Control Center, About, and one icon for every page of <code>bxrig tui list</code>. Everything else is Papirus-Dark: the theme inherits it (<code>Inherits=Papirus-Dark,hicolor</code>), so apps look as they do in Papirus.</p>
+<p><picture><source type="image/webp" srcset="/assets/bxrig-icon-theme-400w.4c68fe5e.webp 400w, /assets/bxrig-icon-theme-800w.4c68fe5e.webp 800w, /assets/bxrig-icon-theme-1148w.4c68fe5e.webp 1148w" sizes="(min-width: 800px) 800px, 100vw"><img src="/assets/bxrig-icon-theme.png" srcset="/assets/bxrig-icon-theme-400w.4c68fe5e.png 400w, /assets/bxrig-icon-theme-800w.4c68fe5e.png 800w" sizes="(min-width: 800px) 800px, 100vw"  alt="The BxRig icons at 16 to 128 px" /></picture></p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th><img src="/assets/screenshots/icons-xfce-menu.webp"  alt="The XFCE application menu with the BxRig folder open" /><br><strong>The application menu</strong> (XFCE)</th><th><img src="/assets/screenshots/icons-launcher-grid.webp"  alt="Rofi as an icon grid with the BxRig launchers" /><br><strong>A launcher grid</strong> (Rofi)</th></tr>
+</thead>
+<tbody></tbody>
+</table></div>
+<pre><code class="language-bash">bxrig appearance icons status
+bxrig appearance icons bxrig --yes     # the default after `bxrig init` / setup: BxRig icons over Papirus-Dark
+bxrig appearance icons papirus --yes   # Papirus-Dark alone; the BxRig launchers use the stock names again
+</code></pre>
+<p>The icon set is not a question in the wizard: setup applies <code>bxrig</code>, and this command switches later. It installs <code>papirus-icon-theme</code> (Arch <code>extra</code>, in the default tier of the catalog) when Papirus-Dark is missing, writes the theme to <code>~/.local/share/icons/BxRig</code>, and sets GTK (gsettings, the settings.ini line when the file has one, xfconf on XFCE), Qt (<code>qt6ct.conf</code>, and Plasma's icon theme), and the runner (Rofi, Fuzzel and Wofi through <code>bxrig runner icon-theme</code>). The application-menu launchers (<code>bxrig launchers on</code>) are rewritten to follow it. It writes files, so without <code>--yes</code> it prints the plan (exit 2). The glyphs are <a href="https://phosphoricons.com">Phosphor Icons</a> (MIT); the licence is installed with the theme.</p>
+<p>A theme-less icon name never leaves a gap: with <code>papirus</code>, or when an older BxRig has no theme installed, the launchers and the runner menu use the stock Papirus names (<code>applications-development</code>, <code>system-run</code>) and the plain <code>bxrig</code> icon.</p>
+<h2 id="where-the-changes-go"><a href="#where-the-changes-go" id="where-the-changes-go" name="where-the-changes-go" class="anchor"></a>Where the changes go</h2>
+<p>Where each kind of setting ends up:</p>
+<pre><code class="language-mermaid">flowchart LR
+  A[&quot;bxrig appearance&quot;] --&gt; B[&quot;Noctalia: config-set or config.toml&quot;]
+  A --&gt; C[&quot;Hyprland: look.lua&quot;]
+  A --&gt; D[&quot;Fonts: fontconfig and GTK&quot;]
+</code></pre>
+<ul>
+<li><strong>Noctalia</strong> (bar position and style, dock mode and position, battery, font, corner radius) is changed with <code>noctalia msg config-set</code>, so your <code>config.toml</code> is not edited. Without Noctalia the choice is saved and <code>appearance apply</code> pushes it later.</li>
+<li><strong>Hyprland</strong> window looks (gaps, corners, opacity, animations, layout) are one generated file, <code>~/.config/bxrig/theme/look.lua</code>, loaded by <code>bxrig.lua</code>. BxRig reloads Hyprland after a change. Your own <code>hyprland.lua</code> is never touched.</li>
+</ul>
+<p>These five settings (<code>bar layout</code>, <code>dock on|off|toggle</code>, <code>appgrid</code>, <code>battery-percent</code>, <code>time format</code>) rewrite <code>~/.config/noctalia/config.toml</code> through the config service: the theme and wallpaper you have are kept, a backup is made, and a running Noctalia reloads the file. If the file has changes of your own, the command shows a plan and <code>--yes</code> replaces it (the backup keeps yours). Noctalia's own settings window stores its changes separately and wins over the file; if the bar does not follow a change, look at <code>~/.local/state/noctalia/settings.toml</code>. The plate images are written to <code>~/.local/share/bxrig/plates/</code>. Noctalia's own first-run wizard is turned off in this config.</p>
+<h2 id="advanced"><a href="#advanced" id="advanced" name="advanced" class="anchor"></a>Advanced</h2>
+<h3 id="every-setting"><a href="#every-setting" id="every-setting" name="every-setting" class="anchor"></a>Every setting</h3>
+<pre><code class="language-bash">bxrig appearance status
+bxrig appearance bar position bottom      # top, bottom, left, right
+bxrig appearance bar style glassy         # opaque, glassy, clear
+bxrig appearance bar clock iso            # ten clock formats (time-24h, sunday-12h, date-24h, iso ...)
+bxrig appearance bar battery on           # the percentage next to the battery
+bxrig appearance bar layout minimal       # minimal, standard (the default), dense, status
+bxrig appearance dock off                 # on, off, toggle, status: the grid button moves between the dock and the bar
+bxrig appearance appgrid launchpad        # launchpad, terminal, status
+bxrig appearance battery-percent on       # laptops only
+bxrig time format &quot;%a %-I:%M %p&quot;          # the bar clock's text; default &quot;%b %-d - %H:%M&quot; reads Nov 5 - 04:00
+bxrig appearance dock mode autohide       # always, autohide, off
+bxrig appearance windows gaps off         # no gaps and no borders
+bxrig appearance windows corners sharp    # theme, rounded, sharp
+bxrig appearance windows opacity glassy   # opaque, glassy
+bxrig appearance animations off
+bxrig appearance layout columns           # dwindle, master, columns, scrolling, monocle, floating
+bxrig appearance windows snap off         # floating windows stop snapping to edges (on by default)
+bxrig appearance font list
+bxrig appearance font install cascadia --yes
+bxrig appearance font cascadia            # the coding font: terminals (and the shell, until you pick an interface font)
+bxrig appearance ui-font inter            # the interface font: bar, panels and GTK apps
+bxrig appearance font-rendering smooth    # default, smooth, crisp, sharp
+bxrig appearance background random        # or: list, set NAME, next
+bxrig appearance apply                    # push everything you chose again
+bxrig appearance icons papirus --yes      # the icon set: bxrig (default), papirus, status
+</code></pre>
+<h3 id="the-bars-widgets-in-detail"><a href="#the-bars-widgets-in-detail" id="the-bars-widgets-in-detail" name="the-bars-widgets-in-detail" class="anchor"></a>The bar's widgets in detail</h3>
+<ul>
+<li><strong>Logo</strong> opens the BxRig menu (<code>bxrig menu</code>). <strong>Clock</strong> is one widget: the time as text, a popover with your local time, the other zones you follow (<code>bxrig time world</code>) and a Calendar button; right click opens the Noctalia calendar.</li>
+<li><strong>Developer</strong> (a code glyph, Standard and Dense) shows how many databases, containers and VMs are running. Its popover has three tabs: Databases (<code>bxrig db</code>), Containers (<code>bxrig containers</code>, over Podman or the engine <code>db engine</code> chose) and VMs (<code>bxrig vm</code>). Each row has a state dot, the host ports, start and stop (stop asks for a second click), a copy button for the connection string or address, and a logs button that opens <code>bxrig containers logs NAME</code> in a terminal; the footer opens the Machines page of <code>bxrig tui</code>. It refreshes every 15 seconds while open and every 2 minutes for the number.</li>
+<li><strong>Dock</strong> is on by default. The Launchpad grid is its first button, so the grid is not in the bar; with <code>dock off</code> the grid button returns to the bar, right after the logo.</li>
+<li><strong>Quick settings</strong> (<code>bxrig/quick</code>, the sliders icon) is a popover of switches and pickers: Caffeine, Do Not Disturb, Dark/Light/Auto, Dock, Battery percentage (laptops), App grid style, Top bar layout, Clock format, a button to the control center Home tile for Night light, and a button that opens the BxRig Control Center. Its <strong>Themes</strong> row opens the theme switcher (search, preview, Enter applies). Every control runs the matching bxrig command with <code>--yes</code> and shows its result. Caffeine is a switch here, not a bar icon: Noctalia can switch it (<code>noctalia msg caffeine-enable|disable</code>) but cannot report its state, so the switch shows what you last set in the popover.</li>
+<li><strong>Battery and power are one panel.</strong> The battery is Noctalia's built-in widget (laptops only). A left click opens the BxRig <strong>Power</strong> panel (<code>bxrig/power</code>, a panel without a bar widget of its own); a right click opens the control center Power tab. The panel shows the charge, state, time remaining, watts, health and cycles, the power profile (Saver, Balanced, Performance), what closing the lid does on battery and on AC, Suspend and Hibernate (each asks first; Hibernate is greyed out with the reason until swap and resume are ready), and a charge limit slider when the battery supports it. It refreshes every 15 seconds while open. The lid and charge limit changes need sudo, so the panel runs them in a terminal window where the password is asked. The separate power profile widget is not on the bar.</li>
+<li><strong>System</strong> (<code>bxrig/system</code>, a monitor glyph) shows the number of waiting updates beside it, hidden when there are none. Its popover has two tabs. <strong>Updates</strong> lists the repository and AUR packages (<code>bxrig system updates</code>), warns when a restart is needed (a kernel, systemd or glibc update, or a kernel that was already replaced), and <strong>Update all</strong> opens a terminal that runs <code>bxrig system update --yes</code>, so you see the snapshot that comes first and the progress. <strong>Backups</strong> shows a row for config snapshots, system snapshots and your files with the last run, the next run, the size and a health mark (<code>bxrig backup status</code>); <strong>Back up now</strong> and <strong>Open Time Machine</strong> run in a terminal too. The count is read every 10 minutes in the background and every minute while the popover is open.</li>
+<li><strong>VPN</strong> (<code>bxrig/vpn</code>, a shield, Standard and Dense) is one list of every VPN you can use: the saved NetworkManager VPN and WireGuard profiles and the VPN apps (NordVPN, NordLayer, Tailscale, Mullvad). The shield is green while one is connected and grey otherwise, and hides itself when no VPN is installed. Switching one on disconnects the one that is connected, unless you turn on &quot;Allow more than one at the same time&quot; (<code>bxrig vpn set allow_several=true --yes</code>). A pin button picks a country or exit node. The same list is <code>bxrig vpn list</code>.</li>
+<li><strong>App grid</strong>: <code>launchpad</code> is the launcher's grid view. <code>terminal</code> (a Terminal-style grid) is only remembered for now: nothing draws it yet, so the launcher keeps the Launchpad grid.</li>
+<li><strong>Clock format</strong> uses Noctalia's date format tokens (<a href="https://docs.noctalia.dev/noctalia/configuration/date-format-tokens/">https://docs.noctalia.dev/noctalia/configuration/date-format-tokens/</a>). A pattern without a <code>%</code>, like <code>MMM d - HH:mm</code>, is read as letters (yyyy MM dd HH mm ss a ...) and converted.</li>
+</ul>
+<h3 id="text-in-large-letters"><a href="#text-in-large-letters" id="text-in-large-letters" name="text-in-large-letters" class="anchor"></a>Text in large letters</h3>
+<p><code>bxrig ascii</code> draws text in large letters with FIGlet fonts, the way <code>figlet</code> does, and paints it with a colour or a gradient. The BxRig logo is drawn the same way, in DOS Rebel.</p>
+<pre><code class="language-bash">bxrig ascii BxRig                                  # DOS Rebel, the brand gradient
+bxrig ascii Hello --font=ansi-shadow --gradient=sunset
+bxrig ascii OK --font=calvin-s --color=#00ff78     # small letters, one colour
+bxrig ascii Deploy --gradient=#ff5f6d,#ffc371,#00dbff --direction=diagonal
+bxrig ascii Theme --gradient=theme                 # your theme's accent colours
+echo &quot;build ok&quot; | bxrig ascii                      # the text from stdin
+bxrig ascii fonts                                  # every font, in its own name
+</code></pre>
+<ul>
+<li><strong>Fonts:</strong> <code>dos-rebel</code> (the default, 8 rows), <code>ansi-shadow</code> (6 rows) and <code>calvin-s</code> (3 rows, for narrow terminals). They ship inside BxRig, so nothing is installed.</li>
+<li><strong><code>--color</code>:</strong> <code>#rrggbb</code>, <code>#rgb</code>, <code>theme</code> (your theme's accent) or a name: black, white, gray, red, orange, yellow, green, cyan, blue, purple, magenta, pink, boxlang, bxrig.</li>
+<li><strong><code>--gradient</code>:</strong> a preset (<code>brand</code>, <code>theme</code>, <code>sunset</code>, <code>ocean</code>, <code>fire</code>, <code>forest</code>, <code>candy</code>, <code>rainbow</code>) or your own two or more colours separated by commas. <code>--direction</code> runs it <code>horizontal</code> (the default), <code>vertical</code> or <code>diagonal</code>.</li>
+<li><strong>When it colours:</strong> without <code>--color</code> or <code>--gradient</code> you get the brand gradient in a terminal and plain text in a pipe or file. <code>--color</code> and <code>--gradient</code> colour even in a pipe. <code>--plain</code> and the <code>NO_COLOR</code> variable always give plain text.</li>
+<li><code>--json</code> returns the lines, the font and the size.</li>
+</ul>
+<h4 id="pictures-as-text"><a href="#pictures-as-text" id="pictures-as-text" name="pictures-as-text" class="anchor"></a>Pictures as text</h4>
+<p><code>bxrig ascii image</code> draws a PNG, JPEG, GIF, WebP or SVG in the terminal. BxRig reads it with the <a href="https://github.com/ortus-boxlang/bx-image">bx-image</a> module, which is built into the binary, so there is nothing to install.</p>
+<pre><code class="language-bash">bxrig ascii image ~/Pictures/logo.png              # 48 columns, half blocks in full colour
+bxrig ascii image logo.svg --width=80              # SVGs are drawn at the size you ask for, so they stay sharp
+bxrig ascii image photo.jpg --style=ascii          # characters from a brightness ramp, in the picture's colours
+</code></pre>
+<ul>
+<li><strong><code>--style</code>:</strong> <code>blocks</code> (the default) uses half blocks, two pixels per row in 24-bit colour. <code>ascii</code> uses one character per cell (<code>.:-=+*#%@</code>), coloured like the picture.</li>
+<li><strong><code>--width</code>:</strong> 4 to 300 columns; the height follows the picture's shape. Transparent pixels stay blank.</li>
+<li>Colour follows the same rules as text: on in a terminal, off in a pipe, with <code>--plain</code> or with <code>NO_COLOR</code>. <code>--json</code> returns the lines without colour.</li>
+</ul>
+<h3 id="about-this-rig"><a href="#about-this-rig" id="about-this-rig" name="about-this-rig" class="anchor"></a>About this rig</h3>
+<p><code>bxrig about</code> shows the BxRig laptop, with BX in DOS Rebel on its screen, beside three panels drawn by <a href="https://github.com/fastfetch-cli/fastfetch">fastfetch</a>:</p>
+<ul>
+<li><strong>rig:</strong> host, CPU, GPU, memory, disk and display</li>
+<li><strong>stack:</strong> BoxLang and MatchBox, Java, Node and pnpm, Git and gh, your editor</li>
+<li><strong>look:</strong> OS, desktop, theme, shell and terminal</li>
+</ul>
+<p>Under the laptop: <em>BXRIG powered by BoxLang</em> and <a href="http://www.boxlang.io">www.boxlang.io</a>. Open it from the BxRig menu (<strong>About</strong>), from the <strong>BxRig About</strong> launcher, or in any terminal:</p>
+<pre><code class="language-bash">bxrig about            # in your terminal
+bxrig about --plain    # no colour
+bxrig about --json     # version, theme and links as data
+</code></pre>
+<ul>
+<li><strong>It follows your theme.</strong> <code>bxrig theme set</code> redraws the laptop in the theme's colours (<code>~/.config/bxrig/theme/fastfetch-logo.ans</code>), and the panel labels use your terminal colours.</li>
+<li><strong>Plain <code>fastfetch</code> works too.</strong> <code>bxrig setup shell</code> installs fastfetch and writes <code>~/.config/fastfetch/config.jsonc</code> once. After that it is yours to change; <code>bxrig about</code> keeps using its own copy in <code>~/.config/bxrig/fastfetch.jsonc</code>.</li>
+<li>Without fastfetch, <code>bxrig about</code> shows the laptop, the version and a hint to install it.</li>
+</ul>
+<p>Next: <a href="/customize/accessibility/index.html">Accessibility</a>, <a href="/customize/boxy-look/index.html">Boxy's look and voice</a>, <a href="/desktop/shortcuts/index.html">Shortcuts</a>.</p>
+
+	
+
+	
+	
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/customize/appearance.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/customize/appearance.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 4&#x3a;56&#x3a;05 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Appearance&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fcustomize%2Fappearance%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+	
+</article>
+
+
+
+
+
+
+	<nav class="page-nav d-flex justify-content-between" aria-label="Page navigation">
+		
+		
+			<a class="page-nav__card page-nav__card--prev" href="/customize/themes/index.html">
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+				<span class="page-nav__text">
+					<span class="page-nav__label">Previous</span>
+					<span class="page-nav__title">Themes</span>
+				</span>
+			</a>
+		
+		
+		
+		
+		
+			<a class="page-nav__card page-nav__card--next" href="/customize/accessibility/index.html">
+				<span class="page-nav__text">
+					<span class="page-nav__label">Next</span>
+					<span class="page-nav__title">Accessibility</span>
+				</span>
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+			</a>
+		
+	</nav>
+
+
+
+
+
+
+			</main>
+
+			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#pick-a-bar">Pick a bar</a></li><li class="toc-level-2"><a href="#change-the-dock-windows-and-layout">Change the dock, windows and layout</a></li><li class="toc-level-2"><a href="#change-the-fonts">Change the fonts</a></li><li class="toc-level-2"><a href="#change-the-background">Change the background</a></li><li class="toc-level-2"><a href="#icons">Icons</a></li><li class="toc-level-2"><a href="#where-the-changes-go">Where the changes go</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li><li class="toc-level-3"><a href="#every-setting">Every setting</a></li><li class="toc-level-3"><a href="#the-bars-widgets-in-detail">The bar&#x27;s widgets in detail</a></li><li class="toc-level-3"><a href="#text-in-large-letters">Text in large letters</a></li><li class="toc-level-3"><a href="#about-this-rig">About this rig</a></li></ul></nav>
+				</aside>
+			
+		</div>
+		
+	</div>
+	
+
+	
+	
+		<footer class="bxsites-footer">
+			<div class="container-fluid bxsites-footer__inner">
+				
+				<div class="bxsites-footer__copy">&copy; 2026 BxRig</div>
+				
+				
+					<div class="bxsites-footer__social"><a class="social-link" href="https://github.com/ortus-boxlang/BoxLang" target="_blank" rel="noopener noreferrer" aria-label="BoxLang on GitHub" title="BoxLang on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg></a><a class="social-link" href="https://www.boxlang.io" target="_blank" rel="noopener noreferrer" aria-label="BoxLang" title="BoxLang"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a></div>
+				
+				
+				<div class="bxsites-footer__credit">Built with <a href="https://bxsites.io" target="_blank" rel="noopener noreferrer">BxSites</a></div>
+			</div>
+		</footer>
+	
+
+	
+	<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+	<script src="/assets/vendor/highlight/highlight.min.js"></script>
+	<script src="/assets/highlight-boxlang.c59b5de4.js"></script>
+	<script>hljs.highlightAll();</script>
+	<script src="/assets/code-lines.66ad0c90.js"></script>
+	<script src="/assets/copy-code.a5acc8cc.js" defer></script>
+	<script src="/assets/admonition-collapse.df9b134e.js" defer></script>
+	<script src="/assets/nav-toggle.6bc5dbe8.js" defer></script>
+	<script src="/assets/toc-collapse.cb73e778.js" defer></script>
+	<script src="/assets/tabs.24dffad6.js" defer></script>
+	<script src="/assets/conditional-content-init.9ef1e0f9.js" defer></script>
+	<script src="/assets/course-progress.3813411a.js" defer></script>
+	<script src="/assets/prompt-init.774781de.js" defer></script>
+	<script src="/assets/contact-form-init.7f7be308.js" defer></script>
+
+	
+	
+
+	
+	
+		<script src="/assets/vendor/mermaid/mermaid.min.js"></script>
+		<script src="/assets/mermaid-init.b2f3ed5c.js"></script>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+</body>
+</html>
+

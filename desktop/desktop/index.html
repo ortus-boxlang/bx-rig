@@ -1,0 +1,468 @@
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>The desktop - BxRig</title>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="BxRig">
+	<meta property="og:title" content="The desktop">
+
+	
+	
+
+	
+	
+		<link rel="canonical" href="https&#x3a;&#x2f;&#x2f;bxrig.boxlang.io&#x2f;desktop&#x2f;desktop&#x2f;index.html">
+	
+
+	
+	
+		<meta name="description" content="Hyprland with Noctalia, KDE Plasma with tiling and panels, and the everyday tools around them.">
+		<meta property="og:description" content="Hyprland with Noctalia, KDE Plasma with tiling and panels, and the everyday tools around them.">
+	
+
+	
+	
+
+	
+	
+		<link rel="icon" href="/assets/favicon.png">
+	
+
+	
+	<script>
+		( function () {
+			var configuredMode = "dark";
+			var stored = localStorage.getItem( "bxsites-theme" );
+			var prefersDark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+			var wantsDark = stored ? stored === "dark" : ( configuredMode === "dark" || ( configuredMode === "auto" && prefersDark ) );
+			if ( wantsDark ) {
+				document.documentElement.setAttribute( "data-theme", "dark" );
+			}
+		} )();
+	</script>
+
+	
+	<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+	<link rel="stylesheet" href="/assets/vendor/highlight/github.min.css">
+	<link rel="stylesheet" href="/assets/theme/style.a70338f7.css">
+
+	
+	
+
+	
+	
+		<style>
+			
+			
+				:root {
+					--bxsites-accent: #00C853;
+					--bxsites-link: #00C853;
+					--bxsites-link-hover: color-mix( in srgb, #00C853 85%, black );
+				}
+			
+			
+			
+				[data-theme="dark"] {
+					--bxsites-accent: #00FF78;
+					--bxsites-link: #00FF78;
+					--bxsites-link-hover: color-mix( in srgb, #00FF78 85%, white );
+				}
+			
+		</style>
+	
+
+	
+	
+		<style>
+			.bxsites-nav-nested {
+				border-inline-start: 2px solid var(--bxsites-accent, var(--bxsites-border));
+				margin-inline-start: 0.2rem;
+				padding-inline-start: 0.85rem;
+			}
+		</style>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+		<script>window.__BXSITES_BASE_PATH__ = "/";</script>
+		<script>window.__BXSITES_SEARCH_NO_RESULTS__ = "No\x20results\x20found.";</script>
+		<script src="/assets/vendor/minisearch/minisearch.js"></script>
+		<script src="/assets/search.f14e08a2.js" defer></script>
+	
+
+	
+	
+
+	
+	
+
+	<script src="/assets/vendor/alpine/cdn.min.js" defer></script>
+</head>
+
+
+<body
+	x-data="{ dark: document.documentElement.getAttribute( 'data-theme' ) === 'dark', navOpen: window.matchMedia( '(min-width: 992px)' ).matches ? ( localStorage.getItem( 'bxsites-nav-open' ) !== null ? localStorage.getItem( 'bxsites-nav-open' ) === 'true' : true ) : false }"
+	x-init="$watch( 'dark', v => { document.documentElement.setAttribute( 'data-theme', v ? 'dark' : 'light' ); localStorage.setItem( 'bxsites-theme', v ? 'dark' : 'light' ) } ); $watch( 'navOpen', v => { if ( window.matchMedia( '(min-width: 992px)' ).matches ) localStorage.setItem( 'bxsites-nav-open', v ) } )">
+	
+	<nav class="navbar navbar-expand-lg brand-navbar">
+		<div class="container-fluid navbar-row">
+			
+			<button
+				class="navbar-toggler"
+				type="button"
+				@click="navOpen = !navOpen"
+				:aria-expanded="navOpen.toString()"
+				aria-controls="bxsites-sidebar"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			
+			<a class="navbar-brand brand-mark" href="/"><img class="brand-logo" src="/assets/bxrig-logo.svg" alt=""><span class="brand-name">BxRig</span></a>
+
+			
+			<div class="navbar-controls">
+				
+				
+					
+
+	<div class="bxsites-search position-relative">
+		<input
+			type="search"
+			id="bxsites-search-input"
+			class="form-control"
+			placeholder="Search..."
+			aria-label="Search">
+		<kbd class="bxsites-search-kbd" aria-hidden="true">Ctrl K</kbd>
+		<ul id="bxsites-search-results" class="bxsites-search-results list-unstyled"></ul>
+	</div>
+
+
+
+				
+
+				
+				
+
+				
+				
+					<a
+						class="repo-link"
+						href="https://github.com/ortus-boxlang/bxrig"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Repository"
+						title="Repository">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg>
+					</a>
+				
+
+				
+				<button
+					type="button"
+					class="theme-toggle"
+					@click="dark = !dark"
+					aria-label="Toggle dark mode">
+					<span x-show="!dark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
+					<span x-show="dark" x-cloak><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
+				</button>
+			</div>
+			
+		</div>
+		
+	</nav>
+
+	
+	<div class="container-fluid">
+		
+		<div class="row" :class="{ 'bxsites-nav-collapsed' : !navOpen }">
+			
+			<aside class="col-lg-3 col-xl-2 sidebar" id="bxsites-sidebar" x-show="navOpen" x-cloak>
+				
+				
+				<ul class="nav flex-column"><li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/start/index.html">Start here</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Start here section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/start/distributions/index.html">Distributions</a></li><li class="nav-item"><a class="nav-link" href="/start/install/index.html">Install</a></li><li class="nav-item"><a class="nav-link" href="/start/wizard/index.html">The setup wizard</a></li><li class="nav-item"><a class="nav-link" href="/start/first-hour/index.html">Your first hour</a></li><li class="nav-item"><a class="nav-link" href="/start/install-advanced/index.html">Install options</a></li><li class="nav-item"><a class="nav-link" href="/start/troubleshooting/index.html">Troubleshooting</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/desktop/index.html">Daily desktop</a><button type="button" class="nav-toggle" aria-expanded="true" aria-label="Toggle Daily desktop section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested"><li class="nav-item"><a class="nav-link active" href="/desktop/desktop/index.html">The desktop</a></li><li class="nav-item"><a class="nav-link" href="/desktop/menu/index.html">The menu</a></li><li class="nav-item"><a class="nav-link" href="/desktop/control-center/index.html">Control Center</a></li><li class="nav-item"><a class="nav-link" href="/desktop/shortcuts/index.html">Shortcuts and Mac keys</a></li><li class="nav-item"><a class="nav-link" href="/desktop/launcher/index.html">Launcher</a></li><li class="nav-item"><a class="nav-link" href="/desktop/input/index.html">Mice, trackpads and keyboards</a></li><li class="nav-item"><a class="nav-link" href="/desktop/system/index.html">Displays, power and time</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/customize/index.html">Customize</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Customize section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/customize/themes/index.html">Themes</a></li><li class="nav-item"><a class="nav-link" href="/customize/appearance/index.html">Appearance</a></li><li class="nav-item"><a class="nav-link" href="/customize/accessibility/index.html">Accessibility</a></li><li class="nav-item"><a class="nav-link" href="/customize/boxy-look/index.html">Boxy&#x27;s look and voice</a></li><li class="nav-item"><a class="nav-link" href="/customize/your-own-config/index.html">Your own config</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/build/index.html">Build software</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Build software section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/build/boxlang/index.html">BoxLang and MatchBox</a></li><li class="nav-item"><a class="nav-link" href="/build/developer-tools/index.html">Developer tools</a></li><li class="nav-item"><a class="nav-link" href="/build/databases-and-vms/index.html">Databases and virtual machines</a></li><li class="nav-item"><a class="nav-link" href="/build/mail/index.html">Mail catcher</a></li><li class="nav-item"><a class="nav-link" href="/build/android/index.html">Android apps</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/ai/index.html">AI on your machine</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle AI on your machine section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/ai/agents/index.html">AI agents and skills</a></li><li class="nav-item"><a class="nav-link" href="/ai/local-ai/index.html">Local AI</a></li><li class="nav-item"><a class="nav-link" href="/ai/boxlang-agents/index.html">BoxLang agents</a></li><li class="nav-item"><a class="nav-link" href="/ai/mcp-and-privacy/index.html">MCP and privacy</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/data/index.html">Apps and your data</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Apps and your data section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/data/apps/index.html">Apps and web apps</a></li><li class="nav-item"><a class="nav-link" href="/data/backups/index.html">Backups and BxTimeMachine</a></li><li class="nav-item"><a class="nav-link" href="/data/nas/index.html">Your NAS</a></li><li class="nav-item"><a class="nav-link" href="/data/scheduler/index.html">Scheduler</a></li><li class="nav-item"><a class="nav-link" href="/data/calendar/index.html">Calendar and reminders</a></li><li class="nav-item"><a class="nav-link" href="/data/export-import/index.html">Move to another machine</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/maintain/index.html">Keep it healthy</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Keep it healthy section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/maintain/updates/index.html">Updates and channels</a></li><li class="nav-item"><a class="nav-link" href="/maintain/security/index.html">Security</a></li><li class="nav-item"><a class="nav-link" href="/maintain/images/index.html">Pictures in the terminal</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/developer/index.html">Extend BxRig</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Extend BxRig section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/developer/architecture/index.html">How it fits together</a></li><li class="nav-item"><a class="nav-link" href="/developer/setup/index.html">Set up your dev machine</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-command/index.html">Add a command</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-theme/index.html">Add a theme</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-an-app/index.html">Add an app</a></li><li class="nav-item"><a class="nav-link" href="/developer/add-a-shortcut/index.html">Add a shortcut</a></li><li class="nav-item"><a class="nav-link" href="/developer/wizard-pages/index.html">Wizard pages</a></li><li class="nav-item"><a class="nav-link" href="/developer/noctalia-plugins/index.html">Noctalia plugins</a></li><li class="nav-item"><a class="nav-link" href="/developer/skills-mcp-agents/index.html">Skills, MCP and agents</a></li><li class="nav-item"><a class="nav-link" href="/developer/ui-toolkit/index.html">The terminal UI toolkit</a></li><li class="nav-item"><a class="nav-link" href="/developer/tests/index.html">Tests</a></li><li class="nav-item"><a class="nav-link" href="/developer/code-rules/index.html">Code rules</a></li><li class="nav-item"><a class="nav-link" href="/developer/release-and-docs/index.html">Releases and docs</a></li><li class="nav-item"><a class="nav-link" href="/developer/screenshots-wanted/index.html">Screenshots wanted</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><a class="nav-link" href="/architecture/index.html">Design records</a><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle Design records section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/architecture/COMMAND-CONTRACT/index.html">Command contract</a></li><li class="nav-item"><a class="nav-link" href="/architecture/MATCHBOX-PARITY/index.html">MatchBox parity</a></li><li class="nav-item"><a class="nav-link" href="/architecture/SHORTCUTS-DECISIONS/index.html">SHORTCUTS DECISIONS</a></li></ul></li><li class="nav-item nav-item--group"><div class="nav-group-header"><span class="nav-link disabled">reference</span><button type="button" class="nav-toggle" aria-expanded="false" aria-label="Toggle reference section"><span class="nav-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></button></div><ul class="nav flex-column nav--nested bxsites-nav-nested" hidden><li class="nav-item"><a class="nav-link" href="/reference/commands/index.html">Command reference</a></li><li class="nav-item"><a class="nav-link" href="/reference/command-flags/index.html">Command flags</a></li><li class="nav-item"><a class="nav-link" href="/reference/config-files/index.html">Files and folders</a></li></ul></li></ul>
+				<a class="bxsites-powered-by" href="https://bxsites.io" target="_blank" rel="noopener noreferrer">
+					<img class="bxsites-powered-by__logo" src="/assets/bxsites-logo.svg" alt="" aria-hidden="true"> <span>Powered by BxSites</span>
+				</a>
+			</aside>
+
+			
+			<main class="col-lg-9 col-xl-8 content">
+					
+
+	
+	<article class="page-content">
+		
+		
+		
+		
+		
+		
+			<nav class="breadcrumb-nav mb-3" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/desktop/index.html">Daily desktop</a></li><li class="breadcrumb-item active" aria-current="page">The desktop</li></ol></nav>
+		
+		
+		<h1 class="page-title" id="page-title">
+			<a href="#page-title" id="page-title" class="anchor"></a>
+			
+			The desktop
+		</h1>
+		
+		
+			<p class="page-summary">Hyprland with Noctalia, KDE Plasma with tiling and panels, and the everyday tools around them.</p>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#pick-your-desktop">Pick your desktop</a></li><li class="toc-level-2"><a href="#hyprland-and-noctalia">Hyprland and Noctalia</a></li><li class="toc-level-3"><a href="#the-bars-panels">The bar&#x27;s panels</a></li><li class="toc-level-2"><a href="#kde-plasma">KDE Plasma</a></li><li class="toc-level-2"><a href="#everyday-tools">Everyday tools</a></li><li class="toc-level-2"><a href="#trackpads-and-apple-devices">Trackpads and Apple devices</a></li><li class="toc-level-2"><a href="#hot-corners">Hot corners</a></li><li class="toc-level-2"><a href="#screensaver">Screensaver</a></li><li class="toc-level-2"><a href="#boot-splash">Boot splash</a></li></ul></details>
+		
+
+		
+		<h1 id="the-desktop"><a href="#the-desktop" id="the-desktop" name="the-desktop" class="anchor"></a>The desktop</h1>
+<p>BxRig sets up <strong>Hyprland with Noctalia</strong> as the main desktop. <strong>KDE Plasma</strong> stays installed and gets tiling and a status panel.</p>
+<h2 id="try-it"><a href="#try-it" id="try-it" name="try-it" class="anchor"></a>Try it</h2>
+<pre><code class="language-bash">bxrig session set hyprland      # or plasma: what the login screen starts
+bxrig menu                      # the control center menu (Super+Space)
+bxrig screenshot region         # Print
+</code></pre>
+<p><img src="/assets/screenshots/notification-center.webp"  alt="The notification center: every notification, by day" /></p>
+<pre><code class="language-mermaid">flowchart LR
+  A[&quot;Login screen&quot;] --&gt; B[&quot;Hyprland and Noctalia&quot;]
+  A --&gt; C[&quot;KDE Plasma&quot;]
+  B --&gt; D[&quot;bxrig.lua: shortcuts, generated&quot;]
+  B --&gt; E[&quot;hyprland.lua: yours&quot;]
+  C --&gt; F[&quot;Tiling and panels&quot;]
+</code></pre>
+<h2 id="pick-your-desktop"><a href="#pick-your-desktop" id="pick-your-desktop" name="pick-your-desktop" class="anchor"></a>Pick your desktop</h2>
+<p>Choose either (or both) at the login screen, or run <code>bxrig session set hyprland|plasma</code>.</p>
+<h2 id="hyprland-and-noctalia"><a href="#hyprland-and-noctalia" id="hyprland-and-noctalia" name="hyprland-and-noctalia" class="anchor"></a>Hyprland and Noctalia</h2>
+<p><code>bxrig setup hyprland</code> installs the packages one by one and writes the starter configuration once. <code>~/.config/hypr/hyprland.lua</code> is yours. BxRig owns <code>~/.config/hypr/bxrig.lua</code>, which it regenerates from the <a href="/desktop/shortcuts/index.html">shortcut table</a>; never edit that file by hand. See <a href="/customize/your-own-config/index.html">Your own config</a>.</p>
+<h3 id="the-bars-panels"><a href="#the-bars-panels" id="the-bars-panels" name="the-bars-panels" class="anchor"></a>The bar's panels</h3>
+<p>The Noctalia bar carries three BxRig panels and the notifications. Each opens from its button on the bar or a key.</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th> </th><th> </th></tr>
+</thead>
+<tbody>
+<tr><td><img src="/assets/screenshots/panel-world-clock.webp"  alt="The world clock: every time zone, how far it is from you, and day or night" /><br><strong>World clock</strong> · the globe before the time, or <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>W</kbd>. The zones are yours: <code>bxrig time world add Asia/Tokyo --yes</code></td><td><img src="/assets/screenshots/panel-agents.webp"  alt="The coding agents panel" /><br><strong>Coding agents</strong> · <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd>. The agents you have installed, their accounts and limits; launch one with a click. <strong>Edit agents</strong> (or <code>bxrig ai panel add\|remove ID --yes</code>) chooses which show</td></tr>
+<tr><td><img src="/assets/screenshots/panel-theme-switcher.webp"  alt="The theme switcher" /><br><strong>Theme switcher</strong> · <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>. See <a href="/customize/themes/index.html">Themes</a></td><td><img src="/assets/screenshots/notifications.webp"  alt="Stacked notifications" /><br><strong>Notifications</strong> stack in the top corner, rounded and in the theme's colors. <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>,</kbd> acts on the newest, <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd> opens them all</td></tr>
+</tbody>
+</table></div>
+<h2 id="kde-plasma"><a href="#kde-plasma" id="kde-plasma" name="kde-plasma" class="anchor"></a>KDE Plasma</h2>
+<ul>
+<li><strong>Tiling:</strong> <code>bxrig setup plasma</code> installs HyprKwin and turns on the Bluetooth service (<code>bluetooth.service</code>, if it is not on yet). Layouts: dwindle, master, monocle, scrolling, stage. <code>bxrig tiling on|off|status|layout NAME</code>.</li>
+<li><strong>Panels:</strong> <code>bxrig plasma panels apply</code> replaces your panels with a top status panel (launcher, workspace pager, active window, clock, weather, media, system vitals, tray, in rounded islands with Panel Colorizer) and a bottom dock. Your old layout is backed up first: <code>bxrig plasma panels undo --yes</code> restores it. From Hyprland it is applied at your next Plasma login.</li>
+<li><strong>Virtual desktops:</strong> <code>bxrig plasma desktops 4</code>.</li>
+<li><strong>World clock:</strong> the panel clock reads <code>Nov 15 - 22:16</code>; click it for every time zone you chose in the wizard (<code>bxrig time world</code>).</li>
+</ul>
+<p><img src="/assets/screenshots/plasma-world-clock.webp"  alt="The Plasma panel clock with its time zones" /></p>
+<h2 id="everyday-tools"><a href="#everyday-tools" id="everyday-tools" name="everyday-tools" class="anchor"></a>Everyday tools</h2>
+<p>The shortcuts below are the Traditional style unless noted. Every key is a row of the <a href="/desktop/shortcuts/index.html">shortcut table</a>, in the style you chose.</p>
+<div class="bxsites-table-wrap" x-data="{ q: '' }"><input type="search" class="bxsites-table-filter" x-model="q" placeholder="Filter table..." aria-label="Filter table"><table class="table">
+<thead>
+<tr><th>Do</th><th>Command</th><th>Shortcut</th></tr>
+</thead>
+<tbody>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Control center</td><td><code>bxrig menu</code></td><td><code>Super+Space</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Launch apps</td><td><code>bxrig runner launch</code> (the launcher you chose); <code>bxrig apps</code> is the All apps window</td><td><code>Super+Alt+Space</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hardware menu</td><td><code>bxrig menu open hardware</code></td><td><code>Super+Ctrl+H</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Screenshot</td><td><code>bxrig screenshot screen\|region\|window</code></td><td><code>Print</code> (region); Mac style also <code>Super+Shift+3</code> / <code>4</code> / <code>5</code> (the <code>5</code> menu)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Text from the screen</td><td><code>bxrig screenshot ocr</code></td><td>in the Capture menu</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>QR codes</td><td><code>bxrig screenshot qr</code>, <code>bxrig qr TEXT</code></td><td> </td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Color picker</td><td><code>bxrig screenshot color</code></td><td><code>Super+Print</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Record the screen</td><td><code>bxrig record toggle [--region] [--audio=desktop\|mic]</code></td><td><code>Super+Shift+R</code> (<code>Super+Alt+Shift+R</code> a region, <code>Alt+Print</code> with desktop audio)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Webcam preview</td><td><code>bxrig webcam toggle</code></td><td><code>Super+Ctrl+Alt+V</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Clipboard history</td><td><code>bxrig clipboard pick</code></td><td><code>Super+Ctrl+V</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Dictation</td><td><code>bxrig dictation toggle</code></td><td><code>Alt+Space</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Do Not Disturb</td><td><code>bxrig notify dnd toggle</code>, <code>notify snooze 30m</code></td><td><code>Super+Ctrl+Alt+Comma</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Time, battery, weather</td><td><code>bxrig notify time\|battery\|weather</code></td><td><code>Super+Ctrl+Alt+T</code> / <code>B</code> / <code>W</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Night shift</td><td><code>bxrig nightshift on\|off\|toggle</code></td><td>menu only</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Hide or show the bar, the dock</td><td><code>bxrig appearance bar toggle</code>, <code>appearance dock toggle</code></td><td><code>Super+Ctrl+Alt+F</code>, <code>Super+Alt+D</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Emoji</td><td><code>bxrig emoji</code></td><td><code>Super+Ctrl+E</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Force quit</td><td><code>bxrig forcequit</code></td><td><code>Super+Alt+Escape</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Overview</td><td><code>bxrig overview</code></td><td><code>Super+Ctrl+Up</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Minimize / restore</td><td><code>bxrig window minimize\|restore</code></td><td><code>Super+H</code> / <code>Super+Shift+H</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Maximize</td><td>(Hyprland binding)</td><td><code>Super+M</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Snap to a half</td><td><code>bxrig window snap left\|right\|top\|bottom</code></td><td><code>Super+Alt+</code> arrows</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Center a floating window</td><td>(Hyprland binding)</td><td><code>Super+Alt+Shift+C</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Last workspace</td><td>(Hyprland binding)</td><td><code>Super+Ctrl+Tab</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Window / workspace to another monitor</td><td>(Hyprland binding)</td><td><code>Super+Ctrl+Shift+</code> / <code>Super+Alt+Shift+</code> arrows</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Next layout on this workspace</td><td>(Hyprland binding)</td><td><code>Super+Shift+J</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Narrower / wider column</td><td>(Hyprland binding)</td><td><code>Super+Minus</code> / <code>Super+Equal</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Quake console</td><td><code>bxrig window quake</code>, <code>window quake send</code></td><td><code>Super+Shift+Grave</code> / <code>Super+Ctrl+Grave</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Private browser window</td><td><code>bxrig browser private [URL]</code></td><td><code>Super+Alt+Shift+B</code> (Mac style <code>Super+Shift+N</code>)</td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>File manager in this folder</td><td><code>bxrig files here [DIR]</code></td><td><code>Super+Alt+Shift+F</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Lock</td><td><code>bxrig system lock</code></td><td><code>Super+Ctrl+L</code></td></tr>
+<tr x-show="!q || $el.textContent.toLowerCase().includes( q.toLowerCase() )"><td>Pull-down AI shell</td><td><code>bxrig ai shell</code></td><td><code>Super+`</code></td></tr>
+</tbody>
+</table></div>
+<p>The quake console is the special workspace <code>qconsole</code>: the first press starts your default terminal on it. The private window uses the default browser (<code>bxrig default browser</code>). The webcam preview needs <code>mpv</code>, and recording with audio needs <code>pactl</code>.</p>
+<p>Night shift on Hyprland runs <code>wlsunset</code> with your time zone's sunrise and sunset (no network lookup); on Plasma it turns on Plasma's own Night Light.</p>
+<h2 id="trackpads-and-apple-devices"><a href="#trackpads-and-apple-devices" id="trackpads-and-apple-devices" name="trackpads-and-apple-devices" class="anchor"></a>Trackpads and Apple devices</h2>
+<p><code>bxrig input gestures --yes</code> sets up three-finger swipes (workspaces, overview) with <code>libinput-gestures</code>. <code>bxrig input doctor</code> checks Magic Mouse and Magic Trackpad support (the kernel driver, loaded or built in, Bluetooth, the <code>input</code> group). <code>bxrig input status</code> finds Apple Magic and Logitech devices and <code>bxrig input offer</code> installs the helpers for them (Solaar for Logitech, libratbag and Piper for gaming mice, upower): see <a href="/desktop/input/index.html">Mice, trackpads and keyboards</a>. For Option-key characters like a Mac, pick the <strong>English (US, Macintosh)</strong> keyboard layout in the wizard. <code>bxrig airplay on</code> starts an AirPlay receiver.</p>
+<h2 id="hot-corners"><a href="#hot-corners" id="hot-corners" name="hot-corners" class="anchor"></a>Hot corners</h2>
+<p>Rest the pointer in a screen corner to run an action. The defaults are Mac-like: top left the overview, top right the notifications, bottom left the desktop, bottom right the lock screen. Change any corner, on Hyprland (Noctalia) and Plasma (KWin screen edges) alike:</p>
+<pre><code class="language-bash">bxrig hotcorners                                      # what each corner does
+bxrig hotcorners set top-left=launcher bottom-right=lock --yes
+bxrig hotcorners off --yes
+</code></pre>
+<p>Actions: <code>none</code>, <code>overview</code>, <code>notifications</code>, <code>desktop</code>, <code>lock</code>, <code>launcher</code>, <code>agents</code>, <code>themes</code>. Plasma has no corner action for notifications, agents and themes; those corners do nothing there and the command says so.</p>
+<h2 id="screensaver"><a href="#screensaver" id="screensaver" name="screensaver" class="anchor"></a>Screensaver</h2>
+<p>After 2.5 minutes idle, BXRIG art in your theme's colours fills every monitor; after 5 minutes the screen locks. Any key or mouse move closes it. Six effects take turns, a minute each: a gradient sweeping across BXRIG, the BxRig laptop with a glint, BoxLang code rain, a drifting clock, a starfield and your own logo.</p>
+<pre><code class="language-bash">bxrig screensaver preview              # try it in this terminal (preview clock for one effect)
+bxrig screensaver                      # the settings and the effects
+bxrig screensaver set screensaver=300 lock=600 --yes
+bxrig screensaver set effects=clock,stars --yes
+bxrig screensaver logo text ACME --yes # or: logo image ~/Pictures/logo.png, logo reset
+bxrig screensaver off --yes            # no screensaver; the lock stays
+</code></pre>
+<p>On Hyprland, Noctalia runs it as an idle behavior. On Plasma, a small user service (swayidle) starts it and Plasma's own lock screen follows the <code>lock=</code> setting; <code>bxrig setup plasma</code> installs swayidle. On both, a video or <strong>Stay awake</strong> holds it off. It is also in the menu (<em>System &gt; Screensaver</em>) and on the Control Center's Look page.</p>
+<h2 id="boot-splash"><a href="#boot-splash" id="boot-splash" name="boot-splash" class="anchor"></a>Boot splash</h2>
+<p><code>bxrig setup boot --yes</code> puts the BxRig splash on the boot screen (Plymouth): the laptop fades in over a soft glow while the dots pulse, and an encrypted disk asks for its password on the same screen. It shows the plan first, keeps a backup of <code>/etc/mkinitcpio.conf</code>, and tells you where to add <code>splash</code> for your boot loader. <code>bxrig setup undo boot --yes</code> puts the previous theme back.</p>
+<p><video src="../assets/clips/boot-splash.webm" poster="../assets/screenshots/boot-splash.webp" autoplay loop muted playsinline width="100%"></video></p>
+<p>Look and hardware have their own pages: <a href="/customize/appearance/index.html">Appearance</a> for the bar, dock, windows and fonts, and <a href="/desktop/system/index.html">Displays, power and time</a> for monitors, laptop power and the time zone. The <a href="/desktop/menu/index.html">menu</a> has all of it as one menu.</p>
+<p>Next: <a href="/desktop/menu/index.html">The menu</a>, <a href="/desktop/shortcuts/index.html">Shortcuts</a>, <a href="/customize/appearance/index.html">Appearance</a>.</p>
+
+	
+
+	
+	
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/desktop/desktop.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/desktop/desktop.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 4&#x3a;56&#x3a;05 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20The%20desktop&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdesktop%2Fdesktop%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+	
+</article>
+
+
+
+
+
+
+	<nav class="page-nav d-flex justify-content-between" aria-label="Page navigation">
+		
+		
+			<a class="page-nav__card page-nav__card--prev" href="/desktop/index.html">
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+				<span class="page-nav__text">
+					<span class="page-nav__label">Previous</span>
+					<span class="page-nav__title">Daily desktop</span>
+				</span>
+			</a>
+		
+		
+		
+		
+		
+			<a class="page-nav__card page-nav__card--next" href="/desktop/menu/index.html">
+				<span class="page-nav__text">
+					<span class="page-nav__label">Next</span>
+					<span class="page-nav__title">The menu</span>
+				</span>
+				<span class="page-nav__icon"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+			</a>
+		
+	</nav>
+
+
+
+
+
+
+			</main>
+
+			
+			
+				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#pick-your-desktop">Pick your desktop</a></li><li class="toc-level-2"><a href="#hyprland-and-noctalia">Hyprland and Noctalia</a></li><li class="toc-level-3"><a href="#the-bars-panels">The bar&#x27;s panels</a></li><li class="toc-level-2"><a href="#kde-plasma">KDE Plasma</a></li><li class="toc-level-2"><a href="#everyday-tools">Everyday tools</a></li><li class="toc-level-2"><a href="#trackpads-and-apple-devices">Trackpads and Apple devices</a></li><li class="toc-level-2"><a href="#hot-corners">Hot corners</a></li><li class="toc-level-2"><a href="#screensaver">Screensaver</a></li><li class="toc-level-2"><a href="#boot-splash">Boot splash</a></li></ul></nav>
+				</aside>
+			
+		</div>
+		
+	</div>
+	
+
+	
+	
+		<footer class="bxsites-footer">
+			<div class="container-fluid bxsites-footer__inner">
+				
+				<div class="bxsites-footer__copy">&copy; 2026 BxRig</div>
+				
+				
+					<div class="bxsites-footer__social"><a class="social-link" href="https://github.com/ortus-boxlang/BoxLang" target="_blank" rel="noopener noreferrer" aria-label="BoxLang on GitHub" title="BoxLang on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.744.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12"/></svg></a><a class="social-link" href="https://www.boxlang.io" target="_blank" rel="noopener noreferrer" aria-label="BoxLang" title="BoxLang"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a></div>
+				
+				
+				<div class="bxsites-footer__credit">Built with <a href="https://bxsites.io" target="_blank" rel="noopener noreferrer">BxSites</a></div>
+			</div>
+		</footer>
+	
+
+	
+	<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+	<script src="/assets/vendor/highlight/highlight.min.js"></script>
+	<script src="/assets/highlight-boxlang.c59b5de4.js"></script>
+	<script>hljs.highlightAll();</script>
+	<script src="/assets/code-lines.66ad0c90.js"></script>
+	<script src="/assets/copy-code.a5acc8cc.js" defer></script>
+	<script src="/assets/admonition-collapse.df9b134e.js" defer></script>
+	<script src="/assets/nav-toggle.6bc5dbe8.js" defer></script>
+	<script src="/assets/toc-collapse.cb73e778.js" defer></script>
+	<script src="/assets/tabs.24dffad6.js" defer></script>
+	<script src="/assets/conditional-content-init.9ef1e0f9.js" defer></script>
+	<script src="/assets/course-progress.3813411a.js" defer></script>
+	<script src="/assets/prompt-init.774781de.js" defer></script>
+	<script src="/assets/contact-form-init.7f7be308.js" defer></script>
+
+	
+	
+
+	
+	
+		<script src="/assets/vendor/mermaid/mermaid.min.js"></script>
+		<script src="/assets/mermaid-init.b2f3ed5c.js"></script>
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+
+	
+	
+</body>
+</html>
+
