@@ -62,7 +62,7 @@ h = trad.render( "hyprland" );
 testkit.check( "hyprland: Lua module, logout bind via uwsm", find( 'hl.dsp.exec_cmd("uwsm stop")', h ) > 0 && find( 'mainMod .. " + SHIFT + Q"', h ) > 0 );
 testkit.check( "hyprland: Noctalia autostart and launcher", find( 'hl.exec_cmd("noctalia")', h ) > 0 && find( "panel-toggle launcher", h ) > 0 );
 testkit.check( "hyprland: Alt+Tab opens the Noctalia window switcher", find( 'hl.bind("ALT + Tab"', h ) > 0 && find( "window-switcher hold", h ) > 0 );
-testkit.check( "hyprland: Super+Alt+Space opens the menu", find( 'hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig menu''', h ) > 0 );
+testkit.check( "hyprland: Super+Alt+Space opens the menu panel and falls back to the menu program", find( 'hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:menu || bxrig menu', h ) > 0 );
 testkit.check( "hyprland: Super+Space follows the chosen launcher and falls back to Noctalia", find( "bxrig runner launch || noctalia msg panel-toggle launcher", h ) > 0 && find( 'hl.bind(mainMod .. " + Space"', h ) > 0 );
 testkit.check( "hyprland: starter binds are in the module (close, terminal, workspaces, arrows)", find( 'hl.bind(mainMod .. " + Q", hl.dsp.window.close())', h ) > 0 && find( "hl.dsp.exec_cmd(terminal)", h ) > 0 && find( "hl.dsp.focus({ workspace = 10 })", h ) > 0 && find( 'mainMod .. " + Left"', h ) > 0 );
 testkit.check( "hyprland: media keys keep locked and repeating", find( 'hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true, repeating = true })', h ) > 0 );

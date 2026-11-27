@@ -1,9 +1,12 @@
 # BxRig Launcher: one search box for everything, in the style of Raycast. Type to find an application, any action of the BxRig menu (with its
 # path, like "Trigger › Capture"), a theme, a calculator answer, or fall back to a web search. A second panel shows the clipboard history.
 # Panels (no bar widget):
-#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space)
+#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab
+#   menu       the drill-down menu noctalia msg panel-toggle bxrig/launcher:menu       (Super+Alt+Space)
 #   clipboard  clipboard history  noctalia msg panel-toggle bxrig/launcher:clipboard  (Super+Shift+V)
-# Data: `bxrig launcher search QUERY --limit=30 --json` on every keystroke; Enter runs `bxrig launcher run ID QUERY`.
+# Data: menu: `bxrig menu level [PATH] --json`, a leaf runs `bxrig launcher run menu:ID`.
+#   Boxy: `bxrig ai agents ask TEXT --thread=ID --json`, `ai agents approve|reject THREAD`.
+#   Launcher: `bxrig launcher search QUERY --limit=30 --json` on every keystroke; Enter runs `bxrig launcher run ID QUERY`.
 #   Clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, Enter runs `bxrig clipboard copy ID`.
 # The ranking idea follows oma-cast (https://github.com/typecraft-dev/oma-cast, MIT).
 
@@ -33,7 +36,7 @@ height = 580
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
-capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2"]
 
 [[panel]]
 id = "clipboard"
@@ -44,3 +47,13 @@ placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]
+
+[[panel]]
+id = "menu"
+entry = "menu.luau"
+width = 560
+height = 620
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Left", "Right"]

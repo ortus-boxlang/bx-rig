@@ -11,7 +11,7 @@ Noctalia v5 plugins (author id `bxrig`). Each folder is one plugin.
 | `vpn/` | `bxrig/vpn` | bar widget `bar` (a shield glyph: primary green while connected, muted otherwise, hidden when nothing is installed), panel `panel` (one list, two groups, place picker) | `bxrig vpn list --json`, every 10 s while open and every 60 s in the background; places `bxrig vpn locations NAME --json`; `bxrig vpn connect NAME [--location=VALUE]`, `bxrig vpn disconnect NAME`, `bxrig vpn set allow_several=true|false --yes` |
 | `quick/` | `bxrig/quick` | bar widget `bar`, panel `panel` (switches and pickers), panel `themes` (theme switcher) | the `status` of each setting on open; each control runs its bxrig command with `--yes`; themes: `bxrig theme list --json` on open, Enter runs `bxrig theme set <name> --yes` |
 | `power/` | `bxrig/power` | panel `panel` only, no bar widget: the battery widget opens it | `bxrig power status --json`, every 15 s while open; profile `bxrig power profile`, lid `bxrig power lid battery|ac ACTION --yes`, `bxrig system suspend`, `bxrig power hibernate --yes`, `bxrig power charge-limit N --yes` |
-| `launcher/` | `bxrig/launcher` | panel `panel` (the launcher), panel `clipboard` (clipboard history); no bar widget | `bxrig launcher search QUERY --limit=30 --json` on every keystroke, Enter runs `bxrig launcher run ID QUERY`; clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, `clipboard copy ID`, `clipboard clear --yes` |
+| `launcher/` | `bxrig/launcher` | panel `panel` (the launcher, with a Boxy chat mode on Tab), panel `menu` (the drill-down menu), panel `clipboard` (clipboard history); no bar widget | `bxrig launcher search QUERY --limit=30 --json` on every keystroke, Enter runs `bxrig launcher run ID QUERY`; Boxy: `bxrig ai agents ask TEXT --thread=ID --json`, `ai agents approve|reject THREAD`; menu: `bxrig menu level [PATH] --json`, a leaf runs `launcher run menu:ID`; clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, `clipboard copy ID`, `clipboard clear --yes` |
 
 The plugins use `plugin_api = 43`. They only draw with palette roles, so they follow the active Noctalia theme. Every file in a folder ships together. `bxrig.luau` is the same helper in every plugin: it runs bxrig and unwraps the `{"ok":…,"data":…}` envelope.
 
@@ -59,6 +59,7 @@ noctalia msg panel-toggle bxrig/quick:themes
 noctalia msg panel-toggle bxrig/power:panel
 noctalia msg panel-toggle bxrig/vpn:panel
 noctalia msg panel-toggle bxrig/launcher:panel
+noctalia msg panel-toggle bxrig/launcher:menu
 noctalia msg panel-toggle bxrig/launcher:clipboard
 ```
 

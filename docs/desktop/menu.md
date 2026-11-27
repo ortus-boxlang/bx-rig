@@ -6,7 +6,7 @@ summary: One menu for everything BxRig does, on your launcher, with search.
 
 # The menu
 
-`bxrig menu` is one menu for everything BxRig does, shown on your launcher. Press `Super+Alt+Space`, type to search, press Enter. To search everything in one list (apps, menu actions, themes, a calculator and the clipboard) use the launcher on `Super+Space`.
+`bxrig menu` is one menu for everything BxRig does, shown on your launcher. Press `Super+Alt+Space`, type to search, press Enter. On the Noctalia desktop it opens as a panel with icons and a breadcrumb (see [Launcher](launcher.md#the-menu)); elsewhere it opens in your menu program. To search everything in one list (apps, menu actions, themes, a calculator and the clipboard) use the launcher on `Super+Space`.
 
 ## Try it
 

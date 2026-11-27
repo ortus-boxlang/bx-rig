@@ -132,6 +132,38 @@ class Menu {
 		return variables.cli.say( "menu search", "ok", { query: arguments.text, results: rows }, arguments.asJson, lines );
 	}
 
+	/**
+	 * The entries at one level of the menu, for the menu panel: the top level when the path is empty, else the submenu at the path
+	 * ("Trigger > Capture", the labels as shown, case does not matter). Each entry: { id, title, kind, hasChildren, checked, path, glyph, tone, does }.
+	 * `path` is where a submenu leads (pass it back to open the next level); `id` is the id `launcher run menu:ID` takes for an action.
+	 * @path The submenu path, or "".
+	 * @asJson True for JSON output.
+	 */
+	function entriesAt( path, asJson ) {
+		var cmd = "menu level";
+		var segs = listToArray( arguments.path, ">" ).map( function( p ) { return trim( p ); } ).filter( function( p ) { return len( p ) > 0; } );
+		var here = tree();
+		var trail = [];
+		for ( var seg in segs ) {
+			var hit = here.filter( function( e ) { return e.kind == "sub" && lCase( e.label ) == lCase( seg ); } );
+			if ( !hit.len() ) return variables.cli.say( cmd, "precondition", { error: "no menu section " & arguments.path }, arguments.asJson, [ "error: no menu section " & arguments.path & ". List them: bxrig menu open" ] );
+			trail.append( hit[ 1 ].label );
+			here = hit[ 1 ].children;
+		}
+		var section = trail.len() ? trail[ 1 ] : "";
+		var glyphs = new bxrig.util.Glyphs();
+		var rows = [];
+		for ( var e in here ) {
+			var sub = e.kind == "sub";
+			var top = trail.len() ? section : e.label;
+			var own = trail.toList( " > " );
+			var ic = glyphs.forRow( e.label, top, sub && !trail.len(), own );
+			rows.append( { id: e.id ?: "", title: e.label, kind: e.kind, hasChildren: sub, checked: e.checked ?: false, path: sub ? ( len( own ) ? own & " > " : "" ) & e.label : "", glyph: ic.glyph, tone: ic.tone, does: sub ? "" : describe( e ) } );
+		}
+		var lines = rows.map( function( r ) { return ( r.hasChildren ? "> " : "  " ) & r.title; } );
+		return variables.cli.say( cmd, "ok", { path: trail.toList( " > " ), crumbs: trail, entries: rows }, arguments.asJson, lines );
+	}
+
 	// Every submenu with its path: [ { path, label, children } ].
 	function routes( entries, prefix = "" ) {
 		var out = [];

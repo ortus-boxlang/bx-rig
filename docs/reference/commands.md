@@ -274,6 +274,7 @@ The control center: every command as a menu on your launcher (Rofi, Walker, Wofi
 ```text
 bxrig menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]
 bxrig menu ids [--json] | menu file [--yes] [--dry-run] [--json]
+bxrig menu level [PATH] [--json]
 ```
 
 ```bash
@@ -282,9 +283,10 @@ bxrig menu search 'time zone'
 bxrig menu open capture
 bxrig menu ids
 bxrig menu file --yes
+bxrig menu level "Trigger > Capture" --json
 ```
 
-> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: `menu ids` lists the ids, `menu file --yes` writes an example, `menu file` checks yours.
+> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: `menu ids` lists the ids, `menu file --yes` writes an example, `menu file` checks yours. level lists the entries at one level (the top level, or the submenu at PATH) with a glyph and colour role for each: the data the Noctalia menu panel draws.
 
 ### `bxrig apps` {#bxrig-apps}
 

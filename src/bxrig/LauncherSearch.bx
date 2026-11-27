@@ -1,6 +1,7 @@
 /**
  * The launcher's search: one flat, ranked list for what you type, like Raycast. `bxrig launcher search QUERY` gives the rows; `launcher run ID`
  * does what a row says. The Noctalia launcher panel calls both; Vicinae and scripts can too.
+ *   glyph (a Tabler icon name) and tone (a theme colour role: primary, secondary, tertiary, error) tell the panel how to draw the row's tile.
  *   iconPath is a picture file for an application row (from the icon themes) or "" (the panel then draws a glyph for the kind).
  *   Rows come from: an answer card (calculator), the menu (every action of `bxrig menu`, with its path as breadcrumb), applications
  *   (desktop entries), themes, and web searches (always last). Empty query: the rows you used most recently and most often.
@@ -130,7 +131,7 @@ class LauncherSearch {
 	function answers( q ) {
 		var r = variables.calc.eval( arguments.q );
 		if ( !r.ok ) return [];
-		return [ { id: "answer:calc", kind: "answer", title: r.text, subtitle: trim( arguments.q ) & " =", icon: "calculator", iconPath: "", breadcrumb: "", action: { type: "copy", text: r.text }, score: 1000 } ];
+		return [ { id: "answer:calc", kind: "answer", title: r.text, subtitle: trim( arguments.q ) & " =", icon: "calculator", glyph: "calculator", tone: "primary", iconPath: "", breadcrumb: "", action: { type: "copy", text: r.text }, score: 1000 } ];
 	}
 
 	/**
@@ -139,13 +140,15 @@ class LauncherSearch {
 	function menuRows() {
 		var rows = [];
 		var menu = new bxrig.Menu( variables.cli, variables.runnerArg );
+		var glyphs = new bxrig.util.Glyphs();
 		for ( var f in menu.flatten( menu.tree() ) ) {
 			var parts = listToArray( f.path, ">" ).map( function( p ) { return trim( p ); } );
 			var title = parts.last();
 			var crumbs = parts.slice( 1, parts.len() - 1 );
 			var parent = crumbs.toList( " > " );
 			var act = { type: "menu", kind: f.entry.kind, argv: f.entry.argv ?: [], url: f.entry.url ?: "", parent: parent };
-			rows.append( { id: "menu:" & ( f.entry.id ?: lCase( f.path ) ), kind: "menu", title: title, subtitle: menu.describe( f.entry ), icon: f.entry.icon ?: "", breadcrumb: crumbs.toList( " › " ), action: act, score: 0 } );
+			var ic = glyphs.forRow( title, parts[ 1 ], false, parent );
+			rows.append( { id: "menu:" & ( f.entry.id ?: lCase( f.path ) ), kind: "menu", title: title, subtitle: menu.describe( f.entry ), icon: f.entry.icon ?: "", glyph: ic.glyph, tone: ic.tone, breadcrumb: crumbs.toList( " › " ), action: act, score: 0 } );
 		}
 		return rows;
 	}
@@ -156,7 +159,7 @@ class LauncherSearch {
 	function appRows() {
 		var rows = [];
 		try {
-			for ( var a in new bxrig.Apps( variables.cli, variables.runnerArg ).all() ) rows.append( { id: "app:" & a.id, kind: "app", title: a.name, subtitle: "Application", icon: a.icon, breadcrumb: "", action: { type: "exec", shell: a.exec }, score: 0 } );
+			for ( var a in new bxrig.Apps( variables.cli, variables.runnerArg ).all() ) rows.append( { id: "app:" & a.id, kind: "app", title: a.name, subtitle: "Application", icon: a.icon, glyph: "app-window", tone: "primary", breadcrumb: "", action: { type: "exec", shell: a.exec }, score: 0 } );
 		} catch ( any e ) {}
 		return rows;
 	}
@@ -168,7 +171,7 @@ class LauncherSearch {
 		var rows = [];
 		try {
 			var th = new bxrig.Theme( variables.cli );
-			for ( var n in th.names() ) rows.append( { id: "theme:" & n, kind: "theme", title: th.label( n ), subtitle: "Switch the theme", icon: "palette", breadcrumb: "Appearance › Theme", action: { type: "theme", name: n }, score: 0 } );
+			for ( var n in th.names() ) rows.append( { id: "theme:" & n, kind: "theme", title: th.label( n ), subtitle: "Switch the theme", icon: "palette", glyph: "palette", tone: "secondary", breadcrumb: "Appearance › Theme", action: { type: "theme", name: n }, score: 0 } );
 		} catch ( any e ) {}
 		return rows;
 	}
@@ -186,7 +189,7 @@ class LauncherSearch {
 			{ id: "boxlang", name: "BoxLang docs", url: "https://boxlang.ortusbooks.com/?q=" }
 		];
 		var rows = [];
-		for ( var e in engines ) rows.append( { id: "web:" & e.id, kind: "web", title: "Search " & e.name & " for " & chr( 34 ) & trim( arguments.q ) & chr( 34 ), subtitle: e.url & enc, icon: "globe", breadcrumb: "Web", action: { type: "url", url: e.url & enc }, score: -1 } );
+		for ( var e in engines ) rows.append( { id: "web:" & e.id, kind: "web", title: "Search " & e.name & " for " & chr( 34 ) & trim( arguments.q ) & chr( 34 ), subtitle: e.url & enc, icon: "globe", glyph: "world-search", tone: "tertiary", breadcrumb: "Web", action: { type: "url", url: e.url & enc }, score: -1 } );
 		return rows;
 	}
 
@@ -195,7 +198,7 @@ class LauncherSearch {
 	 */
 	function catalog() {
 		var rows = [];
-		rows.append( { id: "mode:clipboard", kind: "mode", title: "Clipboard history", subtitle: "Search what you copied", icon: "clipboard", breadcrumb: "", action: { type: "mode", mode: "clipboard" }, score: 0 } );
+		rows.append( { id: "mode:clipboard", kind: "mode", title: "Clipboard history", subtitle: "Search what you copied", icon: "clipboard", glyph: "clipboard-text", tone: "secondary", breadcrumb: "", action: { type: "mode", mode: "clipboard" }, score: 0 } );
 		for ( var r in menuRows() ) rows.append( r );
 		for ( var a in themeRows() ) rows.append( a );
 		for ( var p in appRows() ) rows.append( p );

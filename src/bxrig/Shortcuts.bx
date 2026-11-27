@@ -146,7 +146,8 @@ class Shortcuts {
 			remap( "mac-comma", "Preferences", "Super+Comma", "Ctrl-comma", "Super-comma" ),
 			remap( "switch-windows", "Switch windows", "Super+Tab", "Alt-Tab", "" ),
 			// menus and launchers
-			bx( "menu", G.menu, "BxRig menu (browse AI, databases, settings)", "Super+Alt+Space", "Super+Alt+Space", "menu" ),
+			row( "menu", G.menu, "BxRig menu (browse by section; the Noctalia panel, or your menu program)", "Super+Alt+Space", "Super+Alt+Space", "hypr-bind",
+				'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:menu || bxrig menu'']])', "menu" ),
 			row( "launcher", G.menu, "Launcher: search apps, actions, themes, clipboard (the launcher you chose; Noctalia if it cannot run)", "Super+Space", "Super+Space", "hypr-bind",
 				'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
 			bx( "key-sheet", G.menu, "Shortcut cheat sheet", "Super+K", "Super+K", "keys sheet" ),

@@ -728,6 +728,7 @@ class {
 				if ( p.len() == 2 && p[2] == "ids" ) CLIExit( new bxrig.Menu( cli ).ids( asJson ) );
 				if ( p.len() == 2 && p[2] == "file" ) CLIExit( new bxrig.Menu( cli ).file( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				if ( p.len() >= 2 && p[2] == "open" ) { mnRoute = []; for ( mnj = 3; mnj <= p.len(); mnj++ ) mnRoute.append( p[ mnj ] ); CLIExit( new bxrig.Menu( cli ).open( mnRoute.toList( " " ), asJson ) ); }
+				if ( p.len() >= 2 && p[2] == "level" ) { mnLv = []; for ( mnk = 3; mnk <= p.len(); mnk++ ) mnLv.append( p[ mnk ] ); CLIExit( new bxrig.Menu( cli ).entriesAt( mnLv.toList( " " ), asJson ) ); }
 				if ( p.len() >= 3 && p[2] == "search" ) { mnWords = []; for ( mni = 3; mni <= p.len(); mni++ ) mnWords.append( p[ mni ] ); CLIExit( new bxrig.Menu( cli ).search( mnWords.toList( " " ), asJson ) ); }
 				println( new bxrig.CommandSpec().usage( "menu" ) );
 				CLIExit( xit.usage() );
