@@ -41,8 +41,8 @@ hypr "$binary" runner doctor --json | jq -e '.data.launcher.found and (.data.men
 # launch: noctalia runs detached; the system runner is the desktop's
 hypr "$binary" runner set noctalia >/dev/null
 hypr "$binary" runner launch >/dev/null || fail 'launch'
-for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q 'noctalia msg panel-toggle launcher' "$LOG" && break; sleep 0.3; done
-grep -q 'noctalia msg panel-toggle launcher' "$LOG" || fail 'the launcher command did not run'
+for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q 'noctalia msg panel-toggle bxrig/launcher:panel' "$LOG" && break; sleep 0.3; done
+grep -q 'noctalia msg panel-toggle bxrig/launcher:panel' "$LOG" || fail 'the launcher command did not run'
 hypr "$binary" runner set system >/dev/null
 [[ "$(code "$binary" runner launch)" == 4 ]] || fail 'launching the system runner exits 4'
 hypr "$binary" runner set vicinae >/dev/null; [[ "$(code "$binary" runner launch)" == 4 ]] || fail 'a missing launcher exits 4'
@@ -66,15 +66,15 @@ hypr "$binary" runner menu-set rofi >/dev/null
 [[ "$(code "$binary" runner)" == 2 && "$(code "$binary" runner set)" == 2 && "$(code "$binary" runner list extra)" == 2 && "$(code "$binary" runner bogus)" == 2 ]] || fail 'usage exits 2'
 echo '{' > "$tmp/cfg/bxrig/runner.json"; [[ "$(code "$binary" runner list)" == 4 ]] || fail 'a broken runner.json exits 4'
 
-# Super+Alt+Space: the bound command opens whichever launcher is chosen, and falls back to Noctalia when it cannot
+# Super+Space: the bound command opens whichever launcher is chosen, and falls back to Noctalia when it cannot
 mkdir -p "$tmp/home/.local/bin"; cp "$binary" "$tmp/home/.local/bin/bxrig"
 printf '#!/usr/bin/env bash\necho "rofi $*" >> "$LOG"\n' > "$tmp/bin/rofi"; chmod +x "$tmp/bin/rofi"
-# the Super+Alt+Space line only (Alt+Space alone is dictation)
-bound="$("$binary" keys render hyprland | sed -n 's/.*mainMod \.\. " + ALT + Space".*\[\[\(.*\)\]\].*/\1/p')"
-[[ -n "$bound" ]] || fail 'no Super+Alt+Space bind found in the Hyprland module'
+# the Super+Space line only (Super+Alt+Space is the menu, Alt+Space alone is dictation)
+bound="$("$binary" keys render hyprland | sed -n 's/.*mainMod \.\. " + Space".*\[\[\(.*\)\]\].*/\1/p')"
+[[ -n "$bound" ]] || fail 'no Super+Space bind found in the Hyprland module'
 press() { : > "$LOG"; rm -f "$tmp/cfg/bxrig/runner.json"; [[ -z "${1:-}" ]] || hypr "$binary" runner set "$1" >/dev/null; hypr sh -c "$bound" >/dev/null 2>&1; for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$LOG" ]] && break; sleep 0.3; done; cat "$LOG"; }
-[[ "$(press)" == "noctalia msg panel-toggle launcher" ]] || fail 'Super+Alt+Space opens Noctalia by default'
-[[ "$(press rofi)" == "rofi -show drun" ]] || fail 'after runner set rofi, Super+Alt+Space opens Rofi'
+[[ "$(press)" == "noctalia msg panel-toggle bxrig/launcher:panel" ]] || fail 'Super+Space opens the BxRig launcher panel by default'
+[[ "$(press rofi)" == "rofi -show drun" ]] || fail 'after runner set rofi, Super+Space opens Rofi'
 [[ "$(press system)" == "noctalia msg panel-toggle launcher" ]] || fail 'with the system runner it falls back to Noctalia'
 : > "$LOG"; rm -f "$tmp/cfg/bxrig/runner.json"; hypr "$binary" runner set krunner >/dev/null
 hypr sh -c "$bound" >/dev/null 2>&1; for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$LOG" ]] && break; sleep 0.3; done

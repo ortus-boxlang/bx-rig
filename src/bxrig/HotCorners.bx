@@ -47,7 +47,7 @@ class HotCorners {
 			notifications: "noctalia msg panel-toggle control-center notifications",
 			desktop: "hyprctl dispatch workspace empty",
 			lock: "noctalia msg session lock",
-			launcher: "noctalia msg panel-toggle launcher",
+			launcher: "noctalia msg panel-toggle bxrig/launcher:panel",
 			agents: "noctalia msg panel-toggle bxrig/agents:panel",
 			themes: "noctalia msg panel-toggle bxrig/quick:themes"
 		};

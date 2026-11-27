@@ -30,4 +30,6 @@ run "$binary" launcher run app:zebra-notes.desktop --dry-run 2>/dev/null | grep 
 [[ "$(run "$binary" launcher run app:zebra-notes.desktop >/dev/null 2>&1; echo $?)" == 0 ]] || fail 'run exits 0'
 jq -e '.["app:zebra-notes.desktop"].count == 1' "$tmp/state/bxrig/launcher.json" >/dev/null || fail 'use counted'
 s '' | jq -e '.data.results[0].id == "app:zebra-notes.desktop"' >/dev/null || fail 'empty query lists what you ran'
+run "$binary" launcher run web:ddg bash docs --dry-run --json 2>/dev/null | jq -e '.data.action.url == "https://duckduckgo.com/?q=bash%20docs"' >/dev/null || fail 'web row is made from the words after the id'
+run "$binary" launcher run answer:calc 2+3 --dry-run --json 2>/dev/null | jq -e '.data.action.text == "5"' >/dev/null || fail 'answer row is made from the words after the id'
 echo "launcher search tests passed"

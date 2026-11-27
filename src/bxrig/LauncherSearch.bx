@@ -1,11 +1,13 @@
 /**
  * The launcher's search: one flat, ranked list for what you type, like Raycast. `bxrig launcher search QUERY` gives the rows; `launcher run ID`
  * does what a row says. The Noctalia launcher panel calls both; Vicinae and scripts can too.
+ *   iconPath is a picture file for an application row (from the icon themes) or "" (the panel then draws a glyph for the kind).
  *   Rows come from: an answer card (calculator), the menu (every action of `bxrig menu`, with its path as breadcrumb), applications
  *   (desktop entries), themes, and web searches (always last). Empty query: the rows you used most recently and most often.
  *   A row is { id, kind, title, subtitle, icon, breadcrumb, action, score }. kind: answer | menu | app | theme | web.
  *   Ranking is fuzzy (prefix and word starts count most) plus frecency: how often and how recently you ran a row (state file launcher.json).
  * Credit: the ranking idea follows oma-cast (https://github.com/typecraft-dev/oma-cast, MIT).
+ *   `launcher run ID [QUERY]`: answer and web rows are made from the query, so pass the words typed after the id.
  * Exit: 0 ok, 2 bad usage, 4 unknown row id.
  */
 class LauncherSearch {
@@ -128,7 +130,7 @@ class LauncherSearch {
 	function answers( q ) {
 		var r = variables.calc.eval( arguments.q );
 		if ( !r.ok ) return [];
-		return [ { id: "answer:calc", kind: "answer", title: r.text, subtitle: trim( arguments.q ) & " =", icon: "calculator", breadcrumb: "", action: { type: "copy", text: r.text }, score: 1000 } ];
+		return [ { id: "answer:calc", kind: "answer", title: r.text, subtitle: trim( arguments.q ) & " =", icon: "calculator", iconPath: "", breadcrumb: "", action: { type: "copy", text: r.text }, score: 1000 } ];
 	}
 
 	/**
@@ -193,6 +195,7 @@ class LauncherSearch {
 	 */
 	function catalog() {
 		var rows = [];
+		rows.append( { id: "mode:clipboard", kind: "mode", title: "Clipboard history", subtitle: "Search what you copied", icon: "clipboard", breadcrumb: "", action: { type: "mode", mode: "clipboard" }, score: 0 } );
 		for ( var r in menuRows() ) rows.append( r );
 		for ( var a in themeRows() ) rows.append( a );
 		for ( var p in appRows() ) rows.append( p );
@@ -226,7 +229,9 @@ class LauncherSearch {
 		var reserve = len( q ) ? min( 4, max( 0, arguments.limit - 1 ) ) : 0;
 		var room = max( 1, arguments.limit - reserve );
 		if ( out.len() > room ) out = out.slice( 1, room );
-		if ( reserve > 0 ) for ( var w in webRows( q ).slice( 1, reserve ) ) out.append( w );
+		var icons = new bxrig.AppIcons();
+		for ( var ro in out ) ro.iconPath = ro.kind == "app" ? icons.themed( ro.icon ) : "";
+		if ( reserve > 0 ) for ( var w in webRows( q ).slice( 1, reserve ) ) { w.iconPath = ""; out.append( w ); }
 		return out;
 	}
 
@@ -247,13 +252,18 @@ class LauncherSearch {
 	 * Does what a row says, and counts the use. Answers are copied, menu actions start like the menu starts them, applications and themes
 	 * start detached, web rows open in the browser.
 	 * @id The row id.
+	 * @query The words typed: needed for answer and web rows, which are made from the query.
 	 * @dry Show what would run and run nothing.
 	 * @asJson True for JSON output.
 	 */
-	function runRow( id, dry, asJson ) {
+	function runRow( id, query, dry, asJson ) {
 		var hit = [];
-		if ( left( arguments.id, 5 ) == "web:" || arguments.id == "answer:calc" ) hit = [];
-		for ( var r in catalog() ) if ( r.id == arguments.id ) { hit = [ r ]; break; }
+		var pool = catalog();
+		if ( len( trim( arguments.query ) ) ) {
+			for ( var an in answers( arguments.query ) ) pool.append( an );
+			for ( var wb in webRows( arguments.query ) ) pool.append( wb );
+		}
+		for ( var r in pool ) if ( r.id == arguments.id ) { hit = [ r ]; break; }
 		if ( !hit.len() ) return variables.out.fail( "precondition", "no launcher row " & arguments.id & ". Rows: bxrig launcher search QUERY --json", arguments.asJson );
 		var row = hit[ 1 ];
 		if ( arguments.dry ) return variables.out.say( "ok", { id: row.id, action: row.action }, arguments.asJson, [ "Would run " & row.title ] );
@@ -278,6 +288,8 @@ class LauncherSearch {
 				return 0;
 			case "url":
 				menu.detach( [ "xdg-open", arguments.act.url ] );
+				return 0;
+			case "mode":
 				return 0;
 			case "copy":
 				menu.detach( [ "sh", "-c", 'printf %s "$1" | wl-copy 2>/dev/null || printf %s "$1" | xclip -selection clipboard', "_", arguments.act.text ] );
@@ -309,7 +321,7 @@ class LauncherSearch {
 			var lim = structKeyExists( arguments.opts, "limit" ) && isNumeric( arguments.opts.limit ) ? int( arguments.opts.limit ) : 20;
 			return show( rest.toList( " " ), max( 1, lim ), arguments.asJson );
 		}
-		if ( rest.len() != 1 ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "launcher" ), arguments.asJson );
-		return runRow( rest[ 1 ], arguments.dry, arguments.asJson );
+		if ( !rest.len() ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "launcher" ), arguments.asJson );
+		return runRow( rest[ 1 ], rest.slice( 2 ).toList( " " ), arguments.dry, arguments.asJson );
 	}
 }

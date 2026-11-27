@@ -6,7 +6,7 @@ testkit.check( "menu providers", r.menuProviders().toList( "," ) == "walker,rofi
 testkit.check( "default launcher on Hyprland is Noctalia", r.defaults( "Hyprland" ).provider == "noctalia" );
 testkit.check( "default launcher on KDE is the system runner", r.defaults( "KDE" ).provider == "system" && r.defaults( "KDE" ).menu_provider == "rofi" );
 cfg = r.defaults( "Hyprland" );
-testkit.check( "noctalia resolves to its panel command", r.resolve( "noctalia", cfg ).toList( " " ) == "noctalia msg panel-toggle launcher" );
+testkit.check( "noctalia resolves to its panel command", r.resolve( "noctalia", cfg ).toList( " " ) == "noctalia msg panel-toggle bxrig/launcher:panel" );
 testkit.check( "vicinae resolves to toggle", r.resolve( "vicinae", cfg ).toList( " " ) == "vicinae toggle" );
 testkit.check( "system has no command, the desktop owns it", r.resolve( "system", cfg ).len() == 0 );
 cfg.launcher_commands.rofi = [ "rofi", "-show", "run" ];

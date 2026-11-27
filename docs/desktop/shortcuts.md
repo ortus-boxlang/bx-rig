@@ -57,7 +57,7 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 
 ## From the runner
 
-`Super+Space` opens the menu; its Shortcuts section lists every shortcut, searches them (`bxrig keys search TEXT`), rebinds one (it asks which one and for the new keys, then runs `keys set`), runs the command a shortcut stands for (`bxrig keys run ID`), writes the keys to Hyprland and Plasma, and switches the style. `Super+Escape`, `Super+Ctrl+C`, `Super+Ctrl+O`, `Super+Ctrl+H` and `Super+Shift+Ctrl+A` open the System, Capture, Toggle, Hardware and Agent menus on their own (`bxrig menu open system`).
+`Super+Alt+Space` opens the menu; its Shortcuts section lists every shortcut, searches them (`bxrig keys search TEXT`), rebinds one (it asks which one and for the new keys, then runs `keys set`), runs the command a shortcut stands for (`bxrig keys run ID`), writes the keys to Hyprland and Plasma, and switches the style. `Super+Escape`, `Super+Ctrl+C`, `Super+Ctrl+O`, `Super+Ctrl+H` and `Super+Shift+Ctrl+A` open the System, Capture, Toggle, Hardware and Agent menus on their own (`bxrig menu open system`).
 
 ## Two styles
 
@@ -82,8 +82,8 @@ The keys you will use most, in the Traditional style unless noted:
 
 | Keys | Does |
 |---|---|
-| `Super+Space` | BxRig menu (the runner) |
-| `Super+Alt+Space` | Launch apps |
+| `Super+Space` | Launcher: search apps, menu actions, themes and answers |
+| `Super+Alt+Space` | BxRig menu (browse by section) |
 | `Super+K` | Shortcut cheat sheet |
 | `Print` (Mac style also `Super+Shift+3` / `4` / `5`) | Screenshot: region (Mac style: screen / region / menu) |
 | `Super+Print` | Color picker |

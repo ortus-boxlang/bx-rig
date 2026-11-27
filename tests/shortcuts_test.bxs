@@ -11,7 +11,7 @@ testkit.check( "both styles have the same rows", ids.toList( "," ) == mac.table(
 testkit.check( "row ids are unique", structCount( seen ) == ids.len() );
 testkit.check( "show lists every row", trad.show().len() == ids.len() && ids.len() > 100 );
 // ---- the decisions, per style ----
-testkit.check( "menu is Super+Space and launching apps is Super+Alt+Space", keyOf( trad, "menu" ) == "Super+Space" && keyOf( trad, "launcher" ) == "Super+Alt+Space" && keyOf( mac, "menu" ) == "Super+Space" );
+testkit.check( "the launcher is Super+Space and the drill-down menu is Super+Alt+Space", keyOf( trad, "launcher" ) == "Super+Space" && keyOf( trad, "menu" ) == "Super+Alt+Space" && keyOf( mac, "launcher" ) == "Super+Space" );
 testkit.check( "clipboard is Super+Ctrl+V, lock Super+Ctrl+L, dictation Alt+Space", keyOf( mac, "clipboard-history" ) == "Super+Ctrl+V" && keyOf( mac, "lock" ) == "Super+Ctrl+L" && keyOf( mac, "dictation-toggle" ) == "Alt+Space" );
 testkit.check( "color picker Super+Print, screenshots keep Super+Shift+3/4/5 and Print", keyOf( mac, "color-picker" ) == "Super+Print" && keyOf( trad, "screenshot-print" ) == "Print" && keyOf( mac, "screenshot-print" ) == "Print" && keyOf( trad, "screenshot-menu" ) == "" && keyOf( mac, "screenshot-menu" ) == "Super+Shift+5" && keyOf( mac, "screenshot-screen" ) == "Super+Shift+3" );
 testkit.check( "notices Super+Ctrl+Alt+T/B/W, DND Super+Ctrl+Alt+Comma", keyOf( trad, "notify-time" ) == "Super+Ctrl+Alt+T" && keyOf( trad, "notify-battery" ) == "Super+Ctrl+Alt+B" && keyOf( trad, "notify-weather" ) == "Super+Ctrl+Alt+W" && keyOf( trad, "dnd" ) == "Super+Ctrl+Alt+Comma" );
@@ -62,8 +62,8 @@ h = trad.render( "hyprland" );
 testkit.check( "hyprland: Lua module, logout bind via uwsm", find( 'hl.dsp.exec_cmd("uwsm stop")', h ) > 0 && find( 'mainMod .. " + SHIFT + Q"', h ) > 0 );
 testkit.check( "hyprland: Noctalia autostart and launcher", find( 'hl.exec_cmd("noctalia")', h ) > 0 && find( "panel-toggle launcher", h ) > 0 );
 testkit.check( "hyprland: Alt+Tab opens the Noctalia window switcher", find( 'hl.bind("ALT + Tab"', h ) > 0 && find( "window-switcher hold", h ) > 0 );
-testkit.check( "hyprland: Super+Space opens the menu", find( 'hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig menu''', h ) > 0 );
-testkit.check( "hyprland: Super+Alt+Space follows the chosen launcher and falls back to Noctalia", find( "bxrig runner launch || noctalia msg panel-toggle launcher", h ) > 0 && find( 'hl.bind(mainMod .. " + ALT + Space"', h ) > 0 );
+testkit.check( "hyprland: Super+Alt+Space opens the menu", find( 'hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig menu''', h ) > 0 );
+testkit.check( "hyprland: Super+Space follows the chosen launcher and falls back to Noctalia", find( "bxrig runner launch || noctalia msg panel-toggle launcher", h ) > 0 && find( 'hl.bind(mainMod .. " + Space"', h ) > 0 );
 testkit.check( "hyprland: starter binds are in the module (close, terminal, workspaces, arrows)", find( 'hl.bind(mainMod .. " + Q", hl.dsp.window.close())', h ) > 0 && find( "hl.dsp.exec_cmd(terminal)", h ) > 0 && find( "hl.dsp.focus({ workspace = 10 })", h ) > 0 && find( 'mainMod .. " + Left"', h ) > 0 );
 testkit.check( "hyprland: media keys keep locked and repeating", find( 'hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true, repeating = true })', h ) > 0 );
 testkit.check( "hyprland: mouse binds keep their option", find( 'hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })', h ) > 0 );

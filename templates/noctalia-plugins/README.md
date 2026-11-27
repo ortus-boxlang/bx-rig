@@ -11,6 +11,7 @@ Noctalia v5 plugins (author id `bxrig`). Each folder is one plugin.
 | `vpn/` | `bxrig/vpn` | bar widget `bar` (a shield glyph: primary green while connected, muted otherwise, hidden when nothing is installed), panel `panel` (one list, two groups, place picker) | `bxrig vpn list --json`, every 10 s while open and every 60 s in the background; places `bxrig vpn locations NAME --json`; `bxrig vpn connect NAME [--location=VALUE]`, `bxrig vpn disconnect NAME`, `bxrig vpn set allow_several=true|false --yes` |
 | `quick/` | `bxrig/quick` | bar widget `bar`, panel `panel` (switches and pickers), panel `themes` (theme switcher) | the `status` of each setting on open; each control runs its bxrig command with `--yes`; themes: `bxrig theme list --json` on open, Enter runs `bxrig theme set <name> --yes` |
 | `power/` | `bxrig/power` | panel `panel` only, no bar widget: the battery widget opens it | `bxrig power status --json`, every 15 s while open; profile `bxrig power profile`, lid `bxrig power lid battery|ac ACTION --yes`, `bxrig system suspend`, `bxrig power hibernate --yes`, `bxrig power charge-limit N --yes` |
+| `launcher/` | `bxrig/launcher` | panel `panel` (the launcher), panel `clipboard` (clipboard history); no bar widget | `bxrig launcher search QUERY --limit=30 --json` on every keystroke, Enter runs `bxrig launcher run ID QUERY`; clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, `clipboard copy ID`, `clipboard clear --yes` |
 
 The plugins use `plugin_api = 43`. They only draw with palette roles, so they follow the active Noctalia theme. Every file in a folder ships together. `bxrig.luau` is the same helper in every plugin: it runs bxrig and unwraps the `{"ok":…,"data":…}` envelope.
 
@@ -20,7 +21,7 @@ Noctalia finds hand-placed plugins in `~/.local/share/noctalia/plugins/<folder>/
 
 ```sh
 mkdir -p ~/.local/share/noctalia/plugins
-for p in clock agents system quick dev power vpn; do
+for p in clock agents system quick dev power vpn launcher; do
   rm -rf ~/.local/share/noctalia/plugins/$p
   cp -r templates/noctalia-plugins/$p ~/.local/share/noctalia/plugins/$p
 done
@@ -31,6 +32,7 @@ noctalia msg plugins enable bxrig/quick
 noctalia msg plugins enable bxrig/dev
 noctalia msg plugins enable bxrig/power
 noctalia msg plugins enable bxrig/vpn
+noctalia msg plugins enable bxrig/launcher
 noctalia msg plugins list | grep bxrig     # each shows "enabled"
 ```
 
@@ -38,7 +40,7 @@ Enabling adds the id to `enabled = [...]` under `[plugins]` in Noctalia's state-
 
 ```toml
 [plugins]
-enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power", "bxrig/vpn"]
+enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power", "bxrig/vpn", "bxrig/launcher"]
 ```
 
 To disable a plugin and keep its files: `noctalia msg plugins disable bxrig/<name>`.
@@ -56,6 +58,8 @@ noctalia msg panel-toggle bxrig/quick:panel
 noctalia msg panel-toggle bxrig/quick:themes
 noctalia msg panel-toggle bxrig/power:panel
 noctalia msg panel-toggle bxrig/vpn:panel
+noctalia msg panel-toggle bxrig/launcher:panel
+noctalia msg panel-toggle bxrig/launcher:clipboard
 ```
 
 Example Hyprland binds:

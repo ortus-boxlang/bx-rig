@@ -6,17 +6,17 @@ summary: One menu for everything BxRig does, on your launcher, with search.
 
 # The menu
 
-`bxrig menu` is one menu for everything BxRig does, shown on your launcher. Press `Super+Space`, type to search, press Enter.
+`bxrig menu` is one menu for everything BxRig does, shown on your launcher. Press `Super+Alt+Space`, type to search, press Enter. To search everything in one list (apps, menu actions, themes, a calculator and the clipboard) use the launcher on `Super+Space`.
 
 ## Try it
 
 ```bash
-bxrig menu                    # open it (Super+Space)
+bxrig menu                    # open it (Super+Alt+Space)
 bxrig menu search theme       # find an entry by words
 bxrig menu open capture       # one submenu on its own
 ```
 
-> **Screenshot wanted:** the BxRig menu open on the launcher (Super+Space), showing the section list.
+> **Screenshot wanted:** the BxRig menu open on the launcher (Super+Alt+Space), showing the section list.
 
 It opens on Rofi, Walker, Wofi, Fuzzel or Vicinae: pick one with `bxrig runner set NAME` (see the [launcher](launcher.md)).
 
@@ -24,7 +24,7 @@ It opens on Rofi, Walker, Wofi, Fuzzel or Vicinae: pick one with `bxrig runner s
 
 ```mermaid
 flowchart LR
-  A["Super+Space"] --> B["Menu on your launcher"]
+  A["Super+Alt+Space"] --> B["Menu on your launcher"]
   B --> C["Section"]
   C --> D["Entry"]
   D --> E["A bxrig command"]

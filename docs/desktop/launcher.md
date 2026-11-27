@@ -1,14 +1,40 @@
 ---
 title: Launcher
 order: 5
-summary: Vicinae as your launcher, in your theme's colours, with BxRig's actions and file search.
+summary: The BxRig launcher on Super+Space (apps, actions, themes, calculator, clipboard), and Vicinae as an alternative.
 ---
 
 # Launcher
 
-Search apps, files, your clipboard and BxRig's own actions from one keyboard-first box. [Vicinae](https://github.com/vicinaehq/vicinae) is the launcher and menu BxRig recommends and the wizard's default (Noctalia's own launcher, Walker, Rofi, Fuzzel and Wofi are still choices), drawn in your BxRig theme.
+On other desktops, or if you prefer it, search apps, files, your clipboard and BxRig's own actions from one keyboard-first box. [Vicinae](https://github.com/vicinaehq/vicinae) is the launcher and menu BxRig recommends and the wizard's default (Noctalia's own launcher, Walker, Rofi, Fuzzel and Wofi are still choices), drawn in your BxRig theme.
 
-## Try it
+## The BxRig launcher (Noctalia panel)
+
+On the Noctalia desktop, `Super+Space` opens the BxRig launcher: one flat search box, drawn in your theme. Type and it ranks, best first:
+
+- a **calculator answer** (`2*(3+4)` gives `14`; Enter copies it);
+- **menu actions** with their path, such as `Trigger › Capture`, so every action of `bxrig menu` is one search away;
+- **applications** with their icons, and **themes** (Enter applies the theme);
+- a **Clipboard history** row, which opens the clipboard panel: the history on the left, the full text of the highlighted entry on the right, Enter copies it back (`Super+Ctrl+V` opens it directly);
+- **web searches** (DuckDuckGo, Google, GitHub, BoxLang docs) at the end.
+
+Things you run often rise to the top (kept in `~/.local/state/bxrig/launcher.json`). Tab opens the Actions list for the highlighted row. The drill-down menu stays on `Super+Alt+Space`, for browsing by section.
+
+The panels are the `bxrig/launcher` plugin. They call the same commands you can run yourself:
+
+```bash
+bxrig launcher search capture --json     # the ranked rows
+bxrig launcher run theme:nord            # what Enter does for a row
+bxrig launcher run web:ddg bash docs     # answer and web rows take the words typed
+bxrig clipboard list token --json        # the clipboard history, filtered
+bxrig clipboard copy 42                  # put one entry back
+```
+
+The clipboard needs `cliphist` and `wl-clipboard` (`bxrig install cliphist wl-clipboard`). The ranking idea follows [oma-cast](https://github.com/typecraft-dev/oma-cast) (MIT).
+
+## Vicinae
+
+### Try it
 
 ```bash
 bxrig pkg install vicinae

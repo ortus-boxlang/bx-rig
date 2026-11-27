@@ -192,7 +192,7 @@ class NoctaliaConfig {
 			'type = "bxrig/vpn:bar"',
 			'',
 			'[plugins]',
-			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power", "bxrig/vpn"]',
+			'enabled = ["bxrig/clock", "bxrig/agents", "bxrig/system", "bxrig/quick", "bxrig/dev", "bxrig/power", "bxrig/vpn", "bxrig/launcher"]',
 			''
 		];
 		if ( o.battery ) {

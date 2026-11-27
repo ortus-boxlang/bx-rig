@@ -227,6 +227,9 @@ class {
 				cbSub = p.len() >= 2 ? p[2] : "";
 				cb = new bxrig.Clipboard( cli );
 				if ( cbSub == "pick" && p.len() == 2 ) CLIExit( cb.pick( asJson ) );
+				if ( cbSub == "list" ) CLIExit( cb.list( p.slice( 3 ).toList( " " ), isNumeric( args.options.limit ?: "" ) ? int( args.options.limit ) : 50, asJson ) );
+				if ( cbSub == "show" && p.len() == 3 ) CLIExit( cb.show( p[ 3 ], asJson ) );
+				if ( cbSub == "copy" && p.len() == 3 ) CLIExit( cb.copy( p[ 3 ], asJson ) );
 				if ( cbSub == "clear" && p.len() == 2 ) CLIExit( cb.clear( structKeyExists( args.options, "yes" ), asJson ) );
 				if ( cbSub == "status" && p.len() == 2 ) CLIExit( cb.status( asJson ) );
 				println( new bxrig.CommandSpec().usage( "clipboard" ) );
