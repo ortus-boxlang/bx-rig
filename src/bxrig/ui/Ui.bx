@@ -1,0 +1,126 @@
+// The terminal UI toolkit for commands that print (not the full-screen TUI): tables, panels, badges, key-value lists, trees, columns, status
+// lines, progress bars, spinners, gradients, hyperlinks. Every helper returns text or an array of lines; nothing is printed until you call
+// print(). Colour, width and unicode come from the terminal (see Term); tests and callers can force them.
+//   ui = new bxrig.ui.Ui();                                   ui = new bxrig.ui.Ui( { width: 100, color: false } )
+//   ui.print( ui.table( [ { key: "id" }, { key: "name", title: "Name", grow: true } ], rows ) )
+//   ui.print( ui.panel( "Saved.", { title: "Done", border: "ok" } ) )
+// Colours are roles (accent accent2 ok warn err info text dim border), basic names or hex. With colour off, everything is plain text.
+class Ui {
+	function init( opts = {} ) {
+		variables.term = new bxrig.ui.Term( arguments.opts );
+		variables.theme = new bxrig.ui.Theme( arguments.opts.theme ?: {} );
+		variables.ansi = new bxrig.ui.Ansi( variables.term, variables.theme );
+		variables.boxes = {
+			rounded: { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│", tj: "┬", bj: "┴", lj: "├", rj: "┤", x: "┼" },
+			plain: { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│", tj: "┬", bj: "┴", lj: "├", rj: "┤", x: "┼" },
+			heavy: { tl: "┏", tr: "┓", bl: "┗", br: "┛", h: "━", v: "┃", tj: "┳", bj: "┻", lj: "┣", rj: "┫", x: "╋" },
+			double: { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║", tj: "╦", bj: "╩", lj: "╠", rj: "╣", x: "╬" },
+			ascii: { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|", tj: "+", bj: "+", lj: "+", rj: "+", x: "+" }
+		};
+		return this;
+	}
+
+	function term() { return variables.term; }
+	function theme() { return variables.theme; }
+	function ansi() { return variables.ansi; }
+	function width() { return variables.term.width(); }
+	function color() { return variables.term.color(); }
+	function unicode() { return variables.term.unicode(); }
+
+	// Changes role colours (hex), for example the accent colours of the theme that is on: ui.colors( { accent: "#00c8ff", accent2: "#00ff88" } ). Returns this.
+	function colors( roles ) { variables.theme.set( arguments.roles ); return this; }
+
+	// ---- text, passed through from Ansi ----
+	function style( text, spec ) { return variables.ansi.style( arguments.text, arguments.spec ); }
+	function strip( s ) { return variables.ansi.strip( arguments.s ); }
+	function textWidth( s ) { return variables.ansi.width( arguments.s ); }
+	function truncate( s, w ) { return variables.ansi.truncate( arguments.s, arguments.w ); }
+	function align( s, w, how = "left" ) { return variables.ansi.align( arguments.s, arguments.w, arguments.how ); }
+	function wrap( s, w ) { return variables.ansi.wrap( arguments.s, arguments.w ); }
+	function gradient( text, stops = [ "accent", "accent2" ] ) { return variables.ansi.gradient( arguments.text, arguments.stops ); }
+	function link( text, url ) { return variables.ansi.link( arguments.text, arguments.url ); }
+
+	// The method-name language (see Dsl).
+	function dsl() {
+		if ( !structKeyExists( variables, "dslObj" ) ) variables.dslObj = new bxrig.ui.Dsl( variables.theme );
+		return variables.dslObj;
+	}
+
+	// The fluent print helper: a buffer you chain calls on and flush with toConsole(). See Print.
+	//   ui.printer().boldGreenText( "ok" ).line().redLine( "bad" ).table( rows ).toConsole()
+	function printer() { return new bxrig.ui.Print( this ); }
+
+	// A colour method on the toolkit itself returns a styled string: ui.boldRed( "failed" ), ui.greenOnBlack( "ok" ), ui.text( status, "green" ).
+	function onMissingMethod( missingMethodName, missingMethodArguments ) {
+		var a = arguments.missingMethodArguments;
+		var d = dsl().parse( arguments.missingMethodName, a.len() >= 2 ? a[ 2 ] : "" );
+		return style( a.len() >= 1 ? a[ 1 ] : "", d.spec );
+	}
+
+	// Prints the lines (an array) or the text.
+	function print( lines ) {
+		if ( isArray( arguments.lines ) ) { for ( var l in arguments.lines ) println( l ); }
+		else println( arguments.lines );
+		return this;
+	}
+
+	// A glyph by name, unicode or its ASCII stand-in: ok cross warn info skip run pending bullet arrow ellipsis play star.
+	function glyph( name ) {
+		var u = {
+			ok: "✓", cross: "✗", warn: "!", info: "•", skip: "–", run: "›", pending: "○", bullet: "•", arrow: "→", ellipsis: "…", play: "▶", star: "★",
+			full: "█", empty: "░", dot: "·", up: "▲", down: "▼"
+		};
+		var a = {
+			ok: "+", cross: "x", warn: "!", info: "*", skip: "-", run: ">", pending: "o", bullet: "-", arrow: "->", ellipsis: "...", play: ">", star: "*",
+			full: "##", empty: "-", dot: ".", up: "^", down: "v"
+		};
+		var set = unicode() ? u : a;
+		return structKeyExists( set, arguments.name ) ? set[ arguments.name ] : arguments.name;
+	}
+
+	// The box-drawing characters of a border style: rounded plain heavy double ascii (ascii whenever the terminal has no unicode).
+	function box( name = "rounded" ) {
+		if ( !unicode() ) return variables.boxes.ascii;
+		return structKeyExists( variables.boxes, arguments.name ) ? variables.boxes[ arguments.name ] : variables.boxes.rounded;
+	}
+
+	// The colour role for a status word: ok warn err info skip.
+	function roleOf( kind ) {
+		var k = lCase( arguments.kind );
+		if ( arrayFind( [ "ok", "done", "success", "pass", "yes", "true" ], k ) ) return "ok";
+		if ( arrayFind( [ "warn", "warning", "attention" ], k ) ) return "warn";
+		if ( arrayFind( [ "err", "error", "fail", "failed", "no", "false" ], k ) ) return "err";
+		if ( arrayFind( [ "skip", "skipped", "none", "off", "stopped" ], k ) ) return "dim";
+		return "info";
+	}
+
+	// ---- the components ----
+	function table( columns, rows, opts = {} ) { return new bxrig.ui.Table( this ).render( arguments.columns, arguments.rows, arguments.opts ); }
+	function panel( content, opts = {} ) { return new bxrig.ui.Blocks( this ).panel( arguments.content, arguments.opts ); }
+	function callout( kind, text, opts = {} ) { return new bxrig.ui.Blocks( this ).callout( arguments.kind, arguments.text, arguments.opts ); }
+	function section( title, blurb = "" ) { return new bxrig.ui.Blocks( this ).section( arguments.title, arguments.blurb ); }
+	function rule( title = "", opts = {} ) { return new bxrig.ui.Blocks( this ).rule( arguments.title, arguments.opts ); }
+	function kv( pairs, opts = {} ) { return new bxrig.ui.Blocks( this ).kv( arguments.pairs, arguments.opts ); }
+	function list( items, opts = {} ) { return new bxrig.ui.Blocks( this ).list( arguments.items, arguments.opts ); }
+	function tree( nodes, opts = {} ) { return new bxrig.ui.Blocks( this ).tree( arguments.nodes, arguments.opts ); }
+	function beside( blocks, opts = {} ) { return new bxrig.ui.Blocks( this ).beside( arguments.blocks, arguments.opts ); }
+	function columns( items, format = "", opts = {} ) { return new bxrig.ui.Blocks( this ).flow( arguments.items, arguments.format, arguments.opts ); }
+	function treeOf( data, format = "", opts = {} ) { return new bxrig.ui.Blocks( this ).treeOf( arguments.data, arguments.format, arguments.opts ); }
+	function badge( text, role = "accent" ) { return new bxrig.ui.Blocks( this ).badge( arguments.text, arguments.role ); }
+	function pill( text, role = "accent" ) { return new bxrig.ui.Blocks( this ).pill( arguments.text, arguments.role ); }
+	function status( kind, text ) { return new bxrig.ui.Blocks( this ).status( arguments.kind, arguments.text ); }
+	function bar( ratio, width = 24, opts = {} ) { return new bxrig.ui.Progress( this ).bar( arguments.ratio, arguments.width, arguments.opts ); }
+	function spark( values, opts = {} ) { return new bxrig.ui.Progress( this ).spark( arguments.values, arguments.opts ); }
+	function barChart( rows, opts = {} ) { return new bxrig.ui.Progress( this ).barChart( arguments.rows, arguments.opts ); }
+	function spans( parts ) { return new bxrig.ui.Blocks( this ).spans( arguments.parts ); }
+	function paragraph( text, opts = {} ) { return new bxrig.ui.Blocks( this ).paragraph( arguments.text, arguments.opts ); }
+	function layout( constraints, width, gap = 0 ) { return new bxrig.ui.Blocks( this ).layout( arguments.constraints, arguments.width, arguments.gap ); }
+	function split( blocks, constraints, opts = {} ) { return new bxrig.ui.Blocks( this ).split( arguments.blocks, arguments.constraints, arguments.opts ); }
+	function gauge( ratio, opts = {} ) { return new bxrig.ui.Progress( this ).gauge( arguments.ratio, arguments.opts ); }
+	function lineGauge( ratio, opts = {} ) { return new bxrig.ui.Progress( this ).lineGauge( arguments.ratio, arguments.opts ); }
+	function tabs( titles, selected = 1, opts = {} ) { return new bxrig.ui.Progress( this ).tabs( arguments.titles, arguments.selected, arguments.opts ); }
+	function styled() { return new bxrig.ui.Style( this ); }
+	function spinner() { return new bxrig.ui.Progress( this ); }
+	function steps( items, opts = {} ) { return new bxrig.ui.Progress( this ).steps( arguments.items, arguments.opts ); }
+	function live() { return new bxrig.ui.Live( this ); }
+}

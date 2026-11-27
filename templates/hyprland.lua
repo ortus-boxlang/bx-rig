@@ -5,6 +5,8 @@
 ------------------
 ---- MONITORS ----
 ------------------
+-- BXRIG-MONITORS
+-- Any other screen. Change a scale with: bxrig display scale NAME 1.5 --yes   (1 to 2; list screens with: bxrig display list)
 hl.monitor({
 	output   = "",
 	mode     = "preferred",

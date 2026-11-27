@@ -1,0 +1,58 @@
+// A first scale for each screen, so a high-density panel does not start too big. Hyprland's "auto" picks a large scale on a 2.8K laptop panel; this
+// aims at the room of a 1200 pixel high screen instead: 2880x1800 -> 1.5 (1920x1200), 3840x2160 -> 2 (1920x1080), 1920x1080 -> 1.
+// A tie goes to the larger scale. Only a scale that divides the resolution evenly is chosen (Hyprland warns about the others); when none is close the answer is "auto".
+//   connected()        the screens the kernel reports as connected, from /sys/class/drm: [ { name: "eDP-1", width, height } ]
+//   suggest( w, h )    the scale for a resolution, a number or "auto"
+//   monitorsLua()      hl.monitor lines for the starter hyprland.lua ("" when no screen is found)
+// BXRIG_DRM_DIR replaces /sys/class/drm in tests.
+class DisplayScale {
+	function init( dir = "" ) {
+		variables.dir = len( arguments.dir ) ? arguments.dir : new bxrig.util.Env().get( "BXRIG_DRM_DIR", "/sys/class/drm" );
+		return this;
+	}
+
+	function candidates() { return [ 1, 1.25, 1.5, 1.6, 1.75, 2, 2.5, 3 ]; }
+
+	function suggest( w, h ) {
+		var wish = arguments.h / 1200;
+		var best = "";
+		var bestGap = 99;
+		for ( var c in candidates() ) {
+			if ( arguments.w mod c != 0 && arguments.w / c != int( arguments.w / c ) ) continue;
+			var lw = arguments.w / c;
+			var lh = arguments.h / c;
+			if ( lw != int( lw ) || lh != int( lh ) ) continue;
+			var gap = abs( c - wish );
+			if ( gap <= bestGap + 0.0001 ) { best = c; bestGap = gap; }
+		}
+		// nothing even is close to what is wanted (a 2256x1504 panel has no even scale near 1.25): Hyprland's own pick is better than a bad one
+		if ( best == "" || bestGap > 0.2 ) return "auto";
+		return best < 1 ? 1 : best;
+	}
+
+	function connected() {
+		var out = [];
+		if ( !directoryExists( variables.dir ) ) return out;
+		for ( var d in directoryList( variables.dir, false, "name" ) ) {
+			var m = reFind( "^card[0-9]+-(.+)$", d, 1, true );
+			if ( !m.pos[ 1 ] ) continue;
+			var base = variables.dir & "/" & d;
+			if ( !fileExists( base & "/status" ) || trim( fileRead( base & "/status" ) ) != "connected" || !fileExists( base & "/modes" ) ) continue;
+			var first = listFirst( trim( fileRead( base & "/modes" ) ), chr( 10 ) );
+			var wh = reFind( "^([0-9]+)x([0-9]+)", first, 1, true );
+			if ( !wh.pos[ 1 ] ) continue;
+			out.append( { name: mid( d, m.pos[ 2 ], m.len[ 2 ] ), width: int( val( mid( first, wh.pos[ 2 ], wh.len[ 2 ] ) ) ), height: int( val( mid( first, wh.pos[ 3 ], wh.len[ 3 ] ) ) ) } );
+		}
+		arraySort( out, function( a, b ) { return compare( a.name, b.name ); } );
+		return out;
+	}
+
+	function monitorsLua() {
+		var rows = [];
+		for ( var s in connected() ) {
+			var sc = suggest( s.width, s.height );
+			rows.append( 'hl.monitor({ output = "' & s.name & '", mode = "preferred", position = "auto", scale = ' & ( sc == "auto" ? '"auto"' : sc ) & ' })   -- ' & s.width & "x" & s.height & ( sc == "auto" ? "" : " shown as " & int( s.width / sc ) & "x" & int( s.height / sc ) ) );
+		}
+		return rows.toList( chr( 10 ) );
+	}
+}

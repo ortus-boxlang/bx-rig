@@ -261,17 +261,16 @@ class Init {
 			if ( !run.finished() ) run.stop();
 		}
 		var res = run.result();
-		for ( var d in res.done ) println( "Done: " & d.id );
-		for ( var f in res.failed ) {
-			println( "Failed: " & f.id & " (exit " & f.exit & ")" );
-			println( "  command: " & f.command );
-			for ( var ol in new bxrig.util.Text().lines( f.output ) ) println( "  | " & ol );
+		for ( var unk in unknown ) log.line( "skipped " & unk & ": not in this system's catalog" );
+		var fin = new bxrig.InitFinish();
+		for ( var sl in fin.lines( res, unknown, { answers: answersFile(), log: log.file(), pending: plan.pending } ) ) println( sl );
+		// the screen's l (log out) and b (reboot), confirmed there, run here once the screen is gone
+		if ( structKeyExists( app.advice(), "action" ) && len( app.advice().action ) ) {
+			var act = app.advice().action;
+			log.line( "==> " & act & " asked on the finish screen" );
+			println( act == "reboot" ? "Rebooting…" : "Logging out…" );
+			variables.inst.proc().exec( [ variables.inst.proc().selfPath(), "system", act, "--yes" ], 60 );
 		}
-		for ( var k in res.skipped ) println( "Skipped: " & k.id & " (" & k.reason & ")" );
-		for ( var sp in res.stopped ) println( "Not run (stopped): " & sp.id );
-		for ( var un in unknown ) { println( "Skipped: " & un & " (not available on this system: no entry in its catalog)" ); log.line( "skipped " & un & ": not in this system's catalog" ); }
-		if ( plan.pending.len() ) println( "Saved but not applied yet: " & plan.pending.toList( ", " ) );
-		println( "Log: " & log.file() );
 		return res.code;
 	}
 

@@ -94,4 +94,27 @@ noPw = new bxrig.InstallApp( pwRun2, {} );
 testkit.check( "no password needed (root, a ticket, NOPASSWD): straight to the run", noPw.phase() == "run" );
 
 directoryDelete( tmp, true );
+// ---- the finish screen offers a log out or a reboot, after a question ----
+mkFin = function( ids ) {
+	var done = ids.map( function( i ) { return { id: i }; } );
+	return new bxrig.InstallApp( { finished: function() { return true; }, result: function() { return { done: done, failed: [], stopped: [], skipped: [] }; }, begin: function() {}, tick: function() {} } );
+};
+fa = mkFin( [ "hyprland", "xremap" ] );
+testkit.check( "after a new session the screen offers log out, not reboot", fa.advice().relogin && !fa.advice().reboot );
+fa.onKey( "b" );
+testkit.check( "b does nothing when no reboot is advised", fa.asking() == "" );
+fa.onKey( "l" );
+testkit.check( "l asks first", fa.asking() == "logout" && fa.outcome() == "running" );
+fa.onKey( "n" );
+testkit.check( "any other key than y stays", fa.asking() == "" && fa.advice().action == "" && fa.outcome() == "running" );
+fa.onKey( "l" ); fa.onKey( "y" );
+testkit.check( "y confirms: the choice is kept and the screen ends", fa.advice().action == "logout" && fa.outcome() == "done" );
+fb = mkFin( [ "hyprland", "session" ] );
+fb.onKey( "l" );
+testkit.check( "when a reboot is advised l is not offered", fb.asking() == "" && fb.advice().reboot );
+fb.onKey( "b" ); fb.onKey( "y" );
+testkit.check( "b reboots after y", fb.advice().action == "reboot" );
+fc = mkFin( [ "git-name" ] );
+fc.onKey( "l" ); fc.onKey( "b" );
+testkit.check( "nothing advised: neither key does anything", fc.asking() == "" );
 testkit.done();

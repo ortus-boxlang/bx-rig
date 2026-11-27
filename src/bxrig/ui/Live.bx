@@ -1,0 +1,29 @@
+// A block of lines that redraws itself in place (a progress display for commands that print): update( lines ) replaces what the last call showed.
+// Without a colour terminal nothing is redrawn: each update is printed only when finish() is called, and only the last one.
+class Live {
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		variables.shown = 0;
+		variables.last = [];
+		return this;
+	}
+
+	function update( lines ) {
+		variables.last = arguments.lines;
+		if ( !variables.ui.color() ) return this;
+		var esc = chr( 27 );
+		var buf = "";
+		if ( variables.shown > 0 ) buf = esc & "[" & variables.shown & "A" & esc & "[0J";
+		for ( var l in arguments.lines ) buf &= l & chr( 10 );
+		print( buf );
+		variables.shown = arguments.lines.len();
+		return this;
+	}
+
+	// Ends the display; on a plain output prints the last lines once.
+	function finish() {
+		if ( !variables.ui.color() ) for ( var l in variables.last ) println( l );
+		variables.shown = 0;
+		return this;
+	}
+}

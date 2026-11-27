@@ -1,0 +1,122 @@
+// Progress for commands that print (no full-screen TUI): bars, sparklines, bar charts, a spinner and a step checklist.
+class Progress {
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		return this;
+	}
+
+	// ---- spinner ----
+	function frames() { return variables.ui.unicode() ? [ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" ] : [ "|", "/", "-", "\\" ]; }
+	// The frame for a tick count (0, 1, 2 ...), coloured.
+	function frame( tick, role = "accent" ) { var f = frames(); return variables.ui.style( f[ ( arguments.tick mod f.len() ) + 1 ], arguments.role ); }
+
+	// ---- bar ----
+	// A bar for a ratio 0..1 of `width` cells, then the percent. opts: percent (true), role ("accent"), gradient (false), label.
+	function bar( ratio, width = 24, opts = {} ) {
+		var r = max( 0, min( 1, arguments.ratio ) );
+		var full = int( round( r * arguments.width ) );
+		var f = variables.ui.glyph( "full" );
+		var e = variables.ui.glyph( "empty" );
+		var filled = repeatString( f, full );
+		var body = ( arguments.opts.gradient ?: false ) ? variables.ui.gradient( filled ) : variables.ui.style( filled, arguments.opts.role ?: "accent" );
+		var out = body & variables.ui.style( repeatString( e, arguments.width - full ), "dim" );
+		if ( arguments.opts.percent ?: true ) out &= " " & right( "  " & int( round( r * 100 ) ), 3 ) & "%";
+		if ( len( arguments.opts.label ?: "" ) ) out &= " " & arguments.opts.label;
+		return out;
+	}
+
+	// ---- sparkline ----
+	// One character per value, scaled between the smallest and the largest: ▁▂▃▄▅▆▇█
+	function spark( values, opts = {} ) {
+		var set = variables.ui.unicode() ? [ "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" ] : [ ".", ":", "-", "=", "+", "*", "#", "%" ];
+		if ( !arguments.values.len() ) return "";
+		var lo = arguments.values[ 1 ];
+		var hi = arguments.values[ 1 ];
+		for ( var v in arguments.values ) { lo = min( lo, v ); hi = max( hi, v ); }
+		var out = "";
+		for ( var v2 in arguments.values ) out &= set[ hi == lo ? 1 : 1 + int( round( ( v2 - lo ) / ( hi - lo ) * ( set.len() - 1 ) ) ) ];
+		return variables.ui.style( out, arguments.opts.role ?: "accent" );
+	}
+
+	// ---- bar chart ----
+	// rows: [ { label, value } ]. opts: width of the bars (30), max (the largest value), format (function( value )).
+	function barChart( rows, opts = {} ) {
+		var bw = arguments.opts.width ?: 30;
+		var mx = arguments.opts.max ?: 0;
+		var lw = 0;
+		for ( var r in arguments.rows ) { mx = max( mx, r.value ); lw = max( lw, variables.ui.textWidth( r.label ) ); }
+		var out = [];
+		for ( var r2 in arguments.rows ) {
+			var n = mx > 0 ? int( round( r2.value / mx * bw ) ) : 0;
+			var shown = structKeyExists( arguments.opts, "format" ) ? arguments.opts.format( r2.value ) : r2.value;
+			out.append( variables.ui.align( r2.label, lw ) & " " & variables.ui.style( repeatString( variables.ui.glyph( "full" ), n ), r2.role ?: "accent" ) & repeatString( " ", bw - n ) & " " & shown );
+		}
+		return out;
+	}
+
+	// ---- steps ----
+	// items: [ { state: pending|run|ok|err|warn|skip, title, detail, time } ]. opts: tick (for the spinner of a running step).
+	function steps( items, opts = {} ) {
+		var out = [];
+		for ( var it in arguments.items ) {
+			var st = lCase( it.state ?: "pending" );
+			var mark = "";
+			if ( st == "run" || st == "running" ) mark = frame( arguments.opts.tick ?: 0 );
+			else mark = variables.ui.status( st, "" );
+			mark = rtrim( mark );
+			var line = mark & " " & ( st == "pending" ? variables.ui.style( it.title, "dim" ) : it.title );
+			if ( len( it.time ?: "" ) ) line &= "  " & variables.ui.style( it.time, "dim" );
+			out.append( line );
+			if ( len( it.detail ?: "" ) ) out.append( "  " & variables.ui.style( it.detail, st == "err" ? "err" : "dim" ) );
+		}
+		return out;
+	}
+
+	function rtrim( s ) { return reReplace( arguments.s, "\s+$", "" ); }
+
+	// ---- gauge (after ratatui's Gauge) ----
+	// A bar as wide as `width` (default: the terminal) with the label in the middle: the filled part is a solid colour behind the text.
+	// opts: width, label (default the percent), role ("ok"), unfilled ("zebra").
+	function gauge( ratio, opts = {} ) {
+		var w = arguments.opts.width ?: variables.ui.width();
+		var r = max( 0, min( 1, arguments.ratio ) );
+		var label = arguments.opts.label ?: int( round( r * 100 ) ) & "%";
+		var text = variables.ui.align( label, w, "center" );
+		var cut = int( round( r * w ) );
+		var parts = variables.ui.ansi().slice( text, cut );
+		var role = arguments.opts.role ?: "ok";
+		var left = variables.ui.style( parts[ 1 ], "bold black bg:" & role );
+		var rest = variables.ui.style( parts[ 2 ], "bg:" & ( arguments.opts.unfilled ?: "zebra" ) );
+		if ( !variables.ui.color() ) return [ "[" & repeatString( "##", cut ) & repeatString( "-", w - cut ) & "] " & label ];
+		return [ left & rest ];
+	}
+
+	// A thin gauge: label, then ━━━━━──── (after ratatui's LineGauge). opts: width of the line (30), role ("accent"), label.
+	function lineGauge( ratio, opts = {} ) {
+		var w = arguments.opts.width ?: 30;
+		var r = max( 0, min( 1, arguments.ratio ) );
+		var n = int( round( r * w ) );
+		var thick = variables.ui.unicode() ? "━" : "=";
+		var thin = variables.ui.unicode() ? "─" : "-";
+		var label = arguments.opts.label ?: int( round( r * 100 ) ) & "%";
+		return variables.ui.style( label, "bold" ) & " " & variables.ui.style( repeatString( thick, n ), arguments.opts.role ?: "accent" ) & variables.ui.style( repeatString( thin, w - n ), "dim" );
+	}
+
+	// ---- tabs (after ratatui's Tabs) ----
+	// titles in a row with a divider; the selected one (1-based) is highlighted. opts: divider ("│"), role ("accent").
+	function tabs( titles, selected = 1, opts = {} ) {
+		var div = " " & variables.ui.style( arguments.opts.divider ?: ( variables.ui.unicode() ? "│" : "|" ), "border" ) & " ";
+		var out = [];
+		var i = 0;
+		for ( var t in arguments.titles ) {
+			i++;
+			out.append( i == arguments.selected ? variables.ui.style( " " & t & " ", "bold black bg:" & ( arguments.opts.role ?: "accent" ) ) : variables.ui.style( " " & t & " ", "dim" ) );
+		}
+		if ( !variables.ui.color() ) {
+			out = [];
+			i = 0;
+			for ( var t2 in arguments.titles ) { i++; out.append( i == arguments.selected ? "[" & t2 & "]" : " " & t2 & " " ); }
+		}
+		return [ out.toList( div ) ];
+	}
+}

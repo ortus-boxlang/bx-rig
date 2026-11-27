@@ -1,0 +1,91 @@
+// What the install tells you when it ends: what was already in place, what needs your decision, what was skipped and why (each with the command
+// to do it later), where your answers and the log are saved, and what to do next (log out, open a new terminal, reboot).
+//   classify( skipped )               [ { id, reason } ] -> { inPlace, needsYou, skipped }, each [ { id, why, fix } ]
+//   advice( doneIds )                 { relogin, reboot, next: [ lines ] }
+//   lines( res, unknown, ctx )        the whole summary as lines; ctx = { answers, log, plan pending }
+class InitFinish {
+	function init( ids = {} ) {
+		variables.reloginIds = [ "hyprland", "plasma", "plasma-desktops", "plasma-panels", "xremap", "key-style", "session", "shell", "docker-compat", "containers", "terminal", "default-terminal" ];
+		variables.rebootIds = [ "session", "gaming", "vm-linux", "vm-windows", "android", "power-setup" ];
+		return this;
+	}
+
+	// "could not run (exit 4): error: Boxy is already at ~/Agents/Boxy. Start it: ...; do it later: bxrig ai agents setup --yes" -> { why, fix }
+	function split( reason ) {
+		var r = arguments.reason & "";
+		var fix = "";
+		var m = reFind( "; do it later: (.*)$", r, 1, true );
+		if ( m.pos[ 1 ] ) { fix = trim( mid( r, m.pos[ 2 ], m.len[ 2 ] ) ); r = left( r, m.pos[ 1 ] - 1 ); }
+		r = reReplace( r, "^could not run \(exit [0-9]+\): ", "" );
+		r = reReplace( r, "^error: ", "" );
+		return { why: trim( r ), fix: fix };
+	}
+
+	function classify( skipped ) {
+		var out = { inPlace: [], needsYou: [], skipped: [] };
+		for ( var k in arguments.skipped ) {
+			var p = split( k.reason );
+			var row = { id: k.id, why: p.why, fix: p.fix };
+			var low = lCase( p.why );
+			if ( find( "conflicts with", low ) ) out.needsYou.append( row );
+			else if ( find( "already at", low ) || find( "already installed", low ) || find( "already exists", low ) || find( "left alone", low ) || find( "is already", low ) ) out.inPlace.append( row );
+			else out.skipped.append( row );
+		}
+		return out;
+	}
+
+	function advice( doneIds ) {
+		var ids = arguments.doneIds;
+		var has = function( list ) { for ( var i in ids ) if ( arrayFind( list, i ) > 0 ) return true; return false; };
+		var out = { relogin: has( variables.reloginIds ), reboot: has( variables.rebootIds ), next: [] };
+		var hypr = arrayFind( ids, "hyprland" ) > 0;
+		if ( out.reboot ) out.next.append( "Reboot: the login screen, the boot screen or a driver changed. Reboot now with: bxrig system reboot --yes" );
+		else if ( out.relogin ) out.next.append( "Log out and back in" & ( hypr ? ", and pick Hyprland at the login screen" : "" ) & ": the session, your groups and the new keys take effect then. Log out now with: bxrig system logout --yes" );
+		if ( arrayFind( ids, "shell" ) > 0 ) out.next.append( "Open a new terminal to get the new shell and prompt." );
+		out.next.append( "See what is set up on this machine: bxrig status        Change anything later: bxrig menu" );
+		return out;
+	}
+
+	// The summary lines for the end of the install. res = InitRun.result(); ctx = { answers, log, pending }.
+	function lines( res, unknown, ctx ) {
+		var out = [];
+		var sk = [];
+		for ( var k in arguments.res.skipped ) sk.append( k );
+		for ( var u in arguments.unknown ) sk.append( { id: u, reason: "not available on this system: no entry in its catalog" } );
+		var c = classify( sk );
+		var section = function( title, rows ) {
+			if ( !rows.len() ) return;
+			out.append( "" );
+			out.append( title );
+			var w = 0;
+			for ( var r in rows ) w = max( w, len( r.id ) );
+			for ( var r2 in rows ) {
+				out.append( "  " & left( r2.id & repeatString( " ", w ), w ) & "  " & r2.why );
+				if ( len( r2.fix ) ) out.append( "  " & repeatString( " ", w ) & "  later: " & r2.fix );
+			}
+		};
+		out.append( "Done: " & arguments.res.done.len() & " steps" & ( arguments.res.failed.len() ? ", " & arguments.res.failed.len() & " failed" : "" ) );
+		for ( var f in arguments.res.failed ) {
+			out.append( "Failed: " & f.id & " (exit " & f.exit & ")" );
+			out.append( "  command: " & f.command );
+			for ( var ol in new bxrig.util.Text().lines( f.output ) ) out.append( "  | " & ol );
+		}
+		for ( var sp in arguments.res.stopped ) out.append( "Not run (stopped): " & sp.id );
+		section( "Already in place (nothing to do):", c.inPlace );
+		section( "Needs your decision:", c.needsYou );
+		section( "Skipped:", c.skipped );
+		if ( arguments.ctx.pending.len() ) { out.append( "" ); out.append( "Saved but not applied yet: " & arguments.ctx.pending.toList( ", " ) ); }
+		out.append( "" );
+		out.append( "Saved:" );
+		out.append( "  Your answers  " & arguments.ctx.answers & "   (run them again: bxrig reinstall)" );
+		out.append( "  The log       " & arguments.ctx.log );
+		var done = [];
+		for ( var d in arguments.res.done ) done.append( d.id );
+		var adv = advice( done );
+		out.append( "" );
+		out.append( "Next:" );
+		var n = 0;
+		for ( var line in adv.next ) { n++; out.append( "  " & n & ". " & line ); }
+		return out;
+	}
+}
