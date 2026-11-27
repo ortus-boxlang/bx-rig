@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-order: 10
+order: 6
 summary: Doctors that print a fix for each problem.
 ---
 

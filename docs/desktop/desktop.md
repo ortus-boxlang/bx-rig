@@ -1,16 +1,39 @@
 ---
 title: The desktop
-order: 2
+order: 1
 summary: Hyprland with Noctalia, KDE Plasma with tiling and panels, and the everyday tools around them.
 ---
 
 # The desktop
 
-BxRig sets up **Hyprland with Noctalia** as the main desktop. **KDE Plasma** stays installed and gets tiling and a status panel; pick either (or both) at the login screen (`bxrig session set hyprland|plasma`).
+BxRig sets up **Hyprland with Noctalia** as the main desktop. **KDE Plasma** stays installed and gets tiling and a status panel.
+
+## Try it
+
+```bash
+bxrig session set hyprland      # or plasma: what the login screen starts
+bxrig menu                      # the control center menu (Super+Space)
+bxrig screenshot region         # Print
+```
+
+![The notification center: every notification, by day](../assets/screenshots/notification-center.webp)
+
+```mermaid
+flowchart LR
+  A["Login screen"] --> B["Hyprland and Noctalia"]
+  A --> C["KDE Plasma"]
+  B --> D["bxrig.lua: shortcuts, generated"]
+  B --> E["hyprland.lua: yours"]
+  C --> F["Tiling and panels"]
+```
+
+## Pick your desktop
+
+Choose either (or both) at the login screen, or run `bxrig session set hyprland|plasma`.
 
 ## Hyprland and Noctalia
 
-`bxrig setup hyprland` installs the packages one by one and writes the starter configuration once. `~/.config/hypr/hyprland.lua` is yours. BxRig owns `~/.config/hypr/bxrig.lua`, which it regenerates from the [shortcut table](shortcuts.md); never edit that file by hand.
+`bxrig setup hyprland` installs the packages one by one and writes the starter configuration once. `~/.config/hypr/hyprland.lua` is yours. BxRig owns `~/.config/hypr/bxrig.lua`, which it regenerates from the [shortcut table](shortcuts.md); never edit that file by hand. See [Your own config](../customize/your-own-config.md).
 
 ### The bar's panels
 
@@ -19,9 +42,8 @@ The Noctalia bar carries three BxRig panels and the notifications. Each opens fr
 | | |
 | --- | --- |
 | ![The world clock: every time zone, how far it is from you, and day or night](../assets/screenshots/panel-world-clock.webp)<br>**World clock** · the globe before the time, or <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>W</kbd>. The zones are yours: `bxrig time world add Asia/Tokyo --yes` | ![The coding agents panel](../assets/screenshots/panel-agents.webp)<br>**Coding agents** · <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd>. The agents you have installed, their accounts and limits; launch one with a click. **Edit agents** (or `bxrig ai panel add\|remove ID --yes`) chooses which show |
-| ![The theme switcher](../assets/screenshots/panel-theme-switcher.webp)<br>**Theme switcher** · <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>. See [Themes](themes.md) | ![Stacked notifications](../assets/screenshots/notifications.webp)<br>**Notifications** stack in the top corner, rounded and in the theme's colors. <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>,</kbd> acts on the newest, <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd> opens them all |
+| ![The theme switcher](../assets/screenshots/panel-theme-switcher.webp)<br>**Theme switcher** · <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>. See [Themes](../customize/themes.md) | ![Stacked notifications](../assets/screenshots/notifications.webp)<br>**Notifications** stack in the top corner, rounded and in the theme's colors. <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>,</kbd> acts on the newest, <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd> opens them all |
 
-![The notification center: every notification, by day](../assets/screenshots/notification-center.webp)
 
 ## KDE Plasma
 
@@ -32,9 +54,9 @@ The Noctalia bar carries three BxRig panels and the notifications. Each opens fr
 
 ![The Plasma panel clock with its time zones](../assets/screenshots/plasma-world-clock.webp)
 
-Look and hardware have their own pages: [Appearance](appearance.md) for the bar, dock, windows and fonts, and [Displays, power and time](system.md) for monitors, laptop power and the time zone. The [control center](menu.md) has all of it as one menu.
-
 ## Everyday tools
+
+The shortcuts below are the Traditional style unless noted. Every key is a row of the [shortcut table](shortcuts.md), in the style you chose.
 
 | Do | Command | Shortcut |
 |---|---|---|
@@ -70,9 +92,11 @@ Look and hardware have their own pages: [Appearance](appearance.md) for the bar,
 | Lock | `bxrig system lock` | `Super+Ctrl+L` |
 | Pull-down AI shell | `bxrig ai shell` | ``Super+` `` |
 
-Every key is a row of the [shortcut table](shortcuts.md), in the style you chose. The quake console is the special workspace `qconsole`: the first press starts your default terminal on it. The private window uses the default browser (`bxrig default browser`). The webcam preview needs `mpv`, and recording with audio needs `pactl`.
+
+The quake console is the special workspace `qconsole`: the first press starts your default terminal on it. The private window uses the default browser (`bxrig default browser`). The webcam preview needs `mpv`, and recording with audio needs `pactl`.
 
 Night shift on Hyprland runs `wlsunset` with your time zone's sunrise and sunset (no network lookup); on Plasma it turns on Plasma's own Night Light.
+
 
 ## Trackpads and Apple devices
 
@@ -110,3 +134,7 @@ On Hyprland, Noctalia runs it as an idle behavior. On Plasma, a small user servi
 `bxrig setup boot --yes` puts the BxRig splash on the boot screen (Plymouth): the laptop fades in over a soft glow while the dots pulse, and an encrypted disk asks for its password on the same screen. It shows the plan first, keeps a backup of `/etc/mkinitcpio.conf`, and tells you where to add `splash` for your boot loader. `bxrig setup undo boot --yes` puts the previous theme back.
 
 <video src="../assets/clips/boot-splash.webm" poster="../assets/screenshots/boot-splash.webp" autoplay loop muted playsinline width="100%"></video>
+
+Look and hardware have their own pages: [Appearance](../customize/appearance.md) for the bar, dock, windows and fonts, and [Displays, power and time](system.md) for monitors, laptop power and the time zone. The [menu](menu.md) has all of it as one menu.
+
+Next: [The menu](menu.md), [Shortcuts](shortcuts.md), [Appearance](../customize/appearance.md).

@@ -1,35 +1,26 @@
 ---
-title: Getting started
-order: 2
-summary: Install BxRig, run the wizard, and find your way around.
+title: Install options
+order: 5
+summary: Unattended installs, channels, which MatchBox to use and how to test a branch.
 ---
 
-# Getting started
+# Install options
 
-## What you need
+The [normal install](install.md) is one command. This page is for when you need more: no one at the keyboard, the beta channel, a specific MatchBox, or a branch you want to test.
 
-**Supported: CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13.** See [Distributions](guides/distributions.md) for what each one offers.
-
-- CachyOS or Arch Linux (`pacman`), openSUSE Tumbleweed or Slowroll (`zypper`), Ubuntu 26.04 LTS or Debian 13 (`apt`), x86_64.
-- A normal user with `sudo`. The installer refuses to run as root.
-- A network connection.
-
-## Install
-
-```bash
-curl -fsSL {{ installUrl }} | bash
+```mermaid
+flowchart TD
+    A["Which install do you need?"] --> B["Normal"]
+    A --> C["Unattended"]
+    A --> D["Beta channel"]
+    A --> E["Test a branch"]
+    B --> B1["curl ... | bash"]
+    C --> C1["--yes --answers answers.json"]
+    D --> D1["--channel beta"]
+    E --> E1["--source github:OWNER/REPO@REF"]
 ```
 
-The installer:
-
-1. checks the machine;
-2. downloads the program and the install bundle for your [channel](guides/updates.md) and verifies their signature and SHA-256;
-3. installs packages, toolchains (Java 21, `bvm`, `mvm`, BoxLang, MatchBox, Rust) and the core apps;
-4. starts the [setup wizard](guides/wizard.md).
-
-Its log is `~/.cache/bxrig/install.log`.
-
-### Without anyone at the keyboard
+## Unattended
 
 ```bash
 curl -fsSL {{ installUrl }} | bash -s -- --yes --answers answers.json
@@ -77,14 +68,3 @@ A GitHub source is **unsigned**: no release signature and no checksum from the B
 
 The source (`github:OWNER/REPO@REF`) and the resolved commit are written to `~/.cache/bxrig/install.log` and to `~/.local/share/bxrig/install-source`. `bxrig update` does not read them: it compares the program with the channel's release, so after a GitHub install `bxrig update check` reports an update, and `bxrig update apply --yes` replaces your build with the stable (or beta) one. Skip `update apply` while you test the branch.
 
-## After the install
-
-| Do this | With |
-|---|---|
-| See what is set up | `bxrig status` |
-| Change your choices | `bxrig init` |
-| Open the control center | `Super+Space` or `bxrig menu` |
-| See every shortcut | `Super+K` or `bxrig keys sheet` |
-| Check for updates | `bxrig update check` |
-
-New to BoxLang? Run `bxrig boxlang welcome` for a getting-started page, or open [Try BoxLang](https://try.boxlang.io).

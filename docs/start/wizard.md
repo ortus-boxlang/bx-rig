@@ -1,10 +1,21 @@
 ---
 title: The setup wizard
-order: 1
+order: 3
 summary: One guided form for every choice. Re-run it any time.
 ---
 
 # The setup wizard
+
+The wizard asks for your choices once, shows the commands it will run, and does nothing until you confirm. Re-run it any time with `bxrig init`.
+
+```mermaid
+flowchart LR
+    A["Answer the pages"] --> B["Review: the exact commands"]
+    B --> C{"Confirm?"}
+    C -->|"yes"| D["Install screen"]
+    C -->|"no"| E["Nothing changed"]
+    D --> F["Summary and saved answers"]
+```
 
 `bxrig init` opens a full-screen form with these pages: **Desktop**, **Look**, **Top bar layout**, **App grid style**, **Theme**, **Input**, **Developer**, **Toolchains**, **Containers**, **NAS**, **Remote backups**, **Backups**, **Apps**, **AI**, **Extras** and **Import**, then a review screen that lists exactly the commands it will run. With the Customize choice on the Apps page there is one more page per catalog group. Nothing runs until you confirm.
 
@@ -25,7 +36,7 @@ After **Look** (dark, light or auto, the dock, where the bar sits, the world clo
 
 On a terminal narrower than 92 columns (no step list) the Theme page keeps the list and the pane side by side; between 92 and 96 columns the pane is dropped and the rows keep their swatches.
 
-The **Input** page asks about keyboard layouts, natural scrolling, and the shortcut style: "Mac-style Super keys" (on by default) and, when it is on, "Which keyboard do you type on?" (PC: Alt and Win are swapped so Alt acts as Cmd; Apple: no swap). When an Apple Magic or Logitech device is paired or plugged in (or the Mac-style keys are on) it also asks "Input devices" (default: detect); the answer becomes the optional step `bxrig input offer`, see [Mice, trackpads and keyboards](input.md). Off keeps the Traditional keys (classic Super-key tiling keys). The answers become `bxrig keys style` and the xremap setup, which is installed either way because copy, paste, cut and select all are remaps in both styles. See [Shortcuts](shortcuts.md).
+The **Input** page asks about keyboard layouts, natural scrolling, and the shortcut style: "Mac-style Super keys" (on by default) and, when it is on, "Which keyboard do you type on?" (PC: Alt and Win are swapped so Alt acts as Cmd; Apple: no swap). When an Apple Magic or Logitech device is paired or plugged in (or the Mac-style keys are on) it also asks "Input devices" (default: detect); the answer becomes the optional step `bxrig input offer`, see [Mice, trackpads and keyboards](../desktop/input.md). Off keeps the Traditional keys (classic Super-key tiling keys). The answers become `bxrig keys style` and the xremap setup, which is installed either way because copy, paste, cut and select all are remaps in both styles. See [Shortcuts](../desktop/shortcuts.md).
 
 ## The install screen
 

@@ -27,9 +27,9 @@ bxrig update check              # exit 10 means an update is available
 bxrig update apply --yes        # download, verify, replace atomically
 ```
 
-An install made with `install.sh --source github:...` (an unsigned test build, see [getting started](../getting-started.md)) is not tracked: `update check` reports an update because the program differs from the channel's, and `update apply --yes` replaces it with that channel's build.
+An install made with `install.sh --source github:...` (an unsigned test build, see [getting started](../start/install.md)) is not tracked: `update check` reports an update because the program differs from the channel's, and `update apply --yes` replaces it with that channel's build.
 
-`bxrig update` replaces only the `bxrig` program. MatchBox (the toolchain) is not touched; move it with `mvm update`, or run the installer again with `--snapshot` or `--matchbox-branch REF` (see [getting started](../getting-started.md#which-matchbox)).
+`bxrig update` replaces only the `bxrig` program. MatchBox (the toolchain) is not touched; move it with `mvm update`, or run the installer again with `--snapshot` or `--matchbox-branch REF` (see [getting started](../start/install.md#which-matchbox)).
 
 The release information is signed (Ed25519) and the binary's SHA-256 is checked against it; a bad signature or checksum changes nothing.
 

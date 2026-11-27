@@ -34,7 +34,7 @@ English only for now. Add one with `boxlang bxSites i18n:new --code=es` and list
 
 ## Releases
 
-Pushes to `development` publish the `beta` channel; a `v*` tag publishes `stable`. See [Updates and channels](updates.md) and [Security](security.md).
+Pushes to `development` publish the `beta` channel; a `v*` tag publishes `stable`. See [Updates and channels](../maintain/updates.md) and [Security](../maintain/security.md).
 
 ## Writing code that stays DRY
 

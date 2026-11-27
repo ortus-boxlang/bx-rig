@@ -59,7 +59,7 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Ctrl+E` | Emoji |
 | `Alt+Space` | Dictation on or off (the logical Alt key: with the Mac swap on a PC keyboard it is the Win key, where Option sits on a Mac) |
 | `Super+Alt+D` | Show or hide the dock |
-| `Super+Period` / `Super+Shift+Period` | Chat with your default agent (Boxy) in a terminal / its web page (see [BoxLang agents](boxlang-agents.md)) |
+| `Super+Period` / `Super+Shift+Period` | Chat with your default agent (Boxy) in a terminal / its web page (see [BoxLang agents](../ai/boxlang-agents.md)) |
 | `Super+Ctrl+Alt+F`, `Super+Shift+Space` | Hide or show the bar (Toggle top bar) |
 | `Super+Ctrl+A` `B` `N` `P` `D` | The control center panel |
 | `Super+Ctrl+Alt+Comma` | Do Not Disturb |
@@ -72,7 +72,7 @@ Your changes live in `~/.config/bxrig/shortcuts.json` and apply to both styles. 
 | `Super+Alt+Shift+C` | Center the floating window |
 | `Super+Ctrl+Up` | Overview of all windows (Mission Control) |
 | `Super+Alt+Escape` | Force quit a window |
-| `Super+Alt+E` | AI on the selected text: a menu to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](local-ai.md#ai-on-the-selected-text)) |
+| `Super+Alt+E` | AI on the selected text: a menu to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](../ai/local-ai.md#ai-on-the-selected-text)) |
 | `Super+Shift+J` | Next layout on this workspace: dwindle, master, columns, scrolling, monocle |
 | `Super+Minus` / `Super+Equal` | Narrower / wider: the split (dwindle), the main column (master, columns), or the column through 1/3, 1/2, 2/3 and full (scrolling) |
 | `Super+Ctrl+Left` / `Right` | Previous / next workspace |

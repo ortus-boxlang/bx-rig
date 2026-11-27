@@ -67,11 +67,11 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 | Page | What it does |
 |---|---|
 | Dashboard | what needs attention, meters, what runs, backups |
-| Apps | install, remove and update software: Installed, Discover and Updates tabs, a search box that is always there, icons and screenshots (see [Apps](apps.md#the-apps-manager)) |
-| AI | your local models on llama.cpp: Enter makes one active or downloads a pick, `p` asks a question, `t` tests, `u` tunes, `b` runs the bench, `h` opens it on Hugging Face, `x` removes it, `s` sets everything up (see [Local AI](local-ai.md)) |
+| Apps | install, remove and update software: Installed, Discover and Updates tabs, a search box that is always there, icons and screenshots (see [Apps](../data/apps.md#the-apps-manager)) |
+| AI | your local models on llama.cpp: Enter makes one active or downloads a pick, `p` asks a question, `t` tests, `u` tunes, `b` runs the bench, `h` opens it on Hugging Face, `x` removes it, `s` sets everything up (see [Local AI](../ai/local-ai.md)) |
 | Discover | models for this machine: BxRig's staff picks, then GGUF models on Hugging Face (`/` searches). Enter queues a download, `c` cancels one, `x` clears finished ones, `h` opens Hugging Face |
 | Agents | your coding agents: the default one, which use the local model, their tmux sessions. Enter starts a session, `d` makes one the default, `l` points it at the local model or back, `s` lists the sessions |
-| BoxLang agents | your bx-agents agents: Enter opens the chat in a terminal, `o` the web page, `s` starts or stops it, `d` the default one, `l` its log, `i` installs or updates bx-agents (see [BoxLang agents](boxlang-agents.md)) |
+| BoxLang agents | your bx-agents agents: Enter opens the chat in a terminal, `o` the web page, `s` starts or stops it, `d` the default one, `l` its log, `i` installs or updates bx-agents (see [BoxLang agents](../ai/boxlang-agents.md)) |
 | BoxLang | BoxLang versions through `bvm`: use, install, remove |
 | Modules | BoxLang modules from ForgeBox: installed and latest versions, `i` install, `u` update, `x` remove |
 | Servers | your BoxLang and CFML web apps: `s` start or stop, `r` restart, `o` open, `f` the folder, `l` the log, `a` add one, `x` forget it |
@@ -89,9 +89,9 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 | Mail | the mail your apps send to the catcher (`bxrig mail`): headers and text of the highlighted message, delete, clear, open it in the browser, send a test; it refreshes by itself every 3 seconds |
 | Storage | this computer's disk first (space used and the last disk speed; `t` tests it), then NAS shares and cloud remotes: mount, unmount, test |
 | Secrets | names only; `v` shows one value for one look |
-| Boxy | Boxy's look and voice: its sprite, the speech setting (`v`) and the outfits (Enter puts one on, `e` writes the pictures); see [Boxy's look and voice](boxy.md) |
-| Android | Android apps with Waydroid (off until you turn it on): the state, then your apps; Enter opens one, `s` starts or stops it, `r` registers it for Google Play, `S` shows the plan to set it up (see [Android apps](android.md)) |
-| Privacy | what leaves this machine: where each agent's model runs, keys by name, MCP servers, telemetry, chat folders; `l`/`L` local model on or off, `t`/`T` telemetry off or on (see [MCP and privacy](mcp-and-privacy.md)) |
+| Boxy | Boxy's look and voice: its sprite, the speech setting (`v`) and the outfits (Enter puts one on, `e` writes the pictures); see [Boxy's look and voice](../customize/boxy-look.md) |
+| Android | Android apps with Waydroid (off until you turn it on): the state, then your apps; Enter opens one, `s` starts or stops it, `r` registers it for Google Play, `S` shows the plan to set it up (see [Android apps](../build/android.md)) |
+| Privacy | what leaves this machine: where each agent's model runs, keys by name, MCP servers, telemetry, chat folders; `l`/`L` local model on or off, `t`/`T` telemetry off or on (see [MCP and privacy](../ai/mcp-and-privacy.md)) |
 | Look | the top bar layout (Minimal, Standard, Dense) with a picture of the bar and the dock, battery percentage, clock format, the key that hides the bar, the app grid style (Launchpad or Terminal-style) and the dock. `-` and `+` (or Right, Space, Enter) pick the previous or next value, and the plan comes first. The color theme is a link to the Themes page |
 | Themes | the 24 themes with a palette and wallpaper preview; Enter shows the plan, y applies |
 | Accessibility | zoom, reduce motion and the three contrast themes, one row each; Enter (or Space) switches the row, with the plan first |

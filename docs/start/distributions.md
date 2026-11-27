@@ -1,6 +1,6 @@
 ---
 title: Distributions
-order: 12
+order: 1
 summary: CachyOS and Arch, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 and Debian 13: what differs and what is Arch-only.
 ---
 
