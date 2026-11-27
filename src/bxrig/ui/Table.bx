@@ -28,14 +28,25 @@ class Table {
 		var v = "";
 		if ( isArray( arguments.row ) ) v = arguments.idx <= arguments.row.len() ? arguments.row[ arguments.idx ] : "";
 		else v = structKeyExists( arguments.row, arguments.col.key ) ? arguments.row[ arguments.col.key ] : "";
+		if ( isStruct( v ) && structKeyExists( v, "value" ) ) v = v.value;
 		if ( structKeyExists( arguments.col, "format" ) ) return arguments.col.format( v, arguments.row ) & "";
 		if ( isBoolean( v ) && !isNumeric( v ) ) return v ? variables.ui.glyph( "ok" ) : variables.ui.glyph( "dot" );
 		return isSimpleValue( v ) ? v & "" : serializeJSON( v );
 	}
 
+	// The format of one cell given as { value, options }: "" for a plain value.
+	function cellSpec( row, idx, col ) {
+		var v = "";
+		if ( isArray( arguments.row ) ) v = arguments.idx <= arguments.row.len() ? arguments.row[ arguments.idx ] : "";
+		else v = structKeyExists( arguments.row, arguments.col.key ) ? arguments.row[ arguments.col.key ] : "";
+		if ( isStruct( v ) && structKeyExists( v, "options" ) ) return variables.ui.dsl().parse( "text", v.options ).spec;
+		return "";
+	}
+
 	function render( columns, rows, opts = {} ) {
 		var o = arguments.opts;
 		var cs = cols( arguments.columns );
+		if ( o.drop ?: false ) cs = dropColumns( cs, arguments.rows, o );
 		var n = cs.len();
 		var border = o.border ?: "rounded";
 		var hasBorder = border != "none";
@@ -134,6 +145,8 @@ class Table {
 					var spec = "";
 					if ( head ) spec = o.headerStyle ?: "bold header";
 					else if ( structKeyExists( cs[ i ], "style" ) ) spec = isSimpleValue( cs[ i ].style ) ? cs[ i ].style : cs[ i ].style( cells[ i ], rowData );
+					var own = head ? "" : cellSpec( rowData, i, cs[ i ] );
+					if ( len( own ) ) spec = own;
 					if ( zebra ) spec = trim( spec & " bg:zebra" );
 					var al = head && cs[ i ].align == "right" ? "right" : cs[ i ].align;
 					var cell = a.align( txt, w[ i ], al );
@@ -179,6 +192,34 @@ class Table {
 			for ( var l3 in rowLines( foot[ 1 ].cells, foot[ 1 ].row, false, false ) ) out.append( variables.ui.style( l3, "bold" ) );
 		}
 		if ( hasBorder ) out.append( line( bx.bl, bx.bj, bx.br ) );
+		return out;
+	}
+
+	// On a terminal too narrow for the columns, the columns on the right are replaced by one "..." column (the others keep their text, shrunk).
+	function dropColumns( cs, rows, o ) {
+		var border = o.border ?: "rounded";
+		var hasBorder = border != "none";
+		var pad = hasBorder ? ( o.padding ?: 1 ) : 0;
+		var avail = o.width ?: variables.ui.width();
+		var mins = [];
+		for ( var i = 1; i <= arguments.cs.len(); i++ ) {
+			var nat = variables.a.width( arguments.cs[ i ].title );
+			for ( var r in arguments.rows ) nat = max( nat, variables.a.width( value( arguments.cs[ i ], r, i ) ) );
+			mins.append( arguments.cs[ i ].min ?: min( nat, 8 ) );
+		}
+		var over = function( count ) { return hasBorder ? ( count + 1 ) + count * pad * 2 : 2 * max( 0, count - 1 ); };
+		var sum = 0;
+		for ( var m in mins ) sum += m;
+		if ( sum + over( arguments.cs.len() ) <= avail ) return arguments.cs;
+		var keep = 1;
+		for ( var kk = arguments.cs.len() - 1; kk >= 1; kk-- ) {
+			var used = 0;
+			for ( var j = 1; j <= kk; j++ ) used += mins[ j ];
+			if ( used + 3 + over( kk + 1 ) <= avail ) { keep = kk; break; }
+		}
+		var out = [];
+		for ( var k = 1; k <= keep; k++ ) out.append( arguments.cs[ k ] );
+		out.append( { key: "__more", title: "...", align: "left", wrap: false, width: 3, format: function() { return "..."; } } );
 		return out;
 	}
 

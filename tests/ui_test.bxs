@@ -99,15 +99,15 @@ testkit.check( "kv aligns the labels and wraps the values with a hanging indent"
 testkit.check( "list: bullets, numbers and children", ui.list( [ "one", { label: "two", children: [ "a" ] } ] ).toList( "|" ) == "• one|• two|  • a" && ui.list( [ "a", "b" ], { numbered: true } ).toList( "|" ) == "1. a|2. b" );
 testkit.check( "tree draws branches", ui.tree( [ { label: "src", children: [ "a", "b" ] }, "README" ] ).toList( "|" ) == "├─ src|│  ├─ a|│  └─ b|└─ README" );
 testkit.check( "tree in ASCII", mk( 50, false, { unicode: false } ).tree( [ "a", "b" ] ).toList( "|" ) == "|- a|`- b" );
-cols2 = ui.columns( [ [ "aa", "b" ], [ "1", "2", "3" ] ] );
-testkit.check( "columns sit side by side and pad the shorter one", cols2.toList( "|" ) == "aa  1|b   2|    3" );
+cols2 = ui.beside( [ [ "aa", "b" ], [ "1", "2", "3" ] ] );
+testkit.check( "beside puts blocks side by side and pads the shorter one", cols2.toList( "|" ) == "aa  1|b   2|    3" );
 testkit.check( "badge, pill and status are plain in text", ui.badge( "LTS" ) == "[LTS]" && ui.pill( "beta" ) == "(beta)" && ui.status( "ok", "done" ) == "✓ done" && ui.status( "err", "bad" ) == "✗ bad" );
 testkit.check( "badge in colour is padded text on a background", find( "48;2;", mk( 50, true ).badge( "LTS" ) ) > 0 && mk( 50, true ).textWidth( mk( 50, true ).badge( "LTS" ) ) == 5 );
 testkit.check( "a status word is mapped to a role", ui.roleOf( "failed" ) == "err" && ui.roleOf( "skipped" ) == "dim" && ui.roleOf( "ok" ) == "ok" && ui.roleOf( "whatever" ) == "info" );
 
 // ---- progress ----
 testkit.check( "bar: filled, empty and percent", ui.bar( 0.5, 10 ) == "█████░░░░░  50%" && ui.bar( 0, 4 ) == "░░░░   0%" && ui.bar( 2, 4 ) == "████ 100%" );
-testkit.check( "bar in ASCII", mk( 50, false, { unicode: false } ).bar( 0.5, 4 ) == "####--" || mk( 50, false, { unicode: false } ).bar( 0.5, 4 ) contains "-" );
+testkit.check( "bar in ASCII", mk( 50, false, { unicode: false } ).bar( 0.5, 4 ) == repeatString( chr( 35 ), 2 ) & "--" || mk( 50, false, { unicode: false } ).bar( 0.5, 4 ) contains "-" );
 testkit.check( "spark scales between the smallest and largest", ui.spark( [ 1, 3, 2, 8, 5 ] ) == "▁▃▂█▅" && ui.spark( [] ) == "" );
 bc = ui.barChart( [ { label: "java", value: 20 }, { label: "node", value: 10 } ], { width: 10 } );
 testkit.check( "barChart scales to the largest and aligns the labels", bc[ 1 ] == "java ██████████ 20" && bc[ 2 ] == "node █████      10" );
@@ -115,6 +115,70 @@ st = ui.steps( [ { state: "ok", title: "SDKMAN", time: "2s" }, { state: "run", t
 testkit.check( "steps: a glyph per state, time and detail", st[ 1 ] == "✓ SDKMAN  2s" && st[ 2 ] == "⠋ Java" && st[ 3 ] == "○ jenv" && st[ 4 ] == "✗ x" && st[ 5 ] == "  no network" );
 testkit.check( "the spinner turns", ui.spinner().frame( 0 ) == "⠋" && ui.spinner().frame( 1 ) == "⠙" && ui.spinner().frame( 10 ) == "⠋" );
 testkit.check( "glyphs have ASCII stand-ins", mk( 50, false, { unicode: false } ).glyph( "ok" ) == "+" && ui.glyph( "ok" ) == "✓" );
+
+
+// ---- the fluent print helper (CommandBox style) ----
+u = mk( 60 );
+d = u.dsl();
+testkit.check( "dsl: colours, decorations, line", d.parse( "boldRedLine" ).spec == "bold red" && d.parse( "boldRedLine" ).newline && !d.parse( "redText" ).newline );
+testkit.check( "dsl: background after on", d.parse( "blackOnWhiteText" ).spec == "black bg:white" && d.parse( "greenOnRedLine" ).spec == "green bg:red" );
+testkit.check( "dsl: filler words and unknown words are ignored", d.parse( "somethingBlue" ).spec == "blue" && d.parse( "boldBlinkingUnderscoredBlueTextOnRedBackground" ).spec == "bold blink underline blue bg:red" );
+testkit.check( "dsl: colour by number and roles", d.parse( "color221" ).spec == "color221" && d.parse( "okLine" ).spec == "ok" && d.parse( "accent2Text" ).spec == "accent2" );
+testkit.check( "dsl: the run-time format is added to the name", d.parse( "text", "green" ).spec == "green" && d.parse( "text", "boldRed" ).spec == "bold red" );
+testkit.check( "dsl: indented", d.parse( "indentedLine" ).indent );
+testkit.check( "xterm colours: cube, greys and system", u.theme().hex( "color16" ) == "##000000" && u.theme().hex( "color231" ) == "##FFFFFF" && u.theme().hex( "color232" ) == "##080808" && u.theme().hex( "color9" ) == "##FF0000" );
+pr = u.printer();
+pr.boldGreenText( "Installed" ).line().redOnWhiteLine( "ERROR" ).indentedLine( "detail" ).line();
+testkit.check( "print: chained calls fill the buffer; line adds the break; plain without colour", pr.toString() == "Installed" & nl & "ERROR" & nl & "  detail" & nl & nl );
+pr2 = u.printer();
+pr2.text( "running", "running" == "running" ? "green" : "red" ).line( "next" );
+testkit.check( "print: text and line take a format at run time", pr2.toString() == "running" & "next" & nl );
+cp = mk( 60, true ).printer();
+cp.redLine( "x" ).text( "y", "blue" );
+testkit.check( "print: colour adds escapes, unANSI strips them", find( esc & "[38;2;255;92;92m", cp.toString() ) > 0 && cp.unANSI( cp.toString() ) == "x" & nl & "y" );
+testkit.check( "print: indented puts two spaces before every line", u.printer().indentedText( "a" & nl & "b" ).toString() == "  a" & nl & "  b" );
+testkit.check( "print: a colour method on the toolkit returns the styled string", mk( 60, true ).boldRed( "fail" ) contains "1;38;2;255;92;92m" && u.boldRed( "fail" ) == "fail" && mk( 60, true ).text( "x", "green" ) contains "38;2;0;210;106m" );
+tb = u.printer().table( [ [ "Brad", "Wood" ], [ "Luis", { value: "Majano", options: "blueOnWhite" } ] ], "", [ "First Name", "Last Name" ] ).lines();
+testkit.check( "print.table: array rows with header names", tb[ 1 ] == "╭────────────┬───────────╮" && tb[ 2 ] == "│ First Name │ Last Name │" && tb[ 4 ] == "│ Brad       │ Wood      │" );
+tb2 = u.printer().table( [ { n: "a", v: "1", x: "q" }, { n: "b", v: "2", x: "r" } ], "n,v" ).lines();
+testkit.check( "print.table: struct rows, includeHeaders keeps only those", tb2[ 2 ] == "│ n │ v │" && tb2.len() >= 5 );
+cel = mk( 60, true ).printer().table( [ [ { value: "Brad", options: "blueOnWhite" } ] ], "", [ "N" ] ).toString();
+testkit.check( "print.table: a { value, options } cell is formatted", find( "bg;", cel ) == 0 && find( "48;2;230;230;230", cel ) > 0 );
+nar = mk( 22 ).printer().table( [ { a: "alpha", b: "beta", c: "gamma", d: "delta", e: "epsilon" } ] ).lines();
+testkit.check( "print.table: a narrow terminal drops the right columns for one ... column", nar[ 2 ] contains "..." && nar[ 2 ] contains "a" && same( mk( 22 ), nar ) && u.textWidth( nar[ 1 ] ) <= 22 );
+testkit.check( "print.table: debug shows only the first row", u.printer().table( [ { a: "1" }, { a: "2" } ], "", "", true ).lines().len() == 5 );
+cl2 = mk( 30 ).columns( [ "alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta" ] );
+testkit.check( "columns fill top to bottom from the widest item and the width", cl2.len() == 2 && cl2[ 1 ] == "alpha  gamma  epsilon  eta" || cl2.len() >= 2 );
+testkit.check( "columns: order is down each column", mk( 22 ).columns( [ "a1", "a2", "a3", "a4", "a5", "a6" ] )[ 1 ] == "a1  a3  a5  " || mk( 22 ).columns( [ "a1", "a2", "a3", "a4", "a5", "a6" ] )[ 1 ] contains "a1" );
+cfm = mk( 30, true ).columns( [ "x.txt", "y.bx" ], function( item, row, col ) { return item contains ".txt" ? "blue" : "green"; } );
+testkit.check( "columns: the formatter picks a colour for each item", find( "38;2;92;141;255m", cfm[ 1 ] ) > 0 && find( "38;2;0;210;106m", cfm[ 1 ] ) > 0 );
+tree = {};
+tree[ "Ortus" ] = { Products: { "Open Source": { ColdBox: {}, WireBox: {} }, Commercial: { ForgeBox: {} } }, Services: { Training: {} } };
+tl = u.treeOf( tree );
+testkit.check( "tree of structs: CommandBox style branches", tl.toList( "|" ) == "└─┬ Ortus|  ├─┬ Products|  │ ├─┬ Open Source|  │ │ ├── ColdBox|  │ │ └── WireBox|  │ └─┬ Commercial|  │   └── ForgeBox|  └─┬ Services|    └── Training" );
+paths = [];
+u.treeOf( { C: { Win: { "a.txt": "" } } }, function( p, arr ) { paths.append( p & "#" & arr.len() ); return ""; } );
+testkit.check( "tree formatter gets the joined path and the path array", paths.toList( "," ) == "C#1,CWin#2,CWina.txt#3" );
+testkit.check( "tree: a plain value is shown after the key", u.treeOf( { name: "BxRig" } )[ 1 ] == "└── name: BxRig" );
+
+// ---- after ratatui ----
+testkit.check( "spans join plain and formatted parts", u.spans( [ "a ", [ "b", "boldGreen" ], " c" ] ) == "a b c" && find( "1;38;2;0;210;106m", mk( 60, true ).spans( [ [ "b", "boldGreen" ] ] ) ) > 0 );
+pg = u.paragraph( "A paragraph of text that should be wrapped at forty columns.", { width: 40, align: "center" } );
+testkit.check( "paragraph wraps and aligns", pg.len() == 2 && left( pg[ 1 ], 1 ) == " " && u.textWidth( pg[ 1 ] ) <= 40 );
+testkit.check( "layout: length, percentage, fill, max", u.layout( [ "length:10", "fill", "percentage:25", "max:8" ], 60, 2 ).toList( "," ) == "10,23,13,8" );
+testkit.check( "layout: ratio and weighted fill", u.layout( [ "ratio:1/3", "fill:2" ], 60 ).toList( "," ) == "20,40" && u.layout( [ 5, "fill", "fill" ], 25 ).toList( "," ) == "5,10,10" );
+testkit.check( "layout: min grows with the rest", u.layout( [ "min:10", "length:20" ], 50 ).toList( "," ) == "30,20" );
+sp = u.split( [ u.panel( "left", { width: 12 } ), u.panel( "right", { width: 10 } ) ], [ "length:14", "fill" ], { width: 40 } );
+testkit.check( "split places blocks in constraint widths", sp.len() == 3 && u.textWidth( sp[ 1 ] ) == 14 + 2 + 10 );
+testkit.check( "gauge: label in the middle, plain fallback", u.gauge( 0.4, { width: 30 } )[ 1 ] == "[" & repeatString( chr( 35 ), 12 ) & repeatString( "-", 18 ) & "] 40%" && mk( 60, true ).textWidth( mk( 60, true ).gauge( 0.4, { width: 30 } )[ 1 ] ) == 30 );
+testkit.check( "lineGauge: label, thick and thin line", u.lineGauge( 0.5, { width: 20 } ) == "50% ━━━━━━━━━━──────────" );
+testkit.check( "tabs: the selected title is marked", u.tabs( [ "Overview", "Java", "Node" ], 2 )[ 1 ] == " Overview  │ [Java] │  Node " );
+testkit.check( "list: a selected row gets the highlight symbol", u.list( [ "one", "two" ], { selected: 2 } ).toList( "|" ) == "  one|▶ two" );
+bp = u.panel( "hello", { title: "Top", borders: "top,bottom", width: 30 } );
+testkit.check( "panel: only the borders you list", bp.len() == 3 && !( bp[ 2 ] contains "│" ) && left( bp[ 1 ], 1 ) == "─" );
+testkit.check( "panel: title and subtitle alignment", u.panel( "x", { title: "R", titleAlign: "right", width: 20 } )[ 1 ] == "╭────────────── R ─╮" && u.panel( "x", { title: "M", titleAlign: "center", width: 20 } )[ 1 ] contains "─ M ─" );
+stl = u.styled().bold().red();
+testkit.check( "Style builds by chaining, applies, copies and patches", stl.spec() == "bold red" && stl.apply( "x" ) == "x" && stl.copy().onBlue().spec() == "bold red bg:blue" && stl.spec() == "bold red" && u.styled().dim().patch( u.styled().green() ).spec() == "dim green" );
 
 // ---- Out: one call, two outputs ----
 cli = new bxrig.util.Cli( "1.0" );

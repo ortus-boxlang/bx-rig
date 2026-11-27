@@ -1,7 +1,7 @@
 // Styled text and everything that needs to know how wide text really is: ANSI escapes take no room, a wide character (日, 😀) takes two
 // columns, a combining mark none. All widths in the ui helpers come from here.
 //   style( text, "bold accent" )  style( text, "dim" )  style( text, "##ff8800" )  style( text, "bg:warn black" )
-// Words in a style: bold dim italic underline inverse strike, a colour (role, name or hex), bg:COLOUR for the background.
+// Words in a style: bold dim italic underline inverse strike blink conceal, a colour (role, name or hex), bg:COLOUR for the background.
 // With colour off every style call returns the text unchanged, so output piped to a file or run under NO_COLOR is plain.
 class Ansi {
 	function init( term, theme ) {
@@ -52,6 +52,8 @@ class Ansi {
 				case "underline": out.append( "4" ); break;
 				case "inverse": out.append( "7" ); break;
 				case "strike": out.append( "9" ); break;
+				case "blink": out.append( "5" ); break;
+				case "conceal": out.append( "8" ); break;
 				default:
 					if ( left( x, 3 ) == "bg:" ) { var b = colorCode( mid( w, 4, len( w ) ), true ); if ( len( b ) ) out.append( b ); }
 					else { var f = colorCode( w ); if ( len( f ) ) out.append( f ); }

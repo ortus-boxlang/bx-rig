@@ -73,4 +73,50 @@ class Progress {
 	}
 
 	function rtrim( s ) { return reReplace( arguments.s, "\s+$", "" ); }
+
+	// ---- gauge (after ratatui's Gauge) ----
+	// A bar as wide as `width` (default: the terminal) with the label in the middle: the filled part is a solid colour behind the text.
+	// opts: width, label (default the percent), role ("ok"), unfilled ("zebra").
+	function gauge( ratio, opts = {} ) {
+		var w = arguments.opts.width ?: variables.ui.width();
+		var r = max( 0, min( 1, arguments.ratio ) );
+		var label = arguments.opts.label ?: int( round( r * 100 ) ) & "%";
+		var text = variables.ui.align( label, w, "center" );
+		var cut = int( round( r * w ) );
+		var parts = variables.ui.ansi().slice( text, cut );
+		var role = arguments.opts.role ?: "ok";
+		var left = variables.ui.style( parts[ 1 ], "bold black bg:" & role );
+		var rest = variables.ui.style( parts[ 2 ], "bg:" & ( arguments.opts.unfilled ?: "zebra" ) );
+		if ( !variables.ui.color() ) return [ "[" & repeatString( "##", cut ) & repeatString( "-", w - cut ) & "] " & label ];
+		return [ left & rest ];
+	}
+
+	// A thin gauge: label, then ━━━━━──── (after ratatui's LineGauge). opts: width of the line (30), role ("accent"), label.
+	function lineGauge( ratio, opts = {} ) {
+		var w = arguments.opts.width ?: 30;
+		var r = max( 0, min( 1, arguments.ratio ) );
+		var n = int( round( r * w ) );
+		var thick = variables.ui.unicode() ? "━" : "=";
+		var thin = variables.ui.unicode() ? "─" : "-";
+		var label = arguments.opts.label ?: int( round( r * 100 ) ) & "%";
+		return variables.ui.style( label, "bold" ) & " " & variables.ui.style( repeatString( thick, n ), arguments.opts.role ?: "accent" ) & variables.ui.style( repeatString( thin, w - n ), "dim" );
+	}
+
+	// ---- tabs (after ratatui's Tabs) ----
+	// titles in a row with a divider; the selected one (1-based) is highlighted. opts: divider ("│"), role ("accent").
+	function tabs( titles, selected = 1, opts = {} ) {
+		var div = " " & variables.ui.style( arguments.opts.divider ?: ( variables.ui.unicode() ? "│" : "|" ), "border" ) & " ";
+		var out = [];
+		var i = 0;
+		for ( var t in arguments.titles ) {
+			i++;
+			out.append( i == arguments.selected ? variables.ui.style( " " & t & " ", "bold black bg:" & ( arguments.opts.role ?: "accent" ) ) : variables.ui.style( " " & t & " ", "dim" ) );
+		}
+		if ( !variables.ui.color() ) {
+			out = [];
+			i = 0;
+			for ( var t2 in arguments.titles ) { i++; out.append( i == arguments.selected ? "[" & t2 & "]" : " " & t2 & " " ); }
+		}
+		return [ out.toList( div ) ];
+	}
 }

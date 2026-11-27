@@ -7,7 +7,9 @@ class Theme {
 			accent: "##00C8FF", accent2: "##00FF88", ok: "##00D26A", warn: "##F5C542", err: "##FF5C5C", info: "##5CC8FF",
 			text: "##E6E6E6", dim: "##7C8396", border: "##4B5368", header: "##00C8FF", zebra: "##1E222B",
 			black: "##000000", red: "##FF5C5C", green: "##00D26A", yellow: "##F5C542", blue: "##5C8DFF", magenta: "##C77DFF",
-			cyan: "##00C8FF", white: "##E6E6E6", gray: "##7C8396", grey: "##7C8396", orange: "##FF9E4A", pink: "##FF7AB6"
+			cyan: "##00C8FF", white: "##E6E6E6", gray: "##7C8396", grey: "##7C8396", orange: "##FF9E4A", pink: "##FF7AB6",
+			maroon: "##800000", olive: "##808000", navy: "##000080", silver: "##C0C0C0", lime: "##00FF00", fuchsia: "##FF00FF", aqua: "##00FFFF",
+			purple: "##800080", teal: "##008080", violet: "##AF5FFF", gold: "##FFD700", coral: "##FF7F50", salmon: "##FA8072", brown: "##A0522D", indigo: "##5F00AF"
 		};
 		for ( var k in structKeyArray( arguments.overrides ) ) variables.map[ k ] = arguments.overrides[ k ];
 		return this;
@@ -20,13 +22,28 @@ class Theme {
 		return this;
 	}
 
-	function knows( name ) { return structKeyExists( variables.map, lCase( arguments.name ) ); }
+	// "#rrggbb" of an xterm 256-colour index: 0-15 the system colours, 16-231 the colour cube, 232-255 the greys.
+	function xterm( n ) {
+		var i = int( arguments.n );
+		var sys = [ "##000000", "##800000", "##008000", "##808000", "##000080", "##800080", "##008080", "##C0C0C0", "##808080", "##FF0000", "##00FF00", "##FFFF00", "##0000FF", "##FF00FF", "##00FFFF", "##FFFFFF" ];
+		if ( i < 0 || i > 255 ) return "";
+		if ( i < 16 ) return sys[ i + 1 ];
+		if ( i >= 232 ) { var g = 8 + 10 * ( i - 232 ); return "##" & hx( g ) & hx( g ) & hx( g ); }
+		var steps = [ 0, 95, 135, 175, 215, 255 ];
+		var c = i - 16;
+		return "##" & hx( steps[ int( c / 36 ) + 1 ] ) & hx( steps[ int( ( c mod 36 ) / 6 ) + 1 ] ) & hx( steps[ ( c mod 6 ) + 1 ] );
+	}
+
+	function hx( v ) { return uCase( right( "0" & formatBaseN( arguments.v, 16 ), 2 ) ); }
+
+	function knows( name ) { return structKeyExists( variables.map, lCase( arguments.name ) ) || len( hex( arguments.name ) ) > 0; }
 
 	// "#rrggbb" of a role, a basic name or a hex ("" for anything else).
 	function hex( color ) {
 		var c = trim( arguments.color );
 		if ( reFind( "^##[0-9A-Fa-f]{6}$", c ) ) return uCase( c );
 		if ( structKeyExists( variables.map, lCase( c ) ) ) return variables.map[ lCase( c ) ];
+		if ( reFindNoCase( "^color[0-9]{1,3}$", c ) ) return xterm( mid( c, 6, 3 ) );
 		return "";
 	}
 

@@ -40,6 +40,23 @@ class Ui {
 	function gradient( text, stops = [ "accent", "accent2" ] ) { return variables.ansi.gradient( arguments.text, arguments.stops ); }
 	function link( text, url ) { return variables.ansi.link( arguments.text, arguments.url ); }
 
+	// The method-name language (see Dsl).
+	function dsl() {
+		if ( !structKeyExists( variables, "dslObj" ) ) variables.dslObj = new bxrig.ui.Dsl( variables.theme );
+		return variables.dslObj;
+	}
+
+	// The fluent print helper: a buffer you chain calls on and flush with toConsole(). See Print.
+	//   ui.printer().boldGreenText( "ok" ).line().redLine( "bad" ).table( rows ).toConsole()
+	function printer() { return new bxrig.ui.Print( this ); }
+
+	// A colour method on the toolkit itself returns a styled string: ui.boldRed( "failed" ), ui.greenOnBlack( "ok" ), ui.text( status, "green" ).
+	function onMissingMethod( missingMethodName, missingMethodArguments ) {
+		var a = arguments.missingMethodArguments;
+		var d = dsl().parse( arguments.missingMethodName, a.len() >= 2 ? a[ 2 ] : "" );
+		return style( a.len() >= 1 ? a[ 1 ] : "", d.spec );
+	}
+
 	// Prints the lines (an array) or the text.
 	function print( lines ) {
 		if ( isArray( arguments.lines ) ) { for ( var l in arguments.lines ) println( l ); }
@@ -86,13 +103,23 @@ class Ui {
 	function kv( pairs, opts = {} ) { return new bxrig.ui.Blocks( this ).kv( arguments.pairs, arguments.opts ); }
 	function list( items, opts = {} ) { return new bxrig.ui.Blocks( this ).list( arguments.items, arguments.opts ); }
 	function tree( nodes, opts = {} ) { return new bxrig.ui.Blocks( this ).tree( arguments.nodes, arguments.opts ); }
-	function columns( blocks, opts = {} ) { return new bxrig.ui.Blocks( this ).columns( arguments.blocks, arguments.opts ); }
+	function beside( blocks, opts = {} ) { return new bxrig.ui.Blocks( this ).beside( arguments.blocks, arguments.opts ); }
+	function columns( items, format = "", opts = {} ) { return new bxrig.ui.Blocks( this ).flow( arguments.items, arguments.format, arguments.opts ); }
+	function treeOf( data, format = "", opts = {} ) { return new bxrig.ui.Blocks( this ).treeOf( arguments.data, arguments.format, arguments.opts ); }
 	function badge( text, role = "accent" ) { return new bxrig.ui.Blocks( this ).badge( arguments.text, arguments.role ); }
 	function pill( text, role = "accent" ) { return new bxrig.ui.Blocks( this ).pill( arguments.text, arguments.role ); }
 	function status( kind, text ) { return new bxrig.ui.Blocks( this ).status( arguments.kind, arguments.text ); }
 	function bar( ratio, width = 24, opts = {} ) { return new bxrig.ui.Progress( this ).bar( arguments.ratio, arguments.width, arguments.opts ); }
 	function spark( values, opts = {} ) { return new bxrig.ui.Progress( this ).spark( arguments.values, arguments.opts ); }
 	function barChart( rows, opts = {} ) { return new bxrig.ui.Progress( this ).barChart( arguments.rows, arguments.opts ); }
+	function spans( parts ) { return new bxrig.ui.Blocks( this ).spans( arguments.parts ); }
+	function paragraph( text, opts = {} ) { return new bxrig.ui.Blocks( this ).paragraph( arguments.text, arguments.opts ); }
+	function layout( constraints, width, gap = 0 ) { return new bxrig.ui.Blocks( this ).layout( arguments.constraints, arguments.width, arguments.gap ); }
+	function split( blocks, constraints, opts = {} ) { return new bxrig.ui.Blocks( this ).split( arguments.blocks, arguments.constraints, arguments.opts ); }
+	function gauge( ratio, opts = {} ) { return new bxrig.ui.Progress( this ).gauge( arguments.ratio, arguments.opts ); }
+	function lineGauge( ratio, opts = {} ) { return new bxrig.ui.Progress( this ).lineGauge( arguments.ratio, arguments.opts ); }
+	function tabs( titles, selected = 1, opts = {} ) { return new bxrig.ui.Progress( this ).tabs( arguments.titles, arguments.selected, arguments.opts ); }
+	function styled() { return new bxrig.ui.Style( this ); }
 	function spinner() { return new bxrig.ui.Progress( this ); }
 	function steps( items, opts = {} ) { return new bxrig.ui.Progress( this ).steps( arguments.items, arguments.opts ); }
 	function live() { return new bxrig.ui.Live( this ); }

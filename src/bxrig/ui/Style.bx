@@ -1,0 +1,31 @@
+// A reusable style you build by chaining (after ratatui's Style): the same method-name language as the print helper.
+//   warn = ui.styled().boldYellow();   warn.apply( "careful" );   warn.spec()  -> "bold yellow"
+//   loud = warn.copy().onRed();        ui.styled().dim().patch( loud )     (the later style wins where both set a colour)
+// Each call adds to the same style and returns it; copy() starts a new one from it.
+class Style {
+	function init( ui, name = "" ) {
+		variables.ui = arguments.ui;
+		variables.name = arguments.name;
+		return this;
+	}
+
+	// Any method name adds to the style: .bold(), .red(), .onBlue(), .color221(), .underscored().
+	function onMissingMethod( missingMethodName, missingMethodArguments ) {
+		variables.name &= uCase( left( arguments.missingMethodName, 1 ) ) & mid( arguments.missingMethodName, 2, len( arguments.missingMethodName ) );
+		return this;
+	}
+
+	function named( name ) { variables.name = arguments.name; return this; }
+	// A copy to build on without changing this style.
+	function copy() { return variables.ui.styled().named( variables.name ); }
+
+	function spec() { return variables.ui.dsl().parse( variables.name ).spec; }
+	function name() { return variables.name; }
+	// The text in this style.
+	function apply( text ) { return variables.ui.style( arguments.text, spec() ); }
+	// This style with another one on top.
+	function patch( other ) {
+		var o = arguments.other.name();
+		return variables.ui.styled().named( variables.name & uCase( left( o, 1 ) ) & mid( o, 2, len( o ) ) );
+	}
+}
