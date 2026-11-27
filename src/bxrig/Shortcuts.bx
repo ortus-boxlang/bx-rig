@@ -146,8 +146,9 @@ class Shortcuts {
 			remap( "mac-comma", "Preferences", "Super+Comma", "Ctrl-comma", "Super-comma" ),
 			remap( "switch-windows", "Switch windows", "Super+Tab", "Alt-Tab", "" ),
 			// menus and launchers
-			bx( "menu", G.menu, "BxRig menu (the runner: AI, databases, settings)", "Super+Space", "Super+Space", "menu" ),
-			row( "launcher", G.menu, "Launch apps (the launcher you chose; Noctalia if it cannot run)", "Super+Alt+Space", "Super+Alt+Space", "hypr-bind",
+			row( "menu", G.menu, "BxRig menu (browse by section; the Noctalia panel, or your menu program)", "Super+Alt+Space", "Super+Alt+Space", "hypr-bind",
+				'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:menu || bxrig menu'']])', "menu" ),
+			row( "launcher", G.menu, "Launcher: search apps, actions, themes, clipboard (the launcher you chose; Noctalia if it cannot run)", "Super+Space", "Super+Space", "hypr-bind",
 				'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; bxrig runner launch || noctalia msg panel-toggle launcher'']])', "runner launch" ),
 			bx( "key-sheet", G.menu, "Shortcut cheat sheet", "Super+K", "Super+K", "keys sheet" ),
 			bx( "menu-system", G.menu, "System menu", "Super+Escape", "Super+Escape", "menu open system" ),
@@ -174,7 +175,7 @@ class Shortcuts {
 			row( "boxy-talk-copilot-release", G.apps, "Talk to Boxy with the Copilot key: let go to send", "Super+Shift+F23", "Super+Shift+F23", "hypr-bind", execBxrig( "boxy listen stop" ), "boxy listen stop", "{ release = true }" ),
 			// capture and recording
 			bx( "emoji", G.cap, "Emoji picker", "Super+Ctrl+E", "Super+Ctrl+E", "emoji" ),
-			bx( "clipboard-history", G.cap, "Clipboard history", "Super+Ctrl+V", "Super+Ctrl+V", "clipboard pick" ),
+			row( "clipboard-history", G.cap, "Clipboard history (search, preview, Enter copies)", "Super+Ctrl+V", "Super+Ctrl+V", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:clipboard || bxrig clipboard pick'']])', "clipboard pick" ),
 			bx( "screenshot-screen", G.cap, "Screenshot: the whole screen", "", "Super+Shift+3", "screenshot screen" ),
 			bx( "screenshot-region", G.cap, "Screenshot: a region", "", "Super+Shift+4", "screenshot region" ),
 			bx( "screenshot-menu", G.cap, "Screenshot menu (region, window, OCR, QR, record)", "", "Super+Shift+5", "screenshot menu" ),

@@ -27,7 +27,7 @@ assert c['shell']['setup_wizard_enabled'] is False and c['shell']['launcher']['a
 assert 'bxrig-agents' in m['end'] and 'bxrig-quick' in m['end'] and 'caffeine' not in m['end']
 assert m['end'].index('bxrig-dev') == m['end'].index('bxrig-system') + 1 and c['widget']['bxrig-dev']['type'] == 'bxrig/dev:bar'
 assert m['end'].index('bxrig-vpn') == m['end'].index('bxrig-dev') + 1 and m['end'].index('bxrig-vpn') < m['end'].index('tray') and c['widget']['bxrig-vpn']['type'] == 'bxrig/vpn:bar'
-assert c['plugins']['enabled'] == ['bxrig/clock', 'bxrig/agents', 'bxrig/system', 'bxrig/quick', 'bxrig/dev', 'bxrig/power', 'bxrig/vpn']
+assert c['plugins']['enabled'] == ['bxrig/clock', 'bxrig/agents', 'bxrig/system', 'bxrig/quick', 'bxrig/dev', 'bxrig/power', 'bxrig/vpn', 'bxrig/launcher']
 assert c['widget']['bxrig-system']['type'] == 'bxrig/system:bar' and m['end'].index('screenshot') + 1 == m['end'].index('bxrig-system') and m['end'].index('bxrig-system') < m['end'].index('tray')
 assert c['notification']['group_by_app'] is True and c['notification']['border_color'] == 'primary'
 assert c['wallpaper']['directory'] == sys.argv[2] + '/Pictures/BxRig'

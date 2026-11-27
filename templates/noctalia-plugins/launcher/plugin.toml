@@ -1,0 +1,59 @@
+# BxRig Launcher: one search box for everything, in the style of Raycast. Type to find an application, any action of the BxRig menu (with its
+# path, like "Trigger › Capture"), a theme, a calculator answer, or fall back to a web search. A second panel shows the clipboard history.
+# Panels (no bar widget):
+#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab
+#   menu       the drill-down menu noctalia msg panel-toggle bxrig/launcher:menu       (Super+Alt+Space)
+#   clipboard  clipboard history  noctalia msg panel-toggle bxrig/launcher:clipboard  (Super+Shift+V)
+# Data: menu: `bxrig menu level [PATH] --json`, a leaf runs `bxrig launcher run menu:ID`.
+#   Boxy: `bxrig ai agents ask TEXT --thread=ID --json`, `ai agents approve|reject THREAD`.
+#   Launcher: `bxrig launcher search QUERY --limit=30 --json` on every keystroke; Enter runs `bxrig launcher run ID QUERY`.
+#   Clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, Enter runs `bxrig clipboard copy ID`.
+# The ranking idea follows oma-cast (https://github.com/typecraft-dev/oma-cast, MIT).
+
+id = "bxrig/launcher"
+name = "Launcher (BxRig)"
+version = "1.0.0"
+plugin_api = 43
+author = "bxrig"
+license = "MIT"
+dependencies = ["bxrig"]
+tags = ["launcher", "search", "clipboard", "bxrig"]
+icon = "search"
+description = "One search box for apps, menu actions, themes, calculator answers and web searches, plus the clipboard history, driven by bxrig."
+
+[[setting]]
+key = "command"
+type = "string"
+label_key = "settings.command.label"
+description_key = "settings.command.description"
+default = "bxrig"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 760
+height = 580
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2"]
+
+[[panel]]
+id = "clipboard"
+entry = "clipboard.luau"
+width = 860
+height = 600
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]
+
+[[panel]]
+id = "menu"
+entry = "menu.luau"
+width = 560
+height = 620
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Left", "Right"]

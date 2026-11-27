@@ -2204,7 +2204,7 @@
 						{
 							"value": "noctalia",
 							"label": "Noctalia launcher",
-							"description": "Built into the Noctalia shell, with app search and more. Opens with Super+Space."
+							"description": "The BxRig launcher in the Noctalia shell: apps, menu actions, themes, a calculator and clipboard history in one search box. Opens with Super+Space; the drill-down menu is Super+Alt+Space."
 						},
 						{
 							"value": "walker",

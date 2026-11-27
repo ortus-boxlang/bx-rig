@@ -1,6 +1,9 @@
 // `bxrig clipboard`: clipboard history on Wayland, with cliphist and wl-clipboard.
 //   pick            shows the history with your menu provider (`runner menu-set`), copies the chosen entry back to the clipboard
 //   clear [--yes]   wipes the history (`cliphist wipe`; plan without --yes)
+//   list [QUERY] [--limit=N]   the history as rows { id, kind, preview, chars } (text and images), newest first, for the launcher panel
+//   show ID         one entry in full (text up to 4000 characters, or the image's details)
+//   copy ID         puts one entry back on the clipboard (text or image)
 //   status          whether cliphist and wl-clipboard are installed and how many entries there are
 // The history is filled by the Hyprland module: `wl-paste --type text --watch cliphist store` runs at login (written by `keys apply`).
 // Text entries only: image entries are listed by cliphist but are not offered here. Exit: 0 done or cancelled, 2 plan without --yes,
@@ -47,6 +50,82 @@ class Clipboard {
 		var cp = systemExecute( "wl-copy", [], 30, true, ".", "", "", true, {}, false, dec.output );
 		if ( cp.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "wl-copy failed" }, arguments.asJson, [ "error: wl-copy failed" ] );
 		return variables.cli.say( cmd, "ok", { copied: true }, arguments.asJson, [ "Copied." ] );
+	}
+
+	/**
+	 * The history as rows, newest first. cliphist lines are "ID<TAB>preview"; an image has the preview "[[ binary data SIZE FORMAT WxH ]]".
+	 * @query Optional words: every word must appear in the preview (images match only an empty query or the word image).
+	 * @limit The most rows.
+	 * @return Array of { id, kind, preview, chars }.
+	 */
+	function rows( query = "", limit = 50 ) {
+		var r = variables.proc.exec( [ "cliphist", "list" ], 30 );
+		if ( r.exitCode != 0 ) return [];
+		var words = listToArray( lCase( trim( arguments.query ) ), " " );
+		var out = [];
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) {
+			var t = find( chr( 9 ), l );
+			if ( t == 0 || !isNumeric( left( l, t - 1 ) ) ) continue;
+			var pv = mid( l, t + 1, len( l ) );
+			var img = find( "binary data", pv ) > 0;
+			var hay = lCase( img ? "image " & pv : pv );
+			var ok = true;
+			for ( var w in words ) if ( find( w, hay ) == 0 ) { ok = false; break; }
+			if ( !ok ) continue;
+			out.append( { id: left( l, t - 1 ), kind: img ? "image" : "text", preview: left( trim( pv ), 160 ), chars: len( pv ) } );
+			if ( out.len() >= arguments.limit ) break;
+		}
+		return out;
+	}
+
+	/**
+	 * `clipboard list [QUERY]`.
+	 * @query Words to filter by.
+	 * @limit The most rows.
+	 * @asJson True for JSON output.
+	 */
+	function list( query, limit, asJson ) {
+		var cmd = "clipboard list";
+		if ( !variables.proc.has( "cliphist" ) ) return variables.cli.say( cmd, "precondition", { error: "cliphist is not installed" }, arguments.asJson, [ "error: cliphist is not installed. Install: bxrig install cliphist" ] );
+		var all = rows( arguments.query, arguments.limit );
+		var lines = all.map( function( r ) { return r.id & "  " & r.preview; } );
+		if ( !all.len() ) lines.append( "The clipboard history is empty." );
+		return variables.cli.say( cmd, "ok", { entries: all }, arguments.asJson, lines );
+	}
+
+	/**
+	 * `clipboard show ID`: one entry in full.
+	 * @id The entry id from list.
+	 * @asJson True for JSON output.
+	 */
+	function show( id, asJson ) {
+		var cmd = "clipboard show";
+		if ( !variables.proc.has( "cliphist" ) ) return variables.cli.say( cmd, "precondition", { error: "cliphist is not installed" }, arguments.asJson, [ "error: cliphist is not installed. Install: bxrig install cliphist" ] );
+		if ( !isNumeric( arguments.id ) ) return variables.cli.say( cmd, "usage", { error: "ID is the number from clipboard list" }, arguments.asJson, [ "error: ID is the number from clipboard list" ] );
+		var hit = rows( "", 2000 ).filter( function( r ) { return r.id == id; } );
+		if ( !hit.len() ) return variables.cli.say( cmd, "precondition", { error: "no clipboard entry " & arguments.id }, arguments.asJson, [ "error: no clipboard entry " & arguments.id ] );
+		var e = hit[ 1 ];
+		if ( e.kind == "image" ) return variables.cli.say( cmd, "ok", { id: e.id, kind: "image", text: "", details: e.preview }, arguments.asJson, [ e.preview ] );
+		var dec = systemExecute( "cliphist", [ "decode" ], 30, true, ".", "", "", true, {}, false, arguments.id );
+		var full = dec.exitCode == 0 ? dec.output : e.preview;
+		var cut = len( full ) > 4000;
+		if ( cut ) full = left( full, 4000 );
+		return variables.cli.say( cmd, "ok", { id: e.id, kind: "text", text: full, chars: len( dec.output ), truncated: cut }, arguments.asJson, [ full ] );
+	}
+
+	/**
+	 * `clipboard copy ID`: the entry back on the clipboard.
+	 * @id The entry id from list.
+	 * @asJson True for JSON output.
+	 */
+	function copy( id, asJson ) {
+		var cmd = "clipboard copy";
+		var m = missing( cmd, arguments.asJson );
+		if ( m != 0 ) return m;
+		if ( !isNumeric( arguments.id ) ) return variables.cli.say( cmd, "usage", { error: "ID is the number from clipboard list" }, arguments.asJson, [ "error: ID is the number from clipboard list" ] );
+		var sh = variables.proc.exec( [ "sh", "-c", 'printf %s "$1" | cliphist decode | wl-copy', "_", arguments.id ], 30 );
+		if ( sh.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "could not copy entry " & arguments.id }, arguments.asJson, [ "error: could not copy entry " & arguments.id ] );
+		return variables.cli.say( cmd, "ok", { copied: true, id: arguments.id }, arguments.asJson, [ "Copied." ] );
 	}
 
 	// `clipboard clear [--yes]`

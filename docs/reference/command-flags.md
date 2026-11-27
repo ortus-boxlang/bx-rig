@@ -282,6 +282,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `record` | `--audio` | value | `desktop` | Add sound: desktop (what plays) or mic (default microphone) |
 | `record` | `--webcam` | any | `top-left` | Show the webcam in a corner (default bottom-right, or name one) |
 | `record` | `--webcam-size` | value | `small` | Size of the webcam picture: small, medium (default) or large |
+| `clipboard` | `--limit` | value |  | The most entries list returns (default 50) |
 | `dolphin` | `--fix` | bool |  | Rebuild KDE's service cache to repair an empty Open with menu |
 | `input` | `--for` | value |  | Devices to plan helpers for: detect, apple, logitech, both, none |
 | `input` | `--scroll-speed` | value | `0..63` | Set Magic Mouse and Trackpad scroll speed, 0 to 63 (default 32) |

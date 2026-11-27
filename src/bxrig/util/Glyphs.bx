@@ -1,0 +1,73 @@
+/**
+ * Icons for the launcher and the menu panel: a Tabler glyph name and a colour role for a row, so the panels draw a tile that follows the
+ * Noctalia theme (the glyph takes the role's colour, the tile its tint). Chosen from the menu section a row lives in, and refined by words in
+ * its title (Screenshot gets a camera, Record a video camera). Names are Tabler icon names, which Noctalia's glyph element draws.
+ *   forRow( "Screenshot", "Trigger" )   ->  { glyph: "camera", tone: "primary" }
+ */
+class Glyphs {
+
+	/**
+	 * The glyph of a top-level menu section.
+	 * @label The section label, for example "Appearance".
+	 * @return A Tabler glyph name.
+	 */
+	function section( label ) {
+		var map = {
+			"Apps": "apps", "Setup wizard (re-run, prefilled)": "wand", "Install": "download", "Remove": "trash", "Appearance": "palette", "Trigger": "bolt",
+			"Shortcuts": "keyboard", "Hardware": "cpu", "Setup": "settings", "Update": "refresh", "Develop": "code", "Agent": "sparkles", "Learn": "school",
+			"About": "info-circle", "System": "power", "Control Center": "layout-dashboard"
+		};
+		return structKeyExists( arguments, "label" ) && structKeyExists( map, arguments.label ) ? map[ arguments.label ] : "list-details";
+	}
+
+	/**
+	 * The colour role of a top-level menu section: a few sections are tinted differently so a long list is not one colour.
+	 * @label The section label.
+	 * @return primary | secondary | tertiary | error.
+	 */
+	function tone( label ) {
+		var l = arguments.label;
+		if ( arrayFind( [ "Remove", "System" ], l ) ) return "error";
+		if ( arrayFind( [ "Appearance", "Shortcuts", "Learn", "About" ], l ) ) return "secondary";
+		if ( arrayFind( [ "Develop", "Agent", "Update", "Install" ], l ) ) return "tertiary";
+		return "primary";
+	}
+
+	/**
+	 * Words in a title that call for a better glyph than the section's, first match wins.
+	 * @title The row title.
+	 * @return A glyph name, or "".
+	 */
+	function byWords( title ) {
+		var t = lCase( arguments.title );
+		var words = [
+			[ "screen recording", "video" ], [ "record", "video" ], [ "screenshot", "camera" ], [ "capture", "camera" ], [ "region", "crop" ], [ "color picker", "color-picker" ], [ "qr", "qrcode" ], [ "ocr", "text-scan-2" ],
+			[ "clipboard", "clipboard" ], [ "emoji", "mood-smile" ], [ "wifi", "wifi" ], [ "bluetooth", "bluetooth" ], [ "network", "network" ], [ "volume", "volume" ], [ "audio", "volume" ],
+			[ "brightness", "sun" ], [ "night light", "moon" ], [ "theme", "palette" ], [ "wallpaper", "photo" ], [ "background", "photo" ], [ "font", "typography" ], [ "bar", "layout-navbar" ],
+			[ "dock", "layout-bottombar" ], [ "layout", "layout-grid" ], [ "window", "app-window" ], [ "screen", "device-desktop" ], [ "terminal", "terminal-2" ], [ "shell", "terminal-2" ], [ "keyboard", "keyboard" ],
+			[ "mouse", "mouse" ], [ "touchpad", "device-laptop" ], [ "power", "power" ], [ "battery", "battery-charging" ], [ "lock", "lock" ], [ "password", "key" ], [ "fingerprint", "fingerprint" ],
+			[ "backup", "database-export" ], [ "restore", "history" ], [ "update", "refresh" ], [ "install", "download" ], [ "remove", "trash" ], [ "uninstall", "trash" ], [ "database", "database" ],
+			[ "container", "box" ], [ "docker", "brand-docker" ], [ "git", "git-branch" ], [ "boxlang", "code" ], [ "ai ", "sparkles" ], [ "agent", "sparkles" ], [ "model", "brain" ], [ "share", "share" ],
+			[ "vpn", "shield-lock" ], [ "dns", "world-www" ], [ "speed", "gauge" ], [ "docs", "book" ], [ "help", "help-circle" ], [ "about", "info-circle" ], [ "log out", "logout" ], [ "restart", "rotate" ],
+			[ "shutdown", "power" ], [ "suspend", "player-pause" ], [ "hibernate", "snowflake" ], [ "screensaver", "device-desktop" ], [ "notification", "bell" ], [ "clock", "clock" ], [ "time", "clock" ]
+		];
+		for ( var w in words ) if ( find( w[ 1 ], t ) > 0 ) return w[ 2 ];
+		return "";
+	}
+
+	/**
+	 * The glyph and colour role of a row.
+	 * @title The row title.
+	 * @sectionLabel The top-level menu section it lives in ("" for rows that are not menu actions).
+	 * @parent The path of the submenus above the row, for example "Trigger > Capture" ("" at the top).
+	 * @isSub True for a submenu (a folder of more entries): it keeps its section's glyph.
+	 * @return { glyph, tone }.
+	 */
+	function forRow( title, sectionLabel = "", isSub = false, parent = "" ) {
+		var g = arguments.isSub ? "" : byWords( arguments.title );
+		// a row with no word of its own takes the glyph of the submenu it sits in (Capture gives Screen and Region a camera or a crop)
+		if ( !len( g ) && len( arguments.parent ) ) g = byWords( arguments.parent );
+		if ( !len( g ) ) g = len( arguments.sectionLabel ) ? section( arguments.sectionLabel ) : "list-details";
+		return { glyph: g, tone: len( arguments.sectionLabel ) ? tone( arguments.sectionLabel ) : "primary" };
+	}
+}

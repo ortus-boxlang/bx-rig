@@ -1,0 +1,115 @@
+// The BxRig Noctalia plugin bxrig/launcher: manifest, files, translations and a structural check of the Luau (no Luau interpreter in CI).
+// Run from src/: (cd src && matchbox ../tests/plugin_launcher_test.bxs)
+// Reads the scripts as text: every file the manifest names exists, the blocks balance, the bxrig commands the plugin runs are ones the CLI
+// has, the refresh rates and the hide-when-empty rule are there, and no em dash is in any file.
+testkit = new lib.Check( "launcher plugin" );
+root = expandPath( "../templates/noctalia-plugins" );
+dir = root & "/launcher";
+
+// The script text without comments and string literals, so a keyword inside a message does not count.
+function bare( text ) {
+	var out = "";
+	for ( var line in listToArray( text, chr( 10 ), true ) ) {
+		var i = 1;
+		var res = "";
+		var q = "";
+		while ( i <= len( line ) ) {
+			var ch = mid( line, i, 1 );
+			if ( len( q ) ) {
+				if ( compare( ch, "\" ) == 0 ) { i += 2; continue; }
+				if ( compare( ch, q ) == 0 ) q = "";
+			} else if ( compare( ch, '"' ) == 0 || compare( ch, "'" ) == 0 ) { q = ch; res &= '""'; }
+			else if ( compare( ch, "-" ) == 0 && compare( mid( line, i, 2 ), "--" ) == 0 ) break;
+			else res &= ch;
+			i++;
+		}
+		out &= res & chr( 10 );
+	}
+	return out;
+}
+
+// Opens minus closes of Luau blocks (function, if, for/while ... do, `do`) against `end`.
+function balance( text ) {
+	var words = listToArray( " " & reReplace( bare( text ), "[^A-Za-z_0-9]", " ", "all" ) & " ", " ", false );
+	var depth = 0;
+	var loopHead = 0;
+	for ( var w in words ) {
+		if ( compare( w, "function" ) == 0 || compare( w, "if" ) == 0 ) depth++;
+		else if ( compare( w, "for" ) == 0 || compare( w, "while" ) == 0 ) loopHead++;
+		else if ( compare( w, "do" ) == 0 ) { if ( loopHead > 0 ) loopHead--; depth++; }
+		else if ( compare( w, "end" ) == 0 ) depth--;
+	}
+	return depth;
+}
+
+function textOf( rel ) { return fileRead( root & "/" & rel ); }
+
+testkit.check( "the folder exists", directoryExists( dir ) );
+manifest = textOf( "launcher/plugin.toml" );
+testkit.check( "id bxrig/launcher, plugin_api 43, author bxrig, the bxrig dependency", find( 'id = "bxrig/launcher"', manifest ) > 0 && find( "plugin_api = 43", manifest ) > 0 && find( 'author = "bxrig"', manifest ) > 0 && find( 'dependencies = ["bxrig"]', manifest ) > 0 );
+testkit.check( "the plugin-level command setting", find( 'key = "command"', manifest ) > 0 && find( 'default = "bxrig"', manifest ) > 0 );
+testkit.check( "three floating, centered panels with exclusive keyboard focus: the launcher, the clipboard history and the menu", find( 'id = "panel"', manifest ) > 0 && find( 'id = "clipboard"', manifest ) > 0 && find( 'id = "menu"', manifest ) > 0 && find( 'placement = "floating"', manifest ) > 0 && find( 'keyboard_focus = "exclusive"', manifest ) > 0 && find( "bar.luau", manifest ) == 0 );
+ok = true; entries = 0;
+for ( line in listToArray( manifest, chr( 10 ) ) ) {
+	if ( reFind( '^entry = "', trim( line ) ) ) {
+		entries++;
+		f = listFirst( listRest( trim( line ), '"' ), '"' );
+		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
+	}
+}
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 3 );
+testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "launcher/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
+tr = jsonDeserialize( textOf( "launcher/translations/en.json" ) );
+testkit.check( "translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings, "command" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );
+ok = true;
+for ( f in directoryList( dir, false, "name" ) ) {
+	if ( right( f, 5 ) == ".luau" ) {
+		t = textOf( "launcher/" & f );
+		if ( compare( left( t, 12 ), "--!nonstrict" ) != 0 ) { ok = false; println( "  no --!nonstrict in " & f ); }
+		if ( balance( t ) != 0 ) { ok = false; println( "  unbalanced blocks in " & f & " (" & balance( t ) & ")" ); }
+	}
+}
+testkit.check( "every script is nonstrict and its blocks balance", ok );
+ok = true;
+for ( f in directoryList( dir, true, "path" ) ) {
+	if ( !directoryExists( f ) && find( chr( 8212 ), fileRead( f ) ) ) { ok = false; println( "  em dash in " & f ); }
+}
+testkit.check( "no em dash in any file", ok );
+
+
+// ---- the launcher panel ----
+pn = textOf( "launcher/panel.luau" );
+testkit.check( "panel: searches with `launcher search QUERY --limit=30 --json` and drops an older answer", find( '"launcher", "search"', pn ) > 0 and find( '"--limit=30"', pn ) > 0 and find( "mine ~= seq", pn ) > 0 );
+testkit.check( "panel: runs a row with `launcher run ID` and passes the words only for answer and web rows", find( '"launcher", "run", str(row.id)', pn ) > 0 and find( 'kind == "answer" or kind == "web"', pn ) > 0 );
+testkit.check( "panel: a big answer card, breadcrumbs, an Actions list on F2, and an Open button", find( "renderAnswer", pn ) > 0 and find( "row.breadcrumb", pn ) > 0 and find( '"Actions  F2"', pn ) > 0 and find( '"Open  ↵"', pn ) > 0 );
+testkit.check( "panel: the Clipboard history row opens the clipboard panel", find( 'togglePanel("bxrig/launcher:clipboard")', pn ) > 0 );
+testkit.check( "panel: keys Up, Down, Page_Up, Page_Down, Return, Tab and F2 are captured by the manifest and handled", find( '"Tab"', manifest ) > 0 and find( '"F2"', manifest ) > 0 and find( 'chord == "Tab"', pn ) > 0 and find( 'chord == "F2"', pn ) > 0 and find( 'chord == "Return"', pn ) > 0 );
+testkit.check( "panel: rows are tiles tinted with a theme colour role and a glyph from the backend", find( "local function tile(row, size)", pn ) > 0 and find( '.. "/0.16"', pn ) > 0 and find( "row.glyph", pn ) > 0 and find( "row.tone", pn ) > 0 );
+testkit.check( "panel: Boxy mode asks with `ai agents ask TEXT --thread=ID --json`, approves and rejects tools, and offers to start or make Boxy", find( '{ "ai", "agents", "ask", text }', pn ) > 0 and find( '"--thread=" .. thread', pn ) > 0 and find( '{ "ai", "agents", decision, thread, "--json" }', pn ) > 0 and find( '"onApprove"', pn ) > 0 and find( '"onReject"', pn ) > 0 and find( '{ "ai", "agents", "start", name }', pn ) > 0 and find( '{ "ai", "agents", "setup", "--yes" }', pn ) > 0 );
+testkit.check( "panel: an Ask Boxy row and Tab enter Boxy mode, Tab leaves it", find( 'id = "ai:ask"', pn ) > 0 and find( "enterBoxy(", pn ) > 0 and find( "enterLauncher()", pn ) > 0 );
+
+// ---- the clipboard panel ----
+cp = textOf( "launcher/clipboard.luau" );
+testkit.check( "clipboard: lists with `clipboard list QUERY --limit=60 --json`, shows with `clipboard show ID --json`, copies with `clipboard copy ID`", find( '"clipboard", "list"', cp ) > 0 and find( '"clipboard", "show", id, "--json"', cp ) > 0 and find( '"clipboard", "copy", str(e.id)', cp ) > 0 );
+testkit.check( "clipboard: a detail pane, image entries, and a Clear history button that asks twice", find( "loadDetail", cp ) > 0 and find( 'kind == "image"', cp ) > 0 and find( "armedClear", cp ) > 0 and find( '"clipboard", "clear", "--yes"', cp ) > 0 );
+testkit.check( "panels run no shell and no sudo", find( "os.execute", pn & cp ) == 0 && find( "sudo", bare( pn & cp ) ) == 0 );
+
+// ---- the menu panel ----
+mn = textOf( "launcher/menu.luau" );
+testkit.check( "menu: lists a level with `menu level [PATH] --json` and opens sections, goes up with Left and the header arrow", find( '{ "menu", "level" }', mn ) > 0 and find( 'chord == "Left"', mn ) > 0 and find( 'chord == "Right"', mn ) > 0 and find( '"onUp"', mn ) > 0 and find( 'table.concat(crumbs, "  ›  ")', mn ) > 0 );
+testkit.check( "menu: a leaf runs `launcher run menu:ID`, tiles are tinted by the entry's colour role and show a glyph, sections show a chevron", find( '"launcher", "run", "menu:" .. str(e.id)', mn ) > 0 and find( '.. "/0.16"', mn ) > 0 and find( "e.glyph", mn ) > 0 and find( '"chevron-right"', mn ) > 0 );
+testkit.check( "menu: the manifest captures Left and Right for it", find( 'capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Left", "Right"]', manifest ) > 0 );
+
+// every command the plugin runs is in the CLI's usage text
+ok = true;
+for ( pair in [ [ "launcher", "search" ], [ "launcher", "run ID" ], [ "clipboard", "list" ], [ "clipboard", "show ID" ], [ "clipboard", "copy ID" ], [ "clipboard", "clear" ], [ "menu", "level [PATH]" ], [ "ai", "agents ask TEXT" ], [ "ai", "agents approve|reject THREAD" ], [ "ai", "agents start|stop|status NAME" ], [ "ai", "agents chat [NAME] [--window]" ], [ "ai", "agents setup" ], [ "boxy", "--json" ] ] ) {
+	if ( !find( pair[ 2 ], new bxrig.CommandSpec().usage( pair[ 1 ] ) ) ) { ok = false; println( "  " & pair[ 1 ] & " usage lacks: " & pair[ 2 ] ); }
+}
+testkit.check( "the CLI knows every launcher and clipboard verb the plugin runs", ok );
+
+// the starter installs it beside the other plugins (every file of the folder, translations included)
+starter = new bxrig.Starter( true );
+targets = starter.entries().map( function( e ) { return e.target; } ).filter( function( t ) { return find( "/noctalia/plugins/launcher/", t ) > 0; } );
+testkit.check( "starter: the launcher plugin's six files are installed beside the other plugins", targets.len() == 6 );
+
+testkit.done( "all passed" );

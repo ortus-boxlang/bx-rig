@@ -158,7 +158,7 @@ class Launcher {
 		if ( sub == "setup" && w.len() == 1 ) return setup( yes, dry, arguments.asJson );
 		if ( sub == "scripts" && w.len() == 1 ) return scriptsCmd( false, yes, dry, arguments.asJson );
 		if ( sub == "scripts" && w.len() == 2 && w[ 2 ] == "remove" ) return scriptsCmd( true, yes, dry, arguments.asJson );
-		if ( ( sub == "search" && w.len() >= 1 ) || ( sub == "run" && w.len() == 2 ) ) return new bxrig.LauncherSearch( variables.cli ).dispatch( w, arguments.opts, dry, arguments.asJson );
+		if ( ( sub == "search" && w.len() >= 1 ) || ( sub == "run" && w.len() >= 2 ) ) return new bxrig.LauncherSearch( variables.cli ).dispatch( w, arguments.opts, dry, arguments.asJson );
 		if ( sub == "files" ) return files( w.len() > 1 ? w.slice( 2 ).toList( " " ) : "", arguments.asJson );
 		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "launcher" ), arguments.asJson );
 	}

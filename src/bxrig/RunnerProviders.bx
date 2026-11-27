@@ -15,7 +15,7 @@ class RunnerProviders {
 	function all() {
 		return [
 			{ id: "system", title: "Desktop default", package: "", launch: [], menu: {} },
-			{ id: "noctalia", title: "Noctalia launcher", package: "", launch: [ "noctalia", "msg", "panel-toggle", "launcher" ], menu: {} },
+			{ id: "noctalia", title: "BxRig launcher (Noctalia)", package: "", launch: [ "noctalia", "msg", "panel-toggle", "bxrig/launcher:panel" ], menu: {} },
 			{ id: "walker", title: "Walker", package: "walker", launch: [ "walker" ], menu: { argv: [ "walker", "--dmenu" ], icons: false, returns: "text" } },
 			{ id: "rofi", title: "Rofi", package: "rofi", launch: [ "rofi", "-show", "drun" ], menu: { argv: [ "rofi", "-dmenu", "-i", "-show-icons", "-format", "i", "-p", "{prompt}" ], input: [ "rofi", "-dmenu", "-l", "0", "-p", "{prompt}" ], icons: true, returns: "index" } },
 			{ id: "fuzzel", title: "Fuzzel", package: "fuzzel", launch: [ "fuzzel" ], menu: { argv: [ "fuzzel", "--dmenu", "--index", "--prompt", "{prompt}" ], icons: true, returns: "index" } },
