@@ -1,0 +1,70 @@
+// The shortcuts browser: keycaps, groups, filtering, toggles and drawing. Run from src/: (cd src && matchbox ../tests/shortcuts_page_test.bxs)
+testkit = new lib.Check( "shortcuts page" );
+caps = new bxrig.KeyCaps();
+testkit.check( "caps: a combination splits into keys", caps.tokens( "Super+Shift+T" ).toList( "," ) == "Super,Shift,T" );
+testkit.check( "caps: key names are printed the way the key reads", caps.tokens( "Super+grave" ).toList( "," ) == "Super,`" && caps.tokens( "Super+Return" ).toList( "," ) == "Super,Enter" && caps.tokens( "XF86AudioRaiseVolume" ).toList( "," ) == "Vol up" );
+testkit.check( "caps: unbound or empty has no keys", caps.tokens( "" ).len() == 0 && caps.tokens( "unbound" ).len() == 0 && caps.text( "" ) == "unbound" );
+testkit.check( "caps: plain text has spaces around the plus", caps.text( "Super+Alt+Space" ) == "Super + Alt + Space" );
+testkit.check( "caps: the width counts each key with a space either side and one between", caps.width( "Super+C" ) == ( 5 + 2 ) + 1 + ( 1 + 2 ) );
+
+rows = [
+	{ id: "copy", action: "Copy", keys: "Super+C", group: "Editing", how: "xremap", custom: false },
+	{ id: "undo", action: "Undo", keys: "", group: "Editing", how: "xremap", custom: false },
+	{ id: "term", action: "Terminal", keys: "Super+Return", group: "Apps", how: "Hyprland binding", custom: true },
+	{ id: "close", action: "Close window", keys: "Super+W", group: "Windows", how: "Hyprland binding", custom: false },
+	{ id: "float", action: "Floating window", keys: "Super+F", group: "Windows", how: "Hyprland binding", custom: false }
+];
+pg = new bxrig.ShortcutsPage( false, rows );
+pg.load();
+st = pg.state();
+testkit.check( "load: the groups in the order they appear", st.groups.toList( "," ) == "Editing,Apps,Windows" && st.group == "All" );
+testkit.check( "load: shortcuts without keys are hidden at first", st.rows == 5 && st.shown == 4 );
+pg.onKey( "u" );
+testkit.check( "u: shows the ones without keys too, again hides them", pg.state().shown == 5 && ( pg.onKey( "u" ) == {} ) && pg.state().shown == 4 );
+pg.onKey( "Right" );
+testkit.check( "right: the next group, only its shortcuts", pg.state().group == "Editing" && pg.state().shown == 1 );
+pg.onKey( "3" );
+testkit.check( "a number picks a group", pg.state().group == "Windows" && pg.state().shown == 2 );
+pg.onKey( "Left" ); pg.onKey( "Left" ); pg.onKey( "Left" );
+testkit.check( "left from All wraps to the last group and from the first goes to All", pg.state().group == "All" || pg.state().group == "Windows" );
+pg.onKey( "a" );
+testkit.check( "a: back to everything", pg.state().group == "All" && pg.state().shown == 4 );
+pg.onKey( "y" );
+testkit.check( "y: only yours", pg.state().shown == 1 && pg.state().items[ 1 ].id == "term" );
+pg.onKey( "y" );
+pg.onKey( "/" ); pg.onKey( "w" ); pg.onKey( "i" ); pg.onKey( "n" );
+testkit.check( "typing filters across action, keys, group and how", pg.usesLeft() && pg.state().shown == 2 && pg.state().filter == "win" );
+pg.onKey( "Enter" );
+testkit.check( "enter keeps the filter", !pg.usesLeft() && pg.state().shown == 2 );
+pg.onKey( "a" );
+testkit.check( "a clears the filter", pg.state().filter == "" && pg.state().shown == 4 );
+pg.onKey( "/" ); pg.onKey( "S" ); pg.onKey( "u" ); pg.onKey( "p" ); pg.onKey( "e" ); pg.onKey( "r" ); pg.onKey( "+" ); pg.onKey( "W" );
+testkit.check( "the filter matches the keys as written", pg.state().shown == 1 && pg.state().items[ 1 ].id == "close" );
+pg.onKey( "Escape" );
+testkit.check( "escape clears the filter", pg.state().filter == "" );
+
+// actions: rebind asks for keys, reset and conflicts are commands
+pg.onKey( "a" );
+intent = pg.onKey( "e" );
+testkit.check( "e asks for new keys", intent.action == "ask" && find( "Rebind", intent.title ) > 0 );
+made = intent.make( "Super+Shift+X" );
+testkit.check( "the answer becomes keys set ID KEYS", made.args.toList( " " ) == "keys set " & pg.selected().id & " Super+Shift+X" );
+testkit.check( "r resets", pg.onKey( "r" ).args.toList( " " ) == "keys reset " & pg.selected().id );
+testkit.check( "c shows the conflicts", pg.onKey( "c" ).args.toList( " " ) == "keys conflicts" );
+
+// drawing: tabs, the list with keycaps and the detail pane
+tui = createObject( "rust", "tui.TUI" );
+kit = new bxrig.TuiKit( tui );
+pg.onKey( "a" );
+tui.begin_frame();
+pg.paint( kit, 0, 0, 120, 30, 0, 0 );
+screen = tui.render_to_string( 120, 30 );
+testkit.check( "paint: title, count and the group tabs", find( "Shortcuts", screen ) > 0 && find( "4 of 5 with keys", screen ) > 0 && find( "Editing", screen ) > 0 && find( "Windows", screen ) > 0 );
+testkit.check( "paint: an action and its keys as caps", find( "Copy", screen ) > 0 && find( " Super ", screen ) > 0 && find( " Enter ", screen ) > 0 );
+testkit.check( "paint: the detail pane says how it is bound", find( "Through", screen ) > 0 && find( "Written", screen ) > 0 );
+testkit.check( "paint: a shortcut of yours has a star", find( "★", screen ) > 0 );
+tui.begin_frame();
+pg.paint( kit, 0, 0, 60, 20, 0, 0 );
+narrow = tui.render_to_string( 60, 20 );
+testkit.check( "paint: narrow has no detail pane", find( "Written", narrow ) == 0 && find( "Copy", narrow ) > 0 );
+testkit.done();

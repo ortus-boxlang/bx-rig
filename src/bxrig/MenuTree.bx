@@ -218,7 +218,7 @@ class MenuTree {
 					run( "Check for conflicts", [ "keys", "conflicts" ] ),
 					sub( "Style", [
 							run( "Show the style", [ "keys", "style" ] ),
-							run( "Traditional keys (Omarchy-like)", [ "keys", "style", "traditional", "--yes" ] ),
+							run( "Traditional keys", [ "keys", "style", "traditional", "--yes" ] ),
 							run( "Mac keys on a PC keyboard (Alt and Win swapped)", [ "keys", "style", "mac", "--keyboard=pc", "--yes" ] ),
 							run( "Mac keys on an Apple keyboard", [ "keys", "style", "mac", "--keyboard=apple", "--yes" ] )
 						] )

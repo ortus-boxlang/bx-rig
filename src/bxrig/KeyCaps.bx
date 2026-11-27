@@ -1,0 +1,66 @@
+/**
+ * A key combination as separate keys, for drawing keycaps and for plain text: "Super+Shift+T" becomes Super, Shift and T.
+ * Names Hyprland and xremap use are shown the way the key is printed (grave is a backtick, Return is Enter, XF86 keys by what they do).
+ */
+class KeyCaps {
+
+	/**
+	 * The display names of the keys of a combination, in order. An empty or "unbound" combination gives an empty array.
+	 * @keys A combination like Super+Shift+T (parts joined by +).
+	 */
+	function tokens( keys ) {
+		var k = trim( arguments.keys );
+		if ( !len( k ) || k == "unbound" || k == "(no keys)" ) return [];
+		var out = [];
+		for ( var part in listToArray( k, "+" ) ) out.append( name( trim( part ) ) );
+		return out;
+	}
+
+	/**
+	 * How one key is called on its cap.
+	 * @key The key as the shortcut table spells it.
+	 */
+	function name( key ) {
+		var map = { grave: "`", Return: "Enter", Escape: "Esc", comma: ",", period: ".", slash: "/", minus: "-", equal: "=", bracketleft: "[", bracketright: "]", semicolon: ";", apostrophe: "'", backslash: chr( 92 ), Prior: "PgUp", Next: "PgDn", mouse_down: "Wheel down", mouse_up: "Wheel up", XF86AudioRaiseVolume: "Vol up", XF86AudioLowerVolume: "Vol down", XF86AudioMute: "Mute", XF86AudioMicMute: "Mic mute", XF86MonBrightnessUp: "Bright up", XF86MonBrightnessDown: "Bright down", XF86PowerOff: "Power", XF86AudioPlay: "Play", XF86AudioNext: "Next track", XF86AudioPrev: "Prev track", XF86AudioPause: "Pause" };
+		return structKeyExists( map, arguments.key ) ? map[ arguments.key ] : arguments.key;
+	}
+
+	/**
+	 * The combination as plain text with spaces around the plus: "Super + Shift + T". "unbound" stays as it is.
+	 * @keys A combination.
+	 */
+	function text( keys ) {
+		var t = tokens( arguments.keys );
+		return t.len() ? t.toList( " + " ) : "unbound";
+	}
+
+	/**
+	 * The width the caps take when drawn: every key is padded by one space on both sides, one space between caps.
+	 * @keys A combination.
+	 */
+	function width( keys ) {
+		var w = 0;
+		for ( var t in tokens( arguments.keys ) ) w += len( t ) + 2 + 1;
+		return max( 0, w - 1 );
+	}
+
+	/**
+	 * Draws the caps with a TuiKit: each key on a raised chip.
+	 * @kit The TuiKit.
+	 * @x Column.
+	 * @y Row.
+	 * @keys A combination.
+	 * @fg Key text colour.
+	 * @chip Chip background colour.
+	 * @bg Background colour between the chips.
+	 * @return The column after the last cap.
+	 */
+	function draw( kit, x, y, keys, fg, chip, bg ) {
+		var cx = arguments.x;
+		for ( var t in tokens( arguments.keys ) ) {
+			cx = arguments.kit.put( cx, arguments.y, " " & t & " ", arguments.fg, arguments.chip, true );
+			cx = arguments.kit.put( cx, arguments.y, " ", arguments.fg, arguments.bg );
+		}
+		return cx - 1;
+	}
+}

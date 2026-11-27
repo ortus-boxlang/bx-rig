@@ -1,23 +1,71 @@
-// `bxrig keys sheet`: the shortcut cheat sheet (Omarchy's Super+K). Every shortcut, its action and how it is bound, in your menu
-// program (`runner menu-set`), searchable by typing; picking an entry just closes it. Without a menu program it prints the same list.
-// Reads the shared shortcut table, so your changes (`keys set`) show up. Exit: 0.
+/**
+ * `bxrig keys sheet`: the shortcut cheat sheet (Super+K). It opens the Shortcuts page of the Control Center: shortcuts grouped, keys drawn as
+ * keycaps, a live filter. From a key binding (no terminal) it opens that page in a terminal window; run in a terminal it opens it right there.
+ * Without a terminal program it falls back to your menu program (`runner menu-set`) with the list grouped and the keys written as
+ * "Super + Shift + T", and without that it prints the same list. With --json it gives the groups and the lines.
+ * Reads the shared shortcut table, so your changes (`keys set`) show up. Exit: 0.
+ */
 class KeySheet {
+
+	/**
+	 * @cli The command line context of this run.
+	 * @runner Optional fake process runner for tests.
+	 */
 	function init( cli, runner = "" ) {
 		variables.cli = arguments.cli;
 		variables.runnerArg = arguments.runner;
+		variables.caps = new bxrig.KeyCaps();
 		return this;
 	}
 
-	function lines() {
-		var rows = new bxrig.Shortcuts().show();
-		return rows.map( function( r ) { return ( len( r.keys ) ? r.keys : "(no keys)" ) & "   " & r.action & "   (" & r.how & ( r.custom ? ", yours" : "" ) & ")"; } );
+	/**
+	 * The shortcuts that have keys, grouped: { group, rows: [ { action, keys, custom, how } ] } in the order of the table.
+	 */
+	function groups() {
+		var out = [];
+		var at = {};
+		for ( var r in new bxrig.Shortcuts().show() ) {
+			if ( !len( r.keys ) ) continue;
+			if ( !structKeyExists( at, r.group ) ) { out.append( { group: r.group, rows: [] } ); at[ r.group ] = out.len(); }
+			out[ at[ r.group ] ].rows.append( { action: r.action, keys: r.keys, custom: r.custom, how: r.how } );
+		}
+		return out;
 	}
 
+	/**
+	 * The lines for a menu program or for printing: a group title line, then one line per shortcut with the keys first.
+	 * @return Array of strings.
+	 */
+	function lines() {
+		var out = [];
+		for ( var g in groups() ) {
+			for ( var r in g.rows ) out.append( g.group & "   " & variables.caps.text( r.keys ) & "   " & r.action & ( r.custom ? "   (yours)" : "" ) );
+		}
+		return out;
+	}
+
+	/**
+	 * Opens the page, falls back to the menu program, then to printing.
+	 * @asJson True for JSON output.
+	 */
 	function run( asJson ) {
+		if ( arguments.asJson ) { println( variables.cli.envelope( "keys sheet", 0, { groups: groups(), lines: lines() } ) ); return new bxrig.util.Exit().ok(); }
+		// in a terminal: the page right here
+		if ( CLIIsTerminal() ) {
+			try { return new bxrig.ControlCenter( variables.cli ).run( "shortcuts", false, "", "off" ); } catch ( any e ) {}
+		} else {
+			// from a key binding: the page in its own terminal window
+			var menu = new bxrig.Menu( variables.cli, variables.runnerArg );
+			if ( arrayLen( menu.terminalArgv() ) ) return menu.startTui( { argv: [ "tui", "shortcuts" ] } );
+		}
 		var list = lines();
-		if ( arguments.asJson ) { println( variables.cli.envelope( "keys sheet", 0, { lines: list } ) ); return new bxrig.util.Exit().ok(); }
-		try { new bxrig.Runner( variables.cli, variables.runnerArg ).select( "Shortcuts", list ); return new bxrig.util.Exit().ok(); } catch ( any e ) {}
-		for ( var l in list ) println( l );
+		try { new bxrig.Runner( variables.cli, variables.runnerArg ).select( "Shortcuts", list ); return new bxrig.util.Exit().ok(); } catch ( any e2 ) {}
+		var last = "";
+		for ( var g in groups() ) {
+			println( "" );
+			println( g.group );
+			for ( var r in g.rows ) println( "  " & left( variables.caps.text( r.keys ) & repeatString( " ", 28 ), 28 ) & r.action & ( r.custom ? "  (yours)" : "" ) );
+		}
 		return new bxrig.util.Exit().ok();
 	}
 }

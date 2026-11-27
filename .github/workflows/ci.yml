@@ -190,6 +190,7 @@ jobs:
           (cd src && matchbox ../tests/display_scale_test.bxs)
           (cd src && matchbox ../tests/ui_test.bxs)
           (cd src && matchbox ../tests/help_test.bxs)
+          (cd src && matchbox ../tests/shortcuts_page_test.bxs)
           (cd src && matchbox ../tests/screensaver_test.bxs)
           (cd src && matchbox ../tests/distros_test.bxs)
           (cd src && matchbox ../tests/gaps_test.bxs)
