@@ -8,7 +8,7 @@
 //   bxrig sdk remove CANDIDATE VERSION [--yes]
 // CANDIDATE is java, maven or gradle. A Java VERSION is an identifier from `sdk available java`, like 21.0.13.0+9-tem; `bxrig java install 21` picks one for you.
 // Maven and Gradle reach your shells through ~/.config/bxrig/sdk.sh and sdk.fish (written by setup and default; the shell starters source them).
-// Java's JAVA_HOME stays with `bxrig java default`. Version lists come from api.sdkman.io; installs run SDKMAN's own `sdk` command in bash.
+// Java's JAVA_HOME stays with `bxrig java global`. Version lists come from api.sdkman.io; installs run SDKMAN's own `sdk` command in bash.
 // Overrides for tests: BXRIG_SDKMAN_DIR, BXRIG_SDKMAN_API (default https://api.sdkman.io/2), BXRIG_SDKMAN_INSTALLER (default https://get.sdkman.io?rcupdate=false).
 // Exit: 0 ok, 2 plan shown without --yes or bad usage, 4 unknown candidate, version or missing prerequisite or SDKMAN not installed, 6 the sdk command failed.
 class Sdk {
@@ -134,8 +134,8 @@ class Sdk {
 	function writeEnv() {
 		directoryCreate( cfgDir(), true, true );
 		var d = dir();
-		var sh = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "export SDKMAN_DIR=" & chr( 34 ) & d & chr( 34 ) ];
-		var fish = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java default`.", "set -gx SDKMAN_DIR " & d ];
+		var sh = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java global`.", "export SDKMAN_DIR=" & chr( 34 ) & d & chr( 34 ) ];
+		var fish = [ "# Written by `bxrig sdk`. Maven and Gradle from SDKMAN; Java is set by `bxrig java global`.", "set -gx SDKMAN_DIR " & d ];
 		for ( var c in [ "maven", "gradle" ] ) {
 			var up = uCase( c );
 			sh.append( "[ -d " & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current/bin" & chr( 34 ) & " ] && export " & up & "_HOME=" & chr( 34 ) & "$SDKMAN_DIR/candidates/" & c & "/current" & chr( 34 ) & " && export PATH=" & chr( 34 ) & "$" & up & "_HOME/bin:$PATH" & chr( 34 ) );
@@ -143,6 +143,20 @@ class Sdk {
 		}
 		variables.config.writeAtomic( shFile(), sh.toList( chr( 10 ) ) & chr( 10 ), "644" );
 		variables.config.writeAtomic( fishFile(), fish.toList( chr( 10 ) ) & chr( 10 ), "644" );
+	}
+
+	/**
+	 * Installs SDKMAN (without touching shell files) and writes the Maven and Gradle shell files. Prints nothing.
+	 * @return { ok, error }
+	 */
+	function bootstrap() {
+		var missing = [];
+		for ( var t in [ "curl", "zip", "unzip" ] ) if ( !variables.proc.has( t ) ) missing.append( t );
+		if ( missing.len() ) return { ok: false, error: "missing " & missing.toList( ", " ) & ". Install them: bxrig pkg install " & missing.toList( " " ) };
+		var r = variables.proc.exec( variables.http.installerArgv( installerUrl(), "bash", [], { "SDKMAN_DIR": dir() } ), 1800 );
+		if ( r.exitCode != 0 || !installed() ) return { ok: false, error: "the SDKMAN installer failed: " & trim( right( r.output, 300 ) ) };
+		writeEnv();
+		return { ok: true, error: "" };
 	}
 
 	function setup( yes, dry, asJson ) {
@@ -159,9 +173,8 @@ class Sdk {
 			return variables.out.say( "precondition", { error: "missing " & missing.toList( ", " ) }, arguments.asJson, shown );
 		}
 		if ( !arguments.yes || arguments.dry ) return variables.out.plan( planTitle, data, arguments.asJson, arguments.dry, plan, "Add --yes to install." );
-		var r = variables.proc.exec( variables.http.installerArgv( installerUrl(), "bash", [], { "SDKMAN_DIR": dir() } ), 1800 );
-		if ( r.exitCode != 0 || !installed() ) return variables.out.fail( "failed", "the SDKMAN installer failed: " & trim( right( r.output, 300 ) ), arguments.asJson );
-		writeEnv();
+		var b = bootstrap();
+		if ( !b.ok ) return variables.out.fail( "failed", b.error, arguments.asJson );
 		return variables.out.say( "ok", { installed: true, dir: dir() }, arguments.asJson, [ "SDKMAN is installed in " & dir() & ".", "Next: bxrig java install 21 --yes, bxrig sdk install maven 3.9.9 --yes" ] );
 	}
 
@@ -208,7 +221,7 @@ class Sdk {
 		if ( r.exitCode != 0 ) return variables.out.fail( "failed", "sdk " & arguments.action & " failed: " & trim( right( r.output, 400 ) ), arguments.asJson );
 		writeEnv();
 		var done = [ "Done: " & arguments.action & " " & arguments.cand & " " & arguments.ver ];
-		if ( arguments.cand == "java" && arguments.action == "install" ) done.append( "Use it in new shells: bxrig java default sdkman-" & arguments.ver & " --yes" );
+		if ( arguments.cand == "java" && arguments.action == "install" ) done.append( "Use it in new shells: bxrig java global sdkman-" & arguments.ver & " --yes" );
 		return variables.out.say( "ok", data, arguments.asJson, done );
 	}
 

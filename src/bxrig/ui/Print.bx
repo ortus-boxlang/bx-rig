@@ -76,6 +76,28 @@ class Print {
 	function steps( items, opts = {} ) { return add( variables.ui.steps( arguments.items, arguments.opts ) ); }
 	function barChart( rows, opts = {} ) { return add( variables.ui.barChart( arguments.rows, arguments.opts ) ); }
 	function gauge( ratio, opts = {} ) { return add( variables.ui.gauge( arguments.ratio, arguments.opts ) ); }
+
+	/**
+	 * Adds a progress bar line (see Bar.render for the options).
+	 *
+	 * @ratio How far, 0 to 1.
+	 * @width The width in cells.
+	 * @opts The bar options.
+	 *
+	 * @return This printer, for chaining.
+	 */
+	function bar( ratio, width = 24, opts = {} ) { return add( variables.ui.bar( arguments.ratio, arguments.width, arguments.opts ) ); }
+
+	/**
+	 * Adds a stacked segment bar with its legend (see Bar.segments).
+	 *
+	 * @parts An array of { label, value, role }.
+	 * @width The width of the bar.
+	 * @opts total, format.
+	 *
+	 * @return This printer.
+	 */
+	function segments( parts, width = 40, opts = {} ) { return add( variables.ui.segments( arguments.parts, arguments.width, arguments.opts ) ); }
 	function tabs( titles, selected = 1, opts = {} ) { return add( variables.ui.tabs( arguments.titles, arguments.selected, arguments.opts ) ); }
 	function paragraph( text, opts = {} ) { return add( variables.ui.paragraph( arguments.text, arguments.opts ) ); }
 

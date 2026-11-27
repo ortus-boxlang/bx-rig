@@ -4,7 +4,7 @@ class JavaProvider {
 	function id() { return "java"; }
 	function icon() { return new bxrig.ControlCenterPages().icon( "java" ); }
 	function title() { return "Java"; }
-	function hint() { return variables.view == "homes" ? "* default for new shells   > this shell   (a: what you can install)" : "everything SDKMAN offers   (a: back to your homes)"; }
+	function hint() { return variables.view == "homes" ? "* global (jenv)   > this shell   (a: what you can install)" : "everything SDKMAN offers   (a: back to your homes)"; }
 	function emptyText() { return variables.view == "homes" ? "No Java found. Press a to see what you can install, or i and type 21." : "Could not read the list. Check your network."; }
 	function columns() {
 		if ( variables.view == "available" ) return [ { key: "mark", label: "", w: 4 }, { key: "vendor", label: "vendor", w: 20 }, { key: "version", label: "version", w: 22 }, { key: "id", label: "identifier", w: 0 } ];
@@ -13,13 +13,13 @@ class JavaProvider {
 	function style( r ) { return r.default ? "ok" : ( variables.view == "available" && !r.installed ? "" : "" ); }
 	function detail( r ) {
 		if ( variables.view == "available" ) return [ r.vendor & " " & r.version & "   " & r.id, r.installed ? "Already installed." : "Press i to install it through SDKMAN." ];
-		return [ r.id & "   " & r.path, ( r.default ? "The default for new shells. " : "" ) & ( r.active ? "This shell uses it." : "" ) & ( r.removable ? "" : " Managed by " & r.source & "." ) ];
+		return [ r.id & "   " & r.path, ( r.default ? "The global Java (jenv). " : "" ) & ( r.active ? "This shell uses it." : "" ) & ( r.removable ? "" : " Managed by " & r.source & "." ) ];
 	}
 
 	function actions() {
 		var me = this;
 		return [
-			{ key: "d", label: "default", run: function( r ) { return me.viewName() == "homes" ? { action: "cli", title: "Default Java: " & r.version, args: [ "java", "default", r.id ] } : {}; } },
+			{ key: "d", label: "global", run: function( r ) { return me.viewName() == "homes" ? { action: "cli", title: "Global Java: " & r.version, args: [ "java", "global", r.id ] } : {}; } },
 			{ key: "i", label: "install", run: function( r ) {
 					if ( me.viewName() == "available" ) return { action: "cli", title: "Install Java " & r.version, args: [ "java", "install", r.id ] };
 					return { action: "ask", title: "Install Java", prompt: "Which major version? (21, 17, 25 ...)", make: function( v ) { return { action: "cli", title: "Install Java " & v, args: [ "java", "install", v ] }; } };

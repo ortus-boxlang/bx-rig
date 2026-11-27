@@ -70,7 +70,7 @@ export BXRIG_SDKMAN_INSTALLER="file://$tmp/installer.sh"
 "$binary" sdk setup --yes >/dev/null
 [[ -f "$tmp/sdkman/bin/sdkman-init.sh" ]] || fail 'setup installed SDKMAN'
 grep -q 'MAVEN_HOME' "$tmp/cfg/bxrig/sdk.sh" && grep -q 'fish_add_path' "$tmp/cfg/bxrig/sdk.fish" || fail 'shell env files'
-! grep -q 'JAVA_HOME' "$tmp/cfg/bxrig/sdk.sh" || fail 'Java stays with bxrig java default'
+! grep -q 'JAVA_HOME' "$tmp/cfg/bxrig/sdk.sh" || fail 'Java stays with bxrig java (jenv)'
 "$binary" sdk setup --yes --json | jq -e '.data.already == true' >/dev/null || fail 'setup twice is a no-op'
 
 # what SDKMAN offers

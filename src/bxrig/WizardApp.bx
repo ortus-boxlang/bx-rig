@@ -61,11 +61,11 @@ class WizardApp {
 	// The ways to begin: the whole wizard, answers imported from a file, and (when there are some) the answers saved last time.
 	function startChoices() {
 		var out = [
-			{ id: "new", label: "New install", help: "Answer the whole wizard, starting from the defaults." },
-			{ id: "import", label: "Import answers from a file", help: "Answers you exported before (bxrig init --export). You get the review next, and go." }
+			{ id: "new", label: "New install", help: "Answer the whole wizard from the defaults." },
+			{ id: "import", label: "Import answers from a file", help: "From a file made with: bxrig init --export" }
 		];
 		var saved = variables.presets.saved ?: {};
-		if ( isStruct( saved ) && structCount( saved ) ) out.append( { id: "saved", label: "Use my saved answers", help: "Your last answers and what this machine already has. You get the review next, and can change anything." } );
+		if ( isStruct( saved ) && structCount( saved ) ) out.append( { id: "saved", label: "Use my saved answers", help: "Exactly what you chose last time. Review, change, go." } );
 		return out;
 	}
 
