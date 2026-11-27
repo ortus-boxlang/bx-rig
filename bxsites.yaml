@@ -21,7 +21,7 @@ markdown:
   enableDefinitionLists: true
 # The docs are versioned: docs/ is the version being written (1.0.x). When 1.0.0 ships, cut it with
 #   bxSites version:new --name=1.0.x
-# and set versions.default to "1.0.x" so the release is at the root and docs/ becomes /next/ (see docs/guides/contributing.md).
+# and set versions.default to "1.0.x" so the release is at the root and docs/ becomes /next/ (see docs/developer/release-and-docs.md).
 variables:
   version: "1.0.x"
   installUrl: "https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh"
