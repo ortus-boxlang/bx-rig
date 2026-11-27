@@ -57,10 +57,10 @@ export T="$tmp"
 # the plan runs on the screen; at the end Enter leaves. One step fails, so the exit code is 7 (some done, some failed).
 rc=0; screen "$tmp/s1.out" 'WAIT0.3|v|WAIT1.0|v|WAIT9|\r' 4 || rc=$?
 [[ "$rc" == 7 ]] || fail "the screen run exits 7 (some failed), got $rc"
-grep -q 'Finished' "$tmp/s1.out" || fail 'the end of the run says Finished'
+grep -q 'Summary' "$tmp/s1.out" || fail 'the end of the run says Summary'
 grep -q 'of 3' "$tmp/s1.out" || fail 'the apps step shows its own progress (n of 3)'
 grep -q 'Log' "$tmp/s1.out" && grep -q 'installing alpha' "$tmp/s1.out" || fail 'v shows the live log with the lines'
-grep -q 'What failed' "$tmp/s1.out" || fail 'the end shows what failed'
+grep -q 'WHAT FAILED' "$tmp/s1.out" || fail 'the end shows what failed'
 # the summary printed after the screen, and the log file with every line, the failing step's error and the exit codes
 log="$(ls "$tmp"/state/bxrig/logs/init-*.log 2>/dev/null | head -1)"
 [[ -f "$log" ]] || fail "no log file: $(find "$tmp/state" | head)"

@@ -6,7 +6,7 @@ summary: One guided form for every choice. Re-run it any time.
 
 # The setup wizard
 
-`bxrig init` opens a full-screen form with these pages: **Desktop**, **Look**, **Top bar layout**, **App grid style**, **Theme**, **Input**, **Developer**, **Toolchains**, **Containers**, **NAS**, **Remote backups**, **Backups**, **Apps**, **AI**, **Extras** and **Import**, then a review screen that lists exactly the commands it will run. With the Customize choice on the Apps page there is one more page per catalog group. Nothing runs until you confirm.
+`bxrig init` opens a full-screen form with these pages: **Desktop**, **Look**, **Top bar layout**, **App grid style**, **Theme**, **Input**, **Developer**, **Toolchains**, **Containers**, **NAS**, **Backups** (with the copy somewhere else), **Apps**, **AI**, **Extras** and **Import**, then a review screen that lists exactly the commands it will run. With the Customize choice on the Apps page there is one more page per catalog group. Nothing runs until you confirm.
 
 <video src="../assets/clips/wizard.webm" poster="../assets/screenshots/wizard-welcome.webp" autoplay loop muted playsinline width="100%"></video>
 
@@ -131,3 +131,15 @@ Answers are saved in `~/.config/bxrig/answers.json` (mode 600). They never conta
 | Containers | Podman (with `docker` commands mapped to it) |
 | Dictation | Superwhisper (Voxtype is the alternative) |
 | Updates | stable channel, daily notification |
+
+## What is always installed
+
+BoxLang, Java 21 (switched with jenv) and Rust (rustup, stable) are part of the stack, so the Toolchains page does not ask about them. It asks for extra Java versions (21 stays global), the IDEs and editors you want (VS Code, IntelliJ IDEA Community, Zed, Cursor, Sublime Text) and the other toolchains. The BoxLang extension question only appears when VS Code is ticked.
+
+## When things are installed
+
+The review lists the steps in order. Apps, including the IDEs and any local model apps you ticked, come first. The local AI setup (llama.cpp and the model downloads) is one step near the end, and only runs when you answered "now"; otherwise nothing is downloaded.
+
+## When it finishes
+
+The last screen is a summary: what failed (press `r` to retry), what to do next (log out, reboot, open a new terminal), what needs your decision, what was skipped and the command to do it later, and where your answers and log are saved. Press `d` to see every step.

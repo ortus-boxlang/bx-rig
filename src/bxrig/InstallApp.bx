@@ -28,6 +28,7 @@ class InstallApp {
 		variables.adv = { relogin: false, reboot: false, action: "" };
 		variables.advGiven = false;
 		variables.asking = "";
+		variables.details = false;
 		return this;
 	}
 
@@ -54,6 +55,24 @@ class InstallApp {
 		}
 		return variables.adv;
 	}
+	/** True when the finish screen shows the step list instead of the summary (the d key toggles it). */
+	function details() { return variables.details; }
+
+	/**
+	 * What the summary page shows once the run is over: the next steps, and the skipped steps sorted into what was already in place,
+	 * what needs a decision and what was skipped (each with the command to do it later).
+	 * @return { next: [lines], inPlace: [], needsYou: [], skipped: [] }
+	 */
+	function summary() {
+		var fin = new bxrig.InitFinish();
+		var res = variables.run.result();
+		var done = [];
+		for ( var d in res.done ) done.append( d.id );
+		var c = fin.classify( res.skipped );
+		c.next = fin.advice( done ).next;
+		return c;
+	}
+
 	// "logout" or "reboot" while its question is on the screen, "" otherwise.
 	function asking() { return variables.asking; }
 
@@ -110,6 +129,7 @@ class InstallApp {
 			return this;
 		}
 		if ( k == "v" ) { variables.verbose = !variables.verbose; variables.scroll = 0; return this; }
+		if ( k == "d" && variables.run.finished() ) { variables.details = !variables.details; return this; }
 		if ( variables.run.finished() ) {
 			if ( k == "Enter" || k == "q" || k == "Escape" ) { variables.outcome = "done"; return this; }
 			if ( k == "r" ) { variables.run.retry(); return this; }
