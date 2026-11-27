@@ -105,7 +105,7 @@ class Setup {
 			sessionType: new bxrig.util.Desktop().session(),
 			installed: new bxrig.Packages( variables.cli, {} ).installedNames(),
 			hyprkwinInstalled: hyprkwinInstalled(),
-			user: new bxrig.util.Env().named( "user", "" ),
+			user: new bxrig.util.Env().user(),
 			loginShell: new bxrig.util.Env().named( "shell", "" ),
 			hasYay: variables.aur.available(),
 			groups: listToArray( trim( variables.inst.proc().exec( [ "id", "-nG" ], 10 ).output ), " " ),

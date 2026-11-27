@@ -162,6 +162,11 @@ class InitPlan {
 			out.steps.append( { id: "toolchain-" & tc, title: "install the " & tc & " toolchain", argv: [ "bxrig", "profile-install", profiles[ tc ] ] } );
 			if ( tc == "php" ) out.steps.append( { id: "laravel", title: "install the Laravel installer (composer global)", argv: [ "composer", "global", "require", "laravel/installer" ] } );
 		}
+		// BoxLang itself comes first when a later step runs it (the modules, the VS Code extension, the scheduler); `boxlang update` installs it when it is missing
+		if ( pick( a, "boxlang_modules", [] ).len() || pick( a, "boxlang_vscode", false ) == true || pick( a, "scheduler", false ) == true ) {
+			out.steps.append( { id: "jdk", title: "install Java 21 (BoxLang needs it)", argv: [ "bxrig", "install", "jdk21" ], optional: true } );
+			out.steps.append( { id: "boxlang", title: "install BoxLang (the steps after this one use it)", argv: [ "sh", "-c", "command -v boxlang >/dev/null 2>&1 && exit 0; command -v bvm >/dev/null 2>&1 || curl -fsSL " & new bxrig.util.Urls().bvm() & " | bash; bvm install latest && bvm use latest" ], optional: true } );
+		}
 		// agent skills (optional: needs the skills hub for boxlang and matchbox; a failure is skipped)
 		var skillPick = pick( a, "agent_skills", [] );
 		if ( skillPick.len() ) {

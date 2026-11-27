@@ -2731,8 +2731,13 @@
 					"type": "choice",
 					"id": "password_manager",
 					"label": "Password manager",
-					"default": "bitwarden",
+					"default": "none",
 					"options": [
+						{
+							"value": "none",
+							"label": "None",
+							"description": "Install no password manager."
+						},
 						{
 							"value": "bitwarden",
 							"label": "Bitwarden",

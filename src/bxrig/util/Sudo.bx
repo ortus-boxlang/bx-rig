@@ -29,7 +29,7 @@ class Sudo {
 
 	function available() { return len( runtimeDir() ) > 0 && variables.proc.has( "setsid" ); }
 
-	function user() { return variables.env.get( "USER", variables.env.get( "LOGNAME", "" ) ); }
+	function user() { return variables.env.user(); }
 
 	// Makes the folder (700), the password file (600, created empty first so it is never readable by others) and the helper script (700).
 	function prepare( password ) {

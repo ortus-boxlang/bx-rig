@@ -360,8 +360,7 @@ class SetupPlan {
 		if ( !facts.udevRule ) {
 			out.steps.append( { id: "udev", title: "let the input group use /dev/uinput (" & udevRulePath() & ")", kind: "sudo", commands: [
 						[ "sudo", "sh", "-c", "echo '" & udevRule() & "' > " & udevRulePath() ],
-						[ "sudo", "udevadm", "control", "--reload-rules" ],
-						[ "sudo", "udevadm", "trigger" ] ] } );
+						[ "sudo", "sh", "-c", "udevadm control --reload-rules && udevadm trigger || echo 'udev is not running here: the rule is read at the next boot'" ] ] } );
 			out.added.udev = true;
 		}
 		if ( !arrayFind( facts.groups, "input" ) ) {

@@ -108,6 +108,14 @@ class KeysService {
 			var hc = hyprlandAdd( yes, dryRun );
 			if ( hc != 0 ) worst = max( worst, hc );
 		}
+		// a running xremap reads its config only at start: restart it so the keys (and the Alt and Win swap) take effect now
+		if ( worst == 0 && yes && !dryRun ) {
+			var sd = new bxrig.util.Systemd( variables.inst.proc() );
+			if ( sd.isActive( "xremap", true ) ) {
+				var rr = variables.inst.proc().exec( sd.argv( "restart", [ "xremap.service" ], true ), 30 );
+				progress( rr.exitCode == 0 ? "xremap restarted: the new keys are live" : "xremap did not restart (systemctl --user restart xremap)" );
+			}
+		}
 		if ( worst == 0 && yes && !dryRun ) progress( "Note: xremap and the desktop pick the new keys up at their next restart or login. Hyprland loads the module through the line in hyprland.lua (reload it: hyprctl reload)." );
 		if ( asJson ) println( variables.cli.envelope( "keys apply", worst, { applied: worst == 0 }, dryRun ) );
 		return worst;
