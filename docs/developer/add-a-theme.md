@@ -1,6 +1,6 @@
 ---
 title: Add a theme
-order: 20
+order: 4
 summary: Add a bundled color theme with its wallpaper, and see it show up everywhere.
 ---
 

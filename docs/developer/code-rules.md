@@ -1,6 +1,6 @@
 ---
 title: Code rules
-order: 85
+order: 12
 summary: The fifteen rules that keep BxRig code DRY, grouped so you can scan them before a change.
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Set up your dev machine
-order: 82
+order: 2
 summary: From git clone to a working loop of edit, build and test.
 ---
 

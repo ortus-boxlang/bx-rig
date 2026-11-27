@@ -1,6 +1,6 @@
 ---
 title: Releases and docs
-order: 86
+order: 13
 summary: How these docs are written, built, versioned and translated, and how releases and channels work.
 ---
 

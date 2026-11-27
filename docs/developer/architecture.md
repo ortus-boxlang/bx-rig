@@ -1,6 +1,6 @@
 ---
 title: How it fits together
-order: 81
+order: 1
 summary: The shape of the code, and what every command that changes your machine does.
 ---
 

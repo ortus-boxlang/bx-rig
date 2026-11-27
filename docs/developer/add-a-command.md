@@ -1,6 +1,6 @@
 ---
 title: Add a command
-order: 83
+order: 3
 summary: A worked tutorial that adds a small command from the registry entry to a passing test.
 ---
 

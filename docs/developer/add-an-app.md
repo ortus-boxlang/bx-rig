@@ -1,6 +1,6 @@
 ---
 title: Add an app
-order: 30
+order: 5
 summary: Add an application to the catalog so it shows in the wizard, the Apps page and bxrig install.
 ---
 

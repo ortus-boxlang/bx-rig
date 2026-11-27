@@ -1,6 +1,6 @@
 ---
 title: The terminal UI toolkit
-order: 80
+order: 10
 summary: Build tables, panels, badges and progress bars for command output with one small BoxLang toolkit.
 ---
 

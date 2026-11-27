@@ -1,6 +1,6 @@
 ---
 title: Add a shortcut
-order: 40
+order: 6
 summary: Add one row to the shortcut table and get the key in Hyprland, Plasma and xremap, in both key styles.
 ---
 

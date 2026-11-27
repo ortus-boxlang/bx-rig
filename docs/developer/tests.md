@@ -1,6 +1,6 @@
 ---
 title: Tests
-order: 84
+order: 11
 summary: How BxRig tests work, how to run one or all of them, and how to write a new one.
 ---
 

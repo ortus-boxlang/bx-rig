@@ -1,6 +1,6 @@
 ---
 title: Wizard pages
-order: 50
+order: 7
 summary: Add a question to the setup wizard, turn the answer into a step, and replay it with --answers.
 ---
 

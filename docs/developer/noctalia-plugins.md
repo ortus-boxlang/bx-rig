@@ -1,6 +1,6 @@
 ---
 title: Noctalia plugins
-order: 60
+order: 8
 summary: Build a bar plugin for Noctalia that shows data from a bxrig command, and ship it with BxRig.
 ---
 

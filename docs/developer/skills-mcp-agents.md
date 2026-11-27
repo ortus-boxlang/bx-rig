@@ -1,6 +1,6 @@
 ---
 title: Skills, MCP and agents
-order: 70
+order: 9
 summary: Three recipes to teach agents about BxRig: write a skill, expose a tool over MCP, and build a BoxLang agent.
 ---
 

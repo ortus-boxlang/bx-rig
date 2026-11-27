@@ -1,11 +1,31 @@
 ---
 title: Pictures in the terminal
+order: 3
 summary: App icons and screenshots in the TUIs, how they are fetched, cached and kept from ever breaking a screen.
 ---
 
 # Pictures in the terminal
 
 The TUIs can show app icons and screenshots. A picture is never required: when one is missing, slow or broken, BxRig draws a letter tile and carries on.
+
+## Try it
+
+```bash
+bxrig tui apps                 # icons and screenshots in the Apps manager
+BXRIG_IMAGES=off bxrig tui apps  # letter tiles only
+```
+
+![The Apps page with icons](../assets/screenshots/control-center-apps.webp)
+
+```mermaid
+flowchart LR
+  A["App name"] --> B["Icon theme"]
+  B --> C["AppStream icons"]
+  C --> D["Dashboard Icons"]
+  D --> E["Letter tile"]
+```
+
+The diagram shows where an app icon comes from, in order, and the fallback.
 
 ## Where pictures come from
 
@@ -16,7 +36,7 @@ The TUIs can show app icons and screenshots. A picture is never required: when o
 
 Dashboard Icons is Apache-2.0 licensed. The logos in it belong to their owners and are shown only to identify the app. There is no web image search.
 
-## How it is drawn
+## Change how pictures are drawn
 
 MatchBox draws PNG, JPEG, GIF and WebP. Terminals that speak the Kitty graphics protocol (Kitty, Ghostty) show the real picture; every other terminal gets half block pixels. `tui.image_support()` reports which. Needs a MatchBox built with `--features bif-tui`.
 
@@ -27,7 +47,7 @@ MatchBox draws PNG, JPEG, GIF and WebP. Terminals that speak the Kitty graphics 
 | `BXRIG_SHARE_DIR` | where `/usr/share` is looked up (tests) |
 | `BXRIG_CACHE_HOME` | replaces the cache folder |
 
-## Safety guarantees
+## What keeps it safe
 
 - **Never blocks.** Downloads and the screenshot index scan run in the background. The first call returns nothing and the picture shows on a later redraw.
 - **Never throws.** Every call is wrapped; a failure becomes a letter tile.
@@ -35,8 +55,12 @@ MatchBox draws PNG, JPEG, GIF and WebP. Terminals that speak the Kitty graphics 
 - **Failures are remembered.** A URL that failed is not tried again for 6 hours, so a bad link cannot be hammered.
 - **Bounded disk.** The cache lives in `~/.cache/bxrig/images` and is trimmed to 200 MB, oldest first. Deleting it is always safe.
 
-## For developers
+## Advanced
+
+### For developers
 
 `TuiKit.image( x, y, w, h, path )` draws and answers `true` or `false`. `imageOrTile( x, y, w, h, path, name )` falls back to a coloured tile with the name's first letter. `ImageCache.get( url, kind )` answers a local path or an empty string. `AppIcons.iconFor( name, theme )` and `AppIcons.screenshotsFor( appstreamId )` answer paths the same way.
 
 Tests: `tests/image_cache_test.bxs`, `tests/app_icons_test.bxs` (both start a local server from `tests/image_server.py`) and `tests/tui_kit_test.bxs`.
+
+Next: [Apps and web apps](../data/apps.md) · [Updates and channels](updates.md)
