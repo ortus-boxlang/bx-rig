@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ratchet: patterns that must not come back, each with the highest count allowed today. Lower a maximum whenever a refactor removes copies;
 # Targets (new homes included in the counts): say 2 (Cli, Out), fail 2, tryExec 0, has 1 (Proc), merge 1 (Text), validName 1, home/env/self 1 each (Env), Usage 0, test fail() 0.
-# never raise one. See docs/architecture/CODE-REVIEW.md section 8 and docs/developer/release-and-docs.md. Usage: dry-test.sh [ignored]
+# never raise one. See docs/architecture/CODE-REVIEW.md section 8 and docs/developer/code-rules.md. Usage: dry-test.sh [ignored]
 root="$(cd "$(dirname "$0")/.." && pwd)"
 fails=0
 count() { # pattern, path, max   (counts matching lines, fixed string)
