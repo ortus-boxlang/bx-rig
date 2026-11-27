@@ -170,3 +170,51 @@ a = mk( { bar_layout: "dense", appgrid_style: "terminal", theme_name: "nord" } )
 testkit.check( "review words: Dense, Terminal-style grid, Nord", a.display( barPage.questions[ 1 ] ) == "Dense" && a.display( gridPage.questions[ 1 ] ) == "Terminal-style grid" && a.display( themePage.questions[ 1 ] ) == "Nord" );
 
 testkit.done( "all passed" );
+
+// ---- the start screen: new install, import a file, saved answers ----
+function startApp( withSaved = true ) {
+	var spec = jsonDeserialize( new bxrig.WizardData().demoPages() );
+	var importer = function( path ) {
+		if ( path == "/no/such.json" ) return { ok: false, answers: {}, ignored: [], error: "There is no file /no/such.json" };
+		if ( path == "/mine.json" ) return { ok: true, answers: { terminal: "kitty", vpn: "wireguard", not_a_question: 1 }, ignored: [ "not_a_question" ], error: "" };
+		return { ok: false, answers: {}, ignored: [], error: "not an answers file" };
+	};
+	var presets = { new: {}, saved: withSaved ? { shell: "fish" } : {} };
+	return new bxrig.WizardApp( spec, {}, { start: true, presets: presets, importer: importer } );
+}
+function typeText( app, text ) { for ( var i = 1; i <= len( text ); i++ ) app.onKey( mid( text, i, 1 ) ); }
+sa = startApp();
+sa.onKey( "Enter" );
+testkit.check( "start: Enter on the welcome opens the start screen with three ways to begin", sa.screen() == "start" && sa.startChoices().map( function( c ) { return c.id; } ).toList( "," ) == "new,import,saved" );
+testkit.check( "start: no saved answers, no third choice", startApp( false ).onKey( "Enter" ).startChoices().len() == 2 );
+sa.onKey( "Enter" );
+testkit.check( "start: New install goes to the first page with the defaults", sa.screen() == "page" && sa.pageIndex() == 1 && sa.notice() == "" );
+sa.onKey( "Escape" );
+testkit.check( "start: Escape on the first page goes back to the start screen", sa.screen() == "start" );
+sa.onKey( "Down" ); sa.onKey( "Down" ); sa.onKey( "Up" );
+testkit.check( "start: arrows move and stop at the ends", sa.startIndex() == 2 );
+sa.onKey( "Enter" );
+testkit.check( "start: Import asks for the path", sa.importing() && sa.screen() == "start" );
+typeText( sa, "/no/such.json" ); sa.onKey( "Enter" );
+testkit.check( "start: a file that is not there is an error on the screen and the path stays", sa.importing() && find( "There is no file", sa.importError() ) > 0 && sa.screen() == "start" );
+sa.onKey( "Ctrl+u" ); typeText( sa, "/mine.json" ); sa.onKey( "Backspace" ); typeText( sa, "x" );
+sa.onKey( "Enter" );
+testkit.check( "start: a mistyped path is an error, no change of screen", sa.importing() && len( sa.importError() ) > 0 );
+sa.onKey( "Backspace" ); typeText( sa, "n" ); sa.onKey( "Enter" );
+testkit.check( "start: the file is imported and the review follows", sa.screen() == "review" && !sa.importing() && sa.furthest() == sa.pageCount() + 1 );
+testkit.check( "start: the imported answers are in, a list question given one string becomes a list", sa.answerString( "terminal" ) == "kitty" && sa.answers().vpn.toList() == "wireguard" );
+testkit.check( "start: the notice counts the imported answers and the ones this version does not use", find( "Imported 2 answers from /mine.json", sa.notice() ) > 0 && find( "1 not used", sa.notice() ) > 0 );
+sa.onKey( "Enter" );
+testkit.check( "start: Enter on the review is done, and finalAnswers has the imported ones", sa.outcome() == "done" && sa.finalAnswers().terminal == "kitty" );
+sb = startApp(); sb.onKey( "Enter" ); sb.onKey( "Down" ); sb.onKey( "Enter" ); sb.onKey( "Escape" );
+testkit.check( "start: Escape while typing the path goes back to the choices", sb.screen() == "start" && !sb.importing() );
+sb.onKey( "Down" ); sb.onKey( "Enter" );
+testkit.check( "start: Use my saved answers goes straight to the review", sb.screen() == "review" && sb.answerString( "shell" ) == "fish" && sb.notice() == "Your saved answers" );
+sb.onKey( "Escape" );
+testkit.check( "start: Escape on the review goes back to the last page, and the way back leads to the start screen", sb.screen() == "page" );
+sc = startApp(); sc.onKey( "Escape" );
+testkit.check( "start: Escape on the welcome still quits", sc.outcome() == "cancelled" );
+sd = startApp(); sd.onKey( "Enter" ); sd.onKey( "Escape" );
+testkit.check( "start: Escape on the start screen goes back to the welcome", sd.screen() == "welcome" );
+se = new bxrig.WizardApp( jsonDeserialize( new bxrig.WizardData().demoPages() ) ); se.onKey( "Enter" );
+testkit.check( "no start option (--fresh, --rerun, --from, scripts): Enter goes straight to the first page, as before", se.screen() == "page" );

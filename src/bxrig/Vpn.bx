@@ -273,7 +273,7 @@ class Vpn {
 		var found = false;
 		try { found = variables.inst.proc().exec( [ "sh", "-c", 'command -v nordvpn', "_" ], 10 ).exitCode == 0; } catch ( any e ) {}
 		if ( !found ) return variables.cli.say( cmd, "precondition", { error: "NordVPN is not installed" }, arguments.asJson, [ "error: NordVPN is not installed. Install it: bxrig install nordvpn" ] );
-		var user = new bxrig.util.Env().named( "user", "" );
+		var user = new bxrig.util.Env().user();
 		var steps = [ variables.systemd.enableArgv( "nordvpnd", false, true ), [ "sudo", "gpasswd", "-a", user, "nordvpn" ] ];
 		var data = { steps: steps };
 		if ( !len( user ) ) return variables.cli.say( cmd, "precondition", { error: "No USER" }, arguments.asJson, [ "error: could not tell which user to add to the nordvpn group" ] );

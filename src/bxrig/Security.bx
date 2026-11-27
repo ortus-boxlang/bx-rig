@@ -26,7 +26,7 @@ class Security {
 	function pamFile() { return variables.environ.named( "pamDir", "/etc/pam.d" ) & "/sudo"; }
 	function sudoersFile() { return variables.environ.named( "sudoersDir", "/etc/sudoers.d" ) & "/50-bxrig-nopasswd"; }
 	function u2fFile() { return variables.environ.named( "u2fFile", variables.environ.xdgConfig( "Yubico/u2f_keys" ) ); }
-	function user() { return new bxrig.util.Env().named( "user", "" ); }
+	function user() { return new bxrig.util.Env().user(); }
 
 	function pamLine( kind ) { return arguments.kind == "fingerprint" ? "auth sufficient pam_fprintd.so" : "auth sufficient pam_u2f.so cue"; }
 	function pamMarker( kind ) { return " # bxrig " & arguments.kind; }
