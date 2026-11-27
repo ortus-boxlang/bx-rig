@@ -493,6 +493,43 @@ class Theme {
 		return variables.out.say( "ok", { removed: arguments.name }, arguments.asJson, [ "Removed theme " & arguments.name ] );
 	}
 
+	/**
+	 * Changes only the wallpaper, to the next image (or a random other one) of the current theme's folders: the images of every installed
+	 * wallpaper pack for that theme, then the theme's own. `bxrig assets wallpapers install omarchy --yes` brings a pack.
+	 * @how next or random.
+	 * @dry Show what would change and change nothing.
+	 * @asJson True for JSON output.
+	 */
+	function wallpaper( how, dry, asJson ) {
+		var cur = readState().name;
+		if ( !len( cur ) ) cur = "bxrig";
+		var packs = new bxrig.WallpaperPacks( variables.cli, variables.proc.runner() );
+		var pool = [];
+		for ( var pk in packs.catalog() ) for ( var im in packs.images( pk.id ) ) if ( im.theme == cur ) pool.append( im.path );
+		var own = bundledWallpaper( cur );
+		if ( len( own ) && fileExists( own ) ) pool.append( own );
+		if ( !pool.len() ) return variables.out.fail( "precondition", "no wallpapers for the theme " & cur & ". Install a pack: bxrig assets wallpapers install omarchy --yes", arguments.asJson );
+		var memo = variables.environ.xdgState( "bxrig/wallpaper.txt" );
+		var last = fileExists( memo ) ? trim( fileRead( memo ) ) : "";
+		var at = arrayFind( pool, last );
+		var pick = pool[ 1 ];
+		if ( arguments.how == "next" ) pick = pool[ at == 0 || at >= pool.len() ? 1 : at + 1 ];
+		else if ( pool.len() > 1 ) { pick = pool[ randRange( 1, pool.len() ) ]; while ( pick == last ) pick = pool[ randRange( 1, pool.len() ) ]; }
+		var data = { theme: cur, wallpaper: pick, choices: pool.len() };
+		if ( arguments.dry ) return variables.out.plan( "set the wallpaper to " & pick & " (" & pool.len() & " for " & cur & ").", data, arguments.asJson, true );
+		var notes = [];
+		if ( variables.proc.has( "noctalia" ) ) {
+			var w = variables.proc.exec( [ "noctalia", "msg", "wallpaper-set", pick ], 30 );
+			if ( w.exitCode != 0 ) notes.append( "Noctalia did not change it: " & trim( w.output ) );
+		}
+		if ( new bxrig.util.Desktop().inPlasma() && variables.proc.has( "plasma-apply-wallpaperimage" ) ) variables.proc.exec( [ "plasma-apply-wallpaperimage", pick ], 30 );
+		directoryCreate( getDirectoryFromPath( memo ), true, true );
+		fileWrite( memo, pick );
+		var lines = [ "Wallpaper: " & pick ];
+		for ( var nt in notes ) lines.append( nt );
+		return variables.out.say( "ok", data, arguments.asJson, lines );
+	}
+
 	// The next theme after the current one (wrapping), or a random other one.
 	function pick( how ) {
 		var all = names();

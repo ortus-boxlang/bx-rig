@@ -177,6 +177,8 @@ class InitPlan {
 			for ( var sk in skillPick ) skArgv.append( sk );
 			out.steps.append( { id: "agent-skills", title: "give your coding agents skills (" & skillPick.toList( ", " ) & ")", argv: skArgv, optional: true } );
 		}
+		// wallpaper packs the user ticked: a download, optional so a failed one does not stop the plan
+		for ( var wpk in pick( a, "wallpaper_packs", [] ) ) out.steps.append( { id: "wallpaper-pack-" & wpk, title: "download the " & wpk & " wallpaper pack", argv: [ "bxrig", "assets", "wallpapers", "install", wpk ], optional: true } );
 		// the BoxLang extension for VS Code (optional: a failure is skipped, the plan goes on)
 		// (the extension needs VS Code: ticked in the IDEs, or an older answers file that has no IDEs question)
 		if ( pick( a, "boxlang_vscode", false ) && ( !structKeyExists( a, "ides" ) || arrayFind( pick( a, "ides", [] ), "vscode" ) ) ) out.steps.append( { id: "boxlang-vscode", title: "add the BoxLang extension to VS Code", argv: [ "bxrig", "boxlang", "vscode" ], optional: true } );

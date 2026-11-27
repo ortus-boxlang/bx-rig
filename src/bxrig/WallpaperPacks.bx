@@ -1,0 +1,183 @@
+/**
+ * Wallpaper packs: collections of backgrounds you can download next to the wallpapers that come with BxRig. Today one pack:
+ *   omarchy   the background stills of the Omarchy themes (101 images, about 74 MB), MIT licensed, from
+ *             https://github.com/omacom/omarchy-themes-backgrounds
+ * A pack is cloned (git, shallow) at a pinned release tag and its commit is checked against the one BxRig expects, so a moved tag is never
+ * trusted. The images go to ~/Pictures/BxRig/PACK/THEME/NAME, with a CREDITS.md that carries the licence. Nothing is downloaded until
+ * you ask: `bxrig assets wallpapers install omarchy --yes`, or the Wallpaper packs question of the setup wizard.
+ *   bxrig assets wallpapers                        the packs, how big they are and whether each is installed
+ *   bxrig assets wallpapers install PACK [--yes] [--dry-run]
+ *   bxrig assets wallpapers remove PACK [--yes]
+ * Overrides for tests: BXRIG_WALLPAPER_PACK_REPO (a git address or folder instead of the pack's own), BXRIG_WALLPAPER_PACK_COMMIT (the commit to expect).
+ * Exit: 0 ok, 2 a plan was shown without --yes (or bad usage), 4 unknown pack or git missing, 6 download or check failed.
+ */
+class WallpaperPacks {
+
+	/**
+	 * @cli The command line context of this run.
+	 * @runner Optional fake process runner for tests.
+	 */
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.cli = arguments.cli;
+		variables.out = new bxrig.util.Out( arguments.cli, "assets" );
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	/**
+	 * The packs BxRig knows.
+	 * @return Array of { id, title, description, repo, tag, commit, license, images, sizeMb }.
+	 */
+	function catalog() {
+		return [ {
+				id: "omarchy",
+				title: "Omarchy backgrounds",
+				description: "The stills of the Omarchy themes: rockets, clouds, neon and quiet scenes, a few per theme.",
+				repo: variables.environ.named( "wallpaperPackRepo", "https://github.com/omacom/omarchy-themes-backgrounds" ),
+				tag: "v2026.11.27",
+				commit: variables.environ.named( "wallpaperPackCommit", "1bdb4aac72e5c3a834e1687624e05f311859e1b4" ),
+				license: "MIT, Copyright (c) David Heinemeier Hansson",
+				images: 101,
+				sizeMb: 74
+			} ];
+	}
+
+	/**
+	 * One pack by id, or an empty struct.
+	 * @id The pack id.
+	 */
+	function find( id ) {
+		for ( var p in catalog() ) if ( p.id == arguments.id ) return p;
+		return {};
+	}
+
+	/**
+	 * Where a pack lives on disk.
+	 * @id The pack id.
+	 */
+	function dir( id ) {
+		return variables.environ.home() & "/Pictures/BxRig/" & arguments.id;
+	}
+
+	/**
+	 * Every image of an installed pack: { theme, name, path }, by theme then name.
+	 * @id The pack id.
+	 */
+	function images( id ) {
+		var out = [];
+		var root = dir( arguments.id );
+		if ( !directoryExists( root ) ) return out;
+		for ( var th in directoryList( root, false, "name" ) ) {
+			if ( !directoryExists( root & "/" & th ) ) continue;
+			for ( var f in directoryList( root & "/" & th, false, "name" ) ) {
+				if ( reFindNoCase( "\.(webp|jpe?g|png)$", f ) ) out.append( { theme: th, name: f, path: root & "/" & th & "/" & f } );
+			}
+		}
+		arraySort( out, function( a, b ) { return compare( a.path, b.path ); } );
+		return out;
+	}
+
+	/**
+	 * The packs with their state, as text or JSON.
+	 * @asJson True for JSON output.
+	 */
+	function list( asJson ) {
+		var rows = [];
+		var lines = [];
+		for ( var p in catalog() ) {
+			var have = images( p.id ).len();
+			rows.append( { id: p.id, title: p.title, images: p.images, size_mb: p.sizeMb, installed: have > 0, installed_images: have, dir: dir( p.id ), license: p.license } );
+			lines.append( left( p.id & repeatString( " ", 10 ), 10 ) & p.title & " (" & p.images & " images, about " & p.sizeMb & " MB)  " & ( have ? "installed: " & have & " images in " & dir( p.id ) : "not installed" ) );
+		}
+		lines.append( "Install one: bxrig assets wallpapers install omarchy --yes" );
+		return variables.out.say( "ok", { packs: rows }, arguments.asJson, lines );
+	}
+
+	/**
+	 * Downloads a pack, checks its commit, and unpacks its images. Plans first.
+	 * @id The pack id.
+	 * @yes Apply (without it, only the plan is shown).
+	 * @dry Show the plan and change nothing.
+	 * @asJson True for JSON output.
+	 */
+	function install( id, yes, dry, asJson ) {
+		var p = find( arguments.id );
+		if ( structIsEmpty( p ) ) return variables.out.fail( "precondition", "unknown pack " & arguments.id & ". See: bxrig assets wallpapers", arguments.asJson );
+		var dest = dir( p.id );
+		var title = "download " & p.title & " (about " & p.sizeMb & " MB, " & p.images & " images) from " & p.repo & " at " & p.tag & " and unpack them into " & dest & "/.";
+		var plan = [ "Needs git. The commit is checked against " & left( p.commit, 12 ) & " before anything is used.", "Licence: " & p.license & ". A CREDITS.md goes with the images.", ( directoryExists( dest ) ? "The folder exists: it is replaced." : "Nothing else changes." ) ];
+		var data = { id: p.id, dir: dest, images: p.images, size_mb: p.sizeMb };
+		if ( !variables.proc.has( "git" ) ) return variables.out.fail( "precondition", "git is missing. Install it: bxrig pkg install git", arguments.asJson );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( title, data, arguments.asJson, arguments.dry, plan, "Add --yes to download." );
+		var work = dest & ".download";
+		if ( directoryExists( work ) ) directoryDelete( work, true );
+		directoryCreate( work, true, true );
+		var src = work & "/src";
+		var c = variables.proc.exec( [ "git", "clone", "--quiet", "--depth", "1", "--branch", p.tag, p.repo, src ], 1200 );
+		if ( c.exitCode != 0 ) { cleanup( work ); return variables.out.fail( "failed", "could not download " & p.id & ": " & variables.proc.why( c ), arguments.asJson ); }
+		var head = trim( variables.proc.exec( [ "git", "-C", src, "rev-parse", "HEAD" ], 30 ).output );
+		if ( head != p.commit ) { cleanup( work ); return variables.out.fail( "failed", "the downloaded commit " & left( head, 12 ) & " is not the one BxRig expects (" & left( p.commit, 12 ) & "). Nothing was installed.", arguments.asJson ); }
+		var stage = work & "/stage";
+		directoryCreate( stage, true, true );
+		var n = 0;
+		for ( var th in directoryList( src, false, "name" ) ) {
+			if ( left( th, 1 ) == "." || !directoryExists( src & "/" & th ) ) continue;
+			for ( var f in directoryList( src & "/" & th, false, "name" ) ) {
+				if ( !reFindNoCase( "\.(webp|jpe?g|png)$", f ) ) continue;
+				directoryCreate( stage & "/" & th, true, true );
+				fileCopy( src & "/" & th & "/" & f, stage & "/" & th & "/" & f );
+				n++;
+			}
+		}
+		if ( !n ) { cleanup( work ); return variables.out.fail( "failed", "the pack has no images", arguments.asJson ); }
+		var lic = fileExists( src & "/LICENSE" ) ? fileRead( src & "/LICENSE" ) : p.license;
+		fileWrite( stage & "/CREDITS.md", "# " & p.title & chr( 10 ) & chr( 10 ) & "These backgrounds come from " & p.repo & " (release " & p.tag & ", commit " & p.commit & ")." & chr( 10 ) & "Licence: " & p.license & "." & chr( 10 ) & chr( 10 ) & lic & chr( 10 ) );
+		if ( directoryExists( dest ) ) directoryDelete( dest, true );
+		directoryCreate( getDirectoryFromPath( dest & "/x" ), true, true );
+		directoryRename( stage, dest );
+		cleanup( work );
+		data.images = n;
+		return variables.out.say( "ok", data, arguments.asJson, [ "Installed " & n & " images in " & dest, "Credits: " & dest & "/CREDITS.md", "Cycle through them: bxrig theme wallpaper next" ] );
+	}
+
+	/**
+	 * Removes a pack's folder.
+	 * @id The pack id.
+	 * @yes Apply (without it, only the plan is shown).
+	 * @dry Show the plan and change nothing.
+	 * @asJson True for JSON output.
+	 */
+	function remove( id, yes, dry, asJson ) {
+		var p = find( arguments.id );
+		if ( structIsEmpty( p ) ) return variables.out.fail( "precondition", "unknown pack " & arguments.id & ". See: bxrig assets wallpapers", arguments.asJson );
+		var dest = dir( p.id );
+		if ( !directoryExists( dest ) ) return variables.out.say( "ok", { id: p.id, removed: false }, arguments.asJson, [ p.title & " is not installed." ] );
+		if ( !arguments.yes || arguments.dry ) return variables.out.plan( "delete " & dest & " (" & p.title & ").", { id: p.id }, arguments.asJson, arguments.dry, [ "Your other wallpapers are not touched." ], "Add --yes to delete." );
+		directoryDelete( dest, true );
+		return variables.out.say( "ok", { id: p.id, removed: true }, arguments.asJson, [ "Removed " & p.title ] );
+	}
+
+	/**
+	 * Deletes a work folder, ignoring errors.
+	 * @path The folder.
+	 */
+	function cleanup( path ) {
+		try { if ( directoryExists( arguments.path ) ) directoryDelete( arguments.path, true ); } catch ( any e ) {}
+	}
+
+	/**
+	 * Runs `assets wallpapers ...`.
+	 * @words The words after `wallpapers`.
+	 * @yes Apply changes.
+	 * @dry Show plans only.
+	 * @asJson True for JSON output.
+	 */
+	function run( words, yes, dry, asJson ) {
+		var sub = arguments.words.len() ? arguments.words[ 1 ] : "list";
+		var id = arguments.words.len() >= 2 ? arguments.words[ 2 ] : "";
+		if ( sub == "list" ) return list( arguments.asJson );
+		if ( ( sub == "install" || sub == "remove" ) && len( id ) ) return sub == "install" ? install( id, arguments.yes, arguments.dry, arguments.asJson ) : remove( id, arguments.yes, arguments.dry, arguments.asJson );
+		return variables.out.say( "usage", { error: "usage" }, arguments.asJson, [ new bxrig.CommandSpec().usage( "assets" ) ] );
+	}
+}

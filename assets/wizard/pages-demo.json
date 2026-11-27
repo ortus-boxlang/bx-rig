@@ -670,6 +670,20 @@
 					],
 					"live": true,
 					"preview": "theme"
+				},
+				{
+					"type": "multi",
+					"id": "wallpaper_packs",
+					"label": "Extra wallpaper packs",
+					"default": [],
+					"options": [
+						{
+							"value": "omarchy",
+							"label": "Omarchy backgrounds",
+							"description": "101 stills from the Omarchy themes, about 74 MB, downloaded now. MIT licensed."
+						}
+					],
+					"help": "Optional download. Later: `bxrig assets wallpapers install omarchy --yes`. Cycle them with `bxrig theme wallpaper next`."
 				}
 			]
 		},
