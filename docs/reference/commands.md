@@ -729,15 +729,22 @@ bxrig layout toggle
 
 ### `bxrig assets` {#bxrig-assets}
 
-Brand assets (logo, icon, wallpapers): list, or install them.
+Brand assets (logo, icon, wallpapers): list, or install them; wallpaper packs you can download.
 
 ```text
 bxrig assets list | install [--yes] [--dry-run] [--json]
+bxrig assets wallpapers [list] | install PACK [--yes] [--dry-run] | remove PACK [--yes] [--json]
 ```
+
+Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
 bxrig assets list
+bxrig assets wallpapers
+bxrig assets wallpapers install omarchy --yes
 ```
+
+> A wallpaper pack is downloaded only when you ask (about 74 MB for omarchy: 101 backgrounds of the Omarchy themes, MIT licensed). It is fetched with git at a pinned release and checked against a known commit, then unpacked into ~/Pictures/BxRig/omarchy/THEME/ with a CREDITS.md. bxrig theme wallpaper next cycles the current theme's images.
 
 ### `bxrig launchers` {#bxrig-launchers}
 
@@ -784,7 +791,7 @@ Themes, fonts, bar, dock, windows, monitors and power.
 Themes: 15 bundled (10 community themes, 5 BxRig), set one, light or dark, install from git.
 
 ```text
-bxrig theme list | show NAME | set NAME [--mode=theme|dark|light|auto] [--keep-wallpaper] | random | next | mode theme|dark|light|auto | install GIT_URL [--name=N] [--force] | import PATH [--name=N] [--force] | remove NAME | vscode [--yes] [--dry-run] | status [--dry-run] [--json]
+bxrig theme list | show NAME | set NAME [--mode=theme|dark|light|auto] [--keep-wallpaper] | random | next | wallpaper next|random | mode theme|dark|light|auto | install GIT_URL [--name=N] [--force] | import PATH [--name=N] [--force] | remove NAME | vscode [--yes] [--dry-run] | status [--dry-run] [--json]
 ```
 
 ```bash

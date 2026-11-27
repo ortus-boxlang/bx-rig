@@ -656,6 +656,7 @@ class {
 				if ( thSub == "status" && p.len() == 2 ) CLIExit( th.status( asJson ) );
 				if ( thSub == "set" && p.len() == 3 ) CLIExit( th.set( p[3], args.options.mode ?: "", structKeyExists( args.options, "keep-wallpaper" ), thDry, asJson ) );
 				if ( ( thSub == "random" || thSub == "next" ) && p.len() == 2 ) CLIExit( th.set( th.pick( thSub ), args.options.mode ?: "", structKeyExists( args.options, "keep-wallpaper" ), thDry, asJson ) );
+				if ( thSub == "wallpaper" && p.len() == 3 && arrayFind( [ "next", "random" ], p[3] ) ) CLIExit( th.wallpaper( p[3], thDry, asJson ) );
 				if ( thSub == "mode" && p.len() == 3 ) CLIExit( th.mode( p[3], thDry, asJson ) );
 				if ( thSub == "vscode" && p.len() == 2 ) CLIExit( th.vscode( structKeyExists( args.options, "yes" ), thDry, asJson ) );
 				if ( thSub == "install" && p.len() == 3 ) CLIExit( th.install( p[3], args.options.name ?: "", structKeyExists( args.options, "force" ), asJson ) );
@@ -1061,7 +1062,12 @@ class {
 				break;
 			case "assets":
 				// The embedded brand images: assets list | assets install [--yes] [--dry-run].
-				assetsSub = p.len() == 2 ? p[2] : "";
+				assetsSub = p.len() >= 2 ? p[2] : "";
+				if ( assetsSub == "wallpapers" ) {
+				assetsWords = [];
+				for ( asi = 3; asi <= p.len(); asi++ ) assetsWords.append( p[ asi ] );
+				CLIExit( new bxrig.WallpaperPacks( cli ).run( assetsWords, structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
+			}
 				assetsSvc = new bxrig.Assets( cli );
 				if ( assetsSub == "list" ) CLIExit( assetsSvc.list( asJson ) );
 				if ( assetsSub == "install" ) CLIExit( assetsSvc.install( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
