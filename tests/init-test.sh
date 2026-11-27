@@ -162,8 +162,8 @@ PY
 [[ -f "$tmp/cfg/bxrig/answers.json" ]] || fail 'the wizard did not save the answers'
 [[ "$(stat -c %a "$tmp/cfg/bxrig/answers.json")" == 600 ]] || fail 'answers.json must be mode 600'
 run "$binary" init --print-answers | jq -e '.desktops == "hyprland" and .shell == "zsh" and .terminal == "ghostty" and (has("login_session") | not)' >/dev/null || fail "saved answers: $(run "$binary" init --print-answers)"
-# (the wizard reads what the desktop is set to with the read-only `appearance ... status --json`; nothing else may run)
-[[ -z "$(grep -v ' status --json$' "$LOG")" ]] || fail "--dry-run ran commands: $(cat "$LOG")"
+# (the wizard reads what the desktop is set to with the read-only `appearance ... status --json`; nothing else may run) (and the read-only ai models recommend, which the AI page shows)
+[[ -z "$(grep -v -e ' status --json$' -e '^bxrig ai models recommend --json$' "$LOG")" ]] || fail "--dry-run ran commands: $(cat "$LOG")"
 # the laptop power question: yes on a laptop, no on a desktop
 mkdir -p "$tmp/ps/BAT0" "$tmp/ps/none"
 BXRIG_POWER_DIR="$tmp/ps" run "$binary" init --print-answers --from-system | jq -e '.power_setup == true' >/dev/null || fail 'power_setup is yes on a laptop'
