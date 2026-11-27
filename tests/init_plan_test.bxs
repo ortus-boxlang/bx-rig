@@ -139,6 +139,7 @@ testkit.check( "update channel and notifications", cmd( p, "update-channel" ) ==
 p = ip.plan( { app_mode: "defaults", scheduler: true, boxlang_modules: [ "bx-ai" ] } );
 idl = p.steps.map( function( s ) { return s.id; } );
 testkit.check( "BoxLang is installed once, before the steps that run it", arrayFind( idl, "boxlang" ) > 0 && arrayFind( idl, "boxlang" ) < arrayFind( idl, "boxlang-modules" ) && arrayFind( idl, "boxlang" ) < arrayFind( idl, "scheduler" ) && idl.filter( function( i ) { return i == "boxlang"; } ).len() == 1 );
+testkit.check( "Java 21 comes right before BoxLang", arrayFind( idl, "jdk" ) > 0 && arrayFind( idl, "jdk" ) + 1 == arrayFind( idl, "boxlang" ) );
 testkit.check( "no BoxLang step when nothing needs it", arrayFind( ip.plan( { app_mode: "defaults" } ).steps.map( function( s ) { return s.id; } ), "boxlang" ) == 0 );
 p = ip.plan( { app_mode: "defaults", agent_skills: [ "bxrig", "boxlang" ] } );
 testkit.check( "agent skills are one optional step", cmd( p, "agent-skills" ) == "bxrig skills install bxrig boxlang" );
