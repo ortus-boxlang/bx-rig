@@ -1,0 +1,27 @@
+// DisplayScale: a first scale for each screen, from its resolution, and the starter hyprland.lua that uses it.
+// Run from src/: (cd src && matchbox ../tests/display_scale_test.bxs)
+testkit = new lib.Check( "display scale" );
+d = new bxrig.DisplayScale();
+testkit.check( "a 2.8K laptop panel gets 1.5, not Hyprland's big auto", d.suggest( 2880, 1800 ) == 1.5 );
+testkit.check( "1080p stays at 1", d.suggest( 1920, 1080 ) == 1 && d.suggest( 1920, 1200 ) == 1 );
+testkit.check( "4K gets 2 and a 3840x2400 panel 2", d.suggest( 3840, 2160 ) == 2 && d.suggest( 3840, 2400 ) == 2 );
+testkit.check( "1440p gets 1.25", d.suggest( 2560, 1440 ) == 1.25 && d.suggest( 2560, 1600 ) == 1.25 );
+testkit.check( "only an even scale is chosen, otherwise auto", d.suggest( 2256, 1504 ) == "auto" && d.suggest( 1366, 768 ) == "auto" );
+// a fake /sys/class/drm
+dir = testkit.tmp();
+for ( s in [ { n: "card1-eDP-1", st: "connected", m: "2880x1800" & chr( 10 ) & "1920x1200" }, { n: "card1-HDMI-A-1", st: "connected", m: "1920x1080" }, { n: "card1-DP-3", st: "disconnected", m: "3840x2160" } ] ) {
+	directoryCreate( dir & "/" & s.n );
+	fileWrite( dir & "/" & s.n & "/status", s.st & chr( 10 ) );
+	fileWrite( dir & "/" & s.n & "/modes", s.m & chr( 10 ) );
+}
+directoryCreate( dir & "/card1" );
+// the class reads BXRIG_DRM_DIR through Env: set it for this process by building the object with the folder
+ds = new bxrig.DisplayScale( dir );
+scr = ds.connected();
+testkit.check( "connected screens only, named like Hyprland names them", scr.len() == 2 && scr[ 1 ].name == "HDMI-A-1" && scr[ 2 ].name == "eDP-1" && scr[ 2 ].width == 2880 && scr[ 2 ].height == 1800 );
+lua = ds.monitorsLua();
+testkit.check( "one hl.monitor line per screen with its scale and what it shows", lua contains 'output = "eDP-1", mode = "preferred", position = "auto", scale = 1.5 })' && lua contains "shown as 1920x1200" && lua contains 'output = "HDMI-A-1"' && lua contains "scale = 1 " );
+testkit.check( "no drm folder: no lines", new bxrig.DisplayScale( dir & "/none" ).monitorsLua() == "" );
+st = new bxrig.Starter( { terminal: "kitty", layout: "dwindle", workspaces: 3, layouts: [], naturalScroll: false } );
+testkit.check( "the starter hyprland.lua keeps one catch-all rule and no leftover marker", !( st.hyprlandText() contains "BXRIG-MONITORS" ) && st.hyprlandText() contains 'output   = ""' );
+testkit.done();
