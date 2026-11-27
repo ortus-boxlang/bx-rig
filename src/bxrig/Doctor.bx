@@ -50,13 +50,17 @@ class Doctor {
 		return row( arguments.id, arguments.group, true, versionOf( arguments.id ), "", "" );
 	}
 
+	/**
+	 * The java check: any Java 21 or newer is fine (jenv may pick 25 globally).
+	 * @group The check group.
+	 */
 	function java( group ) {
 		var fix = installHint( "jdk21-openjdk" );
 		if ( !variables.proc.has( "java" ) ) return row( "java", arguments.group, false, "", "", fix );
 		// `java -version` prints to the error stream
 		var r = variables.proc.exec( [ "java", "-version" ], 30 );
 		var v = firstVersion( reReplace( r.output & chr( 10 ) & ( structKeyExists( r, "error" ) ? r.error : "" ), '^[^"]*"', "" ) );
-		if ( listFirst( v, "." ) != 21 ) return row( "java", arguments.group, false, v, "found " & ( len( v ) ? v : "an unknown version" ) & ", need 21", fix );
+		if ( !isNumeric( listFirst( v, "." ) ) || listFirst( v, "." ) < 21 ) return row( "java", arguments.group, false, v, "found " & ( len( v ) ? v : "an unknown version" ) & ", need 21 or newer", fix );
 		return row( "java", arguments.group, true, v, "", "" );
 	}
 

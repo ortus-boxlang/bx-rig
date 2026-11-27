@@ -313,7 +313,7 @@ class Init {
 				for ( var pg in spec.pages ) for ( var q in pg.questions ) if ( ( q.id ?: "" ) != "" ) known[ q.id ] = true;
 				opts = {
 					start: true,
-					presets: { new: sys.startingAnswers( {}, found.answers, "fresh" ), saved: sys.startingAnswers( base, found.answers, "tune" ) },
+					presets: { new: sys.startingAnswers( {}, found.answers, "fresh" ), saved: sys.startingAnswers( base, found.answers, "rerun" ) },
 					importer: function( path ) { return importAnswers( path, known ); }
 				};
 				// the saved answers are only offered when there are some

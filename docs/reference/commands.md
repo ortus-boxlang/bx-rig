@@ -1406,22 +1406,23 @@ bxrig timemachine --demo
 
 ### `bxrig java` {#bxrig-java}
 
-Your Java homes: list them, install a JDK (through SDKMAN when you have it), choose the default for new shells.
+Your Java versions: jenv switches them, SDKMAN or Temurin supplies them. 21 is always there.
 
 ```text
-bxrig java list | available | install MAJOR|IDENTIFIER [--yes] [--dry-run] | default ID|MAJOR [--yes] | default --unset [--yes] | remove ID [--yes] | env [ID|MAJOR] [--json]
+bxrig java setup [--versions=25,17] [--yes] | status | list | available | install MAJOR|IDENTIFIER [--yes] [--dry-run] | global ID|MAJOR [--yes] | local ID|MAJOR [--yes] | remove ID [--yes] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
 
 ```bash
-bxrig java list
-bxrig java install 21 --yes
-bxrig java default 21 --yes
-bxrig java env 17
+bxrig java setup --yes
+bxrig java setup --versions=25,17 --yes
+bxrig java install 25 --yes
+bxrig java global 21 --yes
+bxrig java local 25 --yes
 ```
 
-> Homes come from SDKMAN, BxRig's own Temurin installs (~/.local/share/bxrig/java) and /usr/lib/jvm. With SDKMAN installed (bxrig sdk setup) installs and removals go through it: a major like 21 picks the newest Temurin, an identifier like 21.0.13.0+9-tem installs exactly that. Without it a Temurin JDK is downloaded straight from Adoptium. The system's own JDKs are never deleted. The default is written to java.sh and java.fish, which the shell starters source, so run bxrig refresh shell once on an existing setup.
+> jenv (in ~/.jenv) only switches versions; the JDKs come from SDKMAN (when installed: bxrig sdk setup) or are downloaded as Temurin from Adoptium into ~/.local/share/bxrig/java. setup installs jenv, enables its export, maven and gradle plugins, installs JDK 21 plus any --versions, and makes 21 the global version. New shells load jenv through ~/.config/bxrig/jenv.sh and jenv.fish (run bxrig refresh shell once on an existing setup). global is `jenv global`, local is `jenv local`. The system's own JDKs are never deleted. default still works as the old name of global.
 
 ### `bxrig sdk` {#bxrig-sdk}
 

@@ -1,0 +1,179 @@
+/**
+ * jenv (https://github.com/jenv/jenv) as BxRig uses it: the Java version switcher, an implementation detail of `bxrig java`.
+ * jenv only switches between JDKs. The JDKs themselves come from SDKMAN or Temurin (see bxrig.Java).
+ * BxRig keeps jenv in ~/.jenv (override: BXRIG_JENV_DIR) and never edits your shell files: it writes jenv.sh and jenv.fish
+ * in ~/.config/bxrig, which the shell starters source.
+ */
+class Jenv {
+
+	/**
+	 * @cli The command line context of this run.
+	 * @runner Optional fake process runner for tests.
+	 */
+	function init( cli, runner = "" ) {
+		variables.environ = new bxrig.util.Env();
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		variables.config = new bxrig.ConfigService().quiet( true );
+		return this;
+	}
+
+	/** The jenv root folder: BXRIG_JENV_DIR or ~/.jenv. */
+	function root() {
+		return variables.environ.named( "jenvDir", variables.environ.home() & "/.jenv" );
+	}
+
+	/** The jenv program inside the root. */
+	function bin() {
+		return root() & "/bin/jenv";
+	}
+
+	/** The git address jenv is cloned from (BXRIG_JENV_REPO can point at a local folder in tests). */
+	function repo() {
+		return variables.environ.named( "jenvRepo", "https://github.com/jenv/jenv.git" );
+	}
+
+	/** True when jenv is installed in the root. */
+	function installed() {
+		return fileExists( bin() );
+	}
+
+	/** Where BxRig writes its shell files. */
+	function cfgDir() {
+		return variables.config.cfgHome() & "/bxrig";
+	}
+
+	/** The bash/zsh snippet file. */
+	function shFile() {
+		return cfgDir() & "/jenv.sh";
+	}
+
+	/** The fish snippet file. */
+	function fishFile() {
+		return cfgDir() & "/jenv.fish";
+	}
+
+	/**
+	 * Runs one jenv command with JENV_ROOT set. Never throws.
+	 * @args The jenv arguments, like [ "global", "21" ].
+	 * @timeout Seconds.
+	 * @return { exitCode, output }
+	 */
+	function run( args, timeout = 60 ) {
+		var argv = [ "env", "JENV_ROOT=" & root(), bin() ];
+		for ( var a in arguments.args ) argv.append( a );
+		return variables.proc.exec( argv, arguments.timeout );
+	}
+
+	/**
+	 * Clones jenv into the root (a shallow clone).
+	 * @return { exitCode, output }
+	 */
+	function install() {
+		if ( installed() ) return { exitCode: 0, output: "" };
+		directoryCreate( getDirectoryFromPath( root() & "/x" ), true, true );
+		return variables.proc.exec( [ "git", "clone", "--depth", "1", repo(), root() ], 600 );
+	}
+
+	/**
+	 * Turns on the jenv plugins BxRig relies on: export (JAVA_HOME follows the version), maven and gradle.
+	 * @return The list of plugins that could not be enabled (empty when all went well).
+	 */
+	function enablePlugins() {
+		var failed = [];
+		for ( var p in [ "export", "maven", "gradle" ] ) {
+			var r = run( [ "enable-plugin", p ] );
+			if ( r.exitCode != 0 && !findNoCase( "already", r.output ) ) failed.append( p );
+		}
+		return failed;
+	}
+
+	/**
+	 * Writes jenv.sh and jenv.fish, which put jenv on the PATH and run `jenv init -`.
+	 */
+	function writeShell() {
+		directoryCreate( cfgDir(), true, true );
+		var head = "# Written by `bxrig java setup`. jenv switches Java versions; manage them with: bxrig java";
+		var q = chr( 34 );
+		var sh = [
+			head,
+			"export JENV_ROOT=" & q & root() & q,
+			"[ -d " & q & "$JENV_ROOT/bin" & q & " ] && export PATH=" & q & "$JENV_ROOT/bin:$PATH" & q,
+			"command -v jenv >/dev/null 2>&1 && eval " & q & "$(jenv init -)" & q
+		];
+		var fish = [
+			head,
+			"set -gx JENV_ROOT " & root(),
+			"test -d $JENV_ROOT/bin; and fish_add_path -gP $JENV_ROOT/bin",
+			"status --is-interactive; and type -q jenv; and jenv init - | source"
+		];
+		variables.config.writeAtomic( shFile(), sh.toList( chr( 10 ) ) & chr( 10 ), "644" );
+		variables.config.writeAtomic( fishFile(), fish.toList( chr( 10 ) ) & chr( 10 ), "644" );
+	}
+
+	/**
+	 * The versions jenv knows (names, like "21" or "openjdk64-21.0.5").
+	 * @return Array of strings.
+	 */
+	function versions() {
+		if ( !installed() ) return [];
+		var r = run( [ "versions", "--bare" ] );
+		if ( r.exitCode != 0 ) return [];
+		var out = [];
+		for ( var l in listToArray( r.output, chr( 10 ) ) ) if ( len( trim( l ) ) ) out.append( trim( l ) );
+		return out;
+	}
+
+	/**
+	 * The global version jenv uses, or "" when none is set.
+	 */
+	function globalVersion() {
+		if ( !installed() ) return "";
+		var r = run( [ "global" ] );
+		var v = trim( listFirst( r.output, chr( 10 ) ) );
+		return r.exitCode == 0 && v != "system" ? v : "";
+	}
+
+	/**
+	 * Finds the jenv name that belongs to a JDK, by its version, or "".
+	 * @home A home struct from bxrig.Java.
+	 */
+	function nameFor( home ) {
+		var v = arguments.home.version;
+		for ( var n in versions() ) {
+			if ( n == v || n == arguments.home.major & "" || right( n, len( v ) + 1 ) == "-" & v ) return n;
+		}
+		return "";
+	}
+
+	/**
+	 * Registers a JDK with jenv (`jenv add`). Safe to repeat.
+	 * @path The JDK folder.
+	 */
+	function add( path ) {
+		return run( [ "add", arguments.path ] );
+	}
+
+	/**
+	 * Sets the global version.
+	 * @name A jenv version name.
+	 */
+	function setGlobal( name ) {
+		return run( [ "global", arguments.name ] );
+	}
+
+	/**
+	 * Sets the version for the current folder (writes .java-version).
+	 * @name A jenv version name.
+	 */
+	function setLocal( name ) {
+		return run( [ "local", arguments.name ] );
+	}
+
+	/**
+	 * Forgets a version (`jenv remove`).
+	 * @name A jenv version name.
+	 */
+	function forget( name ) {
+		return run( [ "remove", arguments.name ] );
+	}
+}

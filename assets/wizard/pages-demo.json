@@ -1209,7 +1209,7 @@
 				{
 					"type": "info",
 					"label": "Always installed: BoxLang",
-					"help": "BoxLang with Java 21, its version managers (bvm, mvm) and MatchBox, so BxRig and your BoxLang tools always work."
+					"help": "BoxLang with Java 21 (switched with jenv), its version managers (bvm, mvm) and MatchBox, so BxRig and your BoxLang tools always work."
 				},
 				{
 					"type": "multi",
@@ -1223,7 +1223,7 @@
 						{
 							"value": "java",
 							"label": "Java with Gradle and Maven",
-							"description": "JDK 21, plus the build tools."
+							"description": "Gradle and Maven (Java 21 and jenv are always installed)."
 						},
 						{
 							"value": "php",
@@ -1252,6 +1252,41 @@
 						}
 					],
 					"help": "Pick as many as you use."
+				},
+				{
+					"type": "multi",
+					"id": "java_versions",
+					"label": "Java versions besides 21",
+					"default": [
+						"25"
+					],
+					"when": {
+						"id": "toolchains",
+						"has": "java"
+					},
+					"options": [
+						{
+							"value": "25",
+							"label": "Java 25",
+							"description": "The current long-term support release."
+						},
+						{
+							"value": "17",
+							"label": "Java 17",
+							"description": "For older projects."
+						},
+						{
+							"value": "11",
+							"label": "Java 11",
+							"description": "For older projects."
+						},
+						{
+							"value": "8",
+							"label": "Java 8",
+							"description": "Legacy."
+						}
+					],
+					"help": "Java 21 is always installed and is the global version (BoxLang needs it). jenv switches between them: bxrig java global, bxrig java local."
 				},
 				{
 					"type": "multi",

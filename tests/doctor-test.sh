@@ -43,7 +43,7 @@ jq -e '(.data.tools[] | select(.id == "matchbox")) | .ok == true and .compiles_b
 # a wrong Java is missing, a MatchBox without the terminal UI is missing (it cannot compile BxRig)
 ln -s "$(command -v jq)" "$tmp/bin/jq" 2>/dev/null || true
 out="$(run env JAVA_VER=17.0.9 "$binary" doctor)" && fail 'Java 17 must exit 4' || true
-[[ "$out" == *'miss java 17.0.9 (found 17.0.9, need 21; install: sudo pacman -S jdk21-openjdk)'* ]] || fail "doctor java: $out"
+[[ "$out" == *'miss java 17.0.9 (found 17.0.9, need 21 or newer; install: sudo pacman -S jdk21-openjdk)'* ]] || fail "doctor java: $out"
 out="$(run env MB_TUI=no "$binary" doctor)" && fail 'a MatchBox without the terminal UI must exit 4' || true
 [[ "$out" == *'miss matchbox 0.14.0 (cannot compile BxRig; install: install.sh toolchains --yes --matchbox-branch bxrig)'* ]] || fail "doctor matchbox without TUI: $out"
 
