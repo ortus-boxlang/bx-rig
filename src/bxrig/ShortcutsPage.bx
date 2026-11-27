@@ -1,0 +1,308 @@
+/**
+ * The Shortcuts page of the Control Center (`bxrig tui shortcuts`, and what Super+K opens): every shortcut BxRig manages, grouped, with the keys
+ * drawn as keycaps, a live filter and a detail pane. Not a plain table: the groups are tabs, typing filters across action, keys, group and
+ * how it is bound, and shortcuts without keys are hidden until you ask for them.
+ *   Keys   Up Down PgUp PgDn Home End move   Left Right (or 1 to 9) switch group   / type to filter (Enter keeps it, Escape clears it)
+ *          u show shortcuts without keys too   y only yours   a all (clears the filters)
+ *          e rebind   r reset to the default   c conflicts
+ * The detail pane shows when there are 92 columns; under 56 the list is all there is.
+ * Data comes from `bxrig keys show` (the shared shortcut table), so rebinds show up after a reload.
+ *   id() title() icon() load() state() keys() paint( kit, x, y, w, h, tick, phase ) onKey( key ) act( hit ) onScroll( dir ) usesLeft()
+ */
+class ShortcutsPage {
+
+	/**
+	 * @demo True to use a few made up shortcuts (screenshots and tests without a machine).
+	 * @rows Optional rows to use instead of asking `keys show` (tests).
+	 */
+	function init( demo = false, rows = "" ) {
+		variables.demo = arguments.demo;
+		variables.given = arguments.rows;
+		variables.proc = new bxrig.util.Proc();
+		variables.caps = new bxrig.KeyCaps();
+		variables.all = [];
+		variables.groups = [];
+		variables.group = 0;
+		variables.showUnbound = false;
+		variables.onlyYours = false;
+		variables.list = new bxrig.TuiList( [], function( r ) { return r.__text ?: ""; } );
+		variables.mode = "list";
+		variables.input = "";
+		variables.loaded = false;
+		variables.rowsShown = 10;
+		return this;
+	}
+
+	/** The page id. */
+	function id() { return "shortcuts"; }
+
+	/** The page title. */
+	function title() { return "Shortcuts"; }
+
+	/** The page icon. */
+	function icon() { return new bxrig.ControlCenterPages().icon( "shortcuts" ); }
+
+	/** True while a filter is being typed (the left and right keys belong to the text then). */
+	function usesLeft() { return variables.mode != "list"; }
+
+	/** The highlighted shortcut, or "" when nothing matches. */
+	function selected() { return variables.list.selected(); }
+
+	// ---- data ----
+
+	/**
+	 * Reads the shortcuts again and keeps the cursor on the same one.
+	 */
+	function load() {
+		var keep = variables.list.selected();
+		var keepId = isSimpleValue( keep ) ? "" : keep.id;
+		var src = isArray( variables.given ) ? variables.given : ( variables.demo ? demoRows() : ( variables.proc.selfData( [ "keys", "show" ] ).shortcuts ?: [] ) );
+		var rows = [];
+		variables.groups = [];
+		for ( var s in src ) {
+			var g = s.group ?: "Other";
+			if ( !arrayFind( variables.groups, g ) ) variables.groups.append( g );
+			var bound = len( s.keys ?: "" ) > 0;
+			rows.append( { id: s.id, action: s.action, keys: s.keys ?: "", group: g, how: s.how ?: "", custom: s.custom ?: false, runs: s.runs ?: false, bound: bound,
+					__text: lCase( s.action & " " & ( s.keys ?: "" ) & " " & caps().text( s.keys ?: "" ) & " " & g & " " & ( s.how ?: "" ) ) } );
+		}
+		variables.all = rows;
+		variables.loaded = true;
+		if ( variables.group > variables.groups.len() ) variables.group = 0;
+		refilter();
+		if ( len( keepId ) ) { var at = 0; var i = 0; for ( var item in variables.list.items() ) { i++; if ( item.id == keepId ) at = i; } if ( at ) variables.list.select( at ); }
+		return this;
+	}
+
+	/** The KeyCaps helper. */
+	function caps() { return variables.caps; }
+
+	/** A few shortcuts for demos and screenshots. */
+	function demoRows() {
+		return [
+			{ id: "launcher", action: "Launcher", keys: "Super+Space", group: "Menus and launchers", how: "Hyprland binding", custom: false },
+			{ id: "terminal", action: "Terminal", keys: "Super+Return", group: "Apps", how: "Hyprland binding", custom: false },
+			{ id: "ai-shell", action: "Pull-down AI", keys: "Super+grave", group: "Apps", how: "Hyprland binding", custom: true },
+			{ id: "copy", action: "Copy", keys: "Super+C", group: "Editing", how: "xremap", custom: false },
+			{ id: "paste", action: "Paste", keys: "Super+V", group: "Editing", how: "xremap", custom: false },
+			{ id: "close", action: "Close window", keys: "Super+W", group: "Windows", how: "Hyprland binding", custom: false },
+			{ id: "undo", action: "Undo", keys: "", group: "Editing", how: "xremap", custom: false }
+		];
+	}
+
+	/**
+	 * The rows that pass the group, the bound and the yours switches, then the typed text (TuiList).
+	 */
+	function refilter() {
+		var g = variables.group > 0 ? variables.groups[ variables.group ] : "";
+		var unb = variables.showUnbound;
+		var mine = variables.onlyYours;
+		var rows = variables.all.filter( function( r ) { return ( !len( g ) || r.group == g ) && ( unb || r.bound ) && ( !mine || r.custom ); } );
+		var q = variables.list.query();
+		variables.list.setItems( rows );
+		if ( len( q ) ) variables.list.filter( q );
+	}
+
+	/** What the page shows, for tests and `tui shortcuts --json`. */
+	function state() {
+		var sel = variables.list.selected();
+		return { rows: variables.all.len(), shown: variables.list.count(), cursor: variables.list.cursor(), mode: variables.mode, filter: variables.list.query(), group: variables.group > 0 ? variables.groups[ variables.group ] : "All",
+			groups: variables.groups, unbound: variables.showUnbound, yours: variables.onlyYours, selected: isSimpleValue( sel ) ? "" : sel.id, items: variables.list.items() };
+	}
+
+	// ---- keys ----
+
+	/** The keys of the page, for the footer and for dispatch. */
+	function keyMap() {
+		var m = new bxrig.KeyMap();
+		if ( variables.mode != "list" ) return m.bind( "Enter", "Enter", "keep", "keep" ).bind( "Esc", "Escape", "clear", "clear" );
+		return m.bind( "↑↓", [ "Up", "k" ], "move", "up" ).bind( "", [ "Down", "j" ], "", "down" ).bind( "", "PageUp", "", "pageUp" ).bind( "", "PageDown", "", "pageDown" ).bind( "", "Home", "", "home" ).bind( "", "End", "", "end" )
+		.bind( "←→", [ "Left", "h" ], "group", "prevGroup" ).bind( "", [ "Right", "l" ], "", "nextGroup" ).bind( "/", "/", "filter", "type" )
+		.bind( "u", "u", variables.showUnbound ? "hide unbound" : "show unbound", "unbound" ).bind( "y", "y", variables.onlyYours ? "all keys" : "yours", "yours" ).bind( "a", "a", "all", "all" )
+		.bind( "e", "e", "rebind", "rebind" ).bind( "r", "r", "reset", "reset" ).bind( "c", "c", "conflicts", "conflicts" );
+	}
+
+	/** The footer hints. */
+	function keys() { return keyMap().hints(); }
+
+	/**
+	 * Moves to another group (0 is All).
+	 * @n The group number, 0 to the number of groups.
+	 */
+	function setGroup( n ) {
+		var total = variables.groups.len();
+		variables.group = total ? ( arguments.n < 0 ? total : ( arguments.n > total ? 0 : arguments.n ) ) : 0;
+		refilter();
+		return this;
+	}
+
+	/**
+	 * A key event. Returns an intent for the Control Center ({} for none).
+	 * @key The key name.
+	 */
+	function onKey( key ) {
+		var k = arguments.key;
+		if ( variables.mode != "list" ) {
+			if ( k == "Enter" ) variables.mode = "list";
+			else if ( k == "Escape" ) { variables.input = ""; variables.list.filter( "" ); variables.mode = "list"; }
+			else if ( k == "Backspace" ) { variables.input = len( variables.input ) > 1 ? left( variables.input, len( variables.input ) - 1 ) : ""; variables.list.filter( variables.input ); }
+			else if ( len( k ) == 1 || k == "Space" ) { variables.input &= ( k == "Space" ? " " : k ); variables.list.filter( variables.input ); }
+			return {};
+		}
+		if ( len( k ) == 1 && isNumeric( k ) && k != "0" ) { setGroup( int( val( k ) ) <= variables.groups.len() ? int( val( k ) ) : variables.group ); return {}; }
+		var what = keyMap().match( k );
+		var sel = variables.list.selected();
+		if ( what == "up" ) { variables.list.move( -1 ); return {}; }
+		if ( what == "down" ) { variables.list.move( 1 ); return {}; }
+		if ( what == "pageUp" ) { variables.list.page( -1, variables.rowsShown ); return {}; }
+		if ( what == "pageDown" ) { variables.list.page( 1, variables.rowsShown ); return {}; }
+		if ( what == "home" ) { variables.list.home(); return {}; }
+		if ( what == "end" ) { variables.list.end(); return {}; }
+		if ( what == "prevGroup" ) { setGroup( variables.group - 1 < 0 ? variables.groups.len() : variables.group - 1 ); return {}; }
+		if ( what == "nextGroup" ) { setGroup( variables.group + 1 > variables.groups.len() ? 0 : variables.group + 1 ); return {}; }
+		if ( what == "type" ) { variables.mode = "input"; variables.input = variables.list.query(); return {}; }
+		if ( what == "unbound" ) { variables.showUnbound = !variables.showUnbound; refilter(); return {}; }
+		if ( what == "yours" ) { variables.onlyYours = !variables.onlyYours; refilter(); return {}; }
+		if ( what == "all" ) { variables.showUnbound = false; variables.onlyYours = false; variables.group = 0; variables.input = ""; variables.list.filter( "" ); refilter(); return {}; }
+		if ( what == "conflicts" ) return { action: "show", title: "Conflicts", args: [ "keys", "conflicts" ] };
+		if ( isSimpleValue( sel ) ) return {};
+		if ( what == "rebind" ) {
+			var row = sel;
+			return { action: "ask", title: "Rebind " & row.action, prompt: "New keys, like Super+Shift+T", make: function( v ) { return { action: "cli", title: "Rebind " & row.action, args: [ "keys", "set", row.id, v ] }; } };
+		}
+		if ( what == "reset" ) return { action: "cli", title: "Reset " & sel.action, args: [ "keys", "reset", sel.id ] };
+		return {};
+	}
+
+	/**
+	 * A click on something the page drew.
+	 * @hit { kind, n }
+	 */
+	function act( hit ) {
+		if ( arguments.hit.kind == "row" ) { variables.list.select( arguments.hit.n ); return {}; }
+		if ( arguments.hit.kind == "group" ) { setGroup( arguments.hit.n - 1 ); return {}; }
+		return {};
+	}
+
+	/** Mouse wheel. @dir up or down. */
+	function onScroll( dir ) { variables.list.move( arguments.dir == "up" ? -3 : 3 ); return {}; }
+
+	// ---- drawing ----
+
+	/** Text cut or padded to exactly w columns. */
+	function padText( s, w ) { var t = s & ""; return len( t ) >= w ? left( t, max( 0, w ) ) : t & repeatString( " ", w - len( t ) ); }
+
+	/**
+	 * Draws the page.
+	 * @kit The TuiKit.
+	 * @x Left column.
+	 * @y Top row.
+	 * @w Width.
+	 * @h Height.
+	 * @tick Animation tick.
+	 * @phase Animation phase.
+	 */
+	function paint( kit, x, y, w, h, tick, phase ) {
+		var k = arguments.kit;
+		var col = function( n ) { return k.color( n ); };
+		var ico = k.icon( icon() );
+		if ( len( ico ) ) k.put( arguments.x + 1, arguments.y, ico, col( "GREEN" ), col( "BASE" ) );
+		var tx = arguments.x + 1 + ( len( ico ) ? 2 : 0 );
+		k.put( tx, arguments.y, "Shortcuts", col( "TEXT" ), col( "BASE" ), true );
+		var tag = variables.list.count() & " of " & variables.all.len() & ( variables.showUnbound ? "" : " with keys" ) & ( variables.onlyYours ? ", yours" : "" );
+		k.put( tx + 11, arguments.y, k.trunc( tag, arguments.w - 40 ), col( "OVERLAY" ), col( "BASE" ) );
+		var shown = variables.mode != "list" ? "/ " & variables.input & "▌" : ( len( variables.list.query() ) ? "/ " & variables.list.query() : "" );
+		if ( len( shown ) ) k.put( arguments.x + arguments.w - len( shown ) - 2, arguments.y, shown, variables.mode != "list" ? col( "GREEN" ) : col( "CYAN" ), col( "BASE" ), true );
+		paintTabs( k, arguments.x + 1, arguments.y + 1, arguments.w - 2, arguments.phase );
+		var top = arguments.y + 3;
+		var ph = arguments.h - 3;
+		var paneW = arguments.w >= 92 ? 34 : 0;
+		var listW = arguments.w - paneW - ( paneW ? 1 : 0 );
+		paintList( k, arguments.x, top, listW, ph, arguments.phase );
+		if ( paneW ) paintPane( k, arguments.x + listW + 1, top, paneW, ph, arguments.phase );
+	}
+
+	/**
+	 * A short name for a group tab.
+	 * @group The group name from the shortcut table.
+	 */
+	function shortName( group ) {
+		var map = { "Control Center pages": "Pages", "Notifications and panels": "Panels", "Capture and recording": "Capture", "Menus and launchers": "Menus", "Hardware and keys": "Hardware" };
+		return structKeyExists( map, arguments.group ) ? map[ arguments.group ] : arguments.group;
+	}
+
+	/**
+	 * The group tabs; when they do not fit, only the current group with arrows.
+	 */
+	function paintTabs( k, x, y, w, phase ) {
+		var names = [ "All" ];
+		for ( var g in variables.groups ) names.append( shortName( g ) );
+		var need = 0;
+		for ( var n in names ) need += len( n ) + 3;
+		if ( need <= arguments.w ) { arguments.k.tabs( arguments.x, arguments.y, names, variables.group + 1, "group", arguments.phase ); return; }
+		var label = " ◀  " & names[ variables.group + 1 ] & "  ▶  (" & ( variables.group + 1 ) & " of " & names.len() & ", left and right switch) ";
+		arguments.k.put( arguments.x, arguments.y, arguments.k.trunc( label, arguments.w ), arguments.k.color( "CRUST" ), arguments.k.color( "GREEN" ), true );
+	}
+
+	/**
+	 * The list: the cursor, the action, the keys as caps and (in All) the group.
+	 */
+	function paintList( k, x, y, w, h, phase ) {
+		var kit = arguments.k;
+		kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "", false, arguments.phase );
+		var rowsN = max( 1, arguments.h - 2 );
+		variables.rowsShown = rowsN;
+		variables.list.fit( rowsN );
+		var win = variables.list.window( rowsN );
+		var ry = arguments.y + 1;
+		var inner = arguments.w - 4;
+		var groupW = variables.group == 0 && inner >= 78 ? 22 : 0;
+		// the action gets what the keycaps and the group column leave (the longest keys take about 36 columns)
+		var actW = min( 52, max( 14, inner - groupW - 38 ) );
+		if ( !win.len() ) kit.put( arguments.x + 2, ry, variables.loaded ? ( variables.showUnbound ? "No shortcut matches." : "No shortcut with keys matches. Press u to include the ones without." ) : "Reading...", kit.color( "OVERLAY" ), kit.color( "MANTLE" ) );
+		for ( var item in win ) {
+			var r = item.item;
+			var on = item.index == variables.list.cursor();
+			var bg = on ? kit.color( "SURFACE0" ) : kit.color( "MANTLE" );
+			if ( on ) kit.fillRect( arguments.x + 1, ry, arguments.w - 2, 1, kit.color( "SURFACE0" ) );
+			kit.put( arguments.x + 1, ry, on ? "▸" : " ", kit.color( "GREEN" ), bg, true );
+			var cx = kit.put( arguments.x + 3, ry, padText( kit.trunc( r.action, actW - 1 ), actW ), on ? kit.color( "GREEN" ) : kit.color( "TEXT" ), bg, on );
+			if ( r.custom ) kit.put( arguments.x + 3 + actW - 2, ry, "★", kit.color( "YELLOW" ), bg );
+			if ( r.bound ) variables.caps.draw( kit, cx, ry, r.keys, kit.color( "TEXT" ), on ? kit.color( "SURFACE1" ) : kit.color( "SURFACE0" ), bg );
+			else kit.put( cx, ry, "no keys", kit.color( "OVERLAY" ), bg );
+			if ( groupW ) kit.put( arguments.x + arguments.w - groupW - 2, ry, padText( kit.trunc( r.group, groupW ), groupW ), kit.color( "OVERLAY" ), bg );
+			kit.hit( "row", arguments.x + 1, ry, arguments.w - 2, 1, item.index );
+			ry++;
+		}
+		if ( variables.list.count() > rowsN ) kit.put( arguments.x + arguments.w - 12, arguments.y, " " & variables.list.cursor() & "/" & variables.list.count() & " ", kit.color( "OVERLAY" ), kit.color( "MANTLE" ) );
+	}
+
+	/**
+	 * The detail pane of the highlighted shortcut: its name, its keys as big caps, the group, how it is bound and what you can do with it.
+	 */
+	function paintPane( k, x, y, w, h, phase ) {
+		var kit = arguments.k;
+		kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "", false, arguments.phase );
+		var sel = variables.list.selected();
+		var ix = arguments.x + 2;
+		var iw = arguments.w - 4;
+		var bg = kit.color( "MANTLE" );
+		if ( isSimpleValue( sel ) ) { kit.put( ix, arguments.y + 1, "Nothing selected.", kit.color( "OVERLAY" ), bg ); return; }
+		var ry = arguments.y + 1;
+		for ( var line in kit.wrap( sel.action, iw ) ) { kit.put( ix, ry, line, kit.color( "TEXT" ), bg, true ); ry++; }
+		ry++;
+		if ( sel.bound ) variables.caps.draw( kit, ix, ry, sel.keys, kit.color( "TEXT" ), kit.color( "SURFACE1" ), bg ); else kit.put( ix, ry, "not bound", kit.color( "OVERLAY" ), bg );
+		ry += 2;
+		var facts = [ [ "Group", sel.group ], [ "Through", len( sel.how ) ? sel.how : "BxRig" ], [ "Origin", sel.custom ? "yours" : "the default" ] ];
+		if ( sel.bound ) facts.append( [ "Written", variables.caps.text( sel.keys ) ] );
+		for ( var f in facts ) {
+			if ( ry >= arguments.y + arguments.h - 4 ) break;
+			kit.put( ix, ry, padText( f[ 1 ], 9 ), kit.color( "OVERLAY" ), bg );
+			kit.put( ix + 9, ry, kit.trunc( f[ 2 ], iw - 9 ), kit.color( "SUB" ), bg );
+			ry++;
+		}
+		ry++;
+		var tips = [ sel.custom ? "r goes back to the default" : ( sel.bound ? "e changes the keys" : "e gives it keys" ), "c lists conflicts" ];
+		for ( var tip in tips ) { if ( ry >= arguments.y + arguments.h - 1 ) break; kit.put( ix, ry, kit.trunc( tip, iw ), kit.color( "CYAN" ), bg ); ry++; }
+	}
+}

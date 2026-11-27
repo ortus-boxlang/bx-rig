@@ -11,10 +11,26 @@ One shortcut table drives every key BxRig binds, in two styles: Traditional (cla
 ## Try it
 
 ```bash
-bxrig keys sheet                   # the cheat sheet (Super+K)
+bxrig keys sheet                   # the shortcuts browser (Super+K)
+bxrig tui shortcuts                # the same page in the Control Center
 bxrig keys search screenshot       # find a shortcut by words, keys or id
 bxrig keys style mac --yes         # switch to the Mac style
 ```
+
+## The shortcuts browser
+
+`Super+K` (or `bxrig keys sheet`) opens the Shortcuts page: every shortcut grouped under tabs (Editing, Apps, Windows and so on), the keys drawn as keycaps, and a detail pane that says how the shortcut is bound.
+
+| Key | What it does |
+| --- | --- |
+| `Left` `Right`, or `1` to `9` | Switch group |
+| `/` then type | Filter by action, keys, group or how it is bound (Enter keeps it, Esc clears it) |
+| `u` | Show the shortcuts that have no keys too (they are hidden at first) |
+| `y` | Only your own shortcuts, marked with a star |
+| `a` | Back to everything |
+| `e`, `r`, `c` | Rebind the highlighted one, reset it to the default, list conflicts |
+
+From a key binding it opens in its own terminal window. Without a terminal program it falls back to your menu program, grouped, with the keys written as `Super + Shift + T`.
 
 ```mermaid
 flowchart LR

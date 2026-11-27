@@ -71,7 +71,7 @@ class Refresh {
 		var what = arguments.words.len() == 1 ? arguments.words[ 1 ] : "";
 		var ids = components().map( function( x ) { return x.id; } );
 		if ( what == "list" ) return variables.out.say( "ok", { components: components() }, arguments.asJson, components().map( function( x ) { return x.id & "   " & x.owns; } ) );
-		if ( what != "all" && !arrayFind( ids, what ) ) return variables.out.fail( "usage", "Usage: bxrig refresh " & ids.toList( "|" ) & "|all|list [--starter] [--force] [--yes] [--dry-run]", arguments.asJson );
+		if ( what != "all" && !arrayFind( ids, what ) ) return variables.out.fail( "usage", "Usage: bxrig refresh WHAT [--starter] [--force] [--yes] [--dry-run]" & chr( 10 ) & "  WHAT is one of: " & ids.toList( ", " ) & ", all, list", arguments.asJson );
 		if ( variables.inst.isRoot() ) return variables.out.fail( "precondition", "run as a regular user: these are your own files", arguments.asJson );
 		var comps = what == "all" ? ids : [ what ];
 		var units = [];

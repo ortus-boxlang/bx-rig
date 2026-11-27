@@ -159,7 +159,7 @@ class Shortcuts {
 			// apps
 			row( "terminal", G.apps, "Terminal", "Super+Return", "Super+Return", "hypr-bind", "hl.dsp.exec_cmd(terminal)" ),
 			row( "browser", G.apps, "Browser", "Super+B", "Super+Shift+Return", "hypr-bind", "hl.dsp.exec_cmd(browser)" ),
-			row( "browser-alt", G.apps, "Browser (Omarchy's key)", "Super+Shift+Return", "", "hypr-bind", "hl.dsp.exec_cmd(browser)" ),
+			row( "browser-alt", G.apps, "Browser (second key)", "Super+Shift+Return", "", "hypr-bind", "hl.dsp.exec_cmd(browser)" ),
 			bx( "browser-private", G.apps, "Private browser window (your default browser)", "Super+Alt+Shift+B", "Super+Shift+N", "browser private" ),
 			row( "file-manager", G.apps, "File manager", "Super+Shift+F", "Super+E", "hypr-bind", "hl.dsp.exec_cmd(fileManager)" ),
 			bx( "files-here", G.apps, "File manager in the current folder (of the focused window)", "Super+Alt+Shift+F", "Super+Alt+Shift+F", "files here" ),
@@ -226,7 +226,7 @@ class Shortcuts {
 			row( "theme-switcher", G.note, "Theme switcher (search, preview, Enter applies)", "Super+Ctrl+Shift+Space", "Super+Ctrl+Shift+Space", "hypr-bind", 'hl.dsp.exec_cmd(ipc .. "panel-toggle bxrig/quick:themes")' ),
 			// windows
 			row( "close", G.win, "Close the window", "Super+Q", "Super+Q", "hypr-bind", "hl.dsp.window.close()" ),
-			row( "close-alt", G.win, "Close the window (Omarchy's key)", "Super+W", "", "hypr-bind", "hl.dsp.window.close()" ),
+			row( "close-alt", G.win, "Close the window (second key)", "Super+W", "", "hypr-bind", "hl.dsp.window.close()" ),
 			row( "fullscreen", G.win, "Full screen", "Super+F", "Super+Ctrl+F", "hypr-bind", 'hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })' ),
 			row( "float", G.win, "Float or tile the window", "Super+T", "Super+Alt+T", "hypr-bind", 'hl.dsp.window.float({ action = "toggle" })' ),
 			row( "toggle-split", G.win, "Toggle split", "Super+J", "Super+J", "hypr-bind", 'hl.dsp.layout("togglesplit")' ),

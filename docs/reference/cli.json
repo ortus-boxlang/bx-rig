@@ -21,59 +21,53 @@
 					"flags": [
 						{
 							"name": "answers",
-							"type": "value"
-						},
-						{
-							"name": "bucket",
-							"type": "any"
-						},
-						{
-							"name": "container",
-							"type": "any"
+							"type": "value",
+							"desc": "Run the install from this answers file, no wizard"
 						},
 						{
 							"name": "defaults",
-							"type": "any"
+							"type": "any",
+							"desc": "Run the install with the wizard's default answers"
 						},
 						{
 							"name": "export",
-							"type": "value"
+							"type": "value",
+							"desc": "Write a copy of your saved answers to this file"
 						},
 						{
 							"name": "fresh",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Start the wizard from the defaults, not your saved answers"
 						},
 						{
 							"name": "from",
-							"type": "value"
+							"type": "value",
+							"desc": "Start the wizard from answers exported on another machine"
 						},
 						{
 							"name": "from-system",
-							"type": "bool"
+							"type": "bool",
+							"desc": "With --print-answers, read answers from what this machine has"
 						},
 						{
 							"name": "plain",
-							"type": "bool"
+							"type": "bool",
+							"desc": "After the wizard, print the steps as they run, no progress screen"
 						},
 						{
 							"name": "print-answers",
-							"type": "bool"
-						},
-						{
-							"name": "remote",
-							"type": "any"
+							"type": "bool",
+							"desc": "Print your saved answers and exit"
 						},
 						{
 							"name": "rerun",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Start the wizard from your saved answers only"
 						},
 						{
 							"name": "screen",
-							"type": "bool"
-						},
-						{
-							"name": "workspaces",
-							"type": "any"
+							"type": "bool",
+							"desc": "With --answers --yes, show the install on the progress screen"
 						}
 					]
 				},
@@ -96,7 +90,8 @@
 					"flags": [
 						{
 							"name": "starter",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also rewrite the starter config file (hyprland, noctalia)"
 						}
 					]
 				},
@@ -115,51 +110,43 @@
 					"flags": [
 						{
 							"name": "answers",
-							"type": "any"
-						},
-						{
-							"name": "bucket",
-							"type": "any"
-						},
-						{
-							"name": "container",
-							"type": "any"
+							"type": "any",
+							"desc": "Run the install from this answers file, no wizard"
 						},
 						{
 							"name": "defaults",
-							"type": "any"
+							"type": "any",
+							"desc": "Run the install with the wizard's default answers"
 						},
 						{
 							"name": "export",
-							"type": "any"
+							"type": "any",
+							"desc": "Write a copy of your saved answers to this file"
 						},
 						{
 							"name": "fresh",
-							"type": "any"
+							"type": "any",
+							"desc": "Start the wizard from the defaults, not your saved answers"
 						},
 						{
 							"name": "from",
-							"type": "any"
+							"type": "any",
+							"desc": "Start the wizard from answers exported on another machine"
 						},
 						{
 							"name": "from-system",
-							"type": "any"
+							"type": "any",
+							"desc": "With --print-answers, read answers from what this machine has"
 						},
 						{
 							"name": "print-answers",
-							"type": "any"
-						},
-						{
-							"name": "remote",
-							"type": "any"
+							"type": "any",
+							"desc": "Print your saved answers and exit"
 						},
 						{
 							"name": "rerun",
-							"type": "any"
-						},
-						{
-							"name": "workspaces",
-							"type": "any"
+							"type": "any",
+							"desc": "Always on for reinstall (starts from your saved answers)"
 						}
 					]
 				},
@@ -177,19 +164,23 @@
 					"flags": [
 						{
 							"name": "answers",
-							"type": "value"
+							"type": "value",
+							"desc": "Start the pages from the answers in this JSON file"
 						},
 						{
 							"name": "demo",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show the built-in demo pages"
 						},
 						{
 							"name": "out",
-							"type": "value"
+							"type": "value",
+							"desc": "Write the final answers to this JSON file"
 						},
 						{
 							"name": "pages",
-							"type": "value"
+							"type": "value",
+							"desc": "Show the pages defined in this JSON file"
 						}
 					]
 				},
@@ -223,7 +214,8 @@
 					"flags": [
 						{
 							"name": "dev",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also check the developer setup (git, SSH, signing, containers)"
 						}
 					],
 					"note": "--dev checks git name and email, an SSH key, the SSH agent, commit signing, a container engine and EDITOR. They print warn with the command that fixes them and never change the exit code."
@@ -246,7 +238,8 @@
 					"flags": [
 						{
 							"name": "notify",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show a desktop notice when an update is available"
 						}
 					]
 				},
@@ -274,23 +267,28 @@
 					"flags": [
 						{
 							"name": "group",
-							"type": "value"
+							"type": "value",
+							"desc": "Only list tasks in this group, or the group of a new task"
 						},
 						{
 							"name": "when",
-							"type": "value"
+							"type": "value",
+							"desc": "When the task runs, like daily 02:30 or every 2 hours"
 						},
 						{
 							"name": "notify",
-							"type": "value"
+							"type": "value",
+							"desc": "When to notify: failure, attention, always or never"
 						},
 						{
 							"name": "timeout",
-							"type": "value"
+							"type": "value",
+							"desc": "Seconds a run may take before it is stopped (default 3600)"
 						},
 						{
 							"name": "limit",
-							"type": "value"
+							"type": "value",
+							"desc": "How many past runs to show"
 						}
 					]
 				},
@@ -320,31 +318,38 @@
 					"flags": [
 						{
 							"name": "font",
-							"type": "value"
+							"type": "value",
+							"desc": "Font to draw the text in (see ascii fonts)"
 						},
 						{
 							"name": "color",
-							"type": "value"
+							"type": "value",
+							"desc": "One colour for the text: #rrggbb, #rgb or a name"
 						},
 						{
 							"name": "gradient",
-							"type": "value"
+							"type": "value",
+							"desc": "Colour gradient to paint the text with"
 						},
 						{
 							"name": "direction",
-							"type": "value"
+							"type": "value",
+							"desc": "Which way the gradient runs across the text"
 						},
 						{
 							"name": "plain",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Leave the colour out"
 						},
 						{
 							"name": "width",
-							"type": "value"
+							"type": "value",
+							"desc": "Width of the picture in columns, 4 to 300 (default 48)"
 						},
 						{
 							"name": "style",
-							"type": "value"
+							"type": "value",
+							"desc": "Art style: blocks or ascii"
 						}
 					]
 				},
@@ -365,11 +370,13 @@
 					"flags": [
 						{
 							"name": "wait",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Wait for Enter before returning"
 						},
 						{
 							"name": "plain",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Leave the colour out"
 						}
 					]
 				},
@@ -390,7 +397,8 @@
 					"flags": [
 						{
 							"name": "plain",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Leave the colour out"
 						}
 					]
 				},
@@ -437,12 +445,7 @@
 						"bxrig apps list"
 					],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "name",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "help",
@@ -459,11 +462,13 @@
 					"flags": [
 						{
 							"name": "help",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show the help for the command"
 						},
 						{
 							"name": "h",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Same as --help"
 						}
 					]
 				}
@@ -489,20 +494,19 @@
 					"note": "With no name it installs the default set; without --yes it prints the plan and changes nothing.",
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also include the optional apps of the selection"
 						},
 						{
 							"name": "profile",
-							"type": "any"
+							"type": "any",
+							"desc": "Install the apps of this profile instead of the default set"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Pick apps for this shell: hyprland, plasma or all"
 						}
 					]
 				},
@@ -518,12 +522,7 @@
 					],
 					"mutates": true,
 					"note": "Protected packages (the base system, the kernel, bxrig itself) are refused.",
-					"flags": [
-						{
-							"name": "name",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "pkg",
@@ -541,23 +540,23 @@
 					"flags": [
 						{
 							"name": "aur",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Install from the AUR, not the repositories"
 						},
 						{
 							"name": "explicit",
-							"type": "bool"
+							"type": "bool",
+							"desc": "List only packages you asked for, not dependencies"
 						},
 						{
 							"name": "limit",
-							"type": "value"
-						},
-						{
-							"name": "name",
-							"type": "any"
+							"type": "value",
+							"desc": "Show at most this many search results (default 40)"
 						},
 						{
 							"name": "source",
-							"type": "value"
+							"type": "value",
+							"desc": "Search the repos, the AUR or both: all, repo, aur"
 						}
 					]
 				},
@@ -580,35 +579,38 @@
 					"flags": [
 						{
 							"name": "distro",
-							"type": "value"
+							"type": "value",
+							"desc": "Show the catalog as seen on this distro (arch, suse, debian, ubuntu)"
 						},
 						{
 							"name": "write",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Write the generated distro map to the catalog files"
 						},
 						{
 							"name": "category",
-							"type": "value"
+							"type": "value",
+							"desc": "Only list apps in this category"
 						},
 						{
 							"name": "group",
-							"type": "value"
+							"type": "value",
+							"desc": "Only list apps in this group"
 						},
 						{
 							"name": "kind",
-							"type": "value"
+							"type": "value",
+							"desc": "Only list apps of this kind"
 						},
 						{
 							"name": "source",
-							"type": "value"
+							"type": "value",
+							"desc": "Only list apps from this install source"
 						},
 						{
 							"name": "tier",
-							"type": "value"
-						},
-						{
-							"name": "url",
-							"type": "any"
+							"type": "value",
+							"desc": "Only list apps in this tier: default or optional"
 						}
 					]
 				},
@@ -626,20 +628,19 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also include the optional apps of the selection"
 						},
 						{
 							"name": "profile",
-							"type": "any"
+							"type": "any",
+							"desc": "Plan the apps of this profile instead of the default set"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Pick apps for this shell: hyprland, plasma or all"
 						}
 					]
 				},
@@ -654,20 +655,19 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also include the optional apps of the selection"
 						},
 						{
 							"name": "profile",
-							"type": "any"
+							"type": "any",
+							"desc": "Plan the apps of this profile instead of the default set"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Pick apps for this shell: hyprland, plasma or all"
 						}
 					]
 				},
@@ -682,20 +682,9 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Shell name is checked, but named apps are chosen anyway"
 						}
 					]
 				},
@@ -712,20 +701,14 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
-							"type": "bool"
-						},
-						{
-							"name": "profile",
-							"type": "any"
+							"type": "bool",
+							"desc": "Also include the optional apps of the selection"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Pick apps for this shell: hyprland, plasma or all"
 						}
 					]
 				},
@@ -740,20 +723,14 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
-							"type": "bool"
-						},
-						{
-							"name": "profile",
-							"type": "any"
+							"type": "bool",
+							"desc": "Also include the optional apps of the selection"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Pick apps for this shell: hyprland, plasma or all"
 						}
 					]
 				},
@@ -770,20 +747,14 @@
 					"mutates": true,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
 							"name": "optional",
-							"type": "bool"
-						},
-						{
-							"name": "profile",
-							"type": "any"
+							"type": "bool",
+							"desc": "Also include the optional apps of the selection"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Pick apps for this shell: hyprland, plasma or all"
 						}
 					]
 				},
@@ -798,20 +769,9 @@
 					"mutates": true,
 					"flags": [
 						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Shell name is checked, but named apps are chosen anyway"
 						}
 					]
 				},
@@ -824,24 +784,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "optional-list",
@@ -852,24 +795,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "desktop-list",
@@ -880,24 +806,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "tui-list",
@@ -908,24 +817,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "web-list",
@@ -936,24 +828,7 @@
 					],
 					"examples": [],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "package-status",
@@ -966,24 +841,7 @@
 						"bxrig package-status lazygit"
 					],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "package-source",
@@ -996,24 +854,7 @@
 						"bxrig package-source lazygit"
 					],
 					"mutates": false,
-					"flags": [
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "optional",
-							"type": "any"
-						},
-						{
-							"name": "profile",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "dev-plan",
@@ -1064,7 +905,8 @@
 					"flags": [
 						{
 							"name": "browser",
-							"type": "value"
+							"type": "value",
+							"desc": "Browser that opens the web app: brave, chromium, edge, firefox..."
 						}
 					]
 				},
@@ -1079,28 +921,7 @@
 						"bxrig toolchain node --yes"
 					],
 					"mutates": true,
-					"flags": [
-						{
-							"name": "also",
-							"type": "any"
-						},
-						{
-							"name": "build",
-							"type": "any"
-						},
-						{
-							"name": "default",
-							"type": "any"
-						},
-						{
-							"name": "keys",
-							"type": "any"
-						},
-						{
-							"name": "shell",
-							"type": "any"
-						}
-					]
+					"flags": []
 				}
 			]
 		},
@@ -1126,55 +947,68 @@
 					"flags": [
 						{
 							"name": "also",
-							"type": "value"
+							"type": "value",
+							"desc": "Extra terminals to install besides the default, comma separated"
 						},
 						{
 							"name": "build",
-							"type": "value"
+							"type": "value",
+							"desc": "Which xremap build to install: hypr or kde (default: by session)"
 						},
 						{
 							"name": "default",
-							"type": "value"
+							"type": "value",
+							"desc": "Terminal to make the default (ghostty if not given)"
 						},
 						{
 							"name": "keys",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Hand Plasma's clashing keys to HyprKwin (backed up first)"
 						},
 						{
 							"name": "layout",
-							"type": "value"
+							"type": "value",
+							"desc": "Starting Hyprland window layout, such as dwindle or master"
 						},
 						{
 							"name": "layouts",
-							"type": "value"
+							"type": "value",
+							"desc": "Keyboard layouts to set, comma separated, such as us-intl,es"
 						},
 						{
 							"name": "natural-scroll",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Use natural (reversed) touchpad scrolling in the Hyprland config"
 						},
 						{
 							"name": "shell",
-							"type": "value"
+							"type": "value",
+							"desc": "Shell to set up with Starship: zsh, fish or bash"
 						},
 						{
 							"name": "terminal",
-							"type": "value"
+							"type": "value",
+							"desc": "Terminal bound to Super+Enter in the new Hyprland config"
 						},
 						{
 							"name": "theme",
-							"type": "value"
+							"type": "value",
+							"desc": "Color mode of the starter config: dark, light or auto"
 						},
 						{
 							"name": "undo-keys",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Give the keys back to Plasma's old owners"
 						},
 						{
 							"name": "wallpaper",
-							"type": "value"
+							"type": "value",
+							"desc": "Starting wallpaper, named after a bundled theme"
 						},
 						{
 							"name": "workspaces",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of workspaces always shown in the bar (1 to 10)"
 						}
 					]
 				},
@@ -1223,19 +1057,23 @@
 					"flags": [
 						{
 							"name": "agenda",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Use the Event Calendar widget instead of the digital clock"
 						},
 						{
 							"name": "desktops",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of virtual desktops (default 4)"
 						},
 						{
 							"name": "preset",
-							"type": "value"
+							"type": "value",
+							"desc": "Panel Colorizer preset for the panel look (default Rounded Widgets)"
 						},
 						{
 							"name": "without-weather",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Leave the weather widget out of the top panel"
 						}
 					]
 				},
@@ -1259,14 +1097,16 @@
 					"flags": [
 						{
 							"name": "keyboard",
-							"type": "value"
+							"type": "value",
+							"desc": "Keyboard you type on: pc or apple"
 						},
 						{
 							"name": "swap",
-							"type": "value"
+							"type": "value",
+							"desc": "Swap Alt and Win keys in the Mac style: on or off"
 						}
 					],
-					"note": "Two styles share one table: Traditional (classic Super-key tiling keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines."
+					"note": "Two styles share one table: Traditional (classic Super-key tiling keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines. keys sheet (Super+K) opens the shortcuts browser: groups as tabs, keycaps, a live filter; the same page is bxrig tui shortcuts."
 				},
 				{
 					"name": "runner",
@@ -1285,7 +1125,8 @@
 					"flags": [
 						{
 							"name": "prompt",
-							"type": "value"
+							"type": "value",
+							"desc": "Prompt text shown in the menu for select"
 						}
 					]
 				},
@@ -1310,11 +1151,13 @@
 					"flags": [
 						{
 							"name": "yes",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Apply the change instead of only showing the plan"
 						},
 						{
 							"name": "dry-run",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show what would change without changing anything"
 						}
 					]
 				},
@@ -1392,16 +1235,7 @@
 					],
 					"mutates": false,
 					"note": "BxRig never overwrites a file you edited; `config status` shows which ones are yours.",
-					"flags": [
-						{
-							"name": "theme",
-							"type": "any"
-						},
-						{
-							"name": "wallpaper",
-							"type": "any"
-						}
-					]
+					"flags": []
 				}
 			]
 		},
@@ -1429,15 +1263,18 @@
 					"flags": [
 						{
 							"name": "keep-wallpaper",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Apply the theme but leave the current wallpaper as it is"
 						},
 						{
 							"name": "mode",
-							"type": "value"
+							"type": "value",
+							"desc": "Light or dark choice for this set: theme, dark, light or auto"
 						},
 						{
 							"name": "name",
-							"type": "value"
+							"type": "value",
+							"desc": "Name to save an installed or imported theme under"
 						}
 					]
 				},
@@ -1493,12 +1330,7 @@
 					],
 					"mutates": false,
 					"note": "Settings act at once (no --yes); --dry-run shows the commands. What you choose is remembered, and `appearance apply` pushes it again. `bar layout`, `dock on|off|toggle`, `appgrid` and `battery-percent` rewrite ~/.config/noctalia/config.toml (backup kept; a file with changes of your own needs --yes). The `terminal` app grid style is only stored for now: nothing draws it yet. `icons` is the exception to \"act at once\": it installs papirus-icon-theme and writes the BxRig icon theme and settings files, so it prints a plan (exit 2) until --yes; `bxrig` (the default after setup) is the BxRig icons over Papirus-Dark, `papirus` is Papirus-Dark alone. `font` is the coding font (terminals, and the shell until an interface font is set); `ui-font` is the font of the bar, panels and GTK apps; `font-rendering` writes ~/.config/fontconfig/conf.d/60-bxrig-rendering.conf (`default` removes it unless you edited it).",
-					"flags": [
-						{
-							"name": "mode",
-							"type": "any"
-						}
-					]
+					"flags": []
 				},
 				{
 					"name": "screensaver",
@@ -1524,11 +1356,13 @@
 					"flags": [
 						{
 							"name": "effect",
-							"type": "value"
+							"type": "value",
+							"desc": "Run this one effect instead of letting the effects take turns"
 						},
 						{
 							"name": "idle",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Mark the start as coming from the idle watcher"
 						}
 					],
 					"mutates": true,
@@ -1626,28 +1460,9 @@
 					"note": "`time auto on` sends your Wi-Fi networks or IP address to a location web service; the plan says so first. `time format` sets the bar clock's text in Noctalia date format tokens (or MMM d - HH:mm patterns); it acts at once and rewrites the Noctalia config.",
 					"flags": [
 						{
-							"name": "demo",
-							"type": "any"
-						},
-						{
-							"name": "host",
-							"type": "any"
-						},
-						{
 							"name": "list",
-							"type": "bool"
-						},
-						{
-							"name": "local",
-							"type": "any"
-						},
-						{
-							"name": "packages",
-							"type": "any"
-						},
-						{
-							"name": "path",
-							"type": "any"
+							"type": "bool",
+							"desc": "With zone, print every available time zone"
 						}
 					]
 				},
@@ -1674,23 +1489,28 @@
 					"flags": [
 						{
 							"name": "client-id",
-							"type": "value"
+							"type": "value",
+							"desc": "Google OAuth client ID, needed to add a Google calendar"
 						},
 						{
 							"name": "client-secret-file",
-							"type": "value"
+							"type": "value",
+							"desc": "File holding the Google OAuth client secret"
 						},
 						{
 							"name": "days",
-							"type": "value"
+							"type": "value",
+							"desc": "How many days ahead the agenda shows (1 to 60, default 7)"
 						},
 						{
 							"name": "yes",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Confirm removing the calendar and its local copy"
 						},
 						{
 							"name": "dry-run",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show what remove would do without changing anything"
 						}
 					]
 				},
@@ -1716,11 +1536,13 @@
 					"flags": [
 						{
 							"name": "at",
-							"type": "value"
+							"type": "value",
+							"desc": "Time to remind: HH:MM or \"YYYY-MM-DD HH:MM\""
 						},
 						{
 							"name": "in",
-							"type": "value"
+							"type": "value",
+							"desc": "Remind after a delay such as 30m, 2h or 1d"
 						}
 					]
 				},
@@ -1772,7 +1594,8 @@
 					"flags": [
 						{
 							"name": "location",
-							"type": "value"
+							"type": "value",
+							"desc": "Latitude and longitude as LAT,LON, instead of the time zone guess"
 						}
 					]
 				},
@@ -1793,7 +1616,8 @@
 					"flags": [
 						{
 							"name": "history",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also empty the notification history, not just visible ones"
 						}
 					],
 					"note": "time, battery and weather show one notice through notify-send. weather asks wttr.in over the network."
@@ -1833,15 +1657,18 @@
 					"flags": [
 						{
 							"name": "repo",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Update only the repository packages, not the AUR"
 						},
 						{
 							"name": "aur",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Update only the AUR packages (needs yay or paru)"
 						},
 						{
 							"name": "all",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Update repository and AUR packages (the default)"
 						}
 					]
 				},
@@ -1910,7 +1737,8 @@
 					"flags": [
 						{
 							"name": "email",
-							"type": "value"
+							"type": "value",
+							"desc": "Email address used as the comment of the new key"
 						}
 					]
 				},
@@ -1933,7 +1761,8 @@
 					"flags": [
 						{
 							"name": "key",
-							"type": "value"
+							"type": "value",
+							"desc": "Path of the SSH key used to sign commits"
 						}
 					]
 				},
@@ -1953,35 +1782,43 @@
 					"flags": [
 						{
 							"name": "from-file",
-							"type": "value"
+							"type": "value",
+							"desc": "Read the secret value from this file instead of asking"
 						},
 						{
 							"name": "keyring",
-							"type": "value"
+							"type": "value",
+							"desc": "Keyring to set up: kwallet, gnome-keyring or none"
 						},
 						{
 							"name": "overwrite",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Replace secrets that already exist with a different value"
 						},
 						{
 							"name": "plain",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Export a readable .env file instead of an encrypted one"
 						},
 						{
 							"name": "provider",
-							"type": "value"
+							"type": "value",
+							"desc": "AI provider this secret belongs to"
 						},
 						{
 							"name": "show",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Print the secret value instead of hiding it"
 						},
 						{
 							"name": "strict",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Stop with an error if a named secret is not set"
 						},
 						{
 							"name": "type",
-							"type": "value"
+							"type": "value",
+							"desc": "Kind of secret: ai or other (lists only that kind with list)"
 						}
 					]
 				},
@@ -2007,7 +1844,8 @@
 					"flags": [
 						{
 							"name": "location",
-							"type": "value"
+							"type": "value",
+							"desc": "Place to connect to (see vpn locations)"
 						}
 					],
 					"note": "NAME is a provider from `vpn list` (nordvpn, nordlayer, tailscale, mullvad) or a saved profile as listed there (`nm:Home`). Choosing one disconnects the one that is connected first, unless `allow_several=true` (Tailscale next to another VPN; routes and DNS can clash). connect and disconnect act at once and take `--dry-run`; `set` and `nordvpn setup` need `--yes`. The providers are data (`catalog/vpn-providers.json`, extend with `~/.config/bxrig/vpn-providers.json`). `list` is empty when no VPN is installed; the other verbs exit 4 then. `--location` takes a value from `vpn locations NAME` (`default` connects as it is, `none` clears a Tailscale exit node). The top bar VPN icon (plugin `bxrig/vpn`) is the same list."
@@ -2027,7 +1865,8 @@
 					"flags": [
 						{
 							"name": "path",
-							"type": "value"
+							"type": "value",
+							"desc": "Folder to mount the remote at"
 						}
 					]
 				},
@@ -2060,11 +1899,13 @@
 					"flags": [
 						{
 							"name": "method",
-							"type": "value"
+							"type": "value",
+							"desc": "Force the method: chezmoi, yadm, stow or links"
 						},
 						{
 							"name": "overwrite",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Approve replacing files you already have"
 						}
 					]
 				},
@@ -2097,39 +1938,48 @@
 					"flags": [
 						{
 							"name": "ask-password",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Type the password at a hidden prompt"
 						},
 						{
 							"name": "delete",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Remove files on the NAS that are not in the source"
 						},
 						{
 							"name": "host",
-							"type": "value"
+							"type": "value",
+							"desc": "Host name or address of the NAS"
 						},
 						{
 							"name": "password-file",
-							"type": "value"
+							"type": "value",
+							"desc": "Read the NAS password from this file"
 						},
 						{
 							"name": "path",
-							"type": "value"
+							"type": "value",
+							"desc": "Folder on the share used for backups (default bxrig-backup)"
 						},
 						{
 							"name": "protocol",
-							"type": "value"
+							"type": "value",
+							"desc": "Share protocol: smb (default) or nfs"
 						},
 						{
 							"name": "to",
-							"type": "value"
+							"type": "value",
+							"desc": "Target share, or SHARE/PATH, to copy to"
 						},
 						{
 							"name": "user",
-							"type": "value"
+							"type": "value",
+							"desc": "User name to log in to the NAS"
 						},
 						{
 							"name": "vers",
-							"type": "value"
+							"type": "value",
+							"desc": "SMB protocol version, for example 3.1.1"
 						}
 					]
 				},
@@ -2200,135 +2050,163 @@
 					"flags": [
 						{
 							"name": "all",
-							"type": "any"
+							"type": "any",
+							"desc": "With data run: back up to every initialized target"
 						},
 						{
 							"name": "ask-keys",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Type the target's access keys at a hidden prompt"
 						},
 						{
 							"name": "bucket",
-							"type": "value"
+							"type": "value",
+							"desc": "Bucket name for an s3, b2 or gs target"
 						},
 						{
 							"name": "container",
-							"type": "value"
+							"type": "value",
+							"desc": "Container name for an azure target"
 						},
 						{
 							"name": "credentials",
-							"type": "value"
+							"type": "value",
+							"desc": "Service account JSON key file for a gs target"
 						},
 						{
 							"name": "daily",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of daily backups to keep"
 						},
 						{
 							"name": "deep",
-							"type": "bool"
-						},
-						{
-							"name": "default",
-							"type": "any"
+							"type": "bool",
+							"desc": "Also read a sample (5%) of the stored data to check it"
 						},
 						{
 							"name": "description",
-							"type": "value"
+							"type": "value",
+							"desc": "Text to describe the new snapshot"
 						},
 						{
 							"name": "endpoint",
-							"type": "value"
+							"type": "value",
+							"desc": "Custom server address for an s3 target"
 						},
 						{
 							"name": "from",
-							"type": "value"
+							"type": "value",
+							"desc": "Target to copy the backup from (default target if omitted)"
 						},
 						{
 							"name": "home",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also snapshot /home"
 						},
 						{
 							"name": "host",
-							"type": "value"
+							"type": "value",
+							"desc": "Server name for an sftp target"
 						},
 						{
 							"name": "include",
-							"type": "value"
+							"type": "value",
+							"desc": "Restore only this path, as it was backed up"
 						},
 						{
 							"name": "keep",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of newest config snapshots to keep"
 						},
 						{
 							"name": "keys-file",
-							"type": "value"
+							"type": "value",
+							"desc": "File with KEY=VALUE lines holding the target's access keys"
 						},
 						{
 							"name": "local",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Skip targets that are read over the network"
 						},
 						{
 							"name": "monthly",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of monthly backups to keep"
 						},
 						{
 							"name": "only",
-							"type": "value"
+							"type": "value",
+							"desc": "Restore only this path under your home"
 						},
 						{
 							"name": "packages",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Also install packages from the snapshot that are missing"
 						},
 						{
 							"name": "path",
-							"type": "value"
+							"type": "value",
+							"desc": "Folder of a local or sftp target; with export, path inside the backup"
 						},
 						{
 							"name": "project",
-							"type": "value"
+							"type": "value",
+							"desc": "Google Cloud project ID for a gs target"
 						},
 						{
 							"name": "reason",
-							"type": "value"
+							"type": "value",
+							"desc": "Label stored with the config snapshot"
 						},
 						{
 							"name": "region",
-							"type": "value"
+							"type": "value",
+							"desc": "Region for an s3 target"
 						},
 						{
 							"name": "remote",
-							"type": "value"
+							"type": "value",
+							"desc": "Name of the rclone remote for an rclone target"
 						},
 						{
 							"name": "scheduled",
-							"type": "any"
+							"type": "any",
+							"desc": "Marks a scheduled run: a failure sends a desktop notification"
 						},
 						{
 							"name": "target",
-							"type": "value"
+							"type": "value",
+							"desc": "Backup target to use (default target if omitted)"
 						},
 						{
 							"name": "to",
-							"type": "value"
+							"type": "value",
+							"desc": "Where to put it: folder, target name or export file"
 						},
 						{
 							"name": "type",
-							"type": "value"
+							"type": "value",
+							"desc": "Kind of target: local, sftp, rest, s3, b2, azure, gs or rclone"
 						},
 						{
 							"name": "url",
-							"type": "value"
+							"type": "value",
+							"desc": "Address of the rest server target"
 						},
 						{
 							"name": "user",
-							"type": "value"
+							"type": "value",
+							"desc": "User name for an sftp target"
 						},
 						{
 							"name": "weekly",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of weekly backups to keep"
 						},
 						{
 							"name": "with-secrets",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Include the encrypted secrets in the snapshot"
 						}
 					]
 				},
@@ -2349,23 +2227,13 @@
 					"flags": [
 						{
 							"name": "demo",
-							"type": "bool"
-						},
-						{
-							"name": "host",
-							"type": "any"
+							"type": "bool",
+							"desc": "Show made-up backups; nothing is run"
 						},
 						{
 							"name": "local",
-							"type": "bool"
-						},
-						{
-							"name": "packages",
-							"type": "any"
-						},
-						{
-							"name": "path",
-							"type": "any"
+							"type": "bool",
+							"desc": "Skip targets that are read over the network"
 						}
 					]
 				},
@@ -2388,7 +2256,8 @@
 					"flags": [
 						{
 							"name": "versions",
-							"type": "value"
+							"type": "value",
+							"desc": "Comma list of Java major versions to install"
 						}
 					]
 				},
@@ -2428,31 +2297,38 @@
 					"flags": [
 						{
 							"name": "keep",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Store the inbox on disk so it survives stop and start"
 						},
 						{
 							"name": "keep-data",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Keep the stored mail when removing the catcher"
 						},
 						{
 							"name": "limit",
-							"type": "value"
+							"type": "value",
+							"desc": "Maximum number of messages to show"
 						},
 						{
 							"name": "smtp-port",
-							"type": "value"
+							"type": "value",
+							"desc": "Local port for the SMTP server"
 						},
 						{
 							"name": "subject",
-							"type": "value"
+							"type": "value",
+							"desc": "Subject of the test message"
 						},
 						{
 							"name": "to",
-							"type": "value"
+							"type": "value",
+							"desc": "Recipient address of the test message"
 						},
 						{
 							"name": "ui-port",
-							"type": "value"
+							"type": "value",
+							"desc": "Local port for the web inbox"
 						}
 					]
 				},
@@ -2477,19 +2353,23 @@
 					"flags": [
 						{
 							"name": "demo",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Use made-up data"
 						},
 						{
 							"name": "icons",
-							"type": "value"
+							"type": "value",
+							"desc": "Show icons: on or off"
 						},
 						{
 							"name": "no-sidebar",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Hide the sidebar"
 						},
 						{
 							"name": "sidebar",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show the sidebar"
 						}
 					]
 				},
@@ -2507,23 +2387,13 @@
 					"flags": [
 						{
 							"name": "demo",
-							"type": "bool"
-						},
-						{
-							"name": "host",
-							"type": "any"
+							"type": "bool",
+							"desc": "Show made-up backups; nothing is run"
 						},
 						{
 							"name": "local",
-							"type": "bool"
-						},
-						{
-							"name": "packages",
-							"type": "any"
-						},
-						{
-							"name": "path",
-							"type": "any"
+							"type": "bool",
+							"desc": "Skip targets that are read over the network"
 						}
 					]
 				},
@@ -2543,7 +2413,8 @@
 					"flags": [
 						{
 							"name": "off",
-							"type": "bool"
+							"type": "bool",
+							"desc": "With local-only, turn local-only mode off"
 						}
 					]
 				}
@@ -2584,36 +2455,39 @@
 					"mutates": false,
 					"flags": [
 						{
-							"name": "list",
-							"type": "any"
-						},
-						{
 							"name": "no-open",
-							"type": "any"
+							"type": "any",
+							"desc": "For welcome: write the page but do not open it in a browser"
 						},
 						{
 							"name": "yes",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Apply the change (update, install, remove, scan) instead of a plan"
 						},
 						{
 							"name": "dry-run",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Show what would change without changing anything"
 						},
 						{
 							"name": "open",
-							"type": "bool"
+							"type": "bool",
+							"desc": "For home: open the BoxLang home folder; for register: the web page"
 						},
 						{
 							"name": "name",
-							"type": "value"
+							"type": "value",
+							"desc": "For servers add: the name to register the server under"
 						},
 						{
 							"name": "depth",
-							"type": "value"
+							"type": "value",
+							"desc": "For servers scan: how many folder levels to search (default 3)"
 						},
 						{
 							"name": "follow",
-							"type": "bool"
+							"type": "bool",
+							"desc": "For servers log: keep printing new log lines as they come"
 						}
 					],
 					"note": "check compares the BoxLang you run (the jar next to `boxlang`) with downloads.ortussolutions.com version-latest.properties and runs `bx-module outdated`; it exits 10 when anything is behind, like `update check`. update uses bvm (`bvm install latest`, `bvm use latest`) when it is there, else the quick installer (`install-boxlang latest --non-interactive`). home is BOXLANG_HOME or ~/.boxlang. run and repl hand the terminal to the real `boxlang`. Module commands wrap bx-module; installed and outdated --json give rows. servers registers BoxLang MiniServer apps (miniserver.json) and CommandBox apps (server.json) in ~/.config/bxrig/servers.json; a MiniServer runs detached with its log in ~/.local/state/bxrig/servers, a CommandBox app through `box server start|stop|log directory=PATH`; running means its port is listening."
@@ -2648,27 +2522,33 @@
 					"flags": [
 						{
 							"name": "ask-password",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Type the database password at a prompt instead of generating one"
 						},
 						{
 							"name": "keep-data",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On remove: keep the data volume so a restart reuses it"
 						},
 						{
 							"name": "name",
-							"type": "bool"
+							"type": "value",
+							"desc": "Name of this instance, so you can run several (default: default)"
 						},
 						{
 							"name": "password-file",
-							"type": "bool"
+							"type": "value",
+							"desc": "Read the database password from this file"
 						},
 						{
 							"name": "port",
-							"type": "bool"
+							"type": "value",
+							"desc": "Host port to publish the database on (1024 to 65535)"
 						},
 						{
 							"name": "show-password",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On info: print the password instead of the file holding it"
 						}
 					]
 				},
@@ -2691,7 +2571,8 @@
 					"flags": [
 						{
 							"name": "lines",
-							"type": "value"
+							"type": "value",
+							"desc": "On logs: how many last log lines to show (1 to 10000, default 200)"
 						}
 					]
 				},
@@ -2711,55 +2592,63 @@
 					"flags": [
 						{
 							"name": "cpus",
-							"type": "value"
+							"type": "value",
+							"desc": "Number of CPU cores to give the VM"
 						},
 						{
 							"name": "disk",
-							"type": "value"
+							"type": "value",
+							"desc": "Windows disk size, such as 64G"
 						},
 						{
 							"name": "fullscreen",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On open: start the Windows RDP viewer full screen"
 						},
 						{
 							"name": "gpu",
-							"type": "value"
+							"type": "value",
+							"desc": "Linux desktop GPU access: none, auto, intel, amd or nvidia"
 						},
 						{
 							"name": "keep-data",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On remove: keep the VM's data folder on disk"
 						},
 						{
 							"name": "memory",
-							"type": "value"
-						},
-						{
-							"name": "name",
-							"type": "any"
+							"type": "value",
+							"desc": "Linux desktop memory limit, such as 4G"
 						},
 						{
 							"name": "ram",
-							"type": "value"
+							"type": "value",
+							"desc": "Windows memory size, such as 8G"
 						},
 						{
 							"name": "share",
-							"type": "value"
+							"type": "value",
+							"desc": "Host folder shared with the VM, or none to turn sharing off"
 						},
 						{
 							"name": "show-password",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On info: print the VM password instead of hiding it"
 						},
 						{
 							"name": "tag",
-							"type": "value"
+							"type": "value",
+							"desc": "Linux desktop image flavour (see: vm versions linux)"
 						},
 						{
 							"name": "version",
-							"type": "value"
+							"type": "value",
+							"desc": "Windows version to install (see: vm versions windows)"
 						},
 						{
 							"name": "web",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On open: use the browser viewer instead of an RDP client"
 						}
 					]
 				},
@@ -2781,15 +2670,18 @@
 					"flags": [
 						{
 							"name": "data",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On remove: also delete Android's images, apps and their data"
 						},
 						{
 							"name": "open",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On register: open the Google device registration page"
 						},
 						{
 							"name": "vanilla",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On setup: use the image without Google apps or Play"
 						}
 					]
 				},
@@ -2815,63 +2707,78 @@
 					"flags": [
 						{
 							"name": "accent",
-							"type": "value"
+							"type": "value",
+							"desc": "Local voice accent: latam or castilian Spanish"
 						},
 						{
 							"name": "birthday",
-							"type": "value"
+							"type": "value",
+							"desc": "Boxy's birthday as MM-DD (empty clears it)"
 						},
 						{
 							"name": "color",
-							"type": "value"
+							"type": "value",
+							"desc": "Boxy's colour: theme or a hex colour like #00ff78"
 						},
 						{
 							"name": "dir",
-							"type": "value"
+							"type": "value",
+							"desc": "On export: folder to write the state images to"
 						},
 						{
 							"name": "format",
-							"type": "value"
+							"type": "value",
+							"desc": "Audio format the speech server returns: wav, mp3, opus or flac"
 						},
 						{
 							"name": "hear",
-							"type": "value"
+							"type": "value",
+							"desc": "Language Voxtype listens for when you talk: auto, en or es"
 						},
 						{
 							"name": "holidays",
-							"type": "value"
+							"type": "value",
+							"desc": "Holiday outfits to wear, comma separated, or none"
 						},
 						{
 							"name": "key",
-							"type": "value"
+							"type": "value",
+							"desc": "Name of the stored secret or env variable holding the API key"
 						},
 						{
 							"name": "lang",
-							"type": "value"
+							"type": "value",
+							"desc": "Voice language: auto, en or es (on list and test: en or es)"
 						},
 						{
 							"name": "model",
-							"type": "value"
+							"type": "value",
+							"desc": "Speech model name sent to the voice server"
 						},
 						{
 							"name": "name",
-							"type": "value"
+							"type": "value",
+							"desc": "Boxy's display name (1 to 24 characters)"
 						},
 						{
 							"name": "outfit",
-							"type": "value"
+							"type": "value",
+							"desc": "Outfit to wear: auto, none or an outfit ID"
 						},
 						{
 							"name": "speed",
-							"type": "value"
+							"type": "value",
+							"desc": "Local speech speed, 0.25 to 4 (1 is the voice's own pace)"
 						},
 						{
 							"name": "url",
-							"type": "value"
+							"type": "value",
+							"desc": "Address of an OpenAI-compatible speech server"
 						},
 						{
 							"name": "voice",
-							"type": "value"
+							"type": "value",
+							"desc": "Voice name (for local, needs --lang=en or es to pick the language)"
 						}
 					]
 				},
@@ -2944,135 +2851,168 @@
 					"flags": [
 						{
 							"name": "agent",
-							"type": "value"
+							"type": "value",
+							"desc": "Which agent project to talk to (default: the default agent)"
 						},
 						{
 							"name": "all",
-							"type": "bool"
+							"type": "bool",
+							"desc": "List every model that fits; or approve all skills at once"
 						},
 						{
 							"name": "backend",
-							"type": "value"
+							"type": "value",
+							"desc": "Pull-down shell backend: hyprland or yakuake"
 						},
 						{
 							"name": "background",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On models pull: download in the background and return at once"
 						},
 						{
 							"name": "default",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On link opencode: also make the active model opencode's default"
 						},
 						{
 							"name": "dir",
-							"type": "value"
+							"type": "value",
+							"desc": "On session start: folder the agent session starts in"
 						},
 						{
 							"name": "embeddings",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On discover: only show embedding models"
 						},
 						{
 							"name": "fits",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On discover: only show models that fit this machine"
 						},
 						{
 							"name": "from",
-							"type": "value"
+							"type": "value",
+							"desc": "On text: take the text from the selection or the clipboard"
 						},
 						{
 							"name": "lang",
-							"type": "value"
+							"type": "value",
+							"desc": "On text: language to translate into or answer in"
 						},
 						{
 							"name": "limit",
-							"type": "value"
+							"type": "value",
+							"desc": "On discover: maximum number of results (1 to 30, default 8)"
 						},
 						{
 							"name": "listen",
-							"type": "value"
+							"type": "value",
+							"desc": "On serve: listen on 127.0.0.1 (this machine) or 0.0.0.0 (network)"
 						},
 						{
 							"name": "model",
-							"type": "value"
+							"type": "value",
+							"desc": "On ask and text: model ID to use instead of the active one"
 						},
 						{
 							"name": "models",
-							"type": "value"
+							"type": "value",
+							"desc": "On setup: comma separated model IDs to download instead of picks"
 						},
 						{
 							"name": "name",
-							"type": "value"
+							"type": "value",
+							"desc": "On session start: name added to the tmux session"
 						},
 						{
 							"name": "no-start",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On agents setup: make the Boxy project but do not start it"
 						},
 						{
 							"name": "no-test",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On models pull: skip the test question after download"
 						},
 						{
 							"name": "off",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On link and agents profile: remove the link instead of adding it"
 						},
 						{
 							"name": "picks",
-							"type": "value"
+							"type": "value",
+							"desc": "On setup: use all for every recommended model, not just defaults"
 						},
 						{
 							"name": "port",
-							"type": "value"
+							"type": "value",
+							"desc": "On serve: port the AI server listens on (1024 to 65535)"
 						},
 						{
 							"name": "session",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On agents approve: approve this kind of action for the whole session"
 						},
 						{
 							"name": "snapshot",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On agents install and update: use the snapshot build (the default)"
 						},
 						{
 							"name": "source",
-							"type": "value"
+							"type": "value",
+							"desc": "On engine: install llama.cpp from official or aur"
 						},
 						{
 							"name": "stable",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On agents install and update: use the stable release"
 						},
 						{
 							"name": "start",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Use --start=false to skip starting the agent on agents setup"
 						},
 						{
 							"name": "test",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Use --test=false to skip the test question on models pull"
 						},
 						{
 							"name": "text",
-							"type": "value"
+							"type": "value",
+							"desc": "On text: the text to work on, instead of selection or clipboard"
 						},
 						{
 							"name": "thread",
-							"type": "value"
+							"type": "value",
+							"desc": "On agents ask: continue this conversation thread by its ID"
 						},
 						{
 							"name": "to",
-							"type": "value"
+							"type": "value",
+							"desc": "On text: where the result goes: clipboard, notify or stdout"
 						},
 						{
 							"name": "tools",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On discover: only show models that support tool calling"
 						},
 						{
 							"name": "tune",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On setup: also tune each chat model for this machine"
 						},
 						{
 							"name": "vision",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On discover: only show models that can read images"
 						},
 						{
 							"name": "window",
-							"type": "bool"
+							"type": "bool",
+							"desc": "On agents chat: open the chat in a new terminal window"
 						}
 					]
 				},
@@ -3093,7 +3033,8 @@
 					"flags": [
 						{
 							"name": "write",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Allow tools that change things (the agent asks first each time)"
 						}
 					]
 				},
@@ -3113,7 +3054,8 @@
 					"flags": [
 						{
 							"name": "tag",
-							"type": "value"
+							"type": "value",
+							"desc": "On list: only show skills with this tag"
 						}
 					]
 				}
@@ -3141,7 +3083,8 @@
 					"flags": [
 						{
 							"name": "edit",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Open the capture in the annotation editor (Noctalia only)"
 						}
 					]
 				},
@@ -3160,7 +3103,8 @@
 					"flags": [
 						{
 							"name": "out",
-							"type": "value"
+							"type": "value",
+							"desc": "Write the QR code to this PNG file instead of the terminal"
 						}
 					]
 				},
@@ -3182,7 +3126,8 @@
 					"flags": [
 						{
 							"name": "to",
-							"type": "value"
+							"type": "value",
+							"desc": "Name of the device to send to, skips the device picker"
 						}
 					],
 					"note": "Sending uses LocalSend's command line, localsend-cli (LocalSend 1.18 and later): without --to it lists the devices it finds and you pick one, on your terminal (the menu opens one). Without a path a file chooser asks (kdialog on Plasma, else zenity). clipboard sends what you copied as a text file. receive opens the LocalSend app. Exit 4 when localsend-cli or LocalSend is missing."
@@ -3205,19 +3150,23 @@
 					"flags": [
 						{
 							"name": "region",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Record an area you drag with the mouse, not the whole screen"
 						},
 						{
 							"name": "audio",
-							"type": "value"
+							"type": "value",
+							"desc": "Add sound: desktop (what plays) or mic (default microphone)"
 						},
 						{
 							"name": "webcam",
-							"type": "any"
+							"type": "any",
+							"desc": "Show the webcam in a corner (default bottom-right, or name one)"
 						},
 						{
 							"name": "webcam-size",
-							"type": "value"
+							"type": "value",
+							"desc": "Size of the webcam picture: small, medium (default) or large"
 						}
 					],
 					"note": "--audio=desktop adds what the speakers play, --audio=mic the default microphone (both through pactl). Desktop and microphone together are not offered: wf-recorder takes one audio source. Exit 2 for another audio value. --webcam puts your webcam in a corner while it records (bottom-right unless you name another), so it is in the video; it ends with the recording. Hyprland pins it (the BxRig module's rules); on Plasma it is a small window you can drag."
@@ -3370,7 +3319,8 @@
 					"flags": [
 						{
 							"name": "fix",
-							"type": "bool"
+							"type": "bool",
+							"desc": "Rebuild KDE's service cache to repair an empty Open with menu"
 						}
 					]
 				},
@@ -3444,11 +3394,13 @@
 					"flags": [
 						{
 							"name": "for",
-							"type": "value"
+							"type": "value",
+							"desc": "Devices to plan helpers for: detect, apple, logitech, both, none"
 						},
 						{
 							"name": "scroll-speed",
-							"type": "value"
+							"type": "value",
+							"desc": "Set Magic Mouse and Trackpad scroll speed, 0 to 63 (default 32)"
 						}
 					],
 					"note": "touchpad and touchscreen switch the device off and on in a Hyprland session (hyprctl eval hl.device); a login turns it back on."
@@ -3501,7 +3453,8 @@
 					"flags": [
 						{
 							"name": "out",
-							"type": "value"
+							"type": "value",
+							"desc": "Write the Wi-Fi QR code to this PNG file instead of the terminal"
 						}
 					],
 					"note": "Read only, through `nmcli` (NetworkManager). Joining a network is in the bar panel (Super+Ctrl+N). Exit 4 when `nmcli` is missing. qr draws the network you are on as a QR code a phone camera reads to join (qrencode); the password is in the code only, never printed."
