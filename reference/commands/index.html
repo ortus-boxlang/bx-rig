@@ -427,15 +427,17 @@ bxrig banner --json
 <p>The control center: every command as a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae).</p>
 <pre><code class="language-text">bxrig menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]
 bxrig menu ids [--json] | menu file [--yes] [--dry-run] [--json]
+bxrig menu level [PATH] [--json]
 </code></pre>
 <pre><code class="language-bash">bxrig menu
 bxrig menu search 'time zone'
 bxrig menu open capture
 bxrig menu ids
 bxrig menu file --yes
+bxrig menu level &quot;Trigger &gt; Capture&quot; --json
 </code></pre>
 <blockquote>
-<p>Bind it to a key; the first entry, Search, lists every entry as one flat list. <code>menu open ROUTE</code> opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger &gt; capture); <code>menu open</code> lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: <code>menu ids</code> lists the ids, <code>menu file --yes</code> writes an example, <code>menu file</code> checks yours.</p>
+<p>Bind it to a key; the first entry, Search, lists every entry as one flat list. <code>menu open ROUTE</code> opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger &gt; capture); <code>menu open</code> lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: <code>menu ids</code> lists the ids, <code>menu file --yes</code> writes an example, <code>menu file</code> checks yours. level lists the entries at one level (the top level, or the submenu at PATH) with a glyph and colour role for each: the data the Noctalia menu panel draws.</p>
 </blockquote>
 <h3 id="bxrig-apps-bxrig-apps"><a href="#bxrig-apps-bxrig-apps" id="bxrig-apps-bxrig-apps" name="bxrig-apps-bxrig-apps" class="anchor"></a><code>bxrig apps</code> {#bxrig-apps}</h3>
 <p>Your installed catalog apps, as a list or a launcher grid.</p>
@@ -659,7 +661,7 @@ bxrig launcher setup [--yes] [--dry-run] [--json]
 bxrig launcher scripts [--yes] [--dry-run] | scripts remove [--yes] [--json]
 bxrig launcher files [QUERY]
 bxrig launcher search [QUERY] [--limit=N] [--json]
-bxrig launcher run ID [--dry-run] [--json]
+bxrig launcher run ID [QUERY] [--dry-run] [--json]
 </code></pre>
 <p>Changes the system: needs <code>--yes</code>. Without it you get the plan (exit 2); <code>--dry-run</code> shows it and exits 0.</p>
 <pre><code class="language-bash">bxrig launcher
@@ -670,7 +672,7 @@ bxrig launcher search capture --json
 bxrig launcher run theme:nord
 </code></pre>
 <blockquote>
-<p>setup is a plan until --yes: it makes Vicinae the launcher and the menu, writes ~/.local/share/vicinae/themes/bxrig.toml (rewritten by every <code>bxrig theme set</code>) and selects it with <code>vicinae theme set bxrig</code>, writes the script commands to ~/.local/share/vicinae/scripts/bxrig and starts <code>vicinae server</code> when it is not running. Vicinae's settings.json is never edited. files opens <a href="vicinae://launch/files/search">vicinae://launch/files/search</a> with QUERY typed in. search gives one ranked list for what you type: a calculator answer first, then menu actions (with their path), applications and themes, then web searches. Rows you run often rise (frecency, kept in ~/.local/state/bxrig/launcher.json). run does what a row says; ids come from search --json.</p>
+<p>setup is a plan until --yes: it makes Vicinae the launcher and the menu, writes ~/.local/share/vicinae/themes/bxrig.toml (rewritten by every <code>bxrig theme set</code>) and selects it with <code>vicinae theme set bxrig</code>, writes the script commands to ~/.local/share/vicinae/scripts/bxrig and starts <code>vicinae server</code> when it is not running. Vicinae's settings.json is never edited. files opens <a href="vicinae://launch/files/search">vicinae://launch/files/search</a> with QUERY typed in. search gives one ranked list for what you type: a calculator answer first, then menu actions (with their path), applications and themes, then web searches. Rows you run often rise (frecency, kept in ~/.local/state/bxrig/launcher.json). run does what a row says; ids come from search --json. Answer and web rows are made from the query, so pass the words after the id (launcher run web:ddg bash docs).</p>
 </blockquote>
 <h3 id="bxrig-default-bxrig-default"><a href="#bxrig-default-bxrig-default" id="bxrig-default-bxrig-default" name="bxrig-default-bxrig-default" class="anchor"></a><code>bxrig default</code> {#bxrig-default}</h3>
 <p>Default apps: browser, terminal, file manager.</p>
@@ -1510,12 +1512,19 @@ bxrig webcam status
 <p>mpv on /dev/video0 in a window of class bxrig-webcam, which the Hyprland module floats and sizes. Exit 4 without mpv or a webcam.</p>
 </blockquote>
 <h3 id="bxrig-clipboard-bxrig-clipboard"><a href="#bxrig-clipboard-bxrig-clipboard" id="bxrig-clipboard-bxrig-clipboard" name="bxrig-clipboard-bxrig-clipboard" class="anchor"></a><code>bxrig clipboard</code> {#bxrig-clipboard}</h3>
-<p>Clipboard history (cliphist): pick, list, clear, setup.</p>
-<pre><code class="language-text">bxrig clipboard pick | clear [--yes] | status [--json]
+<p>Clipboard history (cliphist): pick, list, show, copy, clear, status.</p>
+<pre><code class="language-text">bxrig clipboard pick | status [--json]
+bxrig clipboard list [QUERY] [--limit=N] [--json]
+bxrig clipboard show ID | copy ID [--json]
+bxrig clipboard clear [--yes]
 </code></pre>
 <pre><code class="language-bash">bxrig clipboard pick
-bxrig clipboard status
+bxrig clipboard list token --json
+bxrig clipboard copy 42
 </code></pre>
+<blockquote>
+<p>list gives the history newest first as rows { id, kind, preview, chars } (text and images). show prints one entry in full (text up to 4000 characters). copy puts an entry back on the clipboard. The launcher panel uses these three.</p>
+</blockquote>
 <h3 id="bxrig-emoji-bxrig-emoji"><a href="#bxrig-emoji-bxrig-emoji" id="bxrig-emoji-bxrig-emoji" name="bxrig-emoji-bxrig-emoji" class="anchor"></a><code>bxrig emoji</code> {#bxrig-emoji}</h3>
 <p>The emoji picker (rofimoji).</p>
 <pre><code class="language-text">bxrig emoji
@@ -1655,7 +1664,7 @@ bxrig wifi qr --out=wifi.png
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 7&#x3a;08&#x3a;37 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/reference/commands.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/reference/commands.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 10&#x3a;57&#x3a;29 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Command%20reference&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Freference%2Fcommands%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 

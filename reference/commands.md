@@ -274,6 +274,7 @@ The control center: every command as a menu on your launcher (Rofi, Walker, Wofi
 ```text
 bxrig menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]
 bxrig menu ids [--json] | menu file [--yes] [--dry-run] [--json]
+bxrig menu level [PATH] [--json]
 ```
 
 ```bash
@@ -282,9 +283,10 @@ bxrig menu search 'time zone'
 bxrig menu open capture
 bxrig menu ids
 bxrig menu file --yes
+bxrig menu level "Trigger > Capture" --json
 ```
 
-> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: `menu ids` lists the ids, `menu file --yes` writes an example, `menu file` checks yours.
+> Bind it to a key; the first entry, Search, lists every entry as one flat list. `menu open ROUTE` opens one submenu (system, capture, toggle, hardware, agent, shortcuts, trigger > capture); `menu open` lists the routes. A tick marks the current value (bar position, dock, window look, theme mode, power profile). Entries that do not apply here are hidden (laptop, touchpad, touchscreen, webcam, hybrid GPU, Hyprland, Plasma, installed apps); Install hides apps you have. Your own ~/.config/bxrig/menu.json adds entries (a program or a bxrig command under a submenu id), hides and renames entries by id: `menu ids` lists the ids, `menu file --yes` writes an example, `menu file` checks yours. level lists the entries at one level (the top level, or the submenu at PATH) with a glyph and colour role for each: the data the Noctalia menu panel draws.
 
 ### `bxrig apps` {#bxrig-apps}
 
@@ -685,7 +687,7 @@ bxrig launcher setup [--yes] [--dry-run] [--json]
 bxrig launcher scripts [--yes] [--dry-run] | scripts remove [--yes] [--json]
 bxrig launcher files [QUERY]
 bxrig launcher search [QUERY] [--limit=N] [--json]
-bxrig launcher run ID [--dry-run] [--json]
+bxrig launcher run ID [QUERY] [--dry-run] [--json]
 ```
 
 Changes the system: needs `--yes`. Without it you get the plan (exit 2); `--dry-run` shows it and exits 0.
@@ -699,7 +701,7 @@ bxrig launcher search capture --json
 bxrig launcher run theme:nord
 ```
 
-> setup is a plan until --yes: it makes Vicinae the launcher and the menu, writes ~/.local/share/vicinae/themes/bxrig.toml (rewritten by every `bxrig theme set`) and selects it with `vicinae theme set bxrig`, writes the script commands to ~/.local/share/vicinae/scripts/bxrig and starts `vicinae server` when it is not running. Vicinae's settings.json is never edited. files opens vicinae://launch/files/search with QUERY typed in. search gives one ranked list for what you type: a calculator answer first, then menu actions (with their path), applications and themes, then web searches. Rows you run often rise (frecency, kept in ~/.local/state/bxrig/launcher.json). run does what a row says; ids come from search --json.
+> setup is a plan until --yes: it makes Vicinae the launcher and the menu, writes ~/.local/share/vicinae/themes/bxrig.toml (rewritten by every `bxrig theme set`) and selects it with `vicinae theme set bxrig`, writes the script commands to ~/.local/share/vicinae/scripts/bxrig and starts `vicinae server` when it is not running. Vicinae's settings.json is never edited. files opens vicinae://launch/files/search with QUERY typed in. search gives one ranked list for what you type: a calculator answer first, then menu actions (with their path), applications and themes, then web searches. Rows you run often rise (frecency, kept in ~/.local/state/bxrig/launcher.json). run does what a row says; ids come from search --json. Answer and web rows are made from the query, so pass the words after the id (launcher run web:ddg bash docs).
 
 ### `bxrig default` {#bxrig-default}
 
@@ -1880,16 +1882,22 @@ bxrig webcam status
 
 ### `bxrig clipboard` {#bxrig-clipboard}
 
-Clipboard history (cliphist): pick, list, clear, setup.
+Clipboard history (cliphist): pick, list, show, copy, clear, status.
 
 ```text
-bxrig clipboard pick | clear [--yes] | status [--json]
+bxrig clipboard pick | status [--json]
+bxrig clipboard list [QUERY] [--limit=N] [--json]
+bxrig clipboard show ID | copy ID [--json]
+bxrig clipboard clear [--yes]
 ```
 
 ```bash
 bxrig clipboard pick
-bxrig clipboard status
+bxrig clipboard list token --json
+bxrig clipboard copy 42
 ```
+
+> list gives the history newest first as rows { id, kind, preview, chars } (text and images). show prints one entry in full (text up to 4000 characters). copy puts an entry back on the clipboard. The launcher panel uses these three.
 
 ### `bxrig emoji` {#bxrig-emoji}
 

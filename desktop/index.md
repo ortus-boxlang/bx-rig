@@ -46,4 +46,4 @@ Apple Magic and Logitech devices, and the helpers BxRig installs for them.
 Monitors, laptop power, time zone, DNS, kernels and what to do when something is stuck.
 :::
 
-> **Tip:** Press `Super+Space` for the menu and `Super+K` for the shortcut cheat sheet. Looking for colors, fonts or the bar layout? That is [Customize](../customize/index.md).
+> **Tip:** Press `Super+Space` for the launcher, `Super+Alt+Space` for the menu and `Super+K` for the shortcut cheat sheet. Looking for colors, fonts or the bar layout? That is [Customize](../customize/index.md).

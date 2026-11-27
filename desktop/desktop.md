@@ -12,7 +12,7 @@ BxRig sets up **Hyprland with Noctalia** as the main desktop. **KDE Plasma** sta
 
 ```bash
 bxrig session set hyprland      # or plasma: what the login screen starts
-bxrig menu                      # the control center menu (Super+Space)
+bxrig menu                      # the control center menu (Super+Alt+Space)
 bxrig screenshot region         # Print
 ```
 
@@ -60,8 +60,8 @@ The shortcuts below are the Traditional style unless noted. Every key is a row o
 
 | Do | Command | Shortcut |
 |---|---|---|
-| Control center | `bxrig menu` | `Super+Space` |
-| Launch apps | `bxrig runner launch` (the launcher you chose); `bxrig apps` is the All apps window | `Super+Alt+Space` |
+| Control center | `bxrig menu` | `Super+Alt+Space` |
+| Launcher (apps, actions, themes, answers) | `bxrig runner launch` (the launcher you chose); `bxrig launcher search QUERY` is the same list as data; `bxrig apps` is the All apps window | `Super+Space` |
 | Hardware menu | `bxrig menu open hardware` | `Super+Ctrl+H` |
 | Screenshot | `bxrig screenshot screen\|region\|window` | `Print` (region); Mac style also `Super+Shift+3` / `4` / `5` (the `5` menu) |
 | Text from the screen | `bxrig screenshot ocr` | in the Capture menu |

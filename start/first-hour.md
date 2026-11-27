@@ -28,7 +28,7 @@ Everything is also a command. `bxrig help` lists them all and every command take
 
 ### 1. Open the control center
 
-Press `Super+Space`. Every setting and action is one searchable menu.
+Press `Super+Space`. One search box finds apps, every setting and action, themes and the clipboard. `Super+Alt+Space` opens the same actions as a menu you browse by section.
 
 ![The launcher, in your theme's colours](../assets/screenshots/launcher-theme.webp)
 

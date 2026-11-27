@@ -7,8 +7,8 @@ Two styles: **Traditional** (classic Super-key tiling keys) and **Mac** (Cmd-sty
 
 | Row | Action | Traditional | Mac | Note |
 |---|---|---|---|---|
-| r1 | Open the BxRig menu (runner) | `Super+Space` | `Super+Space` | Moves from `Super+Alt+M` |
-| r2 | Launch apps | `Super+Alt+Space` | `Super+Alt+Space` | Moves from `Super+Space`; the separate all-apps key goes away |
+| r1 | Open the BxRig menu (browse by section) | `Super+Alt+Space` | `Super+Alt+Space` | Moves from `Super+Space` when the launcher took that key |
+| r2 | Launcher (apps, actions, themes, answers, clipboard) | `Super+Space` | `Super+Space` | The BxRig launcher panel; the separate all-apps key goes away |
 | r8 | Clipboard manager | `Super+Ctrl+V` | `Super+Ctrl+V` | `Super+Shift+V` is dropped |
 | r9 | Copy, paste, cut, select all | `Super+C/V/X/A` | `Super+C/V/X/A` | Terminal aware |
 | r10 | Screenshot | `Print` | `Print` and `Super+Shift+3/4/5` | Custom text "keep Mac plus Print"; owner answer 2026-11-15 |
