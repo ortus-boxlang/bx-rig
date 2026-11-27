@@ -27,6 +27,34 @@ class Out {
 		return new bxrig.util.Mutation( this ).show( arguments.title, arguments.data, arguments.asJson, arguments.dry, arguments.extra, arguments.hint );
 	}
 
+	// ---- rich output: the same call prints a styled block for people and data for --json ----
+	// The ui toolkit of this run (colour, width and unicode from the terminal). See bxrig.ui.Ui.
+	function ui() {
+		if ( !structKeyExists( variables, "uiKit" ) ) variables.uiKit = new bxrig.ui.Ui();
+		return variables.uiKit;
+	}
+
+	// A table: the lines for people, { rows: [...] } plus `data` in JSON. columns and opts as in ui.table.
+	function table( title, columns, rows, asJson, data = {}, opts = {} ) {
+		var d = duplicate( arguments.data );
+		d.rows = arguments.rows;
+		var o = new bxrig.util.Text().merge( arguments.opts, len( arguments.title ) ? { title: arguments.title } : {} );
+		return say( "ok", d, arguments.asJson, arguments.asJson ? [] : ui().table( arguments.columns, arguments.rows, o ) );
+	}
+
+	// Aligned label and value lines under an optional heading; the pairs (a struct) are the data in JSON.
+	function kv( title, pairs, asJson, opts = {} ) {
+		var lines = [];
+		if ( len( arguments.title ) ) for ( var h in ui().section( arguments.title ) ) lines.append( h );
+		if ( !arguments.asJson ) for ( var l in ui().kv( arguments.pairs, arguments.opts ) ) lines.append( l );
+		return say( "ok", isStruct( arguments.pairs ) ? arguments.pairs : { items: arguments.pairs }, arguments.asJson, lines );
+	}
+
+	// Any blocks of the ui toolkit (arrays of lines) as the text, `data` as the JSON.
+	function blocks( data, asJson, lines, code = "ok" ) {
+		return say( arguments.code, arguments.data, arguments.asJson, arguments.asJson ? [] : arguments.lines );
+	}
+
 	// The same output for another command string (`keys set` and `keys reset` in one class).
 	function sub( command ) {
 		return variables.cli.scoped( arguments.command );

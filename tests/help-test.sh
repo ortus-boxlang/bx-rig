@@ -16,6 +16,18 @@ grep -q 'Changes the system: needs --yes' <<<"$one" || fail 'help says when --ye
 "$binary" help time --json | jq -e '.ok and .data.command.name == "time" and (.data.command.examples | length > 0)' >/dev/null || fail 'help --json'
 "$binary" help --json | jq -e '(.data.groups | length == 7) and ([.data.groups[].commands[]] | length >= 80)' >/dev/null || fail 'help list --json'
 set +e; "$binary" help nonsense >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "unknown command exits 2 (got $c)"
+# --version and --help work at the top and on every command
+[[ "$("$binary" --version)" == bxrig\ * ]] || fail '--version prints "bxrig VERSION"'
+[[ "$("$binary" -v)" == "$("$binary" --version)" ]] || fail '-v is --version'
+"$binary" --version --json | jq -e '.data.version != "" and .exit == 0' >/dev/null || fail '--version --json'
+"$binary" --help | grep -q 'Usage: bxrig COMMAND' || fail '--help lists the commands'
+[[ "$("$binary" -h)" == "$("$binary" --help)" ]] || fail '-h is --help'
+for name in $(jq -r '.groups[].commands[].name' "$root/docs/reference/cli.json"); do
+	out="$("$binary" "$name" --help 2>&1)" || fail "$name --help exits 0"
+	grep -q "^bxrig $name: " <<<"$out" || fail "$name --help shows the command's page"
+	[[ "$("$binary" "$name" -h 2>&1)" == "$out" ]] || fail "$name -h is $name --help"
+done
+set +e; "$binary" nonsense --help >/dev/null 2>&1; c=$?; set -e; [[ $c == 2 ]] || fail "an unknown command with --help exits 2 (got $c)"
 # the docs page and the embedded data are current
 bash "$root/bootstrap/gen-docs.sh" --check >/dev/null || fail 'docs/reference/commands.md or CommandFlagData.bx is stale'
 echo "help-test: ok"

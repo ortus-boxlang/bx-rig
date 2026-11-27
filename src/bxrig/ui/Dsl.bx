@@ -1,0 +1,62 @@
+// The method-name language of the fluent print helper (the one CommandBox's `print` uses): a name like boldRedOnWhiteLine says what to do.
+//   words:   a colour (red, accent, color221 ...), "on" + a colour for the background, decorations (bold dim italic underscored underline blinking
+//            reversed concealed strike), `indented` (two spaces before every line), `line` (a line break after the text); other words ("text", "and")
+//            are ignored so a name reads well: greenText, boldRedOnBlueBackgroundText.
+//   parse( "boldRedOnWhiteLine" ) -> { spec: "bold red bg:white", newline: true, indent: false }
+// A second string is added to the name: parse( "text", "green" ) is greenText. That is how a colour is picked at run time.
+class Dsl {
+	function init( theme ) {
+		variables.theme = arguments.theme;
+		variables.decor = {
+			bold: "bold", dim: "dim", faint: "dim", italic: "italic", underscored: "underline", underline: "underline", underlined: "underline",
+			blinking: "blink", blink: "blink", reversed: "inverse", reverse: "inverse", inverse: "inverse", concealed: "conceal", strike: "strike", strikethrough: "strike"
+		};
+		variables.filler = [ "text", "and", "background", "with", "the", "a", "color", "colored", "coloured", "colour" ];
+		return this;
+	}
+
+	function words( name ) {
+		var out = [];
+		for ( var w in reMatch( "[A-Z]?[a-z]+|[A-Z]+|[0-9]+", arguments.name & "" ) ) out.append( lCase( w ) );
+		return out;
+	}
+
+	function parse( name, extra = "" ) {
+		var n = arguments.name & ( len( arguments.extra ) ? uCase( left( arguments.extra, 1 ) ) & mid( arguments.extra, 2, len( arguments.extra ) ) : "" );
+		var t = words( n );
+		var spec = [];
+		var res = { spec: "", newline: false, indent: false };
+		var fg = "";
+		var bg = "";
+		var nextBg = false;
+		var found = "";
+		var i = 1;
+		while ( i <= t.len() ) {
+			var w = t[ i ];
+			if ( w == "on" ) { nextBg = true; i++; continue; }
+			if ( w == "line" || w == "lines" ) { res.newline = true; i++; continue; }
+			if ( w == "indented" || w == "indent" ) { res.indent = true; i++; continue; }
+			if ( structKeyExists( variables.decor, w ) ) { var d = variables.decor[ w ]; if ( !arrayFind( spec, d ) ) spec.append( d ); i++; continue; }
+			var took = 0;
+			if ( w == "color" && i < t.len() && isNumeric( t[ i + 1 ] ) ) { took = 2; found = "color" & t[ i + 1 ]; }
+			else if ( !arrayFind( variables.filler, w ) ) {
+				for ( var len3 = min( 3, t.len() - i + 1 ); len3 >= 1; len3-- ) {
+					var cand = "";
+					for ( var k = 0; k < len3; k++ ) cand &= t[ i + k ];
+					if ( variables.theme.knows( cand ) ) { took = len3; found = cand; break; }
+				}
+			}
+			if ( took > 0 ) {
+				if ( nextBg ) bg = found; else fg = found;
+				nextBg = false;
+				i += took;
+				continue;
+			}
+			i++;
+		}
+		if ( len( fg ) ) spec.append( fg );
+		if ( len( bg ) ) spec.append( "bg:" & bg );
+		res.spec = spec.toList( " " );
+		return res;
+	}
+}

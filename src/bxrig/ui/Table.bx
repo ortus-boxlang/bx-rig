@@ -1,0 +1,231 @@
+// Tables: `ui.table( columns, rows, opts )` returns the lines.
+//   columns: [ { key, title, align: left|right|center, width (fixed), min, max, grow, wrap: true, format: function( value, row ), style: "accent" or function( value, row ) } ]
+//            A column can be just a key string. Rows are structs (by key) or arrays (by position).
+//   opts:    { border: rounded|plain|heavy|double|ascii|none, header: true, title: "", footer: row, zebra: false, rowLines: false,
+//              width: columns to fit (default: the terminal), padding: 1, empty: "(nothing)", headerStyle: "bold header" }
+// A table wider than the terminal shrinks its widest columns first (never below `min`, default 8 or the natural width) and cuts the text with an ellipsis,
+// or wraps it on a column with wrap: true.
+class Table {
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		variables.a = arguments.ui.ansi();
+		return this;
+	}
+
+	function cols( columns ) {
+		var out = [];
+		for ( var c in arguments.columns ) {
+			var d = isSimpleValue( c ) ? { key: c } : duplicate( c );
+			if ( !structKeyExists( d, "title" ) ) d.title = d.key;
+			if ( !structKeyExists( d, "align" ) ) d.align = "left";
+			if ( !structKeyExists( d, "wrap" ) ) d.wrap = false;
+			out.append( d );
+		}
+		return out;
+	}
+
+	function value( col, row, idx ) {
+		var v = "";
+		if ( isArray( arguments.row ) ) v = arguments.idx <= arguments.row.len() ? arguments.row[ arguments.idx ] : "";
+		else v = structKeyExists( arguments.row, arguments.col.key ) ? arguments.row[ arguments.col.key ] : "";
+		if ( isStruct( v ) && structKeyExists( v, "value" ) ) v = v.value;
+		if ( structKeyExists( arguments.col, "format" ) ) return arguments.col.format( v, arguments.row ) & "";
+		if ( isBoolean( v ) && !isNumeric( v ) ) return v ? variables.ui.glyph( "ok" ) : variables.ui.glyph( "dot" );
+		return isSimpleValue( v ) ? v & "" : serializeJSON( v );
+	}
+
+	// The format of one cell given as { value, options }: "" for a plain value.
+	function cellSpec( row, idx, col ) {
+		var v = "";
+		if ( isArray( arguments.row ) ) v = arguments.idx <= arguments.row.len() ? arguments.row[ arguments.idx ] : "";
+		else v = structKeyExists( arguments.row, arguments.col.key ) ? arguments.row[ arguments.col.key ] : "";
+		if ( isStruct( v ) && structKeyExists( v, "options" ) ) return variables.ui.dsl().parse( "text", v.options ).spec;
+		return "";
+	}
+
+	function render( columns, rows, opts = {} ) {
+		var o = arguments.opts;
+		var cs = cols( arguments.columns );
+		if ( o.drop ?: false ) cs = dropColumns( cs, arguments.rows, o );
+		var n = cs.len();
+		var border = o.border ?: "rounded";
+		var hasBorder = border != "none";
+		var pad = hasBorder ? ( o.padding ?: 1 ) : 0;
+		var gap = hasBorder ? 0 : 2;
+		var bx = variables.ui.box( border == "none" ? "plain" : border );
+		var avail = o.width ?: variables.ui.width();
+		var showHeader = o.header ?: true;
+		var a = variables.a;
+
+		// the text of every cell, as lines
+		var all = arguments.rows;
+		var hasFooter = structKeyExists( o, "footer" );
+		var body = [];
+		for ( var r in all ) {
+			var cells = [];
+			for ( var i = 1; i <= n; i++ ) cells.append( value( cs[ i ], r, i ) );
+			body.append( { cells: cells, row: r } );
+		}
+		var foot = [];
+		if ( hasFooter ) {
+			var fc = [];
+			for ( var i = 1; i <= n; i++ ) fc.append( value( cs[ i ], o.footer, i ) );
+			foot = [ { cells: fc, row: o.footer } ];
+		}
+
+		// natural widths
+		var w = [];
+		for ( var i = 1; i <= n; i++ ) {
+			var nat = showHeader ? a.width( cs[ i ].title ) : 0;
+			for ( var b in body ) for ( var ln in listToArray( b.cells[ i ], chr( 10 ), true ) ) nat = max( nat, a.width( ln ) );
+			for ( var b in foot ) nat = max( nat, a.width( b.cells[ i ] ) );
+			if ( structKeyExists( cs[ i ], "width" ) ) nat = cs[ i ].width;
+			else if ( structKeyExists( cs[ i ], "max" ) ) nat = min( nat, cs[ i ].max );
+			w.append( max( 1, nat ) );
+		}
+		// fit to the width: shrink the widest column that can still shrink
+		var overhead = hasBorder ? ( n + 1 ) + n * pad * 2 : gap * max( 0, n - 1 );
+		var total = overhead;
+		for ( var x in w ) total += x;
+		var guard = 0;
+		while ( total > avail && guard < 2000 ) {
+			guard++;
+			var pick = 0;
+			for ( var i = 1; i <= n; i++ ) {
+				if ( structKeyExists( cs[ i ], "width" ) ) continue;
+				var floor = cs[ i ].min ?: min( w[ i ], 8 );
+				if ( w[ i ] > floor && ( !pick || w[ i ] > w[ pick ] ) ) pick = i;
+			}
+			if ( !pick ) break;
+			w[ pick ] = w[ pick ] - 1;
+			total--;
+		}
+		// the table grows to fill the line only when asked: a column with grow: true takes the spare width
+		if ( total < avail ) {
+			var growers = [];
+			for ( var i = 1; i <= n; i++ ) if ( cs[ i ].grow ?: false ) growers.append( i );
+			if ( growers.len() && ( o.fill ?: false ) ) {
+				var spare = avail - total;
+				for ( var gi in growers ) w[ gi ] = w[ gi ] + int( spare / growers.len() );
+				total = avail;
+			}
+		}
+
+		// an empty table is as wide as its message
+		if ( !body.len() && hasBorder ) {
+			var need = a.width( o.empty ?: "(nothing)" ) - ( total - 4 );
+			if ( need > 0 ) { w[ n ] = w[ n ] + need; total += need; }
+		}
+
+		var out = [];
+		var rtrim = function( s ) { return reReplace( s, "\s+$", "" ); };
+		var line = function( l, m, r ) {
+			var parts = [];
+			for ( var i = 1; i <= n; i++ ) parts.append( repeatString( bx.h, w[ i ] + pad * 2 ) );
+			return variables.ui.style( l & parts.toList( m ) & r, "border" );
+		};
+		var cellLines = function( text, i ) {
+			if ( cs[ i ].wrap ) return a.wrap( text, w[ i ] );
+			var one = listToArray( text, chr( 10 ), true );
+			return one.len() ? one : [ "" ];
+		};
+		var rowLines = function( cells, rowData, head, zebra ) {
+			var per = [];
+			var height = 1;
+			for ( var i = 1; i <= n; i++ ) {
+				var ls = cellLines( cells[ i ], i );
+				per.append( ls );
+				height = max( height, ls.len() );
+			}
+			var res = [];
+			for ( var h = 1; h <= height; h++ ) {
+				var parts = [];
+				for ( var i = 1; i <= n; i++ ) {
+					var txt = h <= per[ i ].len() ? per[ i ][ h ] : "";
+					var spec = "";
+					if ( head ) spec = o.headerStyle ?: "bold header";
+					else if ( structKeyExists( cs[ i ], "style" ) ) spec = isSimpleValue( cs[ i ].style ) ? cs[ i ].style : cs[ i ].style( cells[ i ], rowData );
+					var own = head ? "" : cellSpec( rowData, i, cs[ i ] );
+					if ( len( own ) ) spec = own;
+					if ( zebra ) spec = trim( spec & " bg:zebra" );
+					var al = head && cs[ i ].align == "right" ? "right" : cs[ i ].align;
+					var cell = a.align( txt, w[ i ], al );
+					if ( len( spec ) ) cell = variables.ui.style( cell, spec );
+					var gapText = repeatString( " ", pad );
+					if ( zebra && pad > 0 ) gapText = variables.ui.style( gapText, "bg:zebra" );
+					parts.append( gapText & cell & gapText );
+				}
+				if ( hasBorder ) {
+					var vb = variables.ui.style( bx.v, "border" );
+					res.append( vb & parts.toList( vb ) & vb );
+				} else res.append( rtrim( parts.toList( repeatString( " ", gap ) ) ) );
+			}
+			return res;
+		};
+		if ( len( o.title ?: "" ) ) out.append( variables.ui.style( o.title, "bold accent" ) );
+		if ( hasBorder ) out.append( line( bx.tl, bx.tj, bx.tr ) );
+		if ( showHeader ) {
+			var hdr = [];
+			for ( var i = 1; i <= n; i++ ) hdr.append( cs[ i ].title );
+			for ( var hl in rowLines( hdr, {}, true, false ) ) out.append( hl );
+			if ( hasBorder ) out.append( line( bx.lj, bx.x, bx.rj ) );
+			else {
+				var rl = [];
+				for ( var i = 1; i <= n; i++ ) rl.append( repeatString( bx.h, w[ i ] ) );
+				out.append( variables.ui.style( rl.toList( repeatString( " ", gap ) ), "border" ) );
+			}
+		}
+		if ( !body.len() ) {
+			var msg = o.empty ?: "(nothing)";
+			if ( hasBorder ) out.append( variables.ui.style( bx.v, "border" ) & " " & a.align( variables.ui.style( msg, "dim" ), max( 1, total - 4 ) ) & " " & variables.ui.style( bx.v, "border" ) );
+			else out.append( variables.ui.style( msg, "dim" ) );
+		}
+		var k = 0;
+		for ( var b in body ) {
+			k++;
+			var ls2 = rowLines( b.cells, b.row, false, ( o.zebra ?: false ) && k mod 2 == 0 );
+			for ( var l2 in ls2 ) out.append( l2 );
+			if ( hasBorder && ( o.rowLines ?: false ) && k < body.len() ) out.append( line( bx.lj, bx.x, bx.rj ) );
+		}
+		if ( hasFooter ) {
+			if ( hasBorder ) out.append( line( bx.lj, bx.x, bx.rj ) );
+			for ( var l3 in rowLines( foot[ 1 ].cells, foot[ 1 ].row, false, false ) ) out.append( variables.ui.style( l3, "bold" ) );
+		}
+		if ( hasBorder ) out.append( line( bx.bl, bx.bj, bx.br ) );
+		return out;
+	}
+
+	// On a terminal too narrow for the columns, the columns on the right are replaced by one "..." column (the others keep their text, shrunk).
+	function dropColumns( cs, rows, o ) {
+		var border = o.border ?: "rounded";
+		var hasBorder = border != "none";
+		var pad = hasBorder ? ( o.padding ?: 1 ) : 0;
+		var avail = o.width ?: variables.ui.width();
+		var mins = [];
+		for ( var i = 1; i <= arguments.cs.len(); i++ ) {
+			var nat = variables.a.width( arguments.cs[ i ].title );
+			for ( var r in arguments.rows ) nat = max( nat, variables.a.width( value( arguments.cs[ i ], r, i ) ) );
+			mins.append( arguments.cs[ i ].min ?: min( nat, 8 ) );
+		}
+		var over = function( count ) { return hasBorder ? ( count + 1 ) + count * pad * 2 : 2 * max( 0, count - 1 ); };
+		var sum = 0;
+		for ( var m in mins ) sum += m;
+		if ( sum + over( arguments.cs.len() ) <= avail ) return arguments.cs;
+		var keep = 1;
+		for ( var kk = arguments.cs.len() - 1; kk >= 1; kk-- ) {
+			var used = 0;
+			for ( var j = 1; j <= kk; j++ ) used += mins[ j ];
+			if ( used + 3 + over( kk + 1 ) <= avail ) { keep = kk; break; }
+		}
+		var out = [];
+		for ( var k = 1; k <= keep; k++ ) out.append( arguments.cs[ k ] );
+		out.append( { key: "__more", title: "...", align: "left", wrap: false, width: 3, format: function() { return "..."; } } );
+		return out;
+	}
+
+	function flat( lines ) {
+		var out = [];
+		for ( var l in arguments.lines ) { if ( isArray( l ) ) { for ( var m in l ) out.append( m ); } else out.append( l ); }
+		return out;
+	}
+}
