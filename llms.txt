@@ -47,3 +47,4 @@
 - [Mail catcher](https://bxrig.boxlang.io/guides/mail.md) ([HTML](https://bxrig.boxlang.io/guides/mail/index.html))
 - [Pictures in the terminal](https://bxrig.boxlang.io/guides/images.md) ([HTML](https://bxrig.boxlang.io/guides/images/index.html))
 - [SHORTCUTS DECISIONS](https://bxrig.boxlang.io/architecture/SHORTCUTS-DECISIONS.md) ([HTML](https://bxrig.boxlang.io/architecture/SHORTCUTS-DECISIONS/index.html))
+- [The terminal UI toolkit](https://bxrig.boxlang.io/architecture/ui-toolkit.md) ([HTML](https://bxrig.boxlang.io/architecture/ui-toolkit/index.html))
