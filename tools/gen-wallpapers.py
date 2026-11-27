@@ -601,7 +601,7 @@ EXTRA = {
 	'bxrig-tron': ('horizon', {'wm': True, 'tint2': hexrgb('#00e5ff')}, custom(True, '#05080f', '#05080f', '#ff8a1f', '#00e5ff', '#ff3d00')),
 	'bxrig-neon': ('horizon', {'sun': True}, custom(True, '#0b0420', '#0b0420', '#ff2ec4', '#35e8ff', '#8a2dff')),
 	'bxrig-city': ('city', {'wm': True}, custom(True, '#070a18', '#070a18', '#35e8ff', '#00ff78', '#ff2ec4')),
-	'bxrig-aurora': ('aurora', {'wm': True}, custom(True, '#050a14', '#050a14', '#00ff78', '#35e8ff', '#9d5cff')),
+	'bxrig-aurora': ('aurora', {}, custom(True, '#050a14', '#050a14', '#00ff78', '#35e8ff', '#9d5cff')),
 	'bxrig-orbit': ('orbit', {'wm': True}, custom(True, '#04060c', '#04060c', '#00ff78', '#35e8ff', '#7a2dff')),
 	'bxrig-circuit': ('circuit', {'wm': True}, custom(True, '#04080a', '#04080a', '#00ff78', '#35e8ff', '#ffd400')),
 	'bxrig-rain': ('rain', {'wm': True}, custom(True, '#02070a', '#02070a', '#00ff78', '#7dffb4', '#35e8ff')),
