@@ -1,0 +1,39 @@
+// The colours of the ui helpers, by role. The BxRig brand by default; `set( { accent: "#..." } )` changes a role.
+//   roles: accent accent2 ok warn err info text dim border header zebra
+// A colour is a role, a basic name (red, cyan, gray ...) or a hex like "#00c8ff".
+class Theme {
+	function init( overrides = {} ) {
+		variables.map = {
+			accent: "##00C8FF", accent2: "##00FF88", ok: "##00D26A", warn: "##F5C542", err: "##FF5C5C", info: "##5CC8FF",
+			text: "##E6E6E6", dim: "##7C8396", border: "##4B5368", header: "##00C8FF", zebra: "##1E222B",
+			black: "##000000", red: "##FF5C5C", green: "##00D26A", yellow: "##F5C542", blue: "##5C8DFF", magenta: "##C77DFF",
+			cyan: "##00C8FF", white: "##E6E6E6", gray: "##7C8396", grey: "##7C8396", orange: "##FF9E4A", pink: "##FF7AB6"
+		};
+		for ( var k in structKeyArray( arguments.overrides ) ) variables.map[ k ] = arguments.overrides[ k ];
+		return this;
+	}
+
+	// Sets role colours (hex). The caller passes the theme that is on, e.g. from Banner.colors(): this class does not read the system, so it
+	// can be used anywhere without a circular class reference.
+	function set( colors ) {
+		for ( var k in structKeyArray( arguments.colors ) ) variables.map[ lCase( k ) ] = arguments.colors[ k ];
+		return this;
+	}
+
+	function knows( name ) { return structKeyExists( variables.map, lCase( arguments.name ) ); }
+
+	// "#rrggbb" of a role, a basic name or a hex ("" for anything else).
+	function hex( color ) {
+		var c = trim( arguments.color );
+		if ( reFind( "^##[0-9A-Fa-f]{6}$", c ) ) return uCase( c );
+		if ( structKeyExists( variables.map, lCase( c ) ) ) return variables.map[ lCase( c ) ];
+		return "";
+	}
+
+	// [ r, g, b ] of a colour, [] when it is unknown.
+	function rgb( color ) {
+		var h = hex( arguments.color );
+		if ( !len( h ) ) return [];
+		return [ inputBaseN( mid( h, 2, 2 ), 16 ), inputBaseN( mid( h, 4, 2 ), 16 ), inputBaseN( mid( h, 6, 2 ), 16 ) ];
+	}
+}

@@ -1,0 +1,185 @@
+// The small building blocks of command output: panels, callouts, section headings, rules, key-value lists, lists, trees, columns, badges, status lines.
+// Reach them through Ui (ui.panel, ui.kv ...). Everything returns lines (an array) or one string.
+class Blocks {
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		variables.a = arguments.ui.ansi();
+		return this;
+	}
+
+	// ---- single strings ----
+	function badge( text, role = "accent" ) {
+		if ( !variables.ui.color() ) return "[" & arguments.text & "]";
+		return variables.ui.style( " " & arguments.text & " ", "bold black bg:" & arguments.role );
+	}
+
+	function pill( text, role = "accent" ) {
+		if ( !variables.ui.color() ) return "(" & arguments.text & ")";
+		return variables.ui.style( variables.ui.glyph( "dot" ) & " " & arguments.text, arguments.role );
+	}
+
+	// A status word with its glyph: ok err warn info skip run pending (and the words roleOf knows).
+	function status( kind, text ) {
+		var k = lCase( arguments.kind );
+		var g = "info";
+		if ( k == "ok" || k == "done" ) g = "ok";
+		else if ( k == "err" || k == "error" || k == "failed" || k == "fail" ) g = "cross";
+		else if ( k == "warn" || k == "warning" ) g = "warn";
+		else if ( k == "skip" || k == "skipped" ) g = "skip";
+		else if ( k == "run" || k == "running" ) g = "run";
+		else if ( k == "pending" || k == "todo" ) g = "pending";
+		return variables.ui.style( variables.ui.glyph( g ), variables.ui.roleOf( arguments.kind ) ) & " " & arguments.text;
+	}
+
+	// ---- headings ----
+	// An UPPERCASE accent heading, with a dim note beside it.
+	function section( title, blurb = "" ) {
+		var t = variables.ui.style( uCase( arguments.title ), "bold accent" );
+		if ( len( arguments.blurb ) ) t &= "  " & variables.ui.style( arguments.blurb, "dim" );
+		return [ t ];
+	}
+
+	// A horizontal rule, with a title in it: ── Title ─────────
+	function rule( title = "", opts = {} ) {
+		var w = arguments.opts.width ?: variables.ui.width();
+		var h = variables.ui.box( arguments.opts.border ?: "plain" ).h;
+		if ( !len( arguments.title ) ) return [ variables.ui.style( repeatString( h, w ), "border" ) ];
+		var t = " " & arguments.title & " ";
+		var rest = max( 0, w - 2 - variables.a.width( t ) );
+		return [ variables.ui.style( repeatString( h, 2 ), "border" ) & variables.ui.style( t, "bold accent" ) & variables.ui.style( repeatString( h, rest ), "border" ) ];
+	}
+
+	// ---- panels ----
+	// content: a string or an array of lines. opts: title, subtitle, border (style), color (role of the border), padding, width, fill (full width).
+	function panel( content, opts = {} ) {
+		var o = arguments.opts;
+		var bx = variables.ui.box( o.border ?: "rounded" );
+		var pad = o.padding ?: 1;
+		var role = o.color ?: "border";
+		var src = isArray( arguments.content ) ? arguments.content : listToArray( arguments.content & "", chr( 10 ), true );
+		var natural = 0;
+		for ( var l in src ) natural = max( natural, variables.a.width( l ) );
+		if ( len( o.title ?: "" ) ) natural = max( natural, variables.a.width( o.title ) + 2 );
+		var w = o.width ?: ( ( o.fill ?: false ) ? variables.ui.width() : min( variables.ui.width(), natural + 2 + pad * 2 ) );
+		var inner = max( 1, w - 2 - pad * 2 );
+		var lines = [];
+		for ( var l2 in src ) {
+			if ( variables.a.width( l2 ) <= inner ) lines.append( l2 );
+			else if ( l2 == variables.a.strip( l2 ) ) { for ( var wl in variables.a.wrap( l2, inner ) ) lines.append( wl ); }
+			else lines.append( variables.a.truncate( l2, inner ) );
+		}
+		var bs = function( s ) { return variables.ui.style( s, role ); };
+		var top = bx.tl & repeatString( bx.h, w - 2 ) & bx.tr;
+		if ( len( o.title ?: "" ) ) {
+			var tt = " " & o.title & " ";
+			var fillw = max( 0, w - 3 - variables.a.width( tt ) );
+			top = bs( bx.tl & bx.h ) & variables.ui.style( tt, "bold " & ( role == "border" ? "accent" : role ) ) & bs( repeatString( bx.h, fillw ) & bx.tr );
+		} else top = bs( top );
+		var out = [ top ];
+		for ( var i = 1; i <= lines.len(); i++ ) out.append( bs( bx.v ) & repeatString( " ", pad ) & variables.a.align( lines[ i ], inner ) & repeatString( " ", pad ) & bs( bx.v ) );
+		var bottom = bx.bl & repeatString( bx.h, w - 2 ) & bx.br;
+		if ( len( o.subtitle ?: "" ) ) {
+			var st = " " & o.subtitle & " ";
+			bottom = bs( bx.bl & repeatString( bx.h, 1 ) ) & variables.ui.style( st, "dim" ) & bs( repeatString( bx.h, max( 0, w - 3 - variables.a.width( st ) ) ) & bx.br );
+		} else bottom = bs( bottom );
+		out.append( bottom );
+		return out;
+	}
+
+	// A coloured bar on the left with a message: kind is ok err warn info (tip). opts: title, width.
+	function callout( kind, text, opts = {} ) {
+		var role = variables.ui.roleOf( arguments.kind );
+		var bar = variables.ui.style( variables.ui.unicode() ? "▌" : "|", role );
+		var w = ( arguments.opts.width ?: variables.ui.width() ) - 3;
+		var out = [];
+		if ( len( arguments.opts.title ?: "" ) ) out.append( bar & " " & variables.ui.style( arguments.opts.title, "bold " & role ) );
+		for ( var l in variables.a.wrap( arguments.text, max( 10, w ) ) ) out.append( bar & " " & l );
+		return out;
+	}
+
+	// ---- key-value ----
+	// pairs: a struct, an array of [ label, value ], or an array of { label, value }. opts: indent, sep, labelStyle, valueStyle, width.
+	function kv( pairs, opts = {} ) {
+		var o = arguments.opts;
+		var rows = [];
+		if ( isStruct( arguments.pairs ) ) { for ( var k in structKeyArray( arguments.pairs ) ) rows.append( [ k, arguments.pairs[ k ] ] ); }
+		else for ( var p in arguments.pairs ) rows.append( isArray( p ) ? p : [ p.label, p.value ] );
+		var indent = o.indent ?: 0;
+		var sep = o.sep ?: "  ";
+		var lw = 0;
+		for ( var r in rows ) lw = max( lw, variables.a.width( r[ 1 ] ) );
+		var vw = max( 10, ( o.width ?: variables.ui.width() ) - indent - lw - variables.a.width( sep ) );
+		var out = [];
+		for ( var r2 in rows ) {
+			var vs = variables.a.wrap( r2[ 2 ] & "", vw );
+			if ( !vs.len() ) vs = [ "" ];
+			for ( var i = 1; i <= vs.len(); i++ ) {
+				var label = i == 1 ? variables.a.align( r2[ 1 ], lw ) : repeatString( " ", lw );
+				out.append( repeatString( " ", indent ) & variables.ui.style( label, o.labelStyle ?: "dim" ) & sep & ( len( o.valueStyle ?: "" ) ? variables.ui.style( vs[ i ], o.valueStyle ) : vs[ i ] ) );
+			}
+		}
+		return out;
+	}
+
+	// ---- lists and trees ----
+	// items: strings or { label, children }. opts: numbered, bullet, indent.
+	function list( items, opts = {} ) {
+		var out = [];
+		walkList( arguments.items, arguments.opts, 0, out );
+		return out;
+	}
+
+	function walkList( items, opts, depth, out ) {
+		var n = 0;
+		for ( var it in arguments.items ) {
+			n++;
+			var label = isSimpleValue( it ) ? it : it.label;
+			var mark = ( arguments.opts.numbered ?: false ) ? variables.ui.style( n & ".", "accent" ) : variables.ui.style( arguments.opts.bullet ?: variables.ui.glyph( "bullet" ), "accent" );
+			arguments.out.append( repeatString( " ", ( arguments.opts.indent ?: 0 ) + arguments.depth * 2 ) & mark & " " & label );
+			if ( !isSimpleValue( it ) && structKeyExists( it, "children" ) ) walkList( it.children, arguments.opts, arguments.depth + 1, arguments.out );
+		}
+	}
+
+	// nodes: strings or { label, children }. Drawn with ├─ └─ │ (ASCII without unicode).
+	function tree( nodes, opts = {} ) {
+		var out = [];
+		var bx = variables.ui.unicode() ? { t: "├─ ", l: "└─ ", v: "│  ", s: "   " } : { t: "|- ", l: "`- ", v: "|  ", s: "   " };
+		walkTree( arguments.nodes, "", bx, out );
+		return out;
+	}
+
+	function walkTree( nodes, prefix, bx, out ) {
+		var n = arguments.nodes.len();
+		for ( var i = 1; i <= n; i++ ) {
+			var it = arguments.nodes[ i ];
+			var last = i == n;
+			var label = isSimpleValue( it ) ? it : it.label;
+			arguments.out.append( variables.ui.style( arguments.prefix & ( last ? arguments.bx.l : arguments.bx.t ), "border" ) & label );
+			if ( !isSimpleValue( it ) && structKeyExists( it, "children" ) ) walkTree( it.children, arguments.prefix & ( last ? arguments.bx.s : arguments.bx.v ), arguments.bx, arguments.out );
+		}
+	}
+
+	// ---- columns ----
+	// blocks: arrays of lines, side by side. opts: gap (2), widths (fixed widths, 0 = natural).
+	function columns( blocks, opts = {} ) {
+		var gap = repeatString( " ", arguments.opts.gap ?: 2 );
+		var ws = [];
+		var height = 0;
+		var i = 0;
+		for ( var b in arguments.blocks ) {
+			i++;
+			var fixed = isArray( arguments.opts.widths ?: "" ) && i <= arguments.opts.widths.len() ? arguments.opts.widths[ i ] : 0;
+			var nat = 0;
+			for ( var l in b ) nat = max( nat, variables.a.width( l ) );
+			ws.append( fixed > 0 ? fixed : nat );
+			height = max( height, b.len() );
+		}
+		var out = [];
+		for ( var r = 1; r <= height; r++ ) {
+			var parts = [];
+			for ( var c = 1; c <= arguments.blocks.len(); c++ ) parts.append( variables.a.align( r <= arguments.blocks[ c ].len() ? arguments.blocks[ c ][ r ] : "", ws[ c ] ) );
+			out.append( reReplace( parts.toList( gap ), "\s+$", "" ) );
+		}
+		return out;
+	}
+}
