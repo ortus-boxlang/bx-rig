@@ -1,0 +1,123 @@
+// The fluent print helper: a buffer you chain calls on, like CommandBox's `print`. Any method name is a format (see Dsl):
+//   p = ui.printer();
+//   p.boldGreenText( "Installed" ).line().redOnWhiteLine( "ERROR" ).indentedLine( "detail" ).line();
+//   p.text( status, status == "running" ? "green" : "red" );          // choose the format at run time
+//   p.table( rows ).columns( names, ( item, row, col ) => "blue" ).tree( data ).toConsole();
+// "line" in a name adds a line break; calls return the helper so they chain. toConsole() prints and clears the buffer, toString() returns it.
+class Print {
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		variables.dsl = variables.ui.dsl();
+		variables.buf = [];
+		return this;
+	}
+
+	function ui() { return variables.ui; }
+
+	// ---- text ----
+	// Any other method name is a format: p.redLine( "x" ), p.boldBlueOnWhiteText( "y" ).
+	function onMissingMethod( missingMethodName, missingMethodArguments ) {
+		var a = arguments.missingMethodArguments;
+		return emit( arguments.missingMethodName, a.len() >= 1 ? a[ 1 ] : "", a.len() >= 2 ? a[ 2 ] : "" );
+	}
+
+	// Text, with an optional format added at run time: p.text( "x", "green" ).
+	function text( text = "", format = "" ) { return emit( "text", arguments.text, arguments.format ); }
+	// Text and a line break.
+	function line( text = "", format = "" ) { return emit( "line", arguments.text, arguments.format ); }
+
+	function emit( name, text, extra ) {
+		var d = variables.dsl.parse( arguments.name, arguments.extra );
+		var t = isArray( arguments.text ) ? arguments.text.toList( chr( 10 ) ) : arguments.text & "";
+		var parts = listToArray( t, chr( 10 ), true );
+		if ( !parts.len() ) parts = [ "" ];
+		for ( var i = 1; i <= parts.len(); i++ ) {
+			if ( d.indent ) parts[ i ] = "  " & parts[ i ];
+			if ( len( d.spec ) ) parts[ i ] = variables.ui.style( parts[ i ], d.spec );
+		}
+		variables.buf.append( parts.toList( chr( 10 ) ) & ( d.newline ? chr( 10 ) : "" ) );
+		return this;
+	}
+
+	// Adds text or an array of lines as they are (each line ends with a line break).
+	function add( content ) {
+		if ( isArray( arguments.content ) ) { for ( var l in arguments.content ) variables.buf.append( l & chr( 10 ) ); }
+		else variables.buf.append( arguments.content & chr( 10 ) );
+		return this;
+	}
+
+	// ---- output ----
+	function toString() { return variables.buf.toList( "" ); }
+	function output() { return toString(); }
+	function lines() {
+		var l = listToArray( toString(), chr( 10 ), true );
+		if ( l.len() && !len( l[ l.len() ] ) ) l.deleteAt( l.len() );
+		return l;
+	}
+	function clear() { variables.buf = []; return this; }
+	// Prints the buffer now and empties it (a trailing line break is not doubled).
+	function toConsole() {
+		var s = toString();
+		if ( len( s ) ) { if ( right( s, 1 ) == chr( 10 ) ) print( s ); else println( s ); }
+		variables.buf = [];
+		return this;
+	}
+	// A string without its ANSI escapes.
+	function unANSI( text ) { return variables.ui.strip( arguments.text ); }
+
+	// ---- blocks (the same helpers as the toolkit, added to the buffer) ----
+	function panel( content, opts = {} ) { return add( variables.ui.panel( arguments.content, arguments.opts ) ); }
+	function callout( kind, text, opts = {} ) { return add( variables.ui.callout( arguments.kind, arguments.text, arguments.opts ) ); }
+	function section( title, blurb = "" ) { return add( variables.ui.section( arguments.title, arguments.blurb ) ); }
+	function rule( title = "", opts = {} ) { return add( variables.ui.rule( arguments.title, arguments.opts ) ); }
+	function kv( pairs, opts = {} ) { return add( variables.ui.kv( arguments.pairs, arguments.opts ) ); }
+	function list( items, opts = {} ) { return add( variables.ui.list( arguments.items, arguments.opts ) ); }
+	function beside( blocks, opts = {} ) { return add( variables.ui.beside( arguments.blocks, arguments.opts ) ); }
+	function steps( items, opts = {} ) { return add( variables.ui.steps( arguments.items, arguments.opts ) ); }
+	function barChart( rows, opts = {} ) { return add( variables.ui.barChart( arguments.rows, arguments.opts ) ); }
+	function gauge( ratio, opts = {} ) { return add( variables.ui.gauge( arguments.ratio, arguments.opts ) ); }
+	function tabs( titles, selected = 1, opts = {} ) { return add( variables.ui.tabs( arguments.titles, arguments.selected, arguments.opts ) ); }
+	function paragraph( text, opts = {} ) { return add( variables.ui.paragraph( arguments.text, arguments.opts ) ); }
+
+	// A list of simple values in columns, filled top to bottom. format( item, row, column ) returns a format such as "blue".
+	function columns( items, format = "", opts = {} ) { return add( variables.ui.columns( arguments.items, arguments.format, arguments.opts ) ); }
+
+	// A tree from nested structs (a key with a struct is a branch; "" or {} is a leaf). format( pathString, pathArray ) returns a format.
+	function tree( data, format = "", opts = {} ) { return add( variables.ui.treeOf( arguments.data, arguments.format, arguments.opts ) ); }
+
+	// A table, with the arguments of CommandBox's print.table:
+	//   data            an array of arrays (in header order) or of structs (keys are the headers)
+	//   includeHeaders  a list of the headers to show
+	//   headerNames     the headers (a list or an array), instead of the keys of the first struct
+	//   debug           only the headers and the first row
+	//   options         the options of ui.table (border, title, zebra, footer ...)
+	// A cell can be { value, options } with options a format such as "blueOnWhite". Columns shrink to fit; on a very small terminal the
+	// columns on the right are replaced by one "..." column.
+	function table( data, includeHeaders = "", headerNames = "", debug = false, options = {} ) {
+		var rows = arguments.data;
+		var heads = [];
+		if ( isArray( arguments.headerNames ) ) heads = arguments.headerNames;
+		else if ( len( arguments.headerNames ) ) heads = listToArray( arguments.headerNames );
+		else if ( rows.len() && isStruct( rows[ 1 ] ) ) heads = structKeyArray( rows[ 1 ] );
+		if ( len( arguments.includeHeaders ) ) {
+			var keep = isArray( arguments.includeHeaders ) ? arguments.includeHeaders : listToArray( arguments.includeHeaders );
+			heads = heads.filter( function( h ) { return arrayFindNoCase( keep, h ) > 0; } );
+			if ( !heads.len() ) heads = keep;
+		}
+		if ( arguments.debug && rows.len() ) rows = [ rows[ 1 ] ];
+		var cols = [];
+		var pos = 0;
+		for ( var h in heads ) {
+			pos++;
+			cols.append( { key: h, title: h, pos: pos } );
+		}
+		var opts = duplicate( arguments.options );
+		if ( !structKeyExists( opts, "drop" ) ) opts.drop = true;
+		var shaped = [];
+		for ( var r in rows ) {
+			if ( isArray( r ) ) shaped.append( r );
+			else { var one = []; for ( var c in cols ) one.append( structKeyExists( r, c.key ) ? r[ c.key ] : "" ); shaped.append( one ); }
+		}
+		return add( variables.ui.table( cols, shaped, opts ) );
+	}
+}

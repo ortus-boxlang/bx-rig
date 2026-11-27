@@ -1,0 +1,49 @@
+// What the terminal can do, decided once: colour, truecolor, unicode, width. Every ui helper asks this and nothing else.
+//   new bxrig.ui.Term( { color: true|false, width: 100, plain: true, unicode: true|false, truecolor: true|false } )
+// Without options it looks: colour only on a terminal, never with NO_COLOR or TERM=dumb; width from COLUMNS or stty, else 80.
+class Term {
+	function init( opts = {} ) {
+		variables.opts = arguments.opts;
+		variables.env = new bxrig.util.Env();
+		return this;
+	}
+
+	function plain() { return ( variables.opts.plain ?: false ) == true; }
+
+	function color() {
+		if ( structKeyExists( variables.opts, "color" ) ) return variables.opts.color == true;
+		if ( plain() || len( variables.env.named( "noColor", "" ) ) ) return false;
+		if ( variables.env.get( "TERM", "" ) == "dumb" ) return false;
+		return CLIIsTerminal();
+	}
+
+	function truecolor() {
+		if ( structKeyExists( variables.opts, "truecolor" ) ) return variables.opts.truecolor == true;
+		var ct = lCase( variables.env.get( "COLORTERM", "" ) );
+		return ct contains "truecolor" || ct contains "24bit";
+	}
+
+	function unicode() {
+		if ( structKeyExists( variables.opts, "unicode" ) ) return variables.opts.unicode == true;
+		if ( variables.env.get( "TERM", "" ) == "linux" ) return false;
+		var loc = uCase( variables.env.get( "LC_ALL", variables.env.get( "LC_CTYPE", variables.env.get( "LANG", "" ) ) ) );
+		return !len( loc ) || loc contains "UTF-8" || loc contains "UTF8";
+	}
+
+	// Columns of the terminal: the option, COLUMNS, `stty size`, else 80. Never below 20.
+	function width() {
+		var w = 0;
+		if ( structKeyExists( variables.opts, "width" ) ) w = int( val( variables.opts.width ) );
+		else {
+			var c = variables.env.get( "COLUMNS", "" );
+			if ( isNumeric( c ) && int( c ) > 0 ) w = int( c );
+			else if ( CLIIsTerminal() ) {
+				try {
+					var r = systemExecute( "sh", [ "-c", "stty size < /dev/tty 2>/dev/null" ], 5, true );
+					if ( r.exitCode == 0 && listLen( trim( r.output ), " " ) == 2 ) w = int( val( listLast( trim( r.output ), " " ) ) );
+				} catch ( any e ) {}
+			}
+		}
+		return w > 0 ? max( 20, w ) : 80;
+	}
+}

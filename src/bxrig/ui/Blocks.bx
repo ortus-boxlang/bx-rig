@@ -1,0 +1,368 @@
+// The small building blocks of command output: panels, callouts, section headings, rules, key-value lists, lists, trees, columns, badges, status lines.
+// Reach them through Ui (ui.panel, ui.kv ...). Everything returns lines (an array) or one string.
+class Blocks {
+	function init( ui ) {
+		variables.ui = arguments.ui;
+		variables.a = arguments.ui.ansi();
+		return this;
+	}
+
+	// ---- single strings ----
+	function badge( text, role = "accent" ) {
+		if ( !variables.ui.color() ) return "[" & arguments.text & "]";
+		return variables.ui.style( " " & arguments.text & " ", "bold black bg:" & arguments.role );
+	}
+
+	function pill( text, role = "accent" ) {
+		if ( !variables.ui.color() ) return "(" & arguments.text & ")";
+		return variables.ui.style( variables.ui.glyph( "dot" ) & " " & arguments.text, arguments.role );
+	}
+
+	// A status word with its glyph: ok err warn info skip run pending (and the words roleOf knows).
+	function status( kind, text ) {
+		var k = lCase( arguments.kind );
+		var g = "info";
+		if ( k == "ok" || k == "done" ) g = "ok";
+		else if ( k == "err" || k == "error" || k == "failed" || k == "fail" ) g = "cross";
+		else if ( k == "warn" || k == "warning" ) g = "warn";
+		else if ( k == "skip" || k == "skipped" ) g = "skip";
+		else if ( k == "run" || k == "running" ) g = "run";
+		else if ( k == "pending" || k == "todo" ) g = "pending";
+		return variables.ui.style( variables.ui.glyph( g ), variables.ui.roleOf( arguments.kind ) ) & " " & arguments.text;
+	}
+
+	// ---- headings ----
+	// An UPPERCASE accent heading, with a dim note beside it.
+	function section( title, blurb = "" ) {
+		var t = variables.ui.style( uCase( arguments.title ), "bold accent" );
+		if ( len( arguments.blurb ) ) t &= "  " & variables.ui.style( arguments.blurb, "dim" );
+		return [ t ];
+	}
+
+	// A horizontal rule, with a title in it: ── Title ─────────
+	function rule( title = "", opts = {} ) {
+		var w = arguments.opts.width ?: variables.ui.width();
+		var h = variables.ui.box( arguments.opts.border ?: "plain" ).h;
+		if ( !len( arguments.title ) ) return [ variables.ui.style( repeatString( h, w ), "border" ) ];
+		var t = " " & arguments.title & " ";
+		var rest = max( 0, w - 2 - variables.a.width( t ) );
+		return [ variables.ui.style( repeatString( h, 2 ), "border" ) & variables.ui.style( t, "bold accent" ) & variables.ui.style( repeatString( h, rest ), "border" ) ];
+	}
+
+	// ---- panels ----
+	// content: a string or an array of lines. opts: title, subtitle, titleAlign (left center right), border (style), color (role of the border),
+	// borders ("all", "none", or a list of top bottom left right), padding, width, fill (full width).
+	function panel( content, opts = {} ) {
+		var o = arguments.opts;
+		var bx = variables.ui.box( o.border ?: "rounded" );
+		var pad = o.padding ?: 1;
+		var role = o.color ?: "border";
+		var sides = o.borders ?: "all";
+		var top = sides == "all" || listFindNoCase( sides, "top" ) > 0;
+		var bottom = sides == "all" || listFindNoCase( sides, "bottom" ) > 0;
+		var lft = sides == "all" || listFindNoCase( sides, "left" ) > 0;
+		var rgt = sides == "all" || listFindNoCase( sides, "right" ) > 0;
+		var edge = ( lft ? 1 : 0 ) + ( rgt ? 1 : 0 );
+		var src = isArray( arguments.content ) ? arguments.content : listToArray( arguments.content & "", chr( 10 ), true );
+		var natural = 0;
+		for ( var l in src ) natural = max( natural, variables.a.width( l ) );
+		if ( len( o.title ?: "" ) ) natural = max( natural, variables.a.width( o.title ) + 2 );
+		var w = o.width ?: ( ( o.fill ?: false ) ? variables.ui.width() : min( variables.ui.width(), natural + edge + pad * 2 ) );
+		var inner = max( 1, w - edge - pad * 2 );
+		var lines = [];
+		for ( var l2 in src ) {
+			if ( variables.a.width( l2 ) <= inner ) lines.append( l2 );
+			else if ( l2 == variables.a.strip( l2 ) ) { for ( var wl in variables.a.wrap( l2, inner ) ) lines.append( wl ); }
+			else lines.append( variables.a.truncate( l2, inner ) );
+		}
+		var bs = function( s ) { return variables.ui.style( s, role ); };
+		// an edge line (top or bottom) with an optional label in it
+		var edgeLine = function( left, right, label, labelRole, how ) {
+			var span = w - ( len( left ) ? 1 : 0 ) - ( len( right ) ? 1 : 0 );
+			if ( !len( label ) ) return bs( left & repeatString( bx.h, span ) & right );
+			var t = " " & label & " ";
+			var tw = variables.a.width( t );
+			var free = max( 0, span - tw );
+			var before = how == "center" ? int( free / 2 ) : ( how == "right" ? max( 0, free - 1 ) : min( 1, free ) );
+			return bs( left & repeatString( bx.h, before ) ) & variables.ui.style( t, labelRole ) & bs( repeatString( bx.h, max( 0, free - before ) ) & right );
+		};
+		var out = [];
+		if ( top ) out.append( edgeLine( lft ? bx.tl : "", rgt ? bx.tr : "", o.title ?: "", "bold " & ( role == "border" ? "accent" : role ), o.titleAlign ?: "left" ) );
+		for ( var i = 1; i <= lines.len(); i++ ) out.append( ( lft ? bs( bx.v ) : "" ) & repeatString( " ", pad ) & variables.a.align( lines[ i ], inner ) & repeatString( " ", pad ) & ( rgt ? bs( bx.v ) : "" ) );
+		if ( bottom ) out.append( edgeLine( lft ? bx.bl : "", rgt ? bx.br : "", o.subtitle ?: "", "dim", o.titleAlign ?: "left" ) );
+		return out;
+	}
+
+	// A coloured bar on the left with a message: kind is ok err warn info (tip). opts: title, width.
+	function callout( kind, text, opts = {} ) {
+		var role = variables.ui.roleOf( arguments.kind );
+		var bar = variables.ui.style( variables.ui.unicode() ? "▌" : "|", role );
+		var w = ( arguments.opts.width ?: variables.ui.width() ) - 3;
+		var out = [];
+		if ( len( arguments.opts.title ?: "" ) ) out.append( bar & " " & variables.ui.style( arguments.opts.title, "bold " & role ) );
+		for ( var l in variables.a.wrap( arguments.text, max( 10, w ) ) ) out.append( bar & " " & l );
+		return out;
+	}
+
+	// ---- key-value ----
+	// pairs: a struct, an array of [ label, value ], or an array of { label, value }. opts: indent, sep, labelStyle, valueStyle, width.
+	function kv( pairs, opts = {} ) {
+		var o = arguments.opts;
+		var rows = [];
+		if ( isStruct( arguments.pairs ) ) { for ( var k in structKeyArray( arguments.pairs ) ) rows.append( [ k, arguments.pairs[ k ] ] ); }
+		else for ( var p in arguments.pairs ) rows.append( isArray( p ) ? p : [ p.label, p.value ] );
+		var indent = o.indent ?: 0;
+		var sep = o.sep ?: "  ";
+		var lw = 0;
+		for ( var r in rows ) lw = max( lw, variables.a.width( r[ 1 ] ) );
+		var vw = max( 10, ( o.width ?: variables.ui.width() ) - indent - lw - variables.a.width( sep ) );
+		var out = [];
+		for ( var r2 in rows ) {
+			var vs = variables.a.wrap( r2[ 2 ] & "", vw );
+			if ( !vs.len() ) vs = [ "" ];
+			for ( var i = 1; i <= vs.len(); i++ ) {
+				var label = i == 1 ? variables.a.align( r2[ 1 ], lw ) : repeatString( " ", lw );
+				out.append( repeatString( " ", indent ) & variables.ui.style( label, o.labelStyle ?: "dim" ) & sep & ( len( o.valueStyle ?: "" ) ? variables.ui.style( vs[ i ], o.valueStyle ) : vs[ i ] ) );
+			}
+		}
+		return out;
+	}
+
+	// ---- lists and trees ----
+	// items: strings or { label, children }. opts: numbered, bullet, indent.
+	function list( items, opts = {} ) {
+		var out = [];
+		walkList( arguments.items, arguments.opts, 0, out );
+		return out;
+	}
+
+	function walkList( items, opts, depth, out ) {
+		var n = 0;
+		for ( var it in arguments.items ) {
+			n++;
+			var label = isSimpleValue( it ) ? it : it.label;
+			var mark = ( arguments.opts.numbered ?: false ) ? variables.ui.style( n & ".", "accent" ) : variables.ui.style( arguments.opts.bullet ?: variables.ui.glyph( "bullet" ), "accent" );
+			if ( structKeyExists( arguments.opts, "selected" ) && arguments.depth == 0 ) {
+				// a highlighted row (after ratatui's List): the symbol before it and the row in a highlight colour
+				var sym = arguments.opts.highlight ?: variables.ui.glyph( "play" ) & " ";
+				var on = n == arguments.opts.selected;
+				arguments.out.append( on ? variables.ui.style( sym & label, "bold accent" ) : repeatString( " ", variables.a.width( sym ) ) & label );
+				continue;
+			}
+			arguments.out.append( repeatString( " ", ( arguments.opts.indent ?: 0 ) + arguments.depth * 2 ) & mark & " " & label );
+			if ( !isSimpleValue( it ) && structKeyExists( it, "children" ) ) walkList( it.children, arguments.opts, arguments.depth + 1, arguments.out );
+		}
+	}
+
+	// nodes: strings or { label, children }. Drawn with ├─ └─ │ (ASCII without unicode).
+	function tree( nodes, opts = {} ) {
+		var out = [];
+		var bx = variables.ui.unicode() ? { t: "├─ ", l: "└─ ", v: "│  ", s: "   " } : { t: "|- ", l: "`- ", v: "|  ", s: "   " };
+		walkTree( arguments.nodes, "", bx, out );
+		return out;
+	}
+
+	function walkTree( nodes, prefix, bx, out ) {
+		var n = arguments.nodes.len();
+		for ( var i = 1; i <= n; i++ ) {
+			var it = arguments.nodes[ i ];
+			var last = i == n;
+			var label = isSimpleValue( it ) ? it : it.label;
+			arguments.out.append( variables.ui.style( arguments.prefix & ( last ? arguments.bx.l : arguments.bx.t ), "border" ) & label );
+			if ( !isSimpleValue( it ) && structKeyExists( it, "children" ) ) walkTree( it.children, arguments.prefix & ( last ? arguments.bx.s : arguments.bx.v ), arguments.bx, arguments.out );
+		}
+	}
+
+	// ---- side by side ----
+	// blocks: arrays of lines, side by side. opts: gap (2), widths (fixed widths, 0 = natural).
+	function beside( blocks, opts = {} ) {
+		var gap = repeatString( " ", arguments.opts.gap ?: 2 );
+		var ws = [];
+		var height = 0;
+		var i = 0;
+		for ( var b in arguments.blocks ) {
+			i++;
+			var fixed = isArray( arguments.opts.widths ?: "" ) && i <= arguments.opts.widths.len() ? arguments.opts.widths[ i ] : 0;
+			var nat = 0;
+			for ( var l in b ) nat = max( nat, variables.a.width( l ) );
+			ws.append( fixed > 0 ? fixed : nat );
+			height = max( height, b.len() );
+		}
+		var out = [];
+		for ( var r = 1; r <= height; r++ ) {
+			var parts = [];
+			for ( var c = 1; c <= arguments.blocks.len(); c++ ) parts.append( variables.a.align( r <= arguments.blocks[ c ].len() ? arguments.blocks[ c ][ r ] : "", ws[ c ] ) );
+			out.append( reReplace( parts.toList( gap ), "\s+$", "" ) );
+		}
+		return out;
+	}
+
+	// ---- a long list in columns (like `ls`) ----
+	// items: simple values. Columns are made from the widest item and the terminal width, filled top to bottom. `format` is called for each
+	// item with ( item, row, column ) and returns a print-helper format such as "blue" or "boldGreen".
+	function flow( items, format = "", opts = {} ) {
+		var list = arguments.items;
+		if ( !list.len() ) return [];
+		var gap = arguments.opts.gap ?: 2;
+		var avail = arguments.opts.width ?: variables.ui.width();
+		var wide = 1;
+		for ( var it in list ) wide = max( wide, variables.a.width( it & "" ) );
+		var cell = wide + gap;
+		var ncols = max( 1, int( ( avail + gap ) / cell ) );
+		ncols = min( ncols, list.len() );
+		var nrows = ceiling( list.len() / ncols );
+		var dsl = variables.ui.dsl();
+		var out = [];
+		for ( var r = 1; r <= nrows; r++ ) {
+			var parts = [];
+			for ( var c = 1; c <= ncols; c++ ) {
+				var idx = ( c - 1 ) * nrows + r;
+				if ( idx > list.len() ) { parts.append( "" ); continue; }
+				var text = list[ idx ] & "";
+				var spec = isSimpleValue( arguments.format ) ? "" : dsl.parse( "text", arguments.format( text, r, c ) ).spec;
+				var padded = variables.a.align( text, wide );
+				parts.append( len( spec ) ? variables.ui.style( padded, spec ) : padded );
+			}
+			out.append( reReplace( parts.toList( repeatString( " ", gap ) ), "\s+$", "" ) );
+		}
+		return out;
+	}
+
+	// ---- a tree from nested structs ----
+	// data: a struct whose keys are branches; a key with a struct is a branch, an empty struct or "" is a leaf, another value is shown after the key.
+	// `format` is called for each item with ( pathString, pathArray ) and returns a print-helper format; the path joins the keys from the top.
+	function treeOf( data, format = "", opts = {} ) {
+		var out = [];
+		var g = variables.ui.unicode() ? { last: "└─", mid: "├─", down: "│ ", none: "  ", branch: "┬ ", leaf: "─ " } : { last: "`-", mid: "|-", down: "| ", none: "  ", branch: "+ ", leaf: "- " };
+		walkStruct( arguments.data, "", g, [], arguments.format, out );
+		return out;
+	}
+
+	function walkStruct( data, prefix, g, path, format, out ) {
+		var keys = structKeyArray( arguments.data );
+		var n = keys.len();
+		for ( var i = 1; i <= n; i++ ) {
+			var k = keys[ i ];
+			var v = arguments.data[ k ];
+			var last = i == n;
+			var here = duplicate( arguments.path );
+			here.append( k );
+			var branch = isStruct( v ) && !structIsEmpty( v );
+			var label = k & ( !isStruct( v ) && len( v & "" ) ? ": " & v : "" );
+			var spec = isSimpleValue( arguments.format ) ? "" : variables.ui.dsl().parse( "text", arguments.format( here.toList( "" ), here ) ).spec;
+			if ( len( spec ) ) label = variables.ui.style( label, spec );
+			arguments.out.append( variables.ui.style( arguments.prefix & ( last ? arguments.g.last : arguments.g.mid ) & ( branch ? arguments.g.branch : arguments.g.leaf ), "border" ) & label );
+			if ( branch ) walkStruct( v, arguments.prefix & ( last ? arguments.g.none : arguments.g.down ), arguments.g, here, arguments.format, arguments.out );
+		}
+	}
+
+	// ---- text composition (after ratatui's Span, Line and Paragraph) ----
+	// Parts joined into one string: a plain string, or [ text, format ] with a print-helper format ("boldRed").
+	//   ui.spans( [ "Installed ", [ "Java 21", "boldGreen" ], " in ", [ "41 s", "dim" ] ] )
+	function spans( parts ) {
+		var out = "";
+		for ( var p in arguments.parts ) {
+			if ( isArray( p ) ) out &= variables.ui.style( p[ 1 ], variables.ui.dsl().parse( "text", p.len() >= 2 ? p[ 2 ] : "" ).spec );
+			else out &= p;
+		}
+		return out;
+	}
+
+	// Text laid out in a width: opts.align (left center right), wrap (true), width (the terminal), indent, style (a print-helper format).
+	function paragraph( text, opts = {} ) {
+		var o = arguments.opts;
+		var w = o.width ?: variables.ui.width();
+		var src = isArray( arguments.text ) ? arguments.text.toList( chr( 10 ) ) : arguments.text & "";
+		var lines = ( o.wrap ?: true ) ? variables.a.wrap( src, max( 1, w - ( o.indent ?: 0 ) ) ) : listToArray( src, chr( 10 ), true );
+		var out = [];
+		var spec = len( o.style ?: "" ) ? variables.ui.dsl().parse( "text", o.style ).spec : "";
+		for ( var l in lines ) {
+			var t = len( spec ) ? variables.ui.style( l, spec ) : l;
+			var how = o.align ?: "left";
+			var shown = how == "left" ? repeatString( " ", o.indent ?: 0 ) & t : variables.a.align( t, w, how );
+			out.append( how == "left" ? shown : reReplace( shown, "\s+$", "" ) );
+		}
+		return out;
+	}
+
+	// ---- layout (after ratatui's Constraint) ----
+	// Splits `width` columns by constraints: "length:30" (exactly), "percentage:40", "ratio:1/3", "min:10", "max:20", "fill" or "fill:2" (a share of what is left).
+	// A number is "length:N". `gap` columns sit between the parts. Returns the widths.
+	function layout( constraints, width, gap = 0 ) {
+		var cs = arguments.constraints;
+		var n = cs.len();
+		var room = max( 0, arguments.width - arguments.gap * max( 0, n - 1 ) );
+		var ws = [];
+		var weight = [];
+		var cap = [];
+		var left = room;
+		for ( var c in cs ) {
+			var kind = "fill";
+			var amount = 1;
+			if ( isNumeric( c ) ) { kind = "length"; amount = c; }
+			else {
+				kind = lCase( listFirst( c, ":" ) );
+				var rest = listLen( c, ":" ) > 1 ? listRest( c, ":" ) : "";
+				if ( kind == "ratio" && find( "/", rest ) ) amount = int( val( listFirst( rest, "/" ) ) ) / max( 1, int( val( listLast( rest, "/" ) ) ) );
+				else if ( isNumeric( rest ) ) amount = rest;
+				else amount = ( kind == "min" || kind == "max" || kind == "length" || kind == "percentage" ) ? 0 : 1;
+			}
+			var w = 0;
+			var wt = 0;
+			var cp = -1;
+			if ( kind == "length" ) w = amount;
+			else if ( kind == "percentage" ) w = int( floor( room * amount / 100 ) );
+			else if ( kind == "ratio" ) w = int( floor( room * amount ) );
+			else if ( kind == "min" ) { w = amount; wt = 1; }
+			else if ( kind == "max" ) { wt = 1; cp = amount; }
+			else wt = amount;
+			ws.append( w );
+			weight.append( wt );
+			cap.append( cp );
+			left -= w;
+		}
+		// share what is left by weight; a part with a max stops at its cap and the rest goes to the others
+		var open = [];
+		for ( var i = 1; i <= n; i++ ) if ( weight[ i ] > 0 ) open.append( i );
+		var rounds = 0;
+		while ( left > 0 && open.len() && rounds < 20 ) {
+			rounds++;
+			var total = 0;
+			for ( var o in open ) total += weight[ o ];
+			var given = 0;
+			var still = [];
+			for ( var o2 in open ) {
+				var part = int( floor( left * weight[ o2 ] / total ) );
+				if ( cap[ o2 ] >= 0 && ws[ o2 ] + part > cap[ o2 ] ) { part = max( 0, cap[ o2 ] - ws[ o2 ] ); }
+				else still.append( o2 );
+				ws[ o2 ] = ws[ o2 ] + part;
+				given += part;
+			}
+			left -= given;
+			if ( given == 0 ) break;
+			open = still;
+		}
+		// the remainder from rounding goes to the first part that can take it
+		if ( left > 0 ) for ( var o3 in open ) { ws[ o3 ] = ws[ o3 ] + left; left = 0; break; }
+		// too much (lengths over the room): take it back from the widest parts
+		var guard = 0;
+		while ( left < 0 && guard < 5000 ) {
+			guard++;
+			var big = 1;
+			for ( var j = 2; j <= n; j++ ) if ( ws[ j ] > ws[ big ] ) big = j;
+			if ( ws[ big ] <= 1 ) break;
+			ws[ big ] = ws[ big ] - 1;
+			left++;
+		}
+		return ws;
+	}
+
+	function kindOf( c ) { return isNumeric( arguments.c ) ? "length" : lCase( listFirst( arguments.c, ":" ) ); }
+
+	// Blocks (arrays of lines) side by side in the widths the constraints give. opts: gap (2), width (the terminal).
+	function split( blocks, constraints, opts = {} ) {
+		var gap = arguments.opts.gap ?: 2;
+		var ws = layout( arguments.constraints, arguments.opts.width ?: variables.ui.width(), gap );
+		return beside( arguments.blocks, { gap: gap, widths: ws } );
+	}
+}

@@ -1,0 +1,186 @@
+// Styled text and everything that needs to know how wide text really is: ANSI escapes take no room, a wide character (日, 😀) takes two
+// columns, a combining mark none. All widths in the ui helpers come from here.
+//   style( text, "bold accent" )  style( text, "dim" )  style( text, "##ff8800" )  style( text, "bg:warn black" )
+// Words in a style: bold dim italic underline inverse strike blink conceal, a colour (role, name or hex), bg:COLOUR for the background.
+// With colour off every style call returns the text unchanged, so output piped to a file or run under NO_COLOR is plain.
+class Ansi {
+	function init( term, theme ) {
+		variables.term = arguments.term;
+		variables.theme = arguments.theme;
+		variables.esc = chr( 27 );
+		variables.bel = chr( 7 );
+		variables.escRx = variables.esc & "(\[[0-9;?]*[A-Za-z]|\]8;;[^" & variables.bel & "]*" & variables.bel & ")";
+		variables.zeroCls = "̀-ͯ​-‏⁠⃐-⃿︀-️";
+		variables.wideCls = "ᄀ-ᅟ⌚⌛⏩-⏬☔☕♈-♓♿⚓⚡⚪⚫⚽⚾⛄⛅⛎⛔⛪⛲⛳⛵⛺⛽✅✊✋✨❌❎❓-❕❗➕-➗➰➿⬛⬜⭐⭕⺀-〾ぁ-꓏가-힣豈-﫿︰-﹯＀-｠￠-￦🌀-🧿🨀-🩿";
+		variables.anyRx = "[" & variables.zeroCls & variables.wideCls & "]";
+		return this;
+	}
+
+	function term() { return variables.term; }
+	function theme() { return variables.theme; }
+	function enabled() { return variables.term.color(); }
+	function reset() { return variables.esc & "[0m"; }
+
+	// ---- colour ----
+	// The escape that sets a colour (foreground, or background with bg true): truecolor where the terminal has it, else the nearest of 256.
+	function colorCode( color, bg = false ) {
+		var c = variables.theme.rgb( arguments.color );
+		if ( !c.len() ) return "";
+		if ( variables.term.truecolor() ) return ( arguments.bg ? "48" : "38" ) & ";2;" & c[ 1 ] & ";" & c[ 2 ] & ";" & c[ 3 ];
+		return ( arguments.bg ? "48" : "38" ) & ";5;" & nearest256( c );
+	}
+
+	function nearest256( c ) {
+		if ( c[ 1 ] == c[ 2 ] && c[ 2 ] == c[ 3 ] ) {
+			if ( c[ 1 ] < 8 ) return 16;
+			if ( c[ 1 ] > 248 ) return 231;
+			return 232 + int( ( c[ 1 ] - 8 ) / 10 );
+		}
+		var q = function( v ) { return int( round( v / 51 ) ); };
+		return 16 + 36 * q( c[ 1 ] ) + 6 * q( c[ 2 ] ) + q( c[ 3 ] );
+	}
+
+	// The escape for a style spec ("" when the spec asks for nothing known).
+	function codes( spec ) {
+		var out = [];
+		for ( var w in listToArray( arguments.spec, " " ) ) {
+			var x = lCase( w );
+			switch ( x ) {
+				case "bold": out.append( "1" ); break;
+				case "dim": out.append( "2" ); break;
+				case "italic": out.append( "3" ); break;
+				case "underline": out.append( "4" ); break;
+				case "inverse": out.append( "7" ); break;
+				case "strike": out.append( "9" ); break;
+				case "blink": out.append( "5" ); break;
+				case "conceal": out.append( "8" ); break;
+				default:
+					if ( left( x, 3 ) == "bg:" ) { var b = colorCode( mid( w, 4, len( w ) ), true ); if ( len( b ) ) out.append( b ); }
+					else { var f = colorCode( w ); if ( len( f ) ) out.append( f ); }
+			}
+		}
+		return out.len() ? variables.esc & "[" & out.toList( ";" ) & "m" : "";
+	}
+
+	// `text` in a style; the text itself when colour is off.
+	function style( text, spec ) {
+		var t = arguments.text & "";
+		if ( !enabled() || !len( t ) ) return t;
+		var c = codes( arguments.spec );
+		return len( c ) ? c & t & reset() : t;
+	}
+
+	// A hyperlink (OSC 8) on a terminal with colour; the text, and the address in brackets when it differs, otherwise.
+	function link( text, url ) {
+		if ( !enabled() ) return arguments.text == arguments.url ? arguments.text : arguments.text & " (" & arguments.url & ")";
+		return variables.esc & "]8;;" & arguments.url & variables.bel & arguments.text & variables.esc & "]8;;" & variables.bel;
+	}
+
+	// Each character in a colour between the stops (roles or hex): a gradient across the text. Plain when colour is off or there is no truecolor.
+	function gradient( text, stops = [ "accent", "accent2" ] ) {
+		var t = arguments.text & "";
+		if ( !enabled() || !len( t ) ) return t;
+		var pts = [];
+		for ( var s in arguments.stops ) { var r = variables.theme.rgb( s ); if ( r.len() ) pts.append( r ); }
+		if ( pts.len() < 2 ) return t;
+		var n = len( t );
+		var out = [];
+		for ( var i = 1; i <= n; i++ ) {
+			var pos = n == 1 ? 0 : ( i - 1 ) / ( n - 1 ) * ( pts.len() - 1 );
+			var seg = min( int( pos ), pts.len() - 2 );
+			var f = pos - seg;
+			var a = pts[ seg + 1 ];
+			var b = pts[ seg + 2 ];
+			var rgb = [ round( a[ 1 ] + ( b[ 1 ] - a[ 1 ] ) * f ), round( a[ 2 ] + ( b[ 2 ] - a[ 2 ] ) * f ), round( a[ 3 ] + ( b[ 3 ] - a[ 3 ] ) * f ) ];
+			var ch = mid( t, i, 1 );
+			if ( ch == " " ) { out.append( ch ); continue; }
+			var code = variables.term.truecolor() ? "38;2;" & rgb[ 1 ] & ";" & rgb[ 2 ] & ";" & rgb[ 3 ] : "38;5;" & nearest256( rgb );
+			out.append( variables.esc & "[" & code & "m" & ch );
+		}
+		return out.toList( "" ) & reset();
+	}
+
+	// ---- measuring ----
+	function strip( s ) { return reReplace( arguments.s & "", variables.escRx, "", "all" ); }
+
+	function charWidth( ch ) {
+		var cells = 1;
+		if ( reFind( "[" & variables.zeroCls & "]", arguments.ch ) ) cells = 0;
+		else if ( reFind( "[" & variables.wideCls & "]", arguments.ch ) ) cells = 2;
+		return cells;
+	}
+
+	// Columns the text takes on screen (escapes none, wide characters two, combining marks none).
+	function width( s ) {
+		var t = strip( arguments.s );
+		if ( !reFind( variables.anyRx, t ) ) return len( t );
+		var w = 0;
+		for ( var i = 1; i <= len( t ); i++ ) w += charWidth( mid( t, i, 1 ) );
+		return w;
+	}
+
+	// ---- cutting and padding ----
+	// [ head, tail ]: the first `w` columns of the text (escapes kept, and closed at the cut) and the rest.
+	function slice( s, w ) {
+		var t = arguments.s & "";
+		var head = [];
+		var used = 0;
+		var i = 1;
+		var n = len( t );
+		var opened = false;
+		while ( i <= n ) {
+			var ch = mid( t, i, 1 );
+			if ( ch == variables.esc ) {
+				var m = reFind( variables.escRx, t, i, true );
+				if ( m.pos[ 1 ] == i ) { var seq = mid( t, i, m.len[ 1 ] ); head.append( seq ); opened = seq != reset(); i += m.len[ 1 ]; continue; }
+			}
+			var cw = charWidth( ch );
+			if ( used + cw > arguments.w ) break;
+			head.append( ch ); used += cw; i++;
+		}
+		return [ head.toList( "" ) & ( opened ? reset() : "" ), mid( t, i, n ) ];
+	}
+
+	// The text cut to `w` columns with an ellipsis where it was cut (nothing is added when it fits).
+	function truncate( s, w, ellipsis = "…" ) {
+		var t = arguments.s & "";
+		if ( width( t ) <= arguments.w ) return t;
+		if ( arguments.w <= 0 ) return "";
+		var ell = variables.term.unicode() ? arguments.ellipsis : "...";
+		var room = max( 0, arguments.w - width( ell ) );
+		return slice( t, room )[ 1 ] & ell;
+	}
+
+	// The text in exactly `w` columns: padded with spaces, or truncated. how: left right center
+	function align( s, w, how = "left" ) {
+		var t = width( arguments.s ) > arguments.w ? truncate( arguments.s, arguments.w ) : arguments.s & "";
+		var gap = max( 0, arguments.w - width( t ) );
+		if ( arguments.how == "right" ) return repeatString( " ", gap ) & t;
+		if ( arguments.how == "center" ) return repeatString( " ", int( gap / 2 ) ) & t & repeatString( " ", gap - int( gap / 2 ) );
+		return t & repeatString( " ", gap );
+	}
+
+	// The text as lines no wider than `w` columns: breaks at spaces, keeps existing line breaks, splits a word that is longer than a line.
+	// Style after wrapping (a style that spans a line break is not carried over).
+	function wrap( s, w ) {
+		var out = [];
+		var lim = max( 1, arguments.w );
+		for ( var para in listToArray( replace( arguments.s & "", chr( 13 ), "", "all" ), chr( 10 ), true ) ) {
+			if ( !len( trim( para ) ) ) { out.append( "" ); continue; }
+			var cur = "";
+			for ( var word in listToArray( para, " " ) ) {
+				while ( width( word ) > lim ) {
+					if ( len( cur ) ) { out.append( cur ); cur = ""; }
+					var parts = slice( word, lim );
+					out.append( parts[ 1 ] );
+					word = parts[ 2 ];
+				}
+				if ( !len( cur ) ) cur = word;
+				else if ( width( cur ) + 1 + width( word ) <= lim ) cur &= " " & word;
+				else { out.append( cur ); cur = word; }
+			}
+			if ( len( cur ) ) out.append( cur );
+		}
+		return out;
+	}
+}
