@@ -139,3 +139,7 @@ out.blocks( data, asJson, ui.panel( "Done" ) )
 ```
 
 Tests: `tests/ui_test.bxs` (golden output, widths 40, 80 and 120, plain and colour).
+
+## Help pages
+
+`bxrig help`, `bxrig --help` and `bxrig COMMAND --help` are drawn with this toolkit (`bxrig.Help`): the DOS Rebel wordmark in the brand gradient and a version badge on a terminal, an UPPERCASE coloured title per group, a bold command name and one dim line each (the `brief` of the command in `docs/reference/cli.json`, at most 60 characters, checked by `bootstrap/gen-docs.sh`). A command page has USAGE (one form per line, narrowed by the words after the command: `bxrig ai models --help`), FLAGS, EXAMPLES and NOTES. A usage error prints the forms one per line too (`CommandSpec.usage`). Piped output has no colour and no wordmark.
