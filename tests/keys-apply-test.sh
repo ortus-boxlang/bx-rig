@@ -12,9 +12,15 @@ cat > "$tmp/bin/kwriteconfig6" <<'MOCK'
 [[ "$1" == --version ]] && exit 0
 printf '%s' "${@: -1}" > "$KG/${@: -2:1}"
 MOCK
+cat > "$tmp/bin/systemctl" <<'MOCK'
+#!/usr/bin/env bash
+echo "$*" >> "$SCLOG"
+[[ "$*" == *is-active* ]] && { echo active; exit 0; }
+exit 0
+MOCK
 stub_id
 chmod +x "$tmp/bin/"*
-run() { env HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" KG="$tmp/kg" PATH="$tmp/bin:$PATH" "$@"; }
+run() { env SCLOG="$tmp/sc.log" HOME="$tmp/home" BXRIG_CONFIG_HOME="$tmp/cfg" BXRIG_STATE_HOME="$tmp/state" KG="$tmp/kg" PATH="$tmp/bin:$PATH" "$@"; }
 
 [[ "$(code "$binary" keys check)" == 1 ]] || fail 'check before apply exits 1'
 [[ "$(code "$binary" keys apply)" == 2 ]] || fail 'apply without --yes exits 2'
@@ -55,4 +61,6 @@ echo '# mine' >> "$tmp/cfg/xremap/config.yml"
 grep -q '# mine' "$tmp/cfg/xremap/config.yml" || fail 'drift was overwritten without --force'
 [[ "$(code "$binary" keys apply --yes --force)" == 0 ]] || fail '--force overwrites'
 ! grep -q '# mine' "$tmp/cfg/xremap/config.yml" || fail 'force did not overwrite'
+# a running xremap is restarted so the keys are live
+grep -q -- '--user restart xremap.service' "$tmp/sc.log" || fail 'apply restarts a running xremap'
 echo "keys apply tests passed"

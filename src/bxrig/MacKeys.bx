@@ -14,6 +14,11 @@ class MacKeys {
 		return this;
 	}
 
+	// The style is only a saved choice until the key files are rewritten and xremap is restarted: do both (quietly) so a switch takes effect.
+	function applyKeys() {
+		return new bxrig.KeysService( variables.cli, "", true ).apply( true, false, false, false );
+	}
+
 	function unitFile() { return variables.config.cfgHome() & "/systemd/user/xremap.service"; }
 	function active() { return variables.systemd.isActive( "xremap", true ); }
 
@@ -36,7 +41,8 @@ class MacKeys {
 			if ( r.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: trim( r.output ) }, arguments.asJson, [ "error: " & trim( r.output ) ] );
 		}
 		if ( variables.keyStyle.write( { style: arguments.on ? "mac" : "traditional" } ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & variables.keyStyle.file() }, arguments.asJson, [ "error: could not write " & variables.keyStyle.file() ] );
-		return variables.cli.say( cmd, "ok", { active: arguments.on, style: arguments.on ? "mac" : "traditional" }, arguments.asJson, [ "Mac-style keys are " & ( arguments.on ? "on." : "off (Traditional style). Super+C, V, X and A still copy, paste, cut and select all." ) & " Write the new keys: bxrig keys apply --yes" ] );
+		var applied = applyKeys();
+		return variables.cli.say( cmd, "ok", { active: arguments.on, style: arguments.on ? "mac" : "traditional", applied: applied == 0 }, arguments.asJson, [ "Mac-style keys are " & ( arguments.on ? "on." : "off (Traditional style). Super+C, V, X and A still copy, paste, cut and select all." ) & ( applied == 0 ? " The keys are written and xremap is restarted." : " Write the new keys: bxrig keys apply --yes" ) ] );
 	}
 
 	// `keys style [STYLE] [--keyboard=pc|apple] [--swap=on|off]`: show, or change, the style, the keyboard and the swap.
@@ -62,6 +68,8 @@ class MacKeys {
 		var text = "style " & next.style & ", keyboard " & next.keyboard & ", Alt and Win swapped " & ( data.swapActive ? "yes" : "no" );
 		if ( !arguments.yes ) return variables.cli.scoped( cmd ).plan( "write " & text, data, arguments.asJson, false, [], "Add --yes to apply, then: bxrig keys apply --yes" );
 		if ( variables.keyStyle.write( want ) != 0 ) return variables.cli.say( cmd, "failed", { error: "Could not write " & variables.keyStyle.file() }, arguments.asJson, [ "error: could not write " & variables.keyStyle.file() ] );
-		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Saved: " & text & ". Write the keys into xremap and Hyprland: bxrig keys apply --yes" ] );
+		var applied = applyKeys();
+		data.applied = applied == 0;
+		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ "Saved: " & text & ( applied == 0 ? ". The keys are written into xremap and Hyprland, and xremap is restarted." : ". Writing the keys failed: bxrig keys apply --yes" ) ] );
 	}
 }
