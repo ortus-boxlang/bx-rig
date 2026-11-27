@@ -206,6 +206,7 @@ jobs:
           (cd src && matchbox ../tests/android_test.bxs)
           (cd src && matchbox ../tests/boxy_test.bxs)
           (cd src && matchbox ../tests/init_run_test.bxs)
+          (cd src && matchbox ../tests/init_finish_test.bxs)
           (cd src && matchbox ../tests/install_view_test.bxs)
           (cd src && matchbox ../tests/install_live_test.bxs)
           (cd src && matchbox ../tests/sudo_test.bxs)

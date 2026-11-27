@@ -1,0 +1,31 @@
+// InitFinish: what the install says when it ends (already in place, needs you, skipped, saved, next), and what the finish screen offers.
+// Run from src/: (cd src && matchbox ../tests/init_finish_test.bxs)
+testkit = new lib.Check( "init finish" );
+f = new bxrig.InitFinish();
+sk = [
+	{ id: "docker-compat", reason: "could not run (exit 4): error: the docker package is installed and conflicts with podman-docker. Remove it first, or keep using real Docker (bxrig db engine docker).; do it later: bxrig containers docker-compat --yes" },
+	{ id: "editor-lazyvim", reason: "could not run (exit 4): error: /home/u/.config/nvim already exists, so it was left alone. Move it first (mv ...) and run this again.; do it later: bxrig editor lazyvim --yes" },
+	{ id: "boxy", reason: "could not run (exit 4): error: Boxy is already at /home/u/Agents/Boxy. Start it: bxrig ai agents start Boxy; do it later: bxrig ai agents setup --yes --yes" },
+	{ id: "session", reason: "could not run (exit 4): error: SDDM's state folder /var/lib/sddm/ does not exist, so SDDM is not your login manager here.; do it later: bxrig session set hyprland --yes" }
+];
+c = f.classify( sk );
+testkit.check( "a conflict needs your decision", c.needsYou.len() == 1 && c.needsYou[ 1 ].id == "docker-compat" );
+testkit.check( "a folder or app that is already there is in place, not a failure", c.inPlace.len() == 2 && c.inPlace[ 1 ].id == "editor-lazyvim" && c.inPlace[ 2 ].id == "boxy" );
+testkit.check( "what cannot run here is skipped", c.skipped.len() == 1 && c.skipped[ 1 ].id == "session" );
+p = f.split( sk[ 3 ].reason );
+testkit.check( "the reason loses its prefix and the fix is split off", left( p.why, 11 ) == "Boxy is alr" && p.fix == "bxrig ai agents setup --yes --yes" && !( p.why contains "could not run" ) );
+a = f.advice( [ "hyprland", "xremap", "shell" ] );
+testkit.check( "a new session asks for a log out, not a reboot", a.relogin && !a.reboot && a.next[ 1 ] contains "pick Hyprland at the login screen" && a.next[ 1 ] contains "bxrig system logout --yes" );
+testkit.check( "a new shell says to open a new terminal", arrayFind( a.next, "Open a new terminal to get the new shell and prompt." ) > 0 );
+b = f.advice( [ "hyprland", "session" ] );
+testkit.check( "the login screen changing asks for a reboot", b.reboot && b.next[ 1 ] contains "bxrig system reboot --yes" );
+n = f.advice( [ "git-name" ] );
+testkit.check( "nothing that needs it: no log out, no reboot", !n.relogin && !n.reboot && n.next.len() == 1 );
+res = { done: [ { id: "hyprland" }, { id: "shell" } ], failed: [], stopped: [], skipped: sk };
+ln = f.lines( res, [ "foo-app" ], { answers: "/home/u/.config/bxrig/answers.json", log: "/home/u/.local/state/bxrig/logs/init-1.log", pending: [] } );
+txt = ln.toList( chr( 10 ) );
+testkit.check( "the summary has the sections in order", find( "Already in place", txt ) > 0 && find( "Needs your decision", txt ) < find( "Skipped:", txt ) && find( "Saved:", txt ) > find( "Skipped:", txt ) && find( "Next:", txt ) > find( "Saved:", txt ) );
+testkit.check( "it says where the answers and the log are, and how to run them again", txt contains "Your answers  /home/u/.config/bxrig/answers.json" && txt contains "bxrig reinstall" && txt contains "The log       /home/u/.local/state/bxrig/logs/init-1.log" );
+testkit.check( "every skipped step shows the command to do it later", txt contains "later: bxrig containers docker-compat --yes" && txt contains "later: bxrig session set hyprland --yes" );
+testkit.check( "an app this system's catalog does not have is skipped with that reason", txt contains "foo-app" && txt contains "no entry in its catalog" );
+testkit.done();

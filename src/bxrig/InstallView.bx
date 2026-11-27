@@ -111,6 +111,7 @@ class InstallView {
 		if ( verbose ) logPane( arguments.app, st, x, by, w, arguments.height - by - 2 );
 		keys( arguments.app, st, arguments.width, arguments.height );
 		if ( arguments.app.confirming() ) confirmStop( arguments.width, arguments.height );
+		if ( len( arguments.app.asking() ) ) confirmAction( arguments.app.asking(), arguments.width, arguments.height );
 		return this;
 	}
 
@@ -148,8 +149,12 @@ class InstallView {
 	// quiet, how long that has been (a package build or a download can be silent for minutes: the spinner and this line say it is alive).
 	function running( st, run, tick, x, y, w ) {
 		if ( arguments.st.finished ) {
-			variables.kit.put( arguments.x, arguments.y, "The full log of this run:", variables.SUB, variables.MANTLE );
-			variables.kit.put( arguments.x, arguments.y + 1, variables.kit.trunc( arguments.st.logFile, arguments.w ), variables.CYAN, variables.MANTLE );
+			// where things were saved: the log of this run, and the answers (a re-run starts from them)
+			var answers = new bxrig.util.Env().home() & "/.config/bxrig/answers.json";
+			variables.kit.put( arguments.x, arguments.y, "Log      ", variables.SUB, variables.MANTLE );
+			variables.kit.put( arguments.x + 9, arguments.y, variables.kit.trunc( arguments.st.logFile, arguments.w - 9 ), variables.CYAN, variables.MANTLE );
+			variables.kit.put( arguments.x, arguments.y + 1, "Answers  ", variables.SUB, variables.MANTLE );
+			variables.kit.put( arguments.x + 9, arguments.y + 1, variables.kit.trunc( replace( answers, new bxrig.util.Env().home(), "~" ), arguments.w - 9 ), variables.CYAN, variables.MANTLE );
 			return;
 		}
 		var s = arguments.run.current();
@@ -255,6 +260,8 @@ class InstallView {
 		if ( arguments.st.finished ) {
 			pairs.append( [ "enter", "leave" ] );
 			if ( arguments.app.run().counts().failed || arguments.app.run().counts().stopped ) pairs.append( [ "r", "retry the failed steps" ] );
+			if ( arguments.app.advice().reboot ) pairs.append( [ "b", "reboot" ] );
+			else if ( arguments.app.advice().relogin ) pairs.append( [ "l", "log out" ] );
 		} else pairs.append( [ "ctrl-c", "stop" ] );
 		pairs.append( [ "v", arguments.app.verbose() ? "hide the log" : "show the log" ] );
 		if ( arguments.app.verbose() ) pairs.append( [ "↑↓ PgUp PgDn", "scroll" ] );
@@ -295,5 +302,16 @@ class InstallView {
 		variables.kit.put( x + 3, y + 2, "The running step is killed and the rest is not run.", variables.TEXT, variables.MANTLE );
 		variables.kit.put( x + 3, y + 3, "y", variables.GREEN, variables.MANTLE, true );
 		variables.kit.put( x + 5, y + 3, "stop      any other key goes on", variables.SUB, variables.MANTLE );
+	}
+
+	// Asked before logging out or rebooting from the finish screen.
+	function confirmAction( what, width, height ) {
+		var w = 56; var h = 5;
+		var x = int( ( arguments.width - w ) / 2 ); var y = int( ( arguments.height - h ) / 2 );
+		variables.kit.fillRect( x, y, w, h, variables.MANTLE );
+		variables.kit.panel( x, y, w, h, arguments.what == "reboot" ? "Reboot now?" : "Log out now?", true, 0 );
+		variables.kit.put( x + 3, y + 2, arguments.what == "reboot" ? "Save your work first. The machine restarts at once." : "Save your work first. Your session ends at once.", variables.TEXT, variables.MANTLE );
+		variables.kit.put( x + 3, y + 3, "y", variables.GREEN, variables.MANTLE, true );
+		variables.kit.put( x + 5, y + 3, arguments.what == "reboot" ? "reboot      any other key stays" : "log out      any other key stays", variables.SUB, variables.MANTLE );
 	}
 }
