@@ -6,7 +6,7 @@ BxRig brings an opinionated, beautiful and efficient desktop to Linux, built for
 
 BxRig turns a fresh Linux install into a polished developer rig: a themed desktop, the languages and tools you use, and one terminal screen to manage it all.
 
-**Supported: CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13.** See [Distributions](docs/guides/distributions.md) for what each one offers.
+**Supported: CachyOS, Arch Linux, openSUSE Tumbleweed and Slowroll, Ubuntu 26.04 LTS and Debian 13.** See [Distributions](docs/start/distributions.md) for what each one offers.
 
 > **Your dev rig. Beautiful by default.**
 
@@ -45,7 +45,7 @@ curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh 
 curl -fsSL https://downloads.ortussolutions.com/ortussolutions/bxrig/install.sh | bash -s -- --matchbox-branch bxrig
 ```
 
-Details: [getting started](docs/getting-started.md).
+Details: [getting started](docs/start/install.md).
 
 ## What you get
 
