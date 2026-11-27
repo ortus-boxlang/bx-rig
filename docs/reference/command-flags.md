@@ -105,6 +105,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `runner` | `--prompt` | value |  | Prompt text shown in the menu for select |
 | `launcher` | `--yes` | bool |  | Apply the change instead of only showing the plan |
 | `launcher` | `--dry-run` | bool |  | Show what would change without changing anything |
+| `launcher` | `--limit` | value |  | The most rows search returns (default 20) |
 | `theme` | `--keep-wallpaper` | bool |  | Apply the theme but leave the current wallpaper as it is |
 | `theme` | `--mode` | value | `dark` | Light or dark choice for this set: theme, dark, light or auto |
 | `theme` | `--name` | value | `mine` | Name to save an installed or imported theme under |
