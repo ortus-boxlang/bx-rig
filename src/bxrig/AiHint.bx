@@ -1,0 +1,67 @@
+/**
+ * What the wizard tells you about local AI on this machine: the hardware BxRig found and the models it would choose for it.
+ * The data is the answer of `bxrig ai models recommend --json` (no network needed). The hint is put on the AI page as an info row and the
+ * review shows the models next to "BxRig local AI: now".
+ */
+class AiHint {
+
+	/**
+	 * A size in MB as GB with one decimal (or MB when small).
+	 * @mb Megabytes.
+	 */
+	function size( mb ) {
+		return arguments.mb >= 1000 ? numberFormat( arguments.mb / 1024, "0.0" ) & " GB" : arguments.mb & " MB";
+	}
+
+	/**
+	 * The hardware sentence, or "" when nothing is known.
+	 * @rec The data of `ai models recommend`.
+	 */
+	function hardware( rec ) {
+		var hw = arguments.rec.hardware ?: {};
+		if ( structIsEmpty( hw ) ) return "";
+		var ram = hw.ram_mb ?: 0;
+		var threads = ( hw.cpu ?: {} ).threads ?: 0;
+		var backend = hw.backend ?: "cpu";
+		var parts = [];
+		if ( ram ) parts.append( size( ram ) & " RAM" );
+		if ( threads ) parts.append( threads & " CPU threads" );
+		parts.append( backend == "cpu" ? "no GPU backend, so models run on the CPU" : backend & " GPU backend" );
+		return parts.toList( ", " ) & ".";
+	}
+
+	/**
+	 * The models sentence: each pick with its role and size, the default first.
+	 * @rec The data of `ai models recommend`.
+	 */
+	function models( rec ) {
+		var out = [];
+		for ( var p in arguments.rec.picks ?: [] ) {
+			var isDefault = structKeyExists( p, "default" ) && p.default == true;
+			out.append( p.label & " (" & p.role & ", " & size( p.size_mb ) & ( isDefault ? ", the default" : "" ) & ")" );
+		}
+		return out.toList( ", " );
+	}
+
+	/**
+	 * Puts the hint into the wizard spec: an info row before the local AI question and a note the review shows for "now".
+	 * @spec The wizard spec.
+	 * @rec The data of `ai models recommend` (an empty struct leaves the spec alone).
+	 * @return The spec.
+	 */
+	function inject( spec, rec ) {
+		var m = models( arguments.rec );
+		if ( !len( m ) ) return arguments.spec;
+		var hw = hardware( arguments.rec );
+		for ( var pg in arguments.spec.pages ) {
+			for ( var i = 1; i <= pg.questions.len(); i++ ) {
+				var q = pg.questions[ i ];
+				if ( ( q.id ?: "" ) != "ai_local_setup" ) continue;
+				q.notes = { now: m };
+				pg.questions.insertAt( i, { type: "info", label: "Local AI on this machine", help: hw & " BxRig would download: " & m & ". Choose Models below to take them all or only the balanced one." } );
+				return arguments.spec;
+			}
+		}
+		return arguments.spec;
+	}
+}

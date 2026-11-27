@@ -23,6 +23,8 @@ class WizardApp {
 		variables.spec.version = new bxrig.util.Version().current();   // the one source of the version (box.json via gen-version.sh); the page files carry none
 		variables.screen = "welcome";
 		variables.page = 1;
+		variables.reviewScroll = 0;
+		variables.reviewMax = 0;
 		variables.furthest = 0;   // the highest step reached: pages 1..n, then n + 1 for the review
 		variables.focus = 1;      // index into rows() of the focused row on the current page
 		variables.outcome = "running";
@@ -252,12 +254,34 @@ class WizardApp {
 	function answerNumber( id ) { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] : 0; }
 	function answerBool( id )   { return variables.answers.keyExists( arguments.id ) ? variables.answers[ arguments.id ] == true : false; }
 
+	/** How many rows the review is scrolled down. */
+	function reviewScroll() { return variables.reviewScroll; }
+
+	/**
+	 * Tells the app how far the review can scroll (the view works it out from the room it has).
+	 * @max The largest scroll offset.
+	 */
+	function setReviewMax( max ) {
+		variables.reviewMax = arguments.max;
+		variables.reviewScroll = min( variables.reviewScroll, arguments.max );
+		return this;
+	}
+
+	/**
+	 * Scrolls the review by some rows, within 0 and the maximum the view reported.
+	 * @by Rows, negative for up.
+	 */
+	function scrollReview( by ) {
+		variables.reviewScroll = max( 0, min( variables.reviewMax, variables.reviewScroll + arguments.by ) );
+		return this;
+	}
+
 	// A readable value for the review screen.
 	function display( q ) {
 		switch ( arguments.q.type ) {
 			case "choice":
 				var v = answerString( arguments.q.id );
-				for ( var o in arguments.q.options ) if ( o.value == v ) return o.label;
+				for ( var o in arguments.q.options ) if ( o.value == v ) return o.label & ( structKeyExists( arguments.q, "notes" ) && structKeyExists( arguments.q.notes, v ) ? " (" & arguments.q.notes[ v ] & ")" : "" );
 				return v;
 			case "multi":
 				var names = [];
@@ -305,6 +329,7 @@ class WizardApp {
 	function gotoReview() {
 		variables.furthest = pageCount() + 1;
 		variables.screen = "review";
+		variables.reviewScroll = 0;
 		return this;
 	}
 
@@ -414,7 +439,13 @@ class WizardApp {
 		if ( variables.screen == "start" ) return startKey( arguments.key );
 		if ( variables.screen == "review" ) {
 			if ( arguments.key == "Enter" ) variables.outcome = "done";
-			else if ( arguments.key == "Escape" || arguments.key == "Left" || arguments.key == "BackTab" || arguments.key == "PageUp" ) prevPage();
+			else if ( arguments.key == "Escape" || arguments.key == "Left" || arguments.key == "BackTab" ) prevPage();
+			else if ( arguments.key == "Up" || arguments.key == "k" ) scrollReview( -1 );
+			else if ( arguments.key == "Down" || arguments.key == "j" ) scrollReview( 1 );
+			else if ( arguments.key == "PageUp" ) scrollReview( -10 );
+			else if ( arguments.key == "PageDown" ) scrollReview( 10 );
+			else if ( arguments.key == "Home" ) variables.reviewScroll = 0;
+			else if ( arguments.key == "End" ) variables.reviewScroll = variables.reviewMax;
 			return this;
 		}
 		var tid = textFieldId();

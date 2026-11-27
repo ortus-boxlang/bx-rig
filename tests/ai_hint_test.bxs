@@ -1,0 +1,18 @@
+// bxrig.AiHint: the machine and the models the wizard shows for local AI. Run from src/: (cd src && matchbox ../tests/ai_hint_test.bxs)
+testkit = new lib.Check( "ai hint" );
+rec = { hardware: { backend: "cpu", ram_mb: 16087, cpu: { threads: 4 } }, picks: [
+		{ id: "gemma-4-e4b", label: "Gemma 4 E4B", role: "balanced", size_mb: 5155, default: true },
+		{ id: "granite-4.0-350m", label: "Granite 4.0 350M", role: "fastest", size_mb: 378, default: false } ] };
+h = new bxrig.AiHint();
+testkit.check( "sizes: GB with a decimal, MB when small", h.size( 5155 ) == "5.0 GB" && h.size( 378 ) == "378 MB" );
+testkit.check( "hardware sentence", h.hardware( rec ) == "15.7 GB RAM, 4 CPU threads, no GPU backend, so models run on the CPU." );
+testkit.check( "models sentence: role, size and the default", h.models( rec ) == "Gemma 4 E4B (balanced, 5.0 GB, the default), Granite 4.0 350M (fastest, 378 MB)" );
+spec = { pages: [ { id: "ai", questions: [ { type: "choice", id: "ai_local", label: "x", options: [] }, { type: "choice", id: "ai_local_setup", label: "BxRig local AI", options: [ { value: "now", label: "Now" } ] } ] } ] };
+h.inject( spec, rec );
+qs = spec.pages[ 1 ].questions;
+testkit.check( "an info row comes before the question", qs.len() == 3 && qs[ 2 ].type == "info" && find( "Gemma 4 E4B", qs[ 2 ].help ) > 0 && qs[ 3 ].id == "ai_local_setup" );
+testkit.check( "the question carries a note for now", find( "Gemma 4 E4B", qs[ 3 ].notes.now ) > 0 );
+spec2 = { pages: [ { id: "ai", questions: [ { type: "choice", id: "ai_local_setup", label: "x", options: [] } ] } ] };
+h.inject( spec2, {} );
+testkit.check( "no data, no change", spec2.pages[ 1 ].questions.len() == 1 );
+testkit.done();

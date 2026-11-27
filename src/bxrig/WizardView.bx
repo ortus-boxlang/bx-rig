@@ -215,6 +215,7 @@ class WizardView {
 		}
 		for ( var x = 2; x < arguments.width - 2; x++ ) variables.kit.put( x, 2, "─", variables.kit.mix( variables.SURFACE1, variables.kit.shimmer( x, arguments.width, arguments.phase ), 0.25 ), variables.BASE );
 		var hints = [ [ "↑↓", "move" ], [ "space", "select" ], [ "enter", "next" ], [ "tab", "next page" ], [ "esc", "back" ], [ "ctrl-c", "cancel" ] ];
+		if ( app.screen() == "review" ) hints = [ [ "↑↓ PgUp PgDn", "scroll" ], [ "enter", "apply" ], [ "esc", "back" ], [ "ctrl-c", "cancel" ] ];
 		var hx = 3;
 		for ( var hint in hints ) {
 			hx = variables.kit.put( hx, arguments.height - 1, hint[ 1 ], variables.CYAN, variables.BASE ) + 1;
@@ -518,18 +519,31 @@ class WizardView {
 		var labelW = 20;
 		for ( var pg in app.spec().pages ) for ( var q in pg.questions ) if ( q.type != "info" && app.isVisible( q ) ) labelW = max( labelW, len( q.label ) + 3 );
 		labelW = min( labelW, max( 20, iw - 30 ) );   // a long question never squeezes its answer out
-		var maxY = iy + ih - 3;
-		var stop = false;
+		// every answer is a row; the ones that do not fit scroll (up and down keys, page keys)
+		var rowsOut = [];
 		for ( var pg in app.spec().pages ) {
 			for ( var q in pg.questions ) {
 				if ( q.type == "info" || !app.isVisible( q ) ) continue;
-				if ( cy > maxY ) { variables.kit.put( ix, cy, "…", variables.OVERLAY, variables.MANTLE ); stop = true; break; }
-				variables.kit.put( ix, cy, len( q.label ) > labelW - 2 ? left( q.label, labelW - 3 ) & "…" : q.label, variables.SUB, variables.MANTLE );
-				variables.kit.put( ix + labelW, cy, left( app.display( q ), max( 1, iw - labelW - 2 ) ), variables.GREEN, variables.MANTLE );
-				cy++;
+				// a long answer wraps onto the lines under it (the models of the local AI, a list of apps) instead of being cut off
+				var lines = variables.kit.wrap( app.display( q ), max( 10, iw - labelW - 2 ) );
+				if ( !lines.len() ) lines = [ "" ];
+				for ( var li = 1; li <= lines.len(); li++ ) rowsOut.append( { label: li == 1 ? q.label : "", value: lines[ li ] } );
 			}
-			if ( stop ) break;
 		}
+		var room = max( 3, ih - 6 );
+		var maxScroll = max( 0, rowsOut.len() - room );
+		app.setReviewMax( maxScroll );
+		var scroll = app.reviewScroll();
+		if ( scroll > 0 ) variables.kit.put( ix, cy - 1, "↑ " & scroll & " more above" & repeatString( " ", 50 ), variables.OVERLAY, variables.MANTLE );
+		for ( var r = 1; r <= room; r++ ) {
+			var idx = scroll + r;
+			if ( idx > rowsOut.len() ) break;
+			var row = rowsOut[ idx ];
+			variables.kit.put( ix, cy, len( row.label ) > labelW - 2 ? left( row.label, labelW - 3 ) & "…" : row.label, variables.SUB, variables.MANTLE );
+			variables.kit.put( ix + labelW, cy, variables.kit.trunc( row.value, max( 1, iw - labelW - 2 ) ), variables.GREEN, variables.MANTLE );
+			cy++;
+		}
+		if ( scroll < maxScroll ) variables.kit.put( ix, cy, "↓ " & ( maxScroll - scroll ) & " more below (down arrow or page down)", variables.OVERLAY, variables.MANTLE );
 		var pulse = ( sin( arguments.tick / 8 ) * 0.5 + 0.5 ) * 0.6 + 0.4;
 		var msg = "  Apply these choices  ";
 		var by = iy + ih - 1;

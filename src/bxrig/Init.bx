@@ -292,6 +292,8 @@ class Init {
 	// (unless --dry-run). Needs a terminal.
 	function wizard( dryRun, asJson, from = "", mode = "tune", plain = false ) {
 		var spec = wizardSpec();
+		// the local AI models BxRig would pick for this machine, shown on the AI page (skipped when it cannot be worked out)
+		spec = new bxrig.AiHint().inject( spec, variables.inst.proc().selfData( [ "ai", "models", "recommend" ], 30 ) );
 		var result = "";
 		try {
 			// where the answers start: your saved ones, or a file you name (answers exported from another machine)
