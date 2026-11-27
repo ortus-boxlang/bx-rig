@@ -658,7 +658,7 @@ bxrig keys mac on --yes
 bxrig keys conflicts
 ```
 
-> Two styles share one table: Traditional (classic Super-key tiling keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines.
+> Two styles share one table: Traditional (classic Super-key tiling keys) and Mac (Cmd-style keys through xremap). The Mac style on a PC keyboard swaps Alt and Win; an Apple keyboard never swaps. `keys conflicts` checks the table, the remaps of the style that is on and your own hl.bind lines. keys sheet (Super+K) opens the shortcuts browser: groups as tabs, keycaps, a live filter; the same page is bxrig tui shortcuts.
 
 ### `bxrig runner` {#bxrig-runner}
 

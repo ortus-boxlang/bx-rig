@@ -237,17 +237,34 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#change-a-shortcut">Change a shortcut</a></li><li class="toc-level-2"><a href="#from-the-runner">From the runner</a></li><li class="toc-level-2"><a href="#two-styles">Two styles</a></li><li class="toc-level-2"><a href="#the-main-ones">The main ones</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#the-shortcuts-browser">The shortcuts browser</a></li><li class="toc-level-2"><a href="#change-a-shortcut">Change a shortcut</a></li><li class="toc-level-2"><a href="#from-the-runner">From the runner</a></li><li class="toc-level-2"><a href="#two-styles">Two styles</a></li><li class="toc-level-2"><a href="#the-main-ones">The main ones</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></details>
 		
 
 		
 		<h1 id="shortcuts-and-mac-keys"><a href="#shortcuts-and-mac-keys" id="shortcuts-and-mac-keys" name="shortcuts-and-mac-keys" class="anchor"></a>Shortcuts and Mac keys</h1>
 <p>One shortcut table drives every key BxRig binds, in two styles: Traditional (classic Super-key tiling) or Mac (Cmd-style keys).</p>
 <h2 id="try-it"><a href="#try-it" id="try-it" name="try-it" class="anchor"></a>Try it</h2>
-<pre><code class="language-bash">bxrig keys sheet                   # the cheat sheet (Super+K)
+<pre><code class="language-bash">bxrig keys sheet                   # the shortcuts browser (Super+K)
+bxrig tui shortcuts                # the same page in the Control Center
 bxrig keys search screenshot       # find a shortcut by words, keys or id
 bxrig keys style mac --yes         # switch to the Mac style
 </code></pre>
+<h2 id="the-shortcuts-browser"><a href="#the-shortcuts-browser" id="the-shortcuts-browser" name="the-shortcuts-browser" class="anchor"></a>The shortcuts browser</h2>
+<p><code>Super+K</code> (or <code>bxrig keys sheet</code>) opens the Shortcuts page: every shortcut grouped under tabs (Editing, Apps, Windows and so on), the keys drawn as keycaps, and a detail pane that says how the shortcut is bound.</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Key</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Left</code> <code>Right</code>, or <code>1</code> to <code>9</code></td><td>Switch group</td></tr>
+<tr><td><code>/</code> then type</td><td>Filter by action, keys, group or how it is bound (Enter keeps it, Esc clears it)</td></tr>
+<tr><td><code>u</code></td><td>Show the shortcuts that have no keys too (they are hidden at first)</td></tr>
+<tr><td><code>y</code></td><td>Only your own shortcuts, marked with a star</td></tr>
+<tr><td><code>a</code></td><td>Back to everything</td></tr>
+<tr><td><code>e</code>, <code>r</code>, <code>c</code></td><td>Rebind the highlighted one, reset it to the default, list conflicts</td></tr>
+</tbody>
+</table></div>
+<p>From a key binding it opens in its own terminal window. Without a terminal program it falls back to your menu program, grouped, with the keys written as <code>Super + Shift + T</code>.</p>
 <pre><code class="language-mermaid">flowchart LR
   A[&quot;Shortcut table&quot;] --&gt; B[&quot;Traditional or Mac style&quot;]
   B --&gt; C[&quot;xremap: Cmd keys&quot;]
@@ -352,7 +369,7 @@ bxrig keys conflicts                    # the table, the remaps of the style tha
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/desktop/shortcuts.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/desktop/shortcuts.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 5&#x3a;19&#x3a;47 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Shortcuts%20and%20Mac%20keys&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdesktop%2Fshortcuts%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/desktop/shortcuts.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/desktop/shortcuts.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 27, 2026, 6&#x3a;23&#x3a;50 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Shortcuts%20and%20Mac%20keys&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdesktop%2Fshortcuts%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -396,7 +413,7 @@ bxrig keys conflicts                    # the table, the remaps of the style tha
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#change-a-shortcut">Change a shortcut</a></li><li class="toc-level-2"><a href="#from-the-runner">From the runner</a></li><li class="toc-level-2"><a href="#two-styles">Two styles</a></li><li class="toc-level-2"><a href="#the-main-ones">The main ones</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#try-it">Try it</a></li><li class="toc-level-2"><a href="#the-shortcuts-browser">The shortcuts browser</a></li><li class="toc-level-2"><a href="#change-a-shortcut">Change a shortcut</a></li><li class="toc-level-2"><a href="#from-the-runner">From the runner</a></li><li class="toc-level-2"><a href="#two-styles">Two styles</a></li><li class="toc-level-2"><a href="#the-main-ones">The main ones</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></nav>
 				</aside>
 			
 		</div>
