@@ -160,16 +160,22 @@ function render()
 	if errorText ~= nil then
 		table.insert(rows, ui.label({ text = errorText, fontSize = 12, color = "error", maxLines = 6 }))
 	elseif #results == 0 then
-		table.insert(rows, ui.label({ text = "Type to search", fontSize = 13, color = "on_surface_variant" }))
+		table.insert(rows, ui.label({ text = "Start typing: an app, an action, a theme, or a sum", fontSize = 13, color = "on_surface_variant" }))
 	end
 	local sel = current()
-	table.insert(body, ui.scroll({
-		height = (startAt == 2) and 310 or 400,
-		gap = 2,
-		padding = 8,
-		revealKey = sel and ("row-" .. str(sel.id)) or nil,
-	}, rows))
-
+	-- A fixed-height box around the scroll, so a long list is clipped and the footer stays on screen (the Actions row takes some of the room).
+	local listHeight = (startAt == 2) and 290 or 400
+	if actionsOpen then
+		listHeight -= 48
+	end
+	table.insert(body, ui.column({ height = listHeight }, {
+		ui.scroll({
+			flexGrow = 1,
+			gap = 2,
+			padding = 8,
+			revealKey = sel and ("row-" .. str(sel.id)) or nil,
+		}, rows),
+	}))
 	local list = nil
 	if actionsOpen and sel ~= nil then
 		local buttons = {}
@@ -179,7 +185,7 @@ function render()
 		list = ui.row({ gap = 6, paddingH = 14, paddingV = 6, fill = "surface_container", radius = 10, align = "center" }, buttons)
 	end
 
-	local hint = "Type to search"
+	local hint = "Super+Space opens this launcher"
 	if sel ~= nil then
 		hint = str(sel.subtitle)
 	end

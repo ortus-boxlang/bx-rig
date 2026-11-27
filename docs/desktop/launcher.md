@@ -18,6 +18,16 @@ On the Noctalia desktop, `Super+Space` opens the BxRig launcher: one flat search
 - a **Clipboard history** row, which opens the clipboard panel: the history on the left, the full text of the highlighted entry on the right, Enter copies it back (`Super+Ctrl+V` opens it directly);
 - **web searches** (DuckDuckGo, Google, GitHub, BoxLang docs) at the end.
 
+<video src="../assets/clips/launcher-panel.webm" poster="../assets/screenshots/launcher-answer.webp" autoplay loop muted playsinline width="100%"></video>
+
+![The launcher with a calculator answer](../assets/screenshots/launcher-answer.webp)
+
+![Menu actions with their path, and an application](../assets/screenshots/launcher-search.webp)
+
+![The Actions list for a row](../assets/screenshots/launcher-actions.webp)
+
+![The clipboard history with the entry on the right](../assets/screenshots/launcher-clipboard.webp)
+
 Things you run often rise to the top (kept in `~/.local/state/bxrig/launcher.json`). Tab opens the Actions list for the highlighted row. The drill-down menu stays on `Super+Alt+Space`, for browsing by section.
 
 The panels are the `bxrig/launcher` plugin. They call the same commands you can run yourself:
