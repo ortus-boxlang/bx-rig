@@ -29,7 +29,7 @@ class Containers {
 			var rl = variables.proc.exec( [ "podman", "info", "--format", "{{.Host.Security.Rootless}}" ], 30 );
 			var rootless = trim( rl.output ) == "true";
 			rows.append( check( "rootless", rootless, rootless ? "running without root" : "podman is not rootless for this user" ) );
-			var user = new bxrig.util.Env().named( "user", "" );
+			var user = new bxrig.util.Env().user();
 			var etc = new bxrig.util.Env().named( "etc", "/etc" );
 			var subs = variables.proc.exec( [ "sh", "-c", 'grep -q "^$1:" "$2/subuid" && grep -q "^$1:" "$2/subgid"', "_", user, etc ], 10 ).exitCode == 0;
 			rows.append( check( "subuid", subs, subs ? "subuid and subgid entries exist" : "no subuid/subgid range for " & user, "sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 " & user ) );

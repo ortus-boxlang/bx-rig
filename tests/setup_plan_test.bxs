@@ -113,7 +113,7 @@ function xfacts( over = {} ) {
 }
 x = plan.xremap( xfacts(), {} );
 testkit.check( "xremap on Hyprland: package, udev, group, config, service", ids( x ) == "package,udev,group,config,service" && x.steps[1].commands[1][5] == "xremap-hypr-bin" );
-testkit.check( "xremap udev step writes one rule line and reloads udev", x.steps[2].commands.len() == 3 && find( 'KERNEL=="uinput"', x.steps[2].commands[1][4] ) > 0 && x.steps[2].commands[1][4] contains "99-bxrig-input.rules" );
+testkit.check( "xremap udev step writes one rule line and reloads udev", x.steps[2].commands.len() == 2 && x.steps[2].commands[2][4] contains "reload-rules" && x.steps[2].commands[2][4] contains "|| echo" && find( 'KERNEL=="uinput"', x.steps[2].commands[1][4] ) > 0 && x.steps[2].commands[1][4] contains "99-bxrig-input.rules" );
 testkit.check( "xremap remembers what it added", x.added.package == "xremap-hypr-bin" && x.added.group && x.added.udev );
 x = plan.xremap( xfacts( { desktop: "KDE" } ), {} );
 testkit.check( "xremap on KDE uses the kde build", x.steps[1].commands[1][5] == "xremap-kde-bin" );

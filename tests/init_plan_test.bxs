@@ -136,6 +136,10 @@ p = ip.plan( { app_mode: "defaults", boxlang_modules: [ "bx-ai", "bx-sites" ], b
 testkit.check( "BoxLang modules and the VS Code extension are optional steps", cmd( p, "boxlang-modules" ) == "bxrig boxlang modules install bx-ai bx-sites" && cmd( p, "boxlang-vscode" ) == "bxrig boxlang vscode" );
 p = ip.plan( { app_mode: "defaults", update_channel: "beta", update_notifications: true } );
 testkit.check( "update channel and notifications", cmd( p, "update-channel" ) == "bxrig update channel beta" && cmd( p, "update-notifications" ) == "bxrig update notifications on" );
+p = ip.plan( { app_mode: "defaults", scheduler: true, boxlang_modules: [ "bx-ai" ] } );
+idl = p.steps.map( function( s ) { return s.id; } );
+testkit.check( "BoxLang is installed once, before the steps that run it", arrayFind( idl, "boxlang" ) > 0 && arrayFind( idl, "boxlang" ) < arrayFind( idl, "boxlang-modules" ) && arrayFind( idl, "boxlang" ) < arrayFind( idl, "scheduler" ) && idl.filter( function( i ) { return i == "boxlang"; } ).len() == 1 );
+testkit.check( "no BoxLang step when nothing needs it", arrayFind( ip.plan( { app_mode: "defaults" } ).steps.map( function( s ) { return s.id; } ), "boxlang" ) == 0 );
 p = ip.plan( { app_mode: "defaults", agent_skills: [ "bxrig", "boxlang" ] } );
 testkit.check( "agent skills are one optional step", cmd( p, "agent-skills" ) == "bxrig skills install bxrig boxlang" );
 p = ip.plan( { app_mode: "defaults", dictation: "none" } );
@@ -231,7 +235,11 @@ cat = new bxrig.Catalog();
 pages = jsonDeserialize( new bxrig.WizardData().demoPages() ).pages;
 pmValues = [];
 for ( pg in pages ) for ( q in pg.questions ) if ( compare( q.id, "password_manager" ) == 0 ) for ( o in q.options ) pmValues.append( o.value );
-testkit.check( "the wizard offers ten password managers", pmValues.len() == 10 );
+testkit.check( "the wizard offers none and ten password managers, none first and by default", pmValues.len() == 11 && pmValues[ 1 ] == "none" );
+pmDefault = "";
+for ( pg in pages ) for ( q in pg.questions ) if ( compare( q.id, "password_manager" ) == 0 ) pmDefault = q.default;
+testkit.check( "no password manager is installed unless asked for", pmDefault == "none" );
+pmValues = pmValues.filter( function( v ) { return v != "none"; } );
 allCatalog = true;
 for ( v in pmValues ) { app = cat.find( cat.load(), v ); if ( !structKeyExists( app, "category" ) || compare( app.category, "Security" ) != 0 ) allCatalog = false; }
 testkit.check( "every password manager option is a Security app of the catalog", allCatalog );

@@ -92,7 +92,7 @@ class Proc {
 	// With `askpass` (the path of a helper script) the command runs in a new session with no terminal and SUDO_ASKPASS set: a `sudo` inside it then
 	// reads its password from the helper instead of the terminal, so it never prompts on a screen that owns the terminal (see util.Sudo).
 	function startTo( argv, logFile, statusFile, pidFile, askpass = "" ) {
-		var run = [ "sh", "-c", 'log=$1; st=$2; pf=$3; ap=$4; shift 4; if [ -n "$ap" ]; then export SUDO_ASKPASS="$ap"; set -- setsid -w "$@"; fi; ( "$@" </dev/null >>"$log" 2>&1; echo $? >"$st.tmp"; mv -f "$st.tmp" "$st" ) </dev/null >/dev/null 2>&1 & echo $! >"$pf"', "_", arguments.logFile, arguments.statusFile, arguments.pidFile, arguments.askpass ];
+		var run = [ "sh", "-c", 'log=$1; st=$2; pf=$3; ap=$4; shift 4; export PATH="$HOME/.bvm/bin:$PATH"; if [ -n "$ap" ]; then export SUDO_ASKPASS="$ap"; set -- setsid -w "$@"; fi; ( "$@" </dev/null >>"$log" 2>&1; echo $? >"$st.tmp"; mv -f "$st.tmp" "$st" ) </dev/null >/dev/null 2>&1 & echo $! >"$pf"', "_", arguments.logFile, arguments.statusFile, arguments.pidFile, arguments.askpass ];
 		for ( var p in arguments.argv ) run.append( p );
 		return exec( run, 15 );
 	}
