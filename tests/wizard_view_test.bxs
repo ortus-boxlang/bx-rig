@@ -135,3 +135,25 @@ app = new bxrig.WizardApp( spec3, { theme_name: "nord" } ); view2 = new bxrig.Wi
 testkit.check( "a saved theme answer colours the wizard from the welcome screen", view2.kit().color( "BASE" ) == new bxrig.Palette().colorsOf( "nord" ).background );
 
 testkit.done( "all passed" );
+
+// ---- the start screen ----
+startSpec = jsonDeserialize( new bxrig.WizardData().demoPages() );
+sapp = new bxrig.WizardApp( startSpec, {}, { start: true, presets: { new: {}, saved: { shell: "fish" } }, importer: function( p ) { return { ok: false, answers: {}, ignored: [], error: "There is no file " & p }; } } );
+sapp.onKey( "Enter" );
+view.paint( sapp, 100, 120, 44 ); s = tui.render_to_string( 120, 44 );
+testkit.check( "start: the question, the three ways to begin and the help of the focused one", find( "How do you want to start?", s ) > 0 && find( "New install", s ) > 0 && find( "Import answers from a file", s ) > 0 && find( "Use my saved answers", s ) > 0 && find( "starting from the defaults", s ) > 0 );
+testkit.check( "start: the brand wordmark is above it in a tall window", find( "░░███░░░░░███░░███", s ) > 0 );
+testkit.check( "start: the key hints", find( "choose", s ) > 0 && find( "continue", s ) > 0 );
+sapp.onKey( "Down" ); sapp.onKey( "Enter" );
+for ( ch in [ "/", "x", ".", "j" ] ) sapp.onKey( ch );
+view.paint( sapp, 100, 100, 30 ); s = tui.render_to_string( 100, 30 );
+testkit.check( "start: the path field shows what is typed", find( "Path of your answers file:", s ) > 0 && find( "/x.j", s ) > 0 );
+sapp.onKey( "Enter" );
+view.paint( sapp, 100, 100, 30 ); s = tui.render_to_string( 100, 30 );
+testkit.check( "start: an error from the file shows under the field", find( "There is no file /x.j", s ) > 0 );
+sapp2 = new bxrig.WizardApp( startSpec, {}, { start: true, presets: { new: {}, saved: { shell: "fish" } } } );
+sapp2.onKey( "Enter" ); sapp2.onKey( "Down" ); sapp2.onKey( "Down" ); sapp2.onKey( "Enter" );
+view.paint( sapp2, 100, 120, 36 ); s = tui.render_to_string( 120, 36 );
+testkit.check( "the review says where the answers came from", find( "Your saved answers", s ) > 0 && find( "Everything look right?", s ) > 0 );
+view.paint( sapp, 100, 80, 24 ); s = tui.render_to_string( 80, 24 );
+testkit.check( "start: a small window shows the choices without the wordmark", find( "How do you want to start?", s ) > 0 );

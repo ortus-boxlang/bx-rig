@@ -5,16 +5,34 @@
 // intro, questions: [ { type: choice|multi|text|number|confirm|info, id, label, help, ... } ] } ] }.
 // Answers are a flat struct id -> value (string, array of strings, number or boolean).
 //
-// Screens: "welcome", "page" (page number pageIndex(), 1 based) and "review". outcome() is "running", "done" or "cancelled".
+// Screens: "welcome", "start" (how to begin: a new install, an imported file, saved answers; only when opts.start), "page" (page number
+// pageIndex(), 1 based) and "review". outcome() is "running", "done" or "cancelled".
 class WizardApp {
-	function init( spec, preset = {} ) {
+	// opts (all optional): start (true: a start screen follows the welcome), presets ({ new, saved }: the starting answers of each choice),
+	// importer (function( path ) -> { ok, answers, ignored, error }: reads an answers file).
+	function init( spec, preset = {}, opts = {} ) {
 		variables.spec = arguments.spec;
+		variables.start = arguments.opts.start ?: false;
+		variables.presets = arguments.opts.presets ?: {};
+		variables.importer = arguments.opts.importer ?: "";
+		variables.startIndex = 1;
+		variables.importing = false;
+		variables.importPath = "";
+		variables.importError = "";
+		variables.notice = "";
 		variables.spec.version = new bxrig.util.Version().current();   // the one source of the version (box.json via gen-version.sh); the page files carry none
 		variables.screen = "welcome";
 		variables.page = 1;
 		variables.furthest = 0;   // the highest step reached: pages 1..n, then n + 1 for the review
 		variables.focus = 1;      // index into rows() of the focused row on the current page
 		variables.outcome = "running";
+		variables.answers = {};
+		resetAnswers( arguments.preset );
+		return this;
+	}
+
+	// Every answer back to its default, then the preset on top.
+	function resetAnswers( preset ) {
 		variables.answers = {};
 		for ( var pg in variables.spec.pages ) {
 			for ( var q in pg.questions ) {
@@ -23,7 +41,83 @@ class WizardApp {
 			}
 		}
 		for ( var id in structKeyArray( arguments.preset ) ) {
-			if ( variables.answers.keyExists( id ) ) variables.answers[ id ] = arguments.preset[ id ];
+			if ( variables.answers.keyExists( id ) ) variables.answers[ id ] = coerce( id, arguments.preset[ id ] );
+		}
+		return this;
+	}
+
+	// An imported value in the shape its question wants (a list question given one string, a choice given a list).
+	function coerce( id, value ) {
+		for ( var pg in variables.spec.pages ) for ( var q in pg.questions ) {
+			if ( ( q.id ?: "" ) != arguments.id ) continue;
+			if ( q.type == "multi" && !isArray( arguments.value ) ) return len( toString( arguments.value ) ) && toString( arguments.value ) != "none" ? [ toString( arguments.value ) ] : [];
+			if ( q.type == "choice" && isArray( arguments.value ) ) return arguments.value.len() ? arguments.value[ 1 ] : "";
+		}
+		return arguments.value;
+	}
+
+	// ---- the start screen: how to begin ----
+
+	// The ways to begin: the whole wizard, answers imported from a file, and (when there are some) the answers saved last time.
+	function startChoices() {
+		var out = [
+			{ id: "new", label: "New install", help: "Answer the whole wizard, starting from the defaults." },
+			{ id: "import", label: "Import answers from a file", help: "Answers you exported before (bxrig init --export). You get the review next, and go." }
+		];
+		var saved = variables.presets.saved ?: {};
+		if ( isStruct( saved ) && structCount( saved ) ) out.append( { id: "saved", label: "Use my saved answers", help: "Your last answers and what this machine already has. You get the review next, and can change anything." } );
+		return out;
+	}
+
+	function startIndex()   { return variables.startIndex; }
+	function importing()    { return variables.importing; }
+	function importPath()   { return variables.importPath; }
+	function importError()  { return variables.importError; }
+	function notice()       { return variables.notice; }
+
+	function chooseStart() {
+		var c = startChoices()[ variables.startIndex ];
+		if ( c.id == "new" ) { resetAnswers( variables.presets.new ?: {} ); variables.notice = ""; gotoPage( nextVisible( 0 ) ); }
+		else if ( c.id == "saved" ) { resetAnswers( variables.presets.saved ); variables.notice = "Your saved answers"; gotoReview(); }
+		else { variables.importing = true; variables.importError = ""; }
+		return this;
+	}
+
+	// Reads the file with the importer: its answers go on top of the new-install defaults and the review follows.
+	function doImport() {
+		var path = trim( variables.importPath );
+		if ( !len( path ) ) { variables.importError = "Type the path of your answers file."; return this; }
+		if ( isSimpleValue( variables.importer ) ) { variables.importError = "Importing is not available here."; return this; }
+		var r = variables.importer( path );
+		if ( !r.ok ) { variables.importError = r.error; return this; }
+		var merged = {};
+		for ( var k in structKeyArray( variables.presets.new ?: {} ) ) merged[ k ] = variables.presets.new[ k ];
+		for ( var k2 in structKeyArray( r.answers ) ) merged[ k2 ] = r.answers[ k2 ];
+		resetAnswers( merged );
+		var used = 0;
+		for ( var k3 in structKeyArray( r.answers ) ) if ( variables.answers.keyExists( k3 ) ) used++;
+		variables.notice = "Imported " & used & " answers from " & path & ( r.ignored.len() ? " (" & r.ignored.len() & " not used by this version)" : "" );
+		variables.importing = false;
+		variables.importError = "";
+		gotoReview();
+		return this;
+	}
+
+	function startKey( key ) {
+		if ( variables.importing ) {
+			if ( arguments.key == "Escape" ) { variables.importing = false; variables.importError = ""; }
+			else if ( arguments.key == "Enter" ) doImport();
+			else if ( arguments.key == "Backspace" ) variables.importPath = len( variables.importPath ) > 1 ? left( variables.importPath, len( variables.importPath ) - 1 ) : "";
+			else if ( arguments.key == "Ctrl+u" ) variables.importPath = "";
+			else if ( len( arguments.key ) == 1 ) { variables.importPath &= arguments.key; variables.importError = ""; }
+			return this;
+		}
+		var n = startChoices().len();
+		switch ( arguments.key ) {
+			case "Up": case "k":            variables.startIndex = max( 1, variables.startIndex - 1 ); break;
+			case "Down": case "j":          variables.startIndex = min( n, variables.startIndex + 1 ); break;
+			case "Enter": case " ":         chooseStart(); break;
+			case "Escape": case "Left": case "BackTab": variables.screen = "welcome"; break;
 		}
 		return this;
 	}
@@ -215,14 +309,14 @@ class WizardApp {
 	}
 
 	function nextPage() {
-		if ( variables.screen == "welcome" ) gotoPage( nextVisible( 0 ) );
+		if ( variables.screen == "welcome" ) { if ( variables.start ) variables.screen = "start"; else gotoPage( nextVisible( 0 ) ); }
 		else if ( variables.screen == "page" ) { var nx = nextVisible( variables.page ); if ( nx ) gotoPage( nx ); else gotoReview(); }
 		else variables.outcome = "done";
 		return this;
 	}
 
 	function prevPage() {
-		if ( variables.screen == "page" ) { var pv = prevVisible( variables.page ); if ( pv ) gotoPage( pv ); else variables.screen = "welcome"; }
+		if ( variables.screen == "page" ) { var pv = prevVisible( variables.page ); if ( pv ) gotoPage( pv ); else variables.screen = variables.start ? "start" : "welcome"; }
 		else if ( variables.screen == "review" ) gotoPage( prevVisible( pageCount() + 1 ) );
 		return this;
 	}
@@ -317,6 +411,7 @@ class WizardApp {
 			else if ( arguments.key == "Escape" || arguments.key == "q" ) variables.outcome = "cancelled";
 			return this;
 		}
+		if ( variables.screen == "start" ) return startKey( arguments.key );
 		if ( variables.screen == "review" ) {
 			if ( arguments.key == "Enter" ) variables.outcome = "done";
 			else if ( arguments.key == "Escape" || arguments.key == "Left" || arguments.key == "BackTab" || arguments.key == "PageUp" ) prevPage();

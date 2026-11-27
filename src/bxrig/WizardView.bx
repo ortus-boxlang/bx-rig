@@ -108,6 +108,7 @@ class WizardView {
 		}
 		var phase = ( arguments.tick mod 90 ) / 90 * 1.4 - 0.2;
 		if ( app.screen() == "welcome" ) welcome( app, arguments.tick, arguments.width, arguments.height, phase );
+		else if ( app.screen() == "start" ) startScreen( app, arguments.tick, arguments.width, arguments.height, phase );
 		else pages( app, arguments.tick, arguments.width, arguments.height, phase );
 		return this;
 	}
@@ -123,6 +124,46 @@ class WizardView {
 			var tw = ( sin( arguments.tick / 14 + s.i * 1.7 ) * 0.5 + 0.5 ) * 0.85;
 			variables.kit.put( s.x, s.y, s.i mod 7 == 0 ? "+" : "·", variables.kit.mix( variables.BASE, s.i mod 3 == 0 ? variables.CYAN : variables.SUB, tw * 0.8 ), variables.BASE );
 		}
+	}
+
+	// How to begin: a new install, answers imported from a file, or the saved ones. The import asks for the path right here.
+	function startScreen( app, tick, width, height, phase ) {
+		var choices = app.startChoices();
+		var w = min( 78, arguments.width - 4 );
+		var fieldRows = app.importing() ? 5 : 0;
+		var h = 8 + choices.len() * 2 + fieldRows;
+		var top = 1;
+		var cx = int( arguments.width / 2 );
+		// the wordmark above when the window is tall enough (DOS Rebel, 8 rows)
+		if ( arguments.height >= h + 14 ) {
+			var big = new bxrig.Brand().large();
+			var bw = 0; for ( var l in big ) bw = max( bw, len( l ) );
+			top += variables.kit.logo( cx - int( bw / 2 ), top, "large", arguments.phase, variables.BASE ) + 1;
+		} else top = max( 1, int( ( arguments.height - h ) / 2 ) );
+		var x = cx - int( w / 2 );
+		variables.kit.fillRect( x, top, w, h, variables.MANTLE );
+		variables.kit.panel( x, top, w, h, "How do you want to start?", true, arguments.phase );
+		var ix = x + 3; var iw = w - 6; var ry = top + 2;
+		for ( var i = 1; i <= choices.len(); i++ ) {
+			var sel = i == app.startIndex();
+			var marker = sel ? "●" : "○";
+			var col = sel ? variables.GREEN : variables.TEXT;
+			variables.kit.put( ix, ry, marker & "  " & choices[ i ].label, col, variables.MANTLE, sel );
+			variables.kit.put( ix + 3, ry + 1, variables.kit.trunc( choices[ i ].help, iw - 3 ), sel ? variables.SUB : variables.OVERLAY, variables.MANTLE );
+			ry += 2;
+		}
+		if ( app.importing() ) {
+			ry++;
+			variables.kit.put( ix, ry, "Path of your answers file:", variables.SUB, variables.MANTLE );
+			var fw = iw;
+			variables.kit.fillRect( ix, ry + 1, fw, 1, variables.SURFACE0 );
+			var path = app.importPath();
+			if ( len( path ) ) variables.kit.put( ix + 1, ry + 1, right( path, fw - 3 ), variables.GREEN, variables.SURFACE0, true );
+			else variables.kit.put( ix + 1, ry + 1, "for example ~/answers.json", variables.OVERLAY, variables.SURFACE0 );
+			if ( ( arguments.tick \ 6 ) mod 2 == 0 ) variables.kit.put( ix + 1 + min( len( path ), fw - 3 ), ry + 1, "▏", variables.GREEN, variables.SURFACE0 );
+			if ( len( app.importError() ) ) variables.kit.put( ix, ry + 3, variables.kit.trunc( app.importError(), iw ), variables.YELLOW, variables.MANTLE );
+		}
+		variables.kit.keybar( 0, arguments.height - 1, arguments.width, app.importing() ? [ [ "enter", "import" ], [ "esc", "back" ] ] : [ [ "↑↓", "choose" ], [ "enter", "continue" ], [ "esc", "back" ], [ "ctrl-c", "quit" ] ] );
 	}
 
 	function welcome( app, tick, width, height, phase ) {
@@ -417,6 +458,7 @@ class WizardView {
 		variables.kit.panel( arguments.x, arguments.y, arguments.w, arguments.h, "Review", true, arguments.phase );
 		var ix = arguments.x + 3; var iy = arguments.y + 1; var iw = arguments.w - 6; var ih = arguments.h - 2;
 		variables.kit.put( ix, iy + 1, "Everything look right? Nothing has been changed yet.", variables.SUB, variables.MANTLE );
+		if ( len( arguments.app.notice() ) ) variables.kit.put( ix, iy + 2, variables.kit.trunc( arguments.app.notice(), iw ), variables.GREEN, variables.MANTLE );
 		var cy = iy + 3;
 		var labelW = 20;
 		for ( var pg in app.spec().pages ) for ( var q in pg.questions ) if ( q.type != "info" && app.isVisible( q ) ) labelW = max( labelW, len( q.label ) + 3 );

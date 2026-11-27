@@ -275,6 +275,20 @@ class Init {
 		return res.code;
 	}
 
+	// Reads an answers file for the wizard's import: { ok, answers, ignored, error }. `known` is the set of question ids this version asks.
+	function importAnswers( path, known ) {
+		var file = arguments.path;
+		if ( left( file, 2 ) == "~/" ) file = new bxrig.util.Env().home() & mid( file, 2, len( file ) );
+		if ( !fileExists( file ) ) return { ok: false, answers: {}, ignored: [], error: "There is no file " & arguments.path };
+		var data = "";
+		try { var text = fileRead( file ); data = jsonDeserialize( text ); } catch ( any e ) { return { ok: false, answers: {}, ignored: [], error: arguments.path & " is not a JSON answers file" }; }
+		if ( !isStruct( data ) ) return { ok: false, answers: {}, ignored: [], error: arguments.path & " is not an answers file (a JSON object is expected)" };
+		var ignored = [];
+		for ( var k in structKeyArray( data ) ) if ( !structKeyExists( arguments.known, k ) ) ignored.append( k );
+		if ( ignored.len() == structCount( data ) ) return { ok: false, answers: {}, ignored: ignored, error: arguments.path & " has no answer this wizard asks" };
+		return { ok: true, answers: data, ignored: ignored, error: "" };
+	}
+
 	// The wizard, then the plan. The review screen is the confirmation, so the steps run without a second prompt
 	// (unless --dry-run). Needs a terminal.
 	function wizard( dryRun, asJson, from = "", mode = "tune", plain = false ) {
@@ -292,7 +306,22 @@ class Init {
 			var found = sys.scan( spec );
 			if ( arguments.mode == "tune" ) sys.annotate( spec, found.installed );
 			var start = sys.startingAnswers( base, found.answers, arguments.mode );
-			result = new bxrig.Wizard( spec, start ).run();
+			// the start screen (new install, import a file, saved answers) shows when you give no flag that already says how to begin
+			var withStart = arguments.mode == "tune" && !len( arguments.from );
+			var opts = {};
+			if ( withStart ) {
+				var known = {};
+				for ( var pg in spec.pages ) for ( var q in pg.questions ) if ( ( q.id ?: "" ) != "" ) known[ q.id ] = true;
+				opts = {
+					start: true,
+					presets: { new: sys.startingAnswers( {}, found.answers, "fresh" ), saved: sys.startingAnswers( base, found.answers, "tune" ) },
+					importer: function( path ) { return importAnswers( path, known ); }
+				};
+				// the saved answers are only offered when there are some
+				if ( structIsEmpty( base ) ) opts.presets.saved = {};
+				start = opts.presets.new;
+			}
+			result = new bxrig.Wizard( spec, start, opts ).run();
 		} catch ( any e ) {
 			println( "bxrig init needs a terminal (" & e.message & "). Use --answers FILE to run without one." );
 			return new bxrig.util.Exit().precondition();
