@@ -33,6 +33,9 @@ class Starter {
 		? '-- Floating by default (layout: floating). Delete this rule, or press Super+T on a window (Super+Alt+T with the Mac style), to tile.' & chr( 10 ) & 'hl.window_rule({ name = "bxrig-floating", match = { class = ".*" }, float = true })'
 		: '-- (Windows tile. To float every new window by default, add: hl.window_rule({ name = "floating", match = { class = ".*" }, float = true }))';
 		t = replace( t, "-- BXRIG-FLOATING-RULE", rule );
+		// a first scale for each connected screen (a high-density panel would otherwise start too big); no screen found: the marker line goes
+		var scaleLua = new bxrig.DisplayScale().monitorsLua();
+		t = replace( t, "-- BXRIG-MONITORS", len( scaleLua ) ? "-- Each screen gets a scale that shows about 1200 pixels of height (bxrig display scale NAME VALUE changes it)." & chr( 10 ) & scaleLua : '-- One rule per screen can go here: hl.monitor({ output = "eDP-1", mode = "preferred", position = "auto", scale = 1.5 })' );
 		t = replace( t, "-- BXRIG-WORKSPACES", so.workspacesLua( o.workspaces ) );
 		t = replace( t, 'kb_layout    = "us",', so.keyboardLua( o.layouts ) );
 		t = replace( t, 'natural_scroll = false,   -- true gives the macOS direction', 'natural_scroll = ' & ( o.naturalScroll ? "true" : "false" ) & ',   -- true gives the macOS direction' );

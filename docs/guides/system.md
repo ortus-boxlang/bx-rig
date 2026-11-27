@@ -20,6 +20,8 @@ bxrig display brightness up           # down, or set 40
 bxrig display apply                   # push what is saved again
 ```
 
+The starter `hyprland.lua` that `bxrig setup hyprland` writes gives each connected screen a first scale from its resolution, so a high-density laptop panel does not start too big: it aims at the room of a 1200 pixel high screen (2880x1800 gets 1.5, 3840x2160 gets 2, 1920x1080 stays at 1) and only uses a scale that divides the resolution evenly; otherwise it leaves Hyprland's own `auto`. The file is yours after that. On a machine that already has a `hyprland.lua`, set it yourself: `bxrig display scale eDP-1 1.5 --yes` (`bxrig display list` shows the names).
+
 On Hyprland the settings are one generated file, `~/.config/bxrig/theme/monitors.lua`, loaded after your own `hyprland.lua`, and Hyprland reloads. On Plasma they go through `kscreen-doctor`.
 
 ## Laptop power
