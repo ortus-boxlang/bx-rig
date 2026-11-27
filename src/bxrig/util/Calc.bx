@@ -1,0 +1,147 @@
+/**
+ * A small, safe calculator for the launcher: numbers, + - * / ^ % (remainder), parentheses, unary minus, the constants pi and e, and the
+ * functions sqrt, abs, round, floor, ceil. It parses the text itself and never evaluates it as code.
+ *   eval( "2*(3+4)" )  ->  { ok: true, value: 14 }      eval( "hello" )  ->  { ok: false }
+ * Text that is a plain number, or has no operator and no function, is not an expression (ok: false), so "42" is not turned into an answer card.
+ */
+class Calc {
+
+	/**
+	 * Evaluates an expression.
+	 * @text The expression.
+	 * @return { ok, value, text } where text is the value formatted without trailing zeros.
+	 */
+	function eval( text ) {
+		var src = lCase( trim( arguments.text ) );
+		src = replace( src, "×", "*", "all" );
+		src = replace( src, "÷", "/", "all" );
+		src = replace( src, " ", "", "all" );
+		if ( !len( src ) || !reFind( "[0-9]|pi|e", src ) ) return { ok: false };
+		if ( !reFind( "[-+*/^%(]|sqrt|abs|round|floor|ceil", src ) ) return { ok: false };
+		// anything but the allowed characters is not an expression
+		if ( reFind( "[^0-9a-z.+\-*/^%()]", src ) ) return { ok: false };
+		var st = { s: src, i: 1, ok: true };
+		var v = 0;
+		try {
+			v = expr( st );
+			if ( !st.ok || st.i <= len( st.s ) || !isNumeric( v ) ) return { ok: false };
+		} catch ( any e ) { return { ok: false }; }
+		return { ok: true, value: v, text: fmt( v ) };
+	}
+
+	/**
+	 * A number as text: whole numbers without a decimal point, others to 10 significant digits without trailing zeros.
+	 * @v The number.
+	 */
+	function fmt( v ) {
+		if ( arguments.v == int( arguments.v ) && abs( arguments.v ) < 1e15 ) return toString( int( arguments.v ) );
+		var t = numberFormat( arguments.v, "0.0000000000" );
+		t = reReplace( t, "0+$", "" );
+		return reReplace( t, "\.$", "" );
+	}
+
+	/**
+	 * The character at the cursor, or "".
+	 * @st The parse state.
+	 */
+	function peek( st ) {
+		return arguments.st.i <= len( arguments.st.s ) ? mid( arguments.st.s, arguments.st.i, 1 ) : "";
+	}
+
+	/**
+	 * expr := term { (+|-) term }
+	 * @st The parse state.
+	 */
+	function expr( st ) {
+		var v = term( arguments.st );
+		while ( arguments.st.ok && ( peek( arguments.st ) == "+" || peek( arguments.st ) == "-" ) ) {
+			var op = peek( arguments.st );
+			arguments.st.i++;
+			var r = term( arguments.st );
+			v = op == "+" ? v + r : v - r;
+		}
+		return v;
+	}
+
+	/**
+	 * term := power { (*|/|%) power }
+	 * @st The parse state.
+	 */
+	function term( st ) {
+		var v = power( arguments.st );
+		while ( arguments.st.ok && ( peek( arguments.st ) == "*" || peek( arguments.st ) == "/" || peek( arguments.st ) == "%" ) ) {
+			var op = peek( arguments.st );
+			arguments.st.i++;
+			var r = power( arguments.st );
+			if ( op == "*" ) v = v * r;
+			else if ( r == 0 ) { arguments.st.ok = false; return 0; }
+			else if ( op == "/" ) v = v / r;
+			else v = v mod r;
+		}
+		return v;
+	}
+
+	/**
+	 * power := unary [ ^ power ]  (right to left)
+	 * @st The parse state.
+	 */
+	function power( st ) {
+		var b = unary( arguments.st );
+		if ( arguments.st.ok && peek( arguments.st ) == "^" ) {
+			arguments.st.i++;
+			var x = power( arguments.st );
+			return b ^ x;
+		}
+		return b;
+	}
+
+	/**
+	 * unary := (-|+) unary | atom
+	 * @st The parse state.
+	 */
+	function unary( st ) {
+		var c = peek( arguments.st );
+		if ( c == "-" ) { arguments.st.i++; return -unary( arguments.st ); }
+		if ( c == "+" ) { arguments.st.i++; return unary( arguments.st ); }
+		return atom( arguments.st );
+	}
+
+	/**
+	 * atom := number | ( expr ) | name | name ( expr )
+	 * @st The parse state.
+	 */
+	function atom( st ) {
+		var c = peek( arguments.st );
+		if ( c == "(" ) {
+			arguments.st.i++;
+			var v = expr( arguments.st );
+			if ( peek( arguments.st ) != ")" ) { arguments.st.ok = false; return 0; }
+			arguments.st.i++;
+			return v;
+		}
+		var m = reFind( "^[0-9]*\.?[0-9]+", mid( arguments.st.s, arguments.st.i, len( arguments.st.s ) ), 1, true );
+		if ( m.pos[ 1 ] == 1 ) {
+			var numText = mid( arguments.st.s, arguments.st.i, m.len[ 1 ] );
+			arguments.st.i += m.len[ 1 ];
+			return val( numText );
+		}
+		var n = reFind( "^[a-z]+", mid( arguments.st.s, arguments.st.i, len( arguments.st.s ) ), 1, true );
+		if ( n.pos[ 1 ] != 1 ) { arguments.st.ok = false; return 0; }
+		var name = mid( arguments.st.s, arguments.st.i, n.len[ 1 ] );
+		arguments.st.i += n.len[ 1 ];
+		if ( name == "pi" ) return pi();
+		if ( name == "e" ) return exp( 1 );
+		if ( peek( arguments.st ) != "(" || !arrayFind( [ "sqrt", "abs", "round", "floor", "ceil" ], name ) ) { arguments.st.ok = false; return 0; }
+		arguments.st.i++;
+		var a = expr( arguments.st );
+		if ( peek( arguments.st ) != ")" ) { arguments.st.ok = false; return 0; }
+		arguments.st.i++;
+		switch ( name ) {
+			case "sqrt": if ( a < 0 ) { arguments.st.ok = false; return 0; } return sqr( a );
+			case "abs": return abs( a );
+			case "round": return round( a );
+			case "floor": return floor( a );
+		}
+		return ceiling( a );
+	}
+}

@@ -1,0 +1,315 @@
+/**
+ * The launcher's search: one flat, ranked list for what you type, like Raycast. `bxrig launcher search QUERY` gives the rows; `launcher run ID`
+ * does what a row says. The Noctalia launcher panel calls both; Vicinae and scripts can too.
+ *   Rows come from: an answer card (calculator), the menu (every action of `bxrig menu`, with its path as breadcrumb), applications
+ *   (desktop entries), themes, and web searches (always last). Empty query: the rows you used most recently and most often.
+ *   A row is { id, kind, title, subtitle, icon, breadcrumb, action, score }. kind: answer | menu | app | theme | web.
+ *   Ranking is fuzzy (prefix and word starts count most) plus frecency: how often and how recently you ran a row (state file launcher.json).
+ * Credit: the ranking idea follows oma-cast (https://github.com/typecraft-dev/oma-cast, MIT).
+ * Exit: 0 ok, 2 bad usage, 4 unknown row id.
+ */
+class LauncherSearch {
+
+	/**
+	 * @cli The command line context of this run.
+	 * @runner Optional fake process runner for tests.
+	 */
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.runnerArg = arguments.runner;
+		variables.environ = new bxrig.util.Env();
+		variables.out = new bxrig.util.Out( arguments.cli, "launcher" );
+		variables.store = new bxrig.util.JsonStore();
+		variables.calc = new bxrig.util.Calc();
+		return this;
+	}
+
+	/**
+	 * Where the use counts are kept.
+	 */
+	function stateFile() {
+		return variables.environ.xdgState( "bxrig/launcher.json" );
+	}
+
+	/**
+	 * Seconds since 1970, used for frecency.
+	 */
+	function nowSeconds() {
+		return dateDiff( "s", createDateTime( 1970, 1, 1, 0, 0, 0 ), now() );
+	}
+
+	/**
+	 * Fuzzy score of a query against a text: 0 when it does not match. Every word of the query must match. A prefix beats a word start,
+	 * a word start beats a plain substring, a substring beats scattered letters.
+	 * @query The words typed.
+	 * @text The text to match.
+	 */
+	function fuzzy( query, text ) {
+		var t = lCase( arguments.text );
+		var total = 0;
+		for ( var w in listToArray( lCase( trim( arguments.query ) ), " " ) ) {
+			var s = fuzzyWord( w, t );
+			if ( s == 0 ) return 0;
+			total += s;
+		}
+		return total;
+	}
+
+	/**
+	 * Score of one word against a lower case text.
+	 * @w The word.
+	 * @t The text.
+	 */
+	function fuzzyWord( w, t ) {
+		var at = find( arguments.w, arguments.t );
+		if ( at == 1 ) return 100 + len( arguments.w ) * 2 - min( len( arguments.t ), 40 ) / 4;
+		if ( at > 1 ) {
+			var before = mid( arguments.t, at - 1, 1 );
+			if ( arrayFind( [ " ", "-", "_", ".", "/", ">" ], before ) ) return 80 + len( arguments.w ) * 2 - min( len( arguments.t ), 40 ) / 4;
+			return 50 + len( arguments.w ) - min( len( arguments.t ), 40 ) / 4;
+		}
+		// scattered letters, in order, close together (a short word is never scattered); consecutive and word-start letters count more
+		if ( len( arguments.w ) < 3 ) return 0;
+		var pos = 1;
+		var first = 0;
+		var score = 10;
+		var prev = 0;
+		for ( var i = 1; i <= len( arguments.w ); i++ ) {
+			var hit = find( mid( arguments.w, i, 1 ), arguments.t, pos );
+			if ( hit == 0 ) return 0;
+			if ( first == 0 ) first = hit;
+			if ( hit - first > len( arguments.w ) + 2 ) return 0;
+			if ( prev > 0 && hit == prev + 1 ) score += 4;
+			else if ( hit == 1 || arrayFind( [ " ", "-", "_", ".", ">" ], mid( arguments.t, hit - 1, 1 ) ) ) score += 3;
+			prev = hit;
+			pos = hit + 1;
+		}
+		return score;
+	}
+
+	/**
+	 * The frecency bonus of a row id: grows with how often it ran, fades with days since the last run. 0 to 40.
+	 * @id The row id.
+	 * @counts The loaded state.
+	 */
+	function frecency( id, counts ) {
+		if ( !structKeyExists( arguments.counts, arguments.id ) ) return 0;
+		var c = arguments.counts[ arguments.id ];
+		var days = max( 0, ( nowSeconds() - c.last ) / 86400 );
+		return min( 40, c.count * 6 ) / ( 1 + days / 14 );
+	}
+
+	/**
+	 * Loads the use counts: { id: { count, last } }.
+	 */
+	function counts() {
+		var j = variables.store.load( stateFile(), {} );
+		return isStruct( j ) ? j : {};
+	}
+
+	/**
+	 * Records that a row ran.
+	 * @id The row id.
+	 */
+	function bump( id ) {
+		var c = counts();
+		var old = structKeyExists( c, arguments.id ) ? c[ arguments.id ].count : 0;
+		c[ arguments.id ] = { count: old + 1, last: nowSeconds() };
+		try {
+			directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
+			variables.store.write( "launcher-state", stateFile(), c );
+		} catch ( any e ) {}
+	}
+
+	/**
+	 * The calculator answer card for a query, or an empty array.
+	 * @q The query.
+	 */
+	function answers( q ) {
+		var r = variables.calc.eval( arguments.q );
+		if ( !r.ok ) return [];
+		return [ { id: "answer:calc", kind: "answer", title: r.text, subtitle: trim( arguments.q ) & " =", icon: "calculator", breadcrumb: "", action: { type: "copy", text: r.text }, score: 1000 } ];
+	}
+
+	/**
+	 * The menu actions as rows. A path "Trigger > Capture > Screenshot" gives the title Screenshot and the breadcrumb "Trigger › Capture".
+	 */
+	function menuRows() {
+		var rows = [];
+		var menu = new bxrig.Menu( variables.cli, variables.runnerArg );
+		for ( var f in menu.flatten( menu.tree() ) ) {
+			var parts = listToArray( f.path, ">" ).map( function( p ) { return trim( p ); } );
+			var title = parts.last();
+			var crumbs = parts.slice( 1, parts.len() - 1 );
+			var parent = crumbs.toList( " > " );
+			var act = { type: "menu", kind: f.entry.kind, argv: f.entry.argv ?: [], url: f.entry.url ?: "", parent: parent };
+			rows.append( { id: "menu:" & ( f.entry.id ?: lCase( f.path ) ), kind: "menu", title: title, subtitle: menu.describe( f.entry ), icon: f.entry.icon ?: "", breadcrumb: crumbs.toList( " › " ), action: act, score: 0 } );
+		}
+		return rows;
+	}
+
+	/**
+	 * The installed applications as rows.
+	 */
+	function appRows() {
+		var rows = [];
+		try {
+			for ( var a in new bxrig.Apps( variables.cli, variables.runnerArg ).all() ) rows.append( { id: "app:" & a.id, kind: "app", title: a.name, subtitle: "Application", icon: a.icon, breadcrumb: "", action: { type: "exec", shell: a.exec }, score: 0 } );
+		} catch ( any e ) {}
+		return rows;
+	}
+
+	/**
+	 * The colour themes as rows.
+	 */
+	function themeRows() {
+		var rows = [];
+		try {
+			var th = new bxrig.Theme( variables.cli );
+			for ( var n in th.names() ) rows.append( { id: "theme:" & n, kind: "theme", title: th.label( n ), subtitle: "Switch the theme", icon: "palette", breadcrumb: "Appearance › Theme", action: { type: "theme", name: n }, score: 0 } );
+		} catch ( any e ) {}
+		return rows;
+	}
+
+	/**
+	 * The web searches shown last for any query.
+	 * @q The query.
+	 */
+	function webRows( q ) {
+		var enc = replace( urlEncodedFormat( trim( arguments.q ) ), "+", "%20", "all" );
+		var engines = [
+			{ id: "ddg", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
+			{ id: "google", name: "Google", url: "https://www.google.com/search?q=" },
+			{ id: "github", name: "GitHub", url: "https://github.com/search?q=" },
+			{ id: "boxlang", name: "BoxLang docs", url: "https://boxlang.ortusbooks.com/?q=" }
+		];
+		var rows = [];
+		for ( var e in engines ) rows.append( { id: "web:" & e.id, kind: "web", title: "Search " & e.name & " for " & chr( 34 ) & trim( arguments.q ) & chr( 34 ), subtitle: e.url & enc, icon: "globe", breadcrumb: "Web", action: { type: "url", url: e.url & enc }, score: -1 } );
+		return rows;
+	}
+
+	/**
+	 * Every row that is not an answer or a web search.
+	 */
+	function catalog() {
+		var rows = [];
+		for ( var r in menuRows() ) rows.append( r );
+		for ( var a in themeRows() ) rows.append( a );
+		for ( var p in appRows() ) rows.append( p );
+		return rows;
+	}
+
+	/**
+	 * The ranked rows for a query.
+	 * @query What was typed ("" for the rows used most).
+	 * @limit The most rows to return.
+	 * @return Array of rows.
+	 */
+	function search( query, limit = 20 ) {
+		var q = trim( arguments.query );
+		var c = counts();
+		var scored = [];
+		for ( var r in catalog() ) {
+			var base = 0;
+			if ( len( q ) ) {
+				base = max( fuzzy( q, r.title ), fuzzy( q, r.breadcrumb & " " & r.title ) * 0.6 );
+				if ( base == 0 ) continue;
+			} else if ( !structKeyExists( c, r.id ) ) continue;
+			r.score = base + frecency( r.id, c );
+			scored.append( r );
+		}
+		arraySort( scored, function( a, b ) { return a.score > b.score ? -1 : ( a.score < b.score ? 1 : compareNoCase( a.title, b.title ) ); } );
+		var out = [];
+		if ( len( q ) ) for ( var an in answers( q ) ) out.append( an );
+		for ( var s in scored ) out.append( s );
+		// the web searches take the last rows of the limit (up to four), the rest of the room is for matches
+		var reserve = len( q ) ? min( 4, max( 0, arguments.limit - 1 ) ) : 0;
+		var room = max( 1, arguments.limit - reserve );
+		if ( out.len() > room ) out = out.slice( 1, room );
+		if ( reserve > 0 ) for ( var w in webRows( q ).slice( 1, reserve ) ) out.append( w );
+		return out;
+	}
+
+	/**
+	 * `launcher search QUERY`.
+	 * @query The words typed.
+	 * @limit The most rows.
+	 * @asJson True for JSON output.
+	 */
+	function show( query, limit, asJson ) {
+		var rows = search( arguments.query, arguments.limit );
+		var lines = rows.map( function( r ) { return r.title & ( len( r.breadcrumb ) ? "   " & r.breadcrumb : "" ) & "   (" & r.kind & ")"; } );
+		if ( !rows.len() ) lines.append( "Nothing matches " & arguments.query );
+		return variables.out.say( "ok", { query: arguments.query, results: rows }, arguments.asJson, lines );
+	}
+
+	/**
+	 * Does what a row says, and counts the use. Answers are copied, menu actions start like the menu starts them, applications and themes
+	 * start detached, web rows open in the browser.
+	 * @id The row id.
+	 * @dry Show what would run and run nothing.
+	 * @asJson True for JSON output.
+	 */
+	function runRow( id, dry, asJson ) {
+		var hit = [];
+		if ( left( arguments.id, 5 ) == "web:" || arguments.id == "answer:calc" ) hit = [];
+		for ( var r in catalog() ) if ( r.id == arguments.id ) { hit = [ r ]; break; }
+		if ( !hit.len() ) return variables.out.fail( "precondition", "no launcher row " & arguments.id & ". Rows: bxrig launcher search QUERY --json", arguments.asJson );
+		var row = hit[ 1 ];
+		if ( arguments.dry ) return variables.out.say( "ok", { id: row.id, action: row.action }, arguments.asJson, [ "Would run " & row.title ] );
+		var code = start( row.action );
+		if ( code == 0 ) bump( row.id );
+		return code;
+	}
+
+	/**
+	 * Starts an action. Returns the exit code.
+	 * @act The action struct of a row.
+	 */
+	function start( act ) {
+		var menu = new bxrig.Menu( variables.cli, variables.runnerArg );
+		var me = variables.environ.self();
+		switch ( arguments.act.type ) {
+			case "exec":
+				menu.detach( [ "sh", "-c", arguments.act.shell ] );
+				return 0;
+			case "theme":
+				menu.detach( [ me, "theme", "set", arguments.act.name, "--yes" ] );
+				return 0;
+			case "url":
+				menu.detach( [ "xdg-open", arguments.act.url ] );
+				return 0;
+			case "copy":
+				menu.detach( [ "sh", "-c", 'printf %s "$1" | wl-copy 2>/dev/null || printf %s "$1" | xclip -selection clipboard', "_", arguments.act.text ] );
+				return 0;
+		}
+		var k = arguments.act.kind;
+		var e = { kind: k, argv: arguments.act.argv, url: arguments.act.url };
+		if ( k == "open" ) { menu.detach( [ "xdg-open", arguments.act.url ] ); return 0; }
+		if ( k == "spawn" || k == "run" ) return menu.start( e );
+		if ( k == "tui" ) return menu.startTui( e );
+		if ( k == "term" ) return menu.startTerm( e );
+		if ( k == "tool" ) return menu.startTool( e );
+		if ( k == "exec" ) return menu.startExec( e );
+		// an action that asks or picks first: open its menu section
+		menu.detach( [ me, "menu", "open", len( arguments.act.parent ) ? arguments.act.parent : "" ] );
+		return 0;
+	}
+
+	/**
+	 * Runs `launcher search ...` and `launcher run ...`.
+	 * @words The words after `launcher` (the first is search or run).
+	 * @opts The options (limit).
+	 * @dry Show what would run.
+	 * @asJson True for JSON output.
+	 */
+	function dispatch( words, opts, dry, asJson ) {
+		var rest = arguments.words.slice( 2 );
+		if ( arguments.words[ 1 ] == "search" ) {
+			var lim = structKeyExists( arguments.opts, "limit" ) && isNumeric( arguments.opts.limit ) ? int( arguments.opts.limit ) : 20;
+			return show( rest.toList( " " ), max( 1, lim ), arguments.asJson );
+		}
+		if ( rest.len() != 1 ) return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "launcher" ), arguments.asJson );
+		return runRow( rest[ 1 ], arguments.dry, arguments.asJson );
+	}
+}
