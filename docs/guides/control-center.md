@@ -76,7 +76,7 @@ Each part is read on its own. If one cannot be read, the rest still shows.
 | Modules | BoxLang modules from ForgeBox: installed and latest versions, `i` install, `u` update, `x` remove |
 | Servers | your BoxLang and CFML web apps: `s` start or stop, `r` restart, `o` open, `f` the folder, `l` the log, `a` add one, `x` forget it |
 | Tasks | the scheduler: every timed job, when it runs next and how its recent runs went. Enter shows one, `r` runs it now, `p` pauses it, `g` its group, `a` adds one, `x` removes it |
-| Java | your Java homes: default, remove, and `a` to browse every JDK SDKMAN offers and install one (see `bxrig java`) |
+| Java | your Java versions (jenv): global, remove, and `a` to browse every JDK SDKMAN offers and install one (see `bxrig java`) |
 | Maven | every Maven version SDKMAN offers, installed ones marked: install, default, remove (see `bxrig sdk`) |
 | Gradle | the same for Gradle |
 | Versions | BoxLang, MatchBox, Java and Node in one table; Enter opens the deep page |

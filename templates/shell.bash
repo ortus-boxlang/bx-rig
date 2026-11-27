@@ -11,7 +11,7 @@ command -v zoxide >/dev/null && eval "$(zoxide init bash)"
 command -v starship >/dev/null && eval "$(starship init bash)"
 # API keys: per-command loaders written by `bxrig secrets` (no values in this file)
 [ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/secrets.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/secrets.sh"
-# Java: the default home chosen with `bxrig java default` (no file, no change)
-[ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/java.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/java.sh"
+# Java: jenv, set up by `bxrig java setup` (no file, no change)
+[ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/jenv.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/jenv.sh"
 # Maven and Gradle from SDKMAN, set by `bxrig sdk` (no file, no change)
 [ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/sdk.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/bxrig/sdk.sh"

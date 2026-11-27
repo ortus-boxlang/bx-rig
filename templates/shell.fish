@@ -9,5 +9,5 @@ end
 # API keys: per-command loaders written by `bxrig secrets` (no values in this file)
 set -l bxc_cfg $HOME/.config; set -q XDG_CONFIG_HOME; and set bxc_cfg $XDG_CONFIG_HOME
 test -r "$bxc_cfg/bxrig/secrets.fish"; and source "$bxc_cfg/bxrig/secrets.fish"
-test -r "$bxc_cfg/bxrig/java.fish"; and source "$bxc_cfg/bxrig/java.fish"
+test -r "$bxc_cfg/bxrig/jenv.fish"; and source "$bxc_cfg/bxrig/jenv.fish"
 test -r "$bxc_cfg/bxrig/sdk.fish"; and source "$bxc_cfg/bxrig/sdk.fish"

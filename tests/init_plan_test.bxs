@@ -1,7 +1,9 @@
 // InitPlan: wizard answers to ordered commands (pure). Run from src/: (cd src && matchbox ../tests/init_plan_test.bxs)
 testkit = new lib.Check( "init plan" );
 ip = new bxrig.InitPlan();
-function ids( p ) { return p.steps.map( function( s ) { return s.id; } ).toList( "," ); }
+function first( p ) { return p.steps.filter( function( s ) { return s.id != "java"; } )[ 1 ]; }
+// the always-present java step is left out here and tested on its own below
+function ids( p ) { return p.steps.filter( function( s ) { return s.id != "java"; } ).map( function( s ) { return s.id; } ).toList( "," ); }
 function cmd( p, id ) { for ( var s in p.steps ) if ( s.id == id ) return s.argv.toList( " " ); return ""; }
 
 p = ip.plan( {} );
@@ -33,7 +35,7 @@ testkit.check( "apps: orchestrators and agents in one install", cmd( p, "apps" )
 testkit.check( "no apps chosen, no install step", find( "apps", ids( ip.plan( { ai_orchestrators: [], ai_agents: [] } ) ) ) == 0 );
 
 p = ip.plan( { git_name: "Ada Lovelace", git_email: "ada@example.com" } );
-testkit.check( "git identity is two argument arrays (no shell string)", ids( p ) == "git-name,git-email" && p.steps[ 1 ].argv[ 5 ] == "Ada Lovelace" && p.steps[ 1 ].argv.len() == 5 );
+testkit.check( "git identity is two argument arrays (no shell string)", ids( p ) == "git-name,git-email" && first( p ).argv[ 5 ] == "Ada Lovelace" && first( p ).argv.len() == 5 );
 
 p = ip.plan( { launcher: "rofi", menu: "walker" } );
 testkit.check( "launcher and menu: install what is needed, then record the choice", ids( p ) == "apps,launcher,menu" && cmd( p, "apps" ) == "bxrig install rofi walker" && cmd( p, "launcher" ) == "bxrig runner set rofi" && cmd( p, "menu" ) == "bxrig runner menu-set walker" );
@@ -52,7 +54,7 @@ p = ip.plan( { launcher: "noctalia", menu: "rofi" } );
 testkit.check( "Noctalia needs no package of its own", cmd( p, "apps" ) == "bxrig install rofi" && cmd( p, "launcher" ) == "bxrig runner set noctalia" );
 
 p = ip.plan( { ssh_key: true, natural_scroll: false, layouts: [] } );
-testkit.check( "ssh_key is now a step (optional: ssh-keygen asks for a passphrase), no longer pending", p.pending.len() == 0 && cmd( p, "ssh-key" ) == "bxrig ssh key" && ( p.steps[ 1 ].optional ?: false ) );
+testkit.check( "ssh_key is now a step (optional: ssh-keygen asks for a passphrase), no longer pending", p.pending.len() == 0 && cmd( p, "ssh-key" ) == "bxrig ssh key" && ( first( p ).optional ?: false ) );
 testkit.check( "power_setup is a step that skips itself without a battery", cmd( ip.plan( { power_setup: true } ), "power-setup" ) == "bxrig power setup" && find( "power-setup", ids( ip.plan( {} ) ) ) == 0 );
 testkit.check( "input_devices: each choice but none is one optional `input offer` step, no answer adds nothing", cmd( ip.plan( { input_devices: "detect" } ), "input-devices" ) == "bxrig input offer --for=detect" && cmd( ip.plan( { input_devices: "logitech" } ), "input-devices" ) == "bxrig input offer --for=logitech" && cmd( ip.plan( { input_devices: "both" } ), "input-devices" ) == "bxrig input offer --for=both" && find( "input-devices", ids( ip.plan( { input_devices: "none" } ) ) ) == 0 && find( "input-devices", ids( ip.plan( {} ) ) ) == 0 && ( ip.plan( { input_devices: "apple" } ).steps[ 1 ].optional ?: false ) );
 p = ip.plan( { desktops: "hyprland", input_devices: "apple", gestures: true } );
@@ -97,7 +99,7 @@ testkit.check( "JavaScript: Node through nvm, Bun and Deno as catalog apps", ids
 testkit.check( "JavaScript without a runtime answer means Node", cmd( ip.plan( { toolchains: [ "javascript" ] } ), "toolchain-node" ) == "bxrig toolchain node" );
 testkit.check( "Bun only is just the catalog app", ids( ip.plan( { toolchains: [ "javascript" ], js_runtimes: [ "bun" ] } ) ) == "apps" );
 testkit.check( "python is the python profile", cmd( ip.plan( { toolchains: [ "python" ] } ), "toolchain-python" ) == "bxrig profile-install python" );
-testkit.check( "no toolchains, no steps", ip.plan( { toolchains: [] } ).steps.len() == 0 );
+testkit.check( "no toolchains: only the java setup (jenv and 21)", ids( ip.plan( { toolchains: [] } ) ) == "" && cmd( ip.plan( { toolchains: [] } ), "java" ) == "bxrig java setup" );
 
 testkit.check( "Podman is the containers profile", cmd( ip.plan( { container_engine: "podman" } ), "containers" ) == "bxrig profile-install containers" );
 testkit.check( "Docker is one extra package", cmd( ip.plan( { container_engine: "docker" } ), "apps" ) == "bxrig install docker" && find( "containers", ids( ip.plan( { container_engine: "docker" } ) ) ) == 0 );
@@ -136,10 +138,15 @@ p = ip.plan( { app_mode: "defaults", boxlang_vscode: true } );
 testkit.check( "the BoxLang extension for VS Code is an optional step, and the wizard no longer installs BoxLang modules", cmd( p, "boxlang-vscode" ) == "bxrig boxlang vscode" && cmd( p, "boxlang-modules" ) == "" );
 p = ip.plan( { app_mode: "defaults", update_channel: "beta", update_notifications: true } );
 testkit.check( "update channel and notifications", cmd( p, "update-channel" ) == "bxrig update channel beta" && cmd( p, "update-notifications" ) == "bxrig update notifications on" );
-p = ip.plan( { app_mode: "defaults", scheduler: true, boxlang_vscode: true } );
+p = ip.plan( { app_mode: "defaults", toolchains: [], scheduler: true, boxlang_vscode: true } );
 idl = p.steps.map( function( s ) { return s.id; } );
 testkit.check( "BoxLang is installed once, before the steps that run it", arrayFind( idl, "boxlang" ) > 0 && arrayFind( idl, "boxlang" ) < arrayFind( idl, "boxlang-vscode" ) && arrayFind( idl, "boxlang" ) < arrayFind( idl, "scheduler" ) && idl.filter( function( i ) { return i == "boxlang"; } ).len() == 1 );
-testkit.check( "Java 21 comes right before BoxLang", arrayFind( idl, "jdk" ) > 0 && arrayFind( idl, "jdk" ) + 1 == arrayFind( idl, "boxlang" ) );
+testkit.check( "Java comes right before BoxLang", arrayFind( idl, "java" ) > 0 && arrayFind( idl, "java" ) + 1 == arrayFind( idl, "boxlang" ) );
+p = ip.plan( { toolchains: [] } );
+testkit.check( "Java is always set up: jenv and 21, no extra versions unless Java is a toolchain", cmd( p, "java" ) == "bxrig java setup" );
+p = ip.plan( { toolchains: [ "java" ], java_versions: [ "25", "17" ] } );
+testkit.check( "Java versions picked in the wizard go to java setup", cmd( p, "java" ) == "bxrig java setup --versions=25,17" );
+testkit.check( "Java 25 is the default extra when Java is a toolchain", cmd( ip.plan( { toolchains: [ "java" ] } ), "java" ) == "bxrig java setup --versions=25" );
 testkit.check( "no BoxLang step when nothing needs it", arrayFind( ip.plan( { app_mode: "defaults" } ).steps.map( function( s ) { return s.id; } ), "boxlang" ) == 0 );
 p = ip.plan( { app_mode: "defaults", agent_skills: [ "bxrig", "boxlang" ] } );
 testkit.check( "agent skills are one optional step", cmd( p, "agent-skills" ) == "bxrig skills install bxrig boxlang" );
@@ -180,7 +187,7 @@ testkit.check( "local model apps you tick are installed as they are", cmd( ip.pl
 testkit.check( "Plasma with an agent also installs Yakuake for the pull-down AI shell", cmd( ip.plan( { desktops: "plasma", ai_agents: [ "claude-code" ] } ), "apps" ) == "bxrig install claude-code tmux yakuake" && cmd( ip.plan( { desktops: "both", ai_agents: [ "claude-code" ] } ), "apps" ) == "bxrig install claude-code tmux yakuake" );
 testkit.check( "Hyprland only, or Plasma without agents, adds no Yakuake", cmd( ip.plan( { desktops: "hyprland", ai_agents: [ "claude-code" ] } ), "apps" ) == "bxrig install claude-code tmux" && find( "apps", ids( ip.plan( { desktops: "plasma" } ) ) ) == 0 );
 p = ip.plan( { ai_local_setup: "now" } );
-testkit.check( "local AI now: one optional ai setup step with the balanced pick", ids( p ) == "ai-setup" && cmd( p, "ai-setup" ) == "bxrig ai setup --yes" && p.steps[ 1 ].optional );
+testkit.check( "local AI now: one optional ai setup step with the balanced pick", ids( p ) == "ai-setup" && cmd( p, "ai-setup" ) == "bxrig ai setup --yes" && first( p ).optional );
 testkit.check( "local AI: all three picks and the tune when asked", cmd( ip.plan( { ai_local_setup: "now", ai_local_picks: "all", ai_local_tune: true } ), "ai-setup" ) == "bxrig ai setup --yes --picks=all --tune" );
 testkit.check( "local AI later (the default): no step", find( "ai-setup", ids( ip.plan( { ai_local_setup: "later", ai_local_tune: true } ) ) ) == 0 && find( "ai-setup", ids( ip.plan( {} ) ) ) == 0 );
 bp = ip.plan( { ai_local_setup: "now", boxy: "now" } );

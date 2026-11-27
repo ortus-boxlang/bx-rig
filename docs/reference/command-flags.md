@@ -252,7 +252,7 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `timemachine` | `--local` | bool |  |
 | `timemachine` | `--packages` | any |  |
 | `timemachine` | `--path` | any |  |
-| `java` | `--unset` | bool |  |
+| `java` | `--versions` | value | `25` |
 | `mail` | `--keep` | bool |  |
 | `mail` | `--keep-data` | bool |  |
 | `mail` | `--limit` | value |  |
