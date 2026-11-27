@@ -11,7 +11,7 @@ for c in $cmds; do
 	rc=0; out="$(run "$binary" "$c" --zz-bogus-flag 2>&1)" || rc=$?
 	[[ $rc == 2 ]] || fail "$c --zz-bogus-flag exited $rc, want 2: $out"
 	grep -q "Unknown option: --zz-bogus-flag" <<<"$out" || fail "$c: no 'Unknown option' message: $out"
-	grep -q "^Usage: bxrig " <<<"$out" || fail "$c: no usage line: $out"
+	grep -q "^Usage:" <<<"$out" || fail "$c: no usage line: $out"
 	n=$((n+1))
 done
 # global flags are never rejected as unknown

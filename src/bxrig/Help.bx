@@ -1,43 +1,158 @@
-// `bxrig help` (every command by group) and `bxrig help NAME` (usage, examples, notes). The data is docs/reference/cli.json,
-// embedded in HelpData.bx by bootstrap/gen-docs.sh, so the terminal and the docs site say the same thing.
-// Exit: 0 shown, 2 unknown command.
+/**
+ * `bxrig help`, `bxrig --help` and `bxrig COMMAND --help`: every command by group, and a page per command (usage one line per form,
+ * flags, examples, notes). The data is docs/reference/cli.json, embedded in HelpData.bx by bootstrap/gen-docs.sh, so the terminal and the
+ * docs site say the same thing. Drawn with the ui toolkit (bxrig.ui): colour, width and unicode follow the terminal; piped output is plain.
+ * Exit: 0 shown, 2 unknown command.
+ */
 class Help {
-	function init( cli ) {
+
+	/**
+	 * @cli The command line context of this run.
+	 * @ui Optional ui toolkit (tests pass one with a fixed width and colour).
+	 */
+	function init( cli, ui = "" ) {
 		variables.cli = arguments.cli;
 		variables.data = jsonDeserialize( new bxrig.HelpData().json() );
+		variables.ui = isSimpleValue( arguments.ui ) ? new bxrig.ui.Ui() : arguments.ui;
+		variables.roles = [ "accent", "accent2", "ok", "info", "warn", "err", "accent" ];
 		return this;
 	}
 
+	/**
+	 * The group and entry of a command, or an empty struct.
+	 * @name The command name.
+	 */
 	function find( name ) {
 		for ( var g in variables.data.groups ) for ( var c in g.commands ) if ( c.name == arguments.name ) return { group: g, command: c };
 		return {};
 	}
 
-	function pad( text, width ) {
-		var t = arguments.text;
-		while ( len( t ) < arguments.width ) t &= " ";
+	/**
+	 * The first sentence of a summary, as one line.
+	 * @text The summary.
+	 */
+	function oneLine( text ) {
+		var t = trim( arguments.text );
+		var m = reFind( "\.( |$)", t, 1, true );
+		if ( m.pos[ 1 ] > 0 && m.pos[ 1 ] < len( t ) ) t = left( t, m.pos[ 1 ] );
 		return t;
 	}
 
+	/**
+	 * The BxRig wordmark in the brand gradient with the version in a badge under it. Empty when the output is not a terminal.
+	 * @return Array of lines.
+	 */
+	function banner() {
+		var out = [];
+		if ( !CLIIsTerminal() ) return out;
+		var brand = new bxrig.Brand();
+		var art = variables.ui.width() >= brand.width( "large" ) + 2 ? brand.large() : brand.small();
+		for ( var l in brand.ansi( art ) ) out.append( l );
+		out.append( "" );
+		var version = new bxrig.util.Version().current();
+		var blocks = new bxrig.ui.Blocks( variables.ui );
+		out.append( blocks.badge( "v" & version, "accent" ) & "  " & variables.ui.style( brand.tagline(), "dim" ) );
+		return out;
+	}
+
+	/**
+	 * The page of every command, by group: UPPERCASE coloured title, bold name, one dim line each.
+	 * @return Array of lines.
+	 */
+	function indexLines() {
+		var ui = variables.ui;
+		var out = banner();
+		if ( out.len() ) out.append( "" );
+		var nw = 0;
+		for ( var g in variables.data.groups ) for ( var c in g.commands ) nw = max( nw, len( c.name ) );
+		var room = max( 8, ui.width() - nw - 8 );
+		var gi = 0;
+		for ( var gr in variables.data.groups ) {
+			var role = variables.roles[ ( gi mod variables.roles.len() ) + 1 ];
+			gi++;
+			out.append( ui.style( "  " & uCase( gr.title ), "bold " & role ) );
+			for ( var cm in gr.commands ) out.append( "    " & ui.style( ui.align( cm.name, nw ), "bold" ) & "   " & ui.style( ui.truncate( structKeyExists( cm, "brief" ) ? cm.brief : oneLine( cm.summary ), room ), "dim" ) );
+			out.append( "" );
+		}
+		out.append( "  " & ui.style( "bxrig COMMAND --help", "bold" ) );
+		for ( var tl in ui.wrap( "shows a command's page. --json, --yes and --dry-run work everywhere; changes to the system need --yes. bxrig --version prints the version.", max( 20, ui.width() - 6 ) ) ) out.append( "    " & ui.style( tl, "dim" ) );
+		out.append( "" );
+		for ( var fl in ui.wrap( "Docs: " & new bxrig.util.Urls().commandsReference() & ". Supported: " & new bxrig.util.Distro().supportedText() & ".", max( 20, ui.width() - 4 ) ) ) out.append( "  " & ui.style( fl, "dim" ) );
+		return out;
+	}
+
+	/**
+	 * The usage forms of a command, one per entry, narrowed to the words after the command when there are any.
+	 * @name The command name.
+	 * @sub The words after the command name.
+	 */
+	function forms( name, sub ) {
+		var all = new bxrig.CommandSpec().variants( arguments.name );
+		if ( !arguments.sub.len() ) return all;
+		var want = [ arguments.name ];
+		for ( var w in arguments.sub ) want.append( w );
+		var hit = all.filter( function( v ) {
+				var vw = listToArray( v, " " );
+				if ( vw.len() < want.len() ) return false;
+				for ( var j = 1; j <= want.len(); j++ ) if ( compare( vw[ j ], want[ j ] ) != 0 ) return false;
+				return true;
+			} );
+		return hit.len() ? hit : all;
+	}
+
+	/**
+	 * The page of one command.
+	 * @hit The result of find().
+	 * @sub The words after the command name (narrow the usage to them).
+	 * @return Array of lines.
+	 */
+	function pageLines( hit, sub ) {
+		var ui = variables.ui;
+		var cmd = arguments.hit.command;
+		var w = max( 30, ui.width() - 4 );
+		var out = [];
+		out.append( ui.style( "bxrig " & cmd.name, "bold accent" ) & "  " & ui.style( arguments.hit.group.title, "dim" ) );
+		out.append( "" );
+		for ( var sl in ui.wrap( cmd.summary, w ) ) out.append( "  " & sl );
+		out.append( "" );
+		out.append( ui.style( "  USAGE", "bold accent" ) );
+		for ( var f in forms( cmd.name, arguments.sub ) ) out.append( "    " & ui.style( "bxrig", "dim" ) & " " & ui.style( ui.truncate( f, w - 6 ), "bold" ) );
+		var flags = structKeyExists( cmd, "flags" ) ? cmd.flags : [];
+		out.append( "" );
+		out.append( ui.style( "  FLAGS", "bold accent2" ) );
+		if ( flags.len() ) {
+			var items = [];
+			for ( var fl in flags ) items.append( "--" & fl.name & ( fl.type == "value" ? "=VALUE" : "" ) );
+			for ( var cl in ui.columns( items, "", { width: w } ) ) out.append( "    " & cl );
+			out.append( "" );
+		}
+		for ( var gl in ui.wrap( "--json --yes --dry-run --force --quiet (every command)", w ) ) out.append( "    " & ui.style( gl, "dim" ) );
+		if ( cmd.mutates ) {
+			out.append( "" );
+			for ( var cl2 in new bxrig.ui.Blocks( ui ).callout( "warn", "Changes the system: needs --yes. Without it you get the plan (exit 2); --dry-run shows it and exits 0.", { width: w } ) ) out.append( "  " & cl2 );
+		}
+		if ( cmd.examples.len() ) {
+			out.append( "" );
+			out.append( ui.style( "  EXAMPLES", "bold ok" ) );
+			for ( var e in cmd.examples ) out.append( "    " & ui.style( ui.truncate( e, w - 4 ), "info" ) );
+		}
+		if ( structKeyExists( cmd, "note" ) && len( cmd.note ) ) {
+			out.append( "" );
+			out.append( ui.style( "  NOTES", "bold warn" ) );
+			for ( var nl in ui.wrap( cmd.note, w ) ) out.append( "    " & ui.style( nl, "dim" ) );
+		}
+		return out;
+	}
+
+	/**
+	 * Shows the command list (no words) or the page of a command.
+	 * @words The command name and the words after it.
+	 * @asJson True for JSON output.
+	 */
 	function run( words, asJson = false ) {
 		if ( !arguments.words.len() ) {
 			if ( arguments.asJson ) { println( variables.cli.envelope( "help", 0, variables.data ) ); return new bxrig.util.Exit().ok(); }
-			var width = 0;
-			for ( var g in variables.data.groups ) for ( var c in g.commands ) if ( len( c.name ) > width ) width = len( c.name );
-			if ( CLIIsTerminal() ) { for ( var bl in new bxrig.Brand().ansi( new bxrig.Brand().small() ) ) println( bl ); }
-			println( new bxrig.Brand().oneLiner() );
-			println( new bxrig.Brand().description() );
-			println( "" );
-			println( "Usage: bxrig COMMAND [OPTIONS]" );
-			println( "Every command takes --json and --help. Changes to the system need --yes; --dry-run shows the plan. bxrig --version prints the version." );
-			for ( var gr in variables.data.groups ) {
-				println( "" );
-				println( gr.title & ": " & gr.blurb );
-				for ( var cm in gr.commands ) println( "  " & pad( cm.name, width + 2 ) & listFirst( cm.summary, "." ) & "." );
-			}
-			println( "" );
-			println( "More: bxrig help COMMAND    " & new bxrig.util.Urls().commandsReference() );
-			println( "Supported: " & new bxrig.util.Distro().supportedText() & ". Each has its own catalog of apps (bxrig catalog coverage)." );
+			for ( var l in indexLines() ) println( l );
 			return new bxrig.util.Exit().ok();
 		}
 		var hit = find( arguments.words[ 1 ] );
@@ -46,15 +161,10 @@ class Help {
 			else { println( "error: unknown command " & arguments.words[ 1 ] ); println( "Run bxrig help to list the commands." ); }
 			return new bxrig.util.Exit().usage();
 		}
-		var cmd = hit.command;
-		if ( arguments.asJson ) { println( variables.cli.envelope( "help", 0, { group: hit.group.title, command: cmd } ) ); return new bxrig.util.Exit().ok(); }
-		println( "bxrig " & cmd.name & ": " & cmd.summary );
-		println( "" );
-		println( "Usage:" );
-		for ( var u in cmd.usage ) println( "  bxrig " & u );
-		if ( cmd.mutates ) { println( "" ); println( "Changes the system: needs --yes (without it you get the plan, exit 2; --dry-run shows it and exits 0)." ); }
-		if ( cmd.examples.len() ) { println( "" ); println( "Examples:" ); for ( var e in cmd.examples ) println( "  " & e ); }
-		if ( structKeyExists( cmd, "note" ) ) { println( "" ); println( cmd.note ); }
+		if ( arguments.asJson ) { println( variables.cli.envelope( "help", 0, { group: hit.group.title, command: hit.command } ) ); return new bxrig.util.Exit().ok(); }
+		var sub = [];
+		for ( var i = 2; i <= arguments.words.len(); i++ ) sub.append( arguments.words[ i ] );
+		for ( var pl in pageLines( hit, sub ) ) println( pl );
 		return new bxrig.util.Exit().ok();
 	}
 }

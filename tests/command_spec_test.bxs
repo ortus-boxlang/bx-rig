@@ -15,7 +15,7 @@ testkit.check( "usage for a whole command", find( "pkg search", s.usage( "pkg" )
 testkit.check( "an unknown verb falls back to the command's usage", find( "pkg install", s.usage( "pkg nonsense" ) ) > 0 );
 all = true;
 for ( g in deserializeJSON( new bxrig.HelpData().json() ).groups ) for ( c in g.commands ) {
-	if ( !len( s.usage( c.name ) ) || left( s.usage( c.name ), 13 ) != "Usage: bxrig " || s.variants( c.name ).len() == 0 ) { all = false; println( "no usage for " & c.name ); }
+	if ( !len( s.usage( c.name ) ) || left( s.usage( c.name ), 6 ) != "Usage:" || s.variants( c.name ).len() == 0 ) { all = false; println( "no usage for " & c.name ); }
 	for ( f in c.flags ) if ( s.unknownFlags( c.name, [ f.name ] ).len() ) { all = false; println( "flag not accepted: " & c.name & " --" & f.name ); }
 }
 testkit.check( "every command has usage and accepts its own flags", all );

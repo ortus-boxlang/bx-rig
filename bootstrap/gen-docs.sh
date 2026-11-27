@@ -37,6 +37,7 @@ for g in d['groups']:
         for f in c.get('flags',[]):
             if f['type'] not in ('bool','value','any'): problems.append('bad flag type for %s --%s'%(c['name'],f['name']))
         if not c['summary'].endswith('.'): problems.append('the summary of %s should end with a full stop'%c['name'])
+        if not c.get('brief') or len(c['brief'])>60: problems.append('%s needs a brief of at most 60 characters (the one line in bxrig help)'%c['name'])
         if '—' in json.dumps(c,ensure_ascii=False): problems.append('em dash in '+c['name'])
 if problems:
     sys.stderr.write('\n'.join(problems)+'\n'); sys.exit(1)

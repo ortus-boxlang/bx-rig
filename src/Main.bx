@@ -26,7 +26,7 @@ class {
 			CLIExit( xit.ok() );
 		}
 		if ( !passes && ( structKeyExists( args.options, "help" ) || structKeyExists( args.options, "h" ) ) ) {
-			CLIExit( new bxrig.Help( cli ).run( p.len() ? [ p[ 1 ] ] : [], asJson ) );
+			CLIExit( new bxrig.Help( cli ).run( p, asJson ) );
 		}
 		if ( !structIsEmpty( args.options ) && !agentsPass && !( cmd == "secrets" && p.len() >= 2 && p[ 2 ] == "run" ) && !( cmd == "scheduler" && p.len() >= 2 && p[ 2 ] == "add" && arrayFind( rawArgs, "--" ) ) ) {
 			var spec = new bxrig.CommandSpec();

@@ -1,0 +1,31 @@
+// bxrig.Help: the command list and a command page, drawn with a fixed ui (plain, fixed width). Run from src/: (cd src && matchbox ../tests/help_test.bxs)
+testkit = new lib.Check( "help" );
+nl = chr( 10 );
+mk = function( w, color = false ) { return new bxrig.Help( {}, new bxrig.ui.Ui( { color: color, truecolor: true, width: w, unicode: true } ) ); };
+fits = function( ui, lines, w ) { for ( var l in lines ) if ( ui.textWidth( l ) > w ) return false; return true; };
+
+h = mk( 80 );
+idx = h.indexLines();
+text = idx.toList( nl );
+testkit.check( "index: an UPPERCASE title per group", find( "  START HERE", text ) > 0 && find( "  SYSTEM AND SECURITY", text ) > 0 && find( "  EVERYDAY TOOLS", text ) > 0 );
+testkit.check( "index: a command, then its brief on the same line", find( "    java ", text ) > 0 && find( "Java versions: jenv, SDKMAN, Temurin", text ) > 0 );
+for ( w in [ 40, 60, 80, 120 ] ) {
+	ui = new bxrig.ui.Ui( { color: false, truecolor: true, width: w, unicode: true } );
+	testkit.check( "index fits " & w & " columns", fits( ui, mk( w ).indexLines(), w ) );
+}
+testkit.check( "index: no escapes when colour is off", !find( chr( 27 ), text ) );
+testkit.check( "index: escapes when colour is on", find( chr( 27 ), mk( 80, true ).indexLines().toList( nl ) ) > 0 );
+
+hit = h.find( "java" );
+page = h.pageLines( hit, [] ).toList( nl );
+testkit.check( "page: title, usage one form per line, flags, examples, notes", find( "bxrig java", page ) > 0 && find( "  USAGE", page ) > 0 && find( "    bxrig java setup", page ) > 0 && find( "    bxrig java global", page ) > 0 && find( "  FLAGS", page ) > 0 && find( "--versions=VALUE", page ) > 0 && find( "  EXAMPLES", page ) > 0 && find( "  NOTES", page ) > 0 );
+testkit.check( "page: a command that changes the system says so", find( "Changes the system", page ) > 0 );
+testkit.check( "page: --json, --yes and --dry-run are listed as global", find( "--json --yes --dry-run --force --quiet", page ) > 0 );
+narrow = h.pageLines( hit, [ "global" ] ).toList( nl );
+testkit.check( "page: words after the command narrow the usage", find( "bxrig java global", narrow ) > 0 && find( "    bxrig java setup [", narrow ) == 0 );
+for ( w in [ 40, 60, 80, 120 ] ) {
+	ui = new bxrig.ui.Ui( { color: false, truecolor: true, width: w, unicode: true } );
+	testkit.check( "ai page fits " & w & " columns", fits( ui, mk( w ).pageLines( mk( w ).find( "ai" ), [] ), w ) );
+}
+testkit.check( "an unknown command is not found", structIsEmpty( h.find( "nonsense" ) ) );
+testkit.done();

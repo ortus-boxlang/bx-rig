@@ -79,7 +79,7 @@ class CommandSpec {
 		return listToArray( arguments.s, " " );
 	}
 
-	// "Usage: bxrig ..." for a key such as "pkg" (every variant) or "pkg remove" (the variants that start with those words).
+	// "Usage: bxrig ..." for a key such as "pkg" (every variant, one per line) or "pkg remove" (the variants that start with those words).
 	// Narrows from the right until something matches, so an unknown verb still gives the command's usage.
 	function usage( key ) {
 		var w = words( arguments.key );
@@ -92,7 +92,9 @@ class CommandSpec {
 					for ( var j = 1; j <= want.len(); j++ ) if ( compare( vw[ j ], want[ j ] ) != 0 ) return false;
 					return true;
 				} );
-			if ( hit.len() ) return "Usage: bxrig " & hit.toList( "  |  " );
+			if ( hit.len() == 1 ) return "Usage: bxrig " & hit[ 1 ];
+			// several forms: one per line (a single wrapped line of them is unreadable)
+			if ( hit.len() ) return "Usage:" & chr( 10 ) & "  bxrig " & hit.toList( chr( 10 ) & "  bxrig " );
 		}
 		return "Usage: bxrig " & arguments.key;
 	}
