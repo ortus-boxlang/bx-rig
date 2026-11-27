@@ -8,6 +8,7 @@
 				{
 					"name": "init",
 					"summary": "The setup wizard: asks the questions, shows a review, then installs on a progress screen (press v for the live log) and keeps a log file.",
+					"brief": "The setup wizard",
 					"usage": [
 						"init [--from=FILE] [--fresh | --rerun] [--plain] | init --answers=FILE [--yes [--screen]] [--dry-run] [--json] | init --print-answers [--from-system] [--json] | init --export=FILE [--force]"
 					],
@@ -79,6 +80,7 @@
 				{
 					"name": "refresh",
 					"summary": "Put a managed config back to what BxRig ships, with a backup first and without installing anything.",
+					"brief": "Put a managed config back to what BxRig ships",
 					"usage": [
 						"refresh hyprland|noctalia|terminals|shell|nvim|theme|all [--starter] [--force] [--yes] [--dry-run] [--json]",
 						"refresh list [--json]"
@@ -101,6 +103,7 @@
 				{
 					"name": "reinstall",
 					"summary": "Run the setup wizard again from your saved answers (the same as init --rerun).",
+					"brief": "Run the wizard again from your saved answers",
 					"usage": [
 						"reinstall [--yes] [--dry-run] [--json]"
 					],
@@ -163,6 +166,7 @@
 				{
 					"name": "wizard",
 					"summary": "Wizard pieces for scripts: render the demo screens or a pages file.",
+					"brief": "Wizard pieces for scripts",
 					"usage": [
 						"wizard --demo [--out=FILE] | --pages=FILE [--out=FILE] [--answers=FILE]"
 					],
@@ -192,6 +196,7 @@
 				{
 					"name": "status",
 					"summary": "What is installed and configured on this machine, compared with what BxRig would do.",
+					"brief": "What is installed and configured here",
 					"usage": [
 						"status [--json]"
 					],
@@ -205,6 +210,7 @@
 				{
 					"name": "doctor",
 					"summary": "Checks every tool BxRig needs (git, curl, unzip, jq, Java 21, mvm, bvm, BoxLang, MatchBox, Rust, Cargo), one status line each. Exit 4 when one is missing. --dev adds advice on your developer setup.",
+					"brief": "Check every tool BxRig needs",
 					"usage": [
 						"doctor [--dev] [--json]"
 					],
@@ -225,6 +231,7 @@
 				{
 					"name": "update",
 					"summary": "Check for a BxRig update, apply it, pick a channel, turn the daily notification on or off.",
+					"brief": "Update BxRig, pick a channel, notifications",
 					"usage": [
 						"update check [--notify] | apply [--yes] | channel [stable|beta] | notifications on|off|status [--json]"
 					],
@@ -246,6 +253,7 @@
 				{
 					"name": "scheduler",
 					"summary": "One scheduler on the BoxLang JVM: the update check, backups, BoxLang checks and your own tasks, with run history.",
+					"brief": "One scheduler: updates, backups, your own tasks",
 					"usage": [
 						"scheduler [status|list] [--group=G] [--json]",
 						"scheduler show NAME [--limit=N] | history NAME [--limit=N] [--json]",
@@ -289,6 +297,7 @@
 				{
 					"name": "ascii",
 					"summary": "Text in large letters (FIGlet fonts) or a picture as text art, painted with a colour or a gradient.",
+					"brief": "Text or pictures as colourful terminal art",
 					"usage": [
 						"ascii TEXT... [--font=dos-rebel|ansi-shadow|calvin-s] [--color=COLOR | --gradient=SPEC] [--direction=horizontal|vertical|diagonal] [--plain] [--json]",
 						"ascii fonts [--json]",
@@ -342,6 +351,7 @@
 				{
 					"name": "about",
 					"summary": "About this rig: the BxRig laptop logo beside the hardware, your dev stack and the look (fastfetch).",
+					"brief": "The BxRig laptop logo beside your hardware",
 					"usage": [
 						"about [--wait] [--plain] [--json]"
 					],
@@ -366,6 +376,7 @@
 				{
 					"name": "banner",
 					"summary": "The BXRIG wordmark in block letters, painted in the colors of the current theme (the retro greeting).",
+					"brief": "The BXRIG wordmark in the theme's colours",
 					"usage": [
 						"banner [--plain] [--json]"
 					],
@@ -386,6 +397,7 @@
 				{
 					"name": "version",
 					"summary": "The BxRig version and build.",
+					"brief": "The BxRig version and build",
 					"usage": [
 						"version [--json]"
 					],
@@ -398,6 +410,7 @@
 				{
 					"name": "menu",
 					"summary": "The control center: every command as a menu on your launcher (Rofi, Walker, Wofi, Fuzzel or Vicinae).",
+					"brief": "The control center as a launcher menu",
 					"usage": [
 						"menu | menu items [--json] | menu search TEXT [--json] | menu open [ROUTE] [--json]",
 						"menu ids [--json] | menu file [--yes] [--dry-run] [--json]"
@@ -416,6 +429,7 @@
 				{
 					"name": "apps",
 					"summary": "Your installed catalog apps, as a list or a launcher grid.",
+					"brief": "Your installed catalog apps",
 					"usage": [
 						"apps | apps list [--json]"
 					],
@@ -433,6 +447,7 @@
 				{
 					"name": "help",
 					"summary": "This list, or the usage of one command. `bxrig --help` and `bxrig -h` print the same list.",
+					"brief": "This list, or one command's page",
 					"usage": [
 						"help [COMMAND]"
 					],
@@ -462,6 +477,7 @@
 				{
 					"name": "install",
 					"summary": "Install catalog apps by id (or a whole group or profile).",
+					"brief": "Install catalog apps",
 					"usage": [
 						"install [NAME] [--optional] [--shell=hyprland|plasma|all] [--json] [--yes] [--dry-run]"
 					],
@@ -493,6 +509,7 @@
 				{
 					"name": "remove",
 					"summary": "Uninstall catalog apps (their packages or web launchers).",
+					"brief": "Uninstall catalog apps",
 					"usage": [
 						"remove ID_OR_PACKAGE... [--yes] [--dry-run] [--json]"
 					],
@@ -511,6 +528,7 @@
 				{
 					"name": "pkg",
 					"summary": "Search, inspect, install and remove any package from the repositories and the AUR.",
+					"brief": "Search and install any package, AUR too",
 					"usage": [
 						"pkg search TEXT [--source=all|repo|aur] [--limit=N] | info NAME | installed [--explicit] | install NAME... [--aur] [--yes] [--dry-run] | remove NAME... [--yes] [--dry-run] [--json]"
 					],
@@ -546,6 +564,7 @@
 				{
 					"name": "catalog",
 					"summary": "Browse the app catalog.",
+					"brief": "Browse the app catalog",
 					"usage": [
 						"catalog list [--group=G] [--category=C] [--tier=default|optional] [--kind=K] [--source=S] [--distro=D] [--json] | show ID [--distro=D] | groups | check | coverage [--distro=D] | version",
 						"catalog map suse|debian|ubuntu [--write] [--json]"
@@ -596,6 +615,7 @@
 				{
 					"name": "plan",
 					"summary": "Show what installing would do, without doing it.",
+					"brief": "Show what installing would do",
 					"usage": [
 						"plan [NAME] [--optional] [--shell=hyprland|plasma|all] [--json]"
 					],
@@ -626,6 +646,7 @@
 				{
 					"name": "install-plan",
 					"summary": "The install plan for the selection (same as plan).",
+					"brief": "The install plan (same as plan)",
 					"usage": [
 						"install-plan [NAME] [--optional] [--shell=hyprland|plasma|all] [--json]"
 					],
@@ -653,6 +674,7 @@
 				{
 					"name": "optional-plan",
 					"summary": "The plan for the optional apps.",
+					"brief": "The plan for the optional apps",
 					"usage": [
 						"optional-plan [--shell=hyprland|plasma|all] [--json]"
 					],
@@ -680,6 +702,7 @@
 				{
 					"name": "profile-plan",
 					"summary": "The plan for one profile.",
+					"brief": "The plan for one profile",
 					"usage": [
 						"profile-plan NAME [--optional] [--shell=hyprland|plasma|all] [--json]"
 					],
@@ -709,6 +732,7 @@
 				{
 					"name": "profile-install-plan",
 					"summary": "The install steps for one profile.",
+					"brief": "The install steps of one profile",
 					"usage": [
 						"profile-install-plan NAME [--optional] [--shell=hyprland|plasma|all] [--json]"
 					],
@@ -736,6 +760,7 @@
 				{
 					"name": "profile-install",
 					"summary": "Install a profile (jvm, containers, terminal, editors, ...).",
+					"brief": "Install a profile (jvm, terminal, editors...)",
 					"usage": [
 						"profile-install NAME [--optional] [--shell=hyprland|plasma|all] [--json] [--yes] [--dry-run]"
 					],
@@ -765,6 +790,7 @@
 				{
 					"name": "optional-install",
 					"summary": "Install the optional apps of the catalog.",
+					"brief": "Install the optional catalog apps",
 					"usage": [
 						"optional-install [--shell=hyprland|plasma|all] [--json] [--yes] [--dry-run]"
 					],
@@ -792,6 +818,7 @@
 				{
 					"name": "profile-list",
 					"summary": "List the profiles.",
+					"brief": "List the profiles",
 					"usage": [
 						"profile-list [--json]"
 					],
@@ -819,6 +846,7 @@
 				{
 					"name": "optional-list",
 					"summary": "List the optional apps.",
+					"brief": "List the optional apps",
 					"usage": [
 						"optional-list [--json]"
 					],
@@ -846,6 +874,7 @@
 				{
 					"name": "desktop-list",
 					"summary": "List the desktop apps in the catalog.",
+					"brief": "List the desktop apps",
 					"usage": [
 						"desktop-list [--json]"
 					],
@@ -873,6 +902,7 @@
 				{
 					"name": "tui-list",
 					"summary": "List the terminal apps in the catalog.",
+					"brief": "List the terminal apps",
 					"usage": [
 						"tui-list [--json]"
 					],
@@ -900,6 +930,7 @@
 				{
 					"name": "web-list",
 					"summary": "List the web apps in the catalog.",
+					"brief": "List the web apps",
 					"usage": [
 						"web-list [--json]"
 					],
@@ -927,6 +958,7 @@
 				{
 					"name": "package-status",
 					"summary": "Whether a catalog app is installed.",
+					"brief": "Is a catalog app installed",
 					"usage": [
 						"package-status ID"
 					],
@@ -956,6 +988,7 @@
 				{
 					"name": "package-source",
 					"summary": "Where a catalog app comes from (pacman, AUR, PKGBUILD, web).",
+					"brief": "Where a catalog app comes from",
 					"usage": [
 						"package-source ID"
 					],
@@ -985,6 +1018,7 @@
 				{
 					"name": "dev-plan",
 					"summary": "What the developer toolchain install would use: Java 21, Maven, Gradle, BVM, MVM.",
+					"brief": "What the developer toolchain install uses",
 					"usage": [
 						"dev-plan"
 					],
@@ -995,6 +1029,7 @@
 				{
 					"name": "prerequisites",
 					"summary": "The same check as doctor: one status line per tool BxRig needs.",
+					"brief": "The doctor check, one line per tool",
 					"usage": [
 						"prerequisites [--json]"
 					],
@@ -1005,6 +1040,7 @@
 				{
 					"name": "apps-doctor",
 					"summary": "Checks the catalog apps for missing or broken installs.",
+					"brief": "Find missing or broken catalog apps",
 					"usage": [
 						"apps-doctor [--json]"
 					],
@@ -1015,6 +1051,7 @@
 				{
 					"name": "web",
 					"summary": "Web apps: create one from a URL, install a set (Google, Microsoft, Apple, BoxLang).",
+					"brief": "Web apps from a URL, or a ready set",
 					"usage": [
 						"web add [NAME URL] [--browser=brave|chromium|google-chrome|edge|firefox] [--yes] | list | rm NAME [--yes] | install google|microsoft|apple|boxlang|all [--yes] [--dry-run] [--json]"
 					],
@@ -1034,6 +1071,7 @@
 				{
 					"name": "toolchain",
 					"summary": "Language toolchains outside the always-installed BoxLang one (Node via nvm, Rust, Python, Go, PHP).",
+					"brief": "Node, Rust, Python, Go and PHP toolchains",
 					"usage": [
 						"toolchain node [--yes] [--dry-run] [--json]   (Bun and Deno: bxrig install bun deno)"
 					],
@@ -1074,6 +1112,7 @@
 				{
 					"name": "setup",
 					"summary": "Set up a desktop: Hyprland with Noctalia, Plasma with HyprKwin tiling, terminals, keyboards, status.",
+					"brief": "Set up Hyprland or Plasma, terminals, keys",
 					"usage": [
 						"setup plasma [--keys | --undo-keys] | hyprland [--terminal=ghostty|kitty|alacritty|foot|konsole] [--layout=dwindle|master|columns|scrolling|monocle|floating] [--workspaces=N] [--natural-scroll] [--layouts=us-intl,es] [--theme=dark|light|auto] [--wallpaper=box|grid|aurora|minimal] | terminal [--default=ghostty] [--also=a,b] | shell [--shell=zsh|fish|bash] | keyboard [--layouts=us-intl,es] | xremap [--build=hypr|kde] | undo plasma|hyprland|xremap | status [--yes] [--dry-run] [--json]",
 						"setup boot [status] | setup undo boot [--yes] [--dry-run] [--json]"
@@ -1142,6 +1181,7 @@
 				{
 					"name": "session",
 					"summary": "Which desktop SDDM starts: Hyprland or Plasma.",
+					"brief": "Which desktop the login screen starts",
 					"usage": [
 						"session show | set hyprland|plasma [--yes] [--dry-run] [--json]"
 					],
@@ -1154,6 +1194,7 @@
 				{
 					"name": "tiling",
 					"summary": "Tiling inside Plasma (HyprKwin): on, off, status, layouts.",
+					"brief": "Tiling inside Plasma",
 					"usage": [
 						"tiling on|off|status | layout [dwindle|master|monocle|scrolling|stage] [--json]"
 					],
@@ -1167,6 +1208,7 @@
 				{
 					"name": "plasma",
 					"summary": "Plasma extras: panel layouts (apply, undo, status) and the islands preset.",
+					"brief": "Plasma panel layouts and the islands preset",
 					"usage": [
 						"plasma panels apply [--agenda] [--without-weather] [--desktops=N] [--preset=NAME] [--yes] [--dry-run]",
 						"plasma panels undo [--yes]",
@@ -1200,6 +1242,7 @@
 				{
 					"name": "keys",
 					"summary": "The shortcut table: show, search, run, rebind, check conflicts, apply to Hyprland and Plasma, Traditional or Mac style.",
+					"brief": "The shortcut table: search, rebind, apply",
 					"usage": [
 						"keys show | search TEXT | run ID | style [traditional|mac] [--keyboard=pc|apple] [--swap=on|off] [--yes] | mac [on|off|status] [--yes] | set ID KEYS [--yes] [--force] | reset ID [--yes] | conflicts | sheet | render xremap|hyprland|plasma | check | apply [--yes] [--dry-run] [--force] [--json]"
 					],
@@ -1228,6 +1271,7 @@
 				{
 					"name": "runner",
 					"summary": "Which launcher and which menu program BxRig uses (Rofi, Walker, Wofi, Fuzzel, Vicinae).",
+					"brief": "Which launcher and menu BxRig uses",
 					"usage": [
 						"runner list | show | doctor | launch | select JSON_ENTRIES [--prompt=TEXT] | set PROVIDER | menu-set PROVIDER | icon-theme NAME|auto | launcher-command PROVIDER JSON_ARGV | menu-command PROVIDER JSON_ARGV [--json]"
 					],
@@ -1248,6 +1292,7 @@
 				{
 					"name": "launcher",
 					"summary": "Vicinae as BxRig's launcher: the BxRig theme, BxRig's actions as script commands, and file search.",
+					"brief": "Vicinae as the launcher",
 					"usage": [
 						"launcher [status] [--json]",
 						"launcher setup [--yes] [--dry-run] [--json]",
@@ -1276,6 +1321,7 @@
 				{
 					"name": "default",
 					"summary": "Default apps: browser, terminal, file manager.",
+					"brief": "Default browser, terminal, file manager",
 					"usage": [
 						"default show | browser ID | terminal ID | filemanager ID | editor neovim|vscode|zed|kate [--yes] [--dry-run] [--json]"
 					],
@@ -1291,6 +1337,7 @@
 				{
 					"name": "layout",
 					"summary": "Window layout at runtime: tile or float (toggle).",
+					"brief": "Tile or float windows",
 					"usage": [
 						"layout [toggle|float|tile|status] [--dry-run] [--json]"
 					],
@@ -1303,6 +1350,7 @@
 				{
 					"name": "assets",
 					"summary": "Brand assets (logo, icon, wallpapers): list, or install them.",
+					"brief": "Brand assets: logo, icon, wallpapers",
 					"usage": [
 						"assets list | install [--yes] [--dry-run] [--json]"
 					],
@@ -1315,6 +1363,7 @@
 				{
 					"name": "launchers",
 					"summary": "A BxRig submenu in your application menu (opt-in): the setup wizard, the runner menu, the Control Center and its pages.",
+					"brief": "A BxRig submenu in your app menu",
 					"usage": [
 						"launchers on|off|status [--yes] [--dry-run] [--json]"
 					],
@@ -1331,6 +1380,7 @@
 				{
 					"name": "config",
 					"summary": "The managed config files: list, diff, apply, restore a backup, history. A file you edited is never overwritten.",
+					"brief": "The managed config files: diff, apply, restore",
 					"usage": [
 						"config list|diff NAME|apply NAME|restore NAME ID|history [NAME] [--yes] [--dry-run] [--force] [--json]",
 						"config restore NAME ID --yes"
@@ -1363,6 +1413,7 @@
 				{
 					"name": "theme",
 					"summary": "Themes: 15 bundled (10 community themes, 5 BxRig), set one, light or dark, install from git.",
+					"brief": "Themes: set one, light or dark, install more",
 					"usage": [
 						"theme list | show NAME | set NAME [--mode=theme|dark|light|auto] [--keep-wallpaper] | random | next | mode theme|dark|light|auto | install GIT_URL [--name=N] [--force] | import PATH [--name=N] [--force] | remove NAME | vscode [--yes] [--dry-run] | status [--dry-run] [--json]"
 					],
@@ -1393,6 +1444,7 @@
 				{
 					"name": "appearance",
 					"summary": "Bar layout, dock, app grid, battery percentage, windows, animations, layout, fonts and backgrounds, one setting at a time.",
+					"brief": "Bar, dock, app grid, windows, fonts, backgrounds",
 					"usage": [
 						"appearance status|apply [--json]",
 						"appearance bar show|hide|toggle",
@@ -1451,6 +1503,7 @@
 				{
 					"name": "screensaver",
 					"summary": "The screensaver: terminal art in the theme's colours on every monitor after a while idle, then the lock.",
+					"brief": "Terminal art after a while idle",
 					"usage": [
 						"screensaver [status] [--json]",
 						"screensaver on|off [--yes]",
@@ -1484,6 +1537,7 @@
 				{
 					"name": "hotcorners",
 					"summary": "Hot corners: an action for each screen corner (overview, notifications, show desktop, lock, launcher, agents, themes).",
+					"brief": "An action for each screen corner",
 					"usage": [
 						"hotcorners [status] [--json]",
 						"hotcorners set CORNER=ACTION... [--yes]",
@@ -1500,6 +1554,7 @@
 				{
 					"name": "display",
 					"summary": "Monitors: scale, rotation, mode, position, mirroring the laptop panel, turning it off, brightness.",
+					"brief": "Monitors: scale, rotation, position, brightness",
 					"usage": [
 						"display list|status [--json]",
 						"display scale NAME auto|0.5..4",
@@ -1524,6 +1579,7 @@
 				{
 					"name": "power",
 					"summary": "Laptop power: battery details, profile, lid action on battery and on AC, hibernate, charge limit, setup of the power tools, doctor.",
+					"brief": "Laptop power: profile, lid, charge limit",
 					"usage": [
 						"power status [--json]",
 						"power profile [performance|balanced|saver]",
@@ -1549,6 +1605,7 @@
 				{
 					"name": "time",
 					"summary": "The time zone: show, set, set from your IP after travelling, follow your location, network time, the bar clock format, and the world clock.",
+					"brief": "Time zone, network time, bar clock",
 					"usage": [
 						"time status [--json]",
 						"time zone [--list | ZONE] [--yes]",
@@ -1597,6 +1654,7 @@
 				{
 					"name": "calendar",
 					"summary": "Your calendars on this machine (iCal addresses and Google Calendar), kept in sync by vdirsyncer, and the agenda read from them.",
+					"brief": "Your calendars, kept in sync",
 					"usage": [
 						"calendar [list] [--json]",
 						"calendar add ical NAME URL [--json]",
@@ -1639,6 +1697,7 @@
 				{
 					"name": "remind",
 					"summary": "A reminder that pops up at a time you choose.",
+					"brief": "A reminder at a time you choose",
 					"usage": [
 						"remind TEXT --at=HH:MM | --at=\"YYYY-MM-DD HH:MM\" | --in=30m|2h|1d [--json]",
 						"remind [list] [--json]",
@@ -1668,6 +1727,7 @@
 				{
 					"name": "accessibility",
 					"summary": "Zoom like a Mac, reduce motion, and three high-contrast themes. All off until you turn them on.",
+					"brief": "Zoom, reduce motion, high contrast",
 					"usage": [
 						"accessibility [status] [--json]",
 						"accessibility zoom on|off|status|in|out|toggle [--dry-run] [--json]",
@@ -1687,6 +1747,7 @@
 				{
 					"name": "toggle",
 					"summary": "Quick switches. Today: stay awake (Noctalia caffeine).",
+					"brief": "Quick switches, like stay awake",
 					"usage": [
 						"toggle stay-awake [on|off]"
 					],
@@ -1699,6 +1760,7 @@
 				{
 					"name": "nightshift",
 					"summary": "Night light: on, off, toggle, status (sunset to sunrise from your time zone).",
+					"brief": "Night light, sunset to sunrise",
 					"usage": [
 						"nightshift [on|off|toggle|status] [--location=LAT,LON] [--json]"
 					],
@@ -1717,6 +1779,7 @@
 				{
 					"name": "notify",
 					"summary": "Notifications through Noctalia: do not disturb, snooze, clear, and notices for the time, battery and weather.",
+					"brief": "Notifications: do not disturb, snooze, clear",
 					"usage": [
 						"notify dnd on|off|toggle|status | snooze [30m|2h|90s|off] | clear [--history] | time | battery | weather [--json]"
 					],
@@ -1745,6 +1808,7 @@
 				{
 					"name": "system",
 					"summary": "See what is waiting to be updated, update the system (a snapshot first), lock, suspend, log out, reboot, shut down.",
+					"brief": "Updates, lock, suspend, reboot, power",
 					"usage": [
 						"system updates [--json]",
 						"system update [--repo | --aur | --all] [--yes] [--dry-run] [--json]",
@@ -1784,6 +1848,7 @@
 				{
 					"name": "security",
 					"summary": "Fingerprint and security key for sudo, SSH server, passwordless sudo, with guards.",
+					"brief": "Fingerprint, security key, SSH server, sudo",
 					"usage": [
 						"security status [--json]",
 						"security fingerprint on|off|enroll [--yes]",
@@ -1803,6 +1868,7 @@
 				{
 					"name": "dns",
 					"summary": "DNS servers of the active connections: Cloudflare, Google, Quad9, your own, or back to DHCP. bench times each one to pick the fastest.",
+					"brief": "DNS servers, with a speed bench",
 					"usage": [
 						"dns [cloudflare|google|quad9|dhcp|custom IP[,IP...]] [--yes] [--dry-run]",
 						"dns bench [--json]"
@@ -1819,6 +1885,7 @@
 				{
 					"name": "kernel",
 					"summary": "List, install and remove kernels. Never edits the bootloader.",
+					"brief": "List, install and remove kernels",
 					"usage": [
 						"kernel list | install NAME | remove NAME [--yes] [--dry-run] [--json]"
 					],
@@ -1832,6 +1899,7 @@
 				{
 					"name": "ssh",
 					"summary": "Create an SSH key (ed25519; an existing one is kept).",
+					"brief": "Create an SSH key",
 					"usage": [
 						"ssh key [--email=ADDRESS] [--yes] [--dry-run] [--json]"
 					],
@@ -1849,6 +1917,7 @@
 				{
 					"name": "git",
 					"summary": "Sign commits and tags with your SSH key.",
+					"brief": "Sign commits with your SSH key",
 					"usage": [
 						"git signing [status] [--json]",
 						"git signing on [--key=PATH] [--yes] [--dry-run] [--json]",
@@ -1871,6 +1940,7 @@
 				{
 					"name": "secrets",
 					"summary": "API keys and tokens in the system keyring, loaded per command, exported encrypted.",
+					"brief": "API keys in the system keyring",
 					"usage": [
 						"secrets status | setup [--keyring=kwallet|gnome-keyring|none] [--yes] | list [--type=ai|other] | set NAME [--from-file=F] [--type=ai|other] [--provider=ID] | get NAME [--show] | unset NAME --yes | apply [--yes] | global on NAME --yes|off NAME|show | unlock | lock | export FILE [--plain] [--force] --yes | import FILE [--overwrite] --yes | env [NAMES...] | run [NAMES...] [--strict] -- COMMAND [ARGS...] [--json]"
 					],
@@ -1918,6 +1988,7 @@
 				{
 					"name": "vpn",
 					"summary": "VPNs in one list: saved NetworkManager profiles and the VPN apps (NordVPN, NordLayer, Tailscale, Mullvad); connect, disconnect, pick a place.",
+					"brief": "VPNs in one list",
 					"usage": [
 						"vpn list | status [NAME] | locations NAME [--json]",
 						"vpn connect NAME [--location=PLACE] | disconnect [NAME] [--dry-run] [--json]",
@@ -1944,6 +2015,7 @@
 				{
 					"name": "cloud",
 					"summary": "Cloud storage with rclone: remotes, mounts as systemd user units.",
+					"brief": "Cloud storage with rclone",
 					"usage": [
 						"cloud remotes | configure | mount NAME [--path=DIR] [--yes] | unmount NAME [--yes] | status [--json]"
 					],
@@ -1962,6 +2034,7 @@
 				{
 					"name": "settings",
 					"summary": "Export and import your BxRig settings as one archive.",
+					"brief": "Export and import your BxRig settings",
 					"usage": [
 						"settings export FILE.tar.gz [--force] | import FILE.tar.gz [--yes] [--json]"
 					],
@@ -1975,6 +2048,7 @@
 				{
 					"name": "dotfiles",
 					"summary": "Apply your dotfiles repo with chezmoi, yadm, stow or plain links, never overwriting unasked, with undo.",
+					"brief": "Apply your dotfiles repo, with undo",
 					"usage": [
 						"dotfiles plan REPO [--method=chezmoi|yadm|stow|links] | apply REPO [--method=M] [--overwrite] [--yes] [--dry-run] | status | undo [--yes] [--dry-run] [--json]"
 					],
@@ -1997,6 +2071,7 @@
 				{
 					"name": "nas",
 					"summary": "Your NAS boxes: find them, save their details, list shares, mount them (also automatically), test them, mirror folders to them, use one as a backup target.",
+					"brief": "Find, mount and test your NAS boxes",
 					"usage": [
 						"nas setup [--yes]",
 						"nas discover [--json]",
@@ -2061,6 +2136,7 @@
 				{
 					"name": "backup",
 					"summary": "Backups of your BxRig setup, of the system and of your files, and a way to move them around.",
+					"brief": "Backups of setup, system and files",
 					"usage": [
 						"backup config now [--reason=TEXT] [--with-secrets]",
 						"backup config list",
@@ -2259,6 +2335,7 @@
 				{
 					"name": "timemachine",
 					"summary": "BxTimeMachine: every backup of your system, setup and files on one timeline, with browse, restore, export and send.",
+					"brief": "Every backup on one timeline",
 					"usage": [
 						"timemachine [--demo] [--local]"
 					],
@@ -2295,6 +2372,7 @@
 				{
 					"name": "java",
 					"summary": "Your Java versions: jenv switches them, SDKMAN or Temurin supplies them. 21 is always there.",
+					"brief": "Java versions: jenv, SDKMAN, Temurin",
 					"usage": [
 						"java setup [--versions=25,17] [--yes] | status | list | available | install MAJOR|IDENTIFIER [--yes] [--dry-run] | global ID|MAJOR [--yes] | local ID|MAJOR [--yes] | remove ID [--yes] [--json]"
 					],
@@ -2317,6 +2395,7 @@
 				{
 					"name": "sdk",
 					"summary": "Java, Maven and Gradle through SDKMAN: install, switch, remove.",
+					"brief": "Java, Maven, Gradle through SDKMAN",
 					"usage": [
 						"sdk status | setup [--yes] | list java|maven|gradle | available java|maven|gradle | install CANDIDATE VERSION [--yes] | default CANDIDATE VERSION [--yes] | remove CANDIDATE VERSION [--yes] [--dry-run] [--json]"
 					],
@@ -2333,6 +2412,7 @@
 				{
 					"name": "mail",
 					"summary": "A mail catcher for development: a local inbox for the mail your apps send, in a container.",
+					"brief": "A local inbox for development mail",
 					"usage": [
 						"mail start [--keep] [--smtp-port=N] [--ui-port=N] [--yes] | stop | status | remove [--keep-data] [--yes] | list [--limit=N] | show ID | delete ID [--yes] | clear [--yes] | open [ID] | test [--to=ADDR] [--subject=TEXT] | env [--dry-run] [--json]"
 					],
@@ -2379,6 +2459,7 @@
 				{
 					"name": "tui",
 					"summary": "Control Center: every BxRig screen in one terminal, or one page on its own.",
+					"brief": "The Control Center in the terminal",
 					"usage": [
 						"tui [PAGE] [--sidebar|--no-sidebar] [--demo] [--icons=on|off] [--json]",
 						"tui list [--json]"
@@ -2415,6 +2496,7 @@
 				{
 					"name": "bxtimemachine",
 					"summary": "The same as timemachine: BxTimeMachine, your backups through time.",
+					"brief": "Same as timemachine",
 					"usage": [
 						"bxtimemachine [--demo] [--local]"
 					],
@@ -2448,6 +2530,7 @@
 				{
 					"name": "privacy",
 					"summary": "What leaves this machine: which AI runs where, your keys, agent data, MCP servers, telemetry; and switches for local only and telemetry.",
+					"brief": "What leaves this machine",
 					"usage": [
 						"privacy [--json] | local-only [--off] [--yes] | telemetry off|on [AGENT...] [--yes] [--json]"
 					],
@@ -2474,6 +2557,7 @@
 				{
 					"name": "boxlang",
 					"summary": "BoxLang status, MatchBox home, logs and .env, modules (ForgeBox), the VS Code extension, links.",
+					"brief": "BoxLang status, modules, VS Code extension",
 					"usage": [
 						"boxlang status | check | update [--yes] [--dry-run] | home [--open] | run FILE [ARGS...] | repl | use VERSION [--json]",
 						"boxlang modules list|search TEXT|installed|outdated [--json] | install SLUG... | update [SLUG...] | remove SLUG... [--yes] [--dry-run]",
@@ -2537,6 +2621,7 @@
 				{
 					"name": "editor",
 					"summary": "Neovim with LazyVim, the BoxLang plugin and themes that follow the BxRig theme.",
+					"brief": "Neovim with LazyVim and BoxLang",
 					"usage": [
 						"editor lazyvim [--yes] | boxlang [--yes] | status | refresh [--force] [--yes] [--json]"
 					],
@@ -2550,6 +2635,7 @@
 				{
 					"name": "db",
 					"summary": "Databases as containers (Podman or Docker): PostgreSQL, MySQL, Redis, MongoDB, Couchbase, vector stores.",
+					"brief": "Databases as containers",
 					"usage": [
 						"db engines | list | start ENGINE [--name N] [--port P] [--password-file FILE | --ask-password] [--yes] [--dry-run] | stop|status|logs ENGINE [--name N] | remove ENGINE [--name N] [--keep-data] --yes | info ENGINE [--name N] [--show-password] | engine [podman|docker] | menu [--json]"
 					],
@@ -2589,6 +2675,7 @@
 				{
 					"name": "containers",
 					"summary": "Containers on the configured engine (Podman or Docker): list, start, stop, restart, logs; Podman helpers: doctor, rootless socket, docker compatibility.",
+					"brief": "Manage Podman or Docker containers",
 					"usage": [
 						"containers doctor | socket enable [--yes] | docker-compat [--yes] [--json]",
 						"containers list [--json]",
@@ -2611,6 +2698,7 @@
 				{
 					"name": "vm",
 					"summary": "Virtual machines in containers: Windows (dockur) and Linux desktops (webtop), with sizes and status.",
+					"brief": "Windows and Linux desktops in containers",
 					"usage": [
 						"vm list | status [NAME] | size [NAME] | info NAME [--show-password] | doctor | versions linux|windows | create windows [NAME] [--version=V] [--ram=8G] [--cpus=N] [--disk=64G] [--share=PATH|none] | create linux NAME [--tag=ubuntu-xfce] [--cpus=N] [--memory=4G] [--share=PATH|none] [--gpu=none|auto|intel|amd|nvidia] | start|stop|logs NAME | open NAME [--web] [--fullscreen] | remove NAME [--keep-data] [--yes] [--dry-run] [--json]"
 					],
@@ -2678,6 +2766,7 @@
 				{
 					"name": "android",
 					"summary": "Android apps on your desktop with Waydroid. Off until you set it up; Google Play by default.",
+					"brief": "Android apps on your desktop",
 					"usage": [
 						"android [--json] | setup [--vanilla] [--yes] | start | stop | apps | open [APP] | install FILE.apk [--yes] | register [--open] | remove [--data] [--yes] [--json]"
 					],
@@ -2707,6 +2796,7 @@
 				{
 					"name": "boxy",
 					"summary": "Boxy's character and voice: name, colour, seasonal outfits, hold-to-talk with Voxtype, speech on this machine (English and Spanish) or from a server. All opt in.",
+					"brief": "Boxy's character and voice",
 					"usage": [
 						"boxy [--json] | look [--name=N] [--color=theme|#RRGGBB] [--outfit=auto|none|ID] [--holidays=LIST|none] [--birthday=MM-DD]",
 						"boxy export [--dir=DIR] | state | listen start|stop|toggle | say TEXT",
@@ -2788,6 +2878,7 @@
 				{
 					"name": "ai",
 					"summary": "AI: local models on llama.cpp (hardware, engine, models, the server with OpenAI and Anthropic APIs), BoxLang agents (bx-agents), coding agents, tmux sessions, the pull-down AI shell.",
+					"brief": "Local models, agents, the pull-down AI shell",
 					"usage": [
 						"ai session start [ID] [--name=N] [--dir=PATH] [--dry-run]",
 						"ai session list",
@@ -2988,6 +3079,7 @@
 				{
 					"name": "mcp",
 					"summary": "BxRig's own tools for any coding agent or editor, as an MCP server (Boxy's tools, read-only unless --write).",
+					"brief": "BxRig's tools as an MCP server",
 					"usage": [
 						"mcp [--json] | tools | serve [--write] | link [AGENT...] [--write] [--yes] | unlink [AGENT...] [--yes] [--json]"
 					],
@@ -3008,6 +3100,7 @@
 				{
 					"name": "skills",
 					"summary": "Agent skills for BoxLang and BxRig: install, update, remove.",
+					"brief": "Agent skills for BoxLang and BxRig",
 					"usage": [
 						"skills list [--tag=T] | search TEXT | show OWNER/REPO/SLUG | install [bxrig|boxlang|matchbox|OWNER/REPO/SLUG]... [--yes] | installed | update [--yes] | remove NAME [--yes] | status | link [--json]"
 					],
@@ -3034,6 +3127,7 @@
 				{
 					"name": "screenshot",
 					"summary": "Screenshots: screen, region, window, OCR text, QR codes, a color picker, or a menu.",
+					"brief": "Screen, region, window, OCR, QR, color picker",
 					"usage": [
 						"screenshot screen|region|window [--edit] | ocr | qr | color | menu [--dry-run] [--json]"
 					],
@@ -3054,6 +3148,7 @@
 				{
 					"name": "qr",
 					"summary": "Make a QR code from text (printed in the terminal, or saved with --out).",
+					"brief": "Make a QR code from text",
 					"usage": [
 						"qr TEXT [--out=FILE.png] [--json]"
 					],
@@ -3072,6 +3167,7 @@
 				{
 					"name": "share",
 					"summary": "Send files, a folder or the clipboard to a phone or computer nearby with LocalSend, or open it to receive.",
+					"brief": "Send files to a nearby device",
 					"usage": [
 						"share file [PATH...] | folder [PATH] | clipboard [--to=DEVICE] [--dry-run] [--json]",
 						"share receive [--dry-run] [--json]"
@@ -3094,6 +3190,7 @@
 				{
 					"name": "record",
 					"summary": "Screen recording: start, stop, toggle, with desktop or microphone audio if you like.",
+					"brief": "Screen recording",
 					"usage": [
 						"record [toggle|start|stop|status] [--region] [--audio=desktop|mic] [--webcam[=bottom-right|bottom-left|top-right|top-left]] [--webcam-size=small|medium|large] [--dry-run] [--json]"
 					],
@@ -3128,6 +3225,7 @@
 				{
 					"name": "browser",
 					"summary": "Your default browser in a private window.",
+					"brief": "Your default browser, private window",
 					"usage": [
 						"browser private [URL] [--dry-run] [--json]"
 					],
@@ -3142,6 +3240,7 @@
 				{
 					"name": "files",
 					"summary": "Your default file manager in the folder of the focused window.",
+					"brief": "File manager in the focused folder",
 					"usage": [
 						"files here [DIR] [--dry-run] [--json]"
 					],
@@ -3156,6 +3255,7 @@
 				{
 					"name": "webcam",
 					"summary": "A small live webcam preview, on or off with one key.",
+					"brief": "A small live webcam preview",
 					"usage": [
 						"webcam toggle|status [--dry-run] [--json]"
 					],
@@ -3170,6 +3270,7 @@
 				{
 					"name": "clipboard",
 					"summary": "Clipboard history (cliphist): pick, list, clear, setup.",
+					"brief": "Clipboard history",
 					"usage": [
 						"clipboard pick | clear [--yes] | status [--json]"
 					],
@@ -3183,6 +3284,7 @@
 				{
 					"name": "emoji",
 					"summary": "The emoji picker (rofimoji).",
+					"brief": "The emoji picker",
 					"usage": [
 						"emoji"
 					],
@@ -3195,6 +3297,7 @@
 				{
 					"name": "forcequit",
 					"summary": "Pick a window or process and force quit it.",
+					"brief": "Pick a window and force quit it",
 					"usage": [
 						"forcequit"
 					],
@@ -3207,6 +3310,7 @@
 				{
 					"name": "window",
 					"summary": "Minimize, restore and snap windows, and the quake console.",
+					"brief": "Minimize, restore, snap, quake console",
 					"usage": [
 						"window minimize|restore|quake [--json]",
 						"window quake send [--json]",
@@ -3228,6 +3332,7 @@
 				{
 					"name": "overview",
 					"summary": "The workspace and window overview.",
+					"brief": "The workspace overview",
 					"usage": [
 						"overview [setup]"
 					],
@@ -3240,6 +3345,7 @@
 				{
 					"name": "quicklook",
 					"summary": "Quick Look for files (Kiview): preview with a key.",
+					"brief": "Quick Look previews for files",
 					"usage": [
 						"quicklook [PATH] [--dry-run] [--json]"
 					],
@@ -3252,6 +3358,7 @@
 				{
 					"name": "dolphin",
 					"summary": "Dolphin diagnostics: why it is slow or missing features.",
+					"brief": "Why Dolphin is slow or missing features",
 					"usage": [
 						"dolphin doctor [--fix] [--json]"
 					],
@@ -3270,6 +3377,7 @@
 				{
 					"name": "dictation",
 					"summary": "Dictation with Superwhisper or Voxtype: setup and toggle.",
+					"brief": "Dictation with Superwhisper or Voxtype",
 					"usage": [
 						"dictation setup [superwhisper|voxtype] [--yes] | status | key [ENGINE] | toggle [--dry-run] [--json]"
 					],
@@ -3284,6 +3392,7 @@
 				{
 					"name": "strata",
 					"summary": "Strata, the file manager: its integrations.",
+					"brief": "The Strata file manager",
 					"usage": [
 						"strata integrations [--dry-run] [--json]"
 					],
@@ -3296,6 +3405,7 @@
 				{
 					"name": "gpu",
 					"summary": "GPU check: driver, rendering, NVIDIA specifics; the mode of a laptop with two GPUs.",
+					"brief": "GPU check and dual GPU mode",
 					"usage": [
 						"gpu doctor [--json]",
 						"gpu mode [status] [--json]",
@@ -3313,6 +3423,7 @@
 				{
 					"name": "input",
 					"summary": "Input devices: Apple Magic Mouse and Trackpad, Logitech, the helpers for them, the older doctor and trackpad gestures.",
+					"brief": "Apple Magic and Logitech devices",
 					"usage": [
 						"input status [--json]",
 						"input offer [--for=detect|apple|logitech|both|none] [--yes] [--dry-run] [--json]",
@@ -3345,6 +3456,7 @@
 				{
 					"name": "audio",
 					"summary": "Sound server status: outputs, inputs, volumes and the defaults.",
+					"brief": "Sound outputs, inputs and volumes",
 					"usage": [
 						"audio status [--json]"
 					],
@@ -3359,6 +3471,7 @@
 				{
 					"name": "bluetooth",
 					"summary": "Bluetooth status: the service, the adapter and the paired devices.",
+					"brief": "Bluetooth adapter and paired devices",
 					"usage": [
 						"bluetooth status [--json]"
 					],
@@ -3373,6 +3486,7 @@
 				{
 					"name": "wifi",
 					"summary": "Wi-Fi status: the radio, the Wi-Fi devices and the network you are on; a QR code to join it.",
+					"brief": "Wi-Fi status and a join QR code",
 					"usage": [
 						"wifi status [--json]",
 						"wifi qr [--out=FILE.png] [--json]"
@@ -3395,6 +3509,7 @@
 				{
 					"name": "airplay",
 					"summary": "AirPlay receiver: on, off, status.",
+					"brief": "AirPlay receiver on or off",
 					"usage": [
 						"airplay on|off|status [--json]"
 					],

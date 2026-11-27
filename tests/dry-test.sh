@@ -19,7 +19,7 @@ count 'function home()'            src/bxrig 4
 count 'function env('              src/bxrig 1
 count 'function self()'            src/bxrig 1
 count '"Usage: bxrig'              src/Main.bx 4
-count '"Usage: bxrig'              src/bxrig 16
+count '"Usage: bxrig'              src/bxrig 14
 count 'fail() { echo "FAIL'        tests 4
 count 'function check( label, ok )' tests 2
 count 'jsonDeserialize( fileRead(' src/bxrig 24
