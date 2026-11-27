@@ -116,7 +116,11 @@ class Help {
 		for ( var sl in ui.wrap( cmd.summary, w ) ) out.append( "  " & sl );
 		out.append( "" );
 		out.append( ui.style( "  USAGE", "bold accent" ) );
-		for ( var f in forms( cmd.name, arguments.sub ) ) out.append( "    " & ui.style( "bxrig", "dim" ) & " " & ui.style( ui.truncate( f, w - 6 ), "bold" ) );
+		for ( var f in forms( cmd.name, arguments.sub ) ) {
+			// a long form wraps under itself instead of being cut off
+			var fl2 = ui.wrap( f, max( 20, w - 6 ) );
+			for ( var fi = 1; fi <= fl2.len(); fi++ ) out.append( fi == 1 ? "    " & ui.style( "bxrig", "dim" ) & " " & ui.style( fl2[ fi ], "bold" ) : "          " & ui.style( fl2[ fi ], "bold" ) );
+		}
 		var flags = structKeyExists( cmd, "flags" ) ? cmd.flags : [];
 		out.append( "" );
 		out.append( ui.style( "  FLAGS", "bold accent2" ) );
