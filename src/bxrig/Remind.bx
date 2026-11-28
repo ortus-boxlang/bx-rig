@@ -1,7 +1,8 @@
 // `bxrig remind`: a note that pops up at a time you choose, shown by the desktop's notifications.
-//   TEXT --at="HH:MM" | --at="YYYY-MM-DD HH:MM" | --in=30m|2h|1d|1h30m   add one (an HH:MM that has passed today means tomorrow)
+//   TEXT --at="HH:MM" | --at="YYYY-MM-DD HH:MM" | --at="tomorrow HH:MM" | --in=30m|2h|1d|1h30m   add one (an HH:MM that has passed today means tomorrow)
 //   list                                                               what is still to come, and what is due and not yet done
 //   done ID / remove ID                                                mark it done / forget it
+//   clear [--done] [--yes]                                             forget every reminder, or with --done only the finished ones (a plan without --yes)
 //   due                                                                pop up the reminders whose time has come (the scheduler runs it every minute)
 // Kept in ~/.config/bxrig/reminders.json. Adding the first one adds the scheduler task "reminders" when the scheduler is installed.
 class Remind {
@@ -42,8 +43,23 @@ class Remind {
 	}
 
 	// "--at" text -> the date and time it means, from `now` ("" when it is not one). A bare HH:MM that has passed means tomorrow.
+	/**
+	 * A clock time as a date: "HH:MM" (tomorrow when it has passed today), "tomorrow HH:MM", or "YYYY-MM-DD HH:MM".
+	 *
+	 * @param s The text of --at.
+	 * @param nowDt The current time.
+	 *
+	 * @return A date, or "" when the text is not a time.
+	 */
 	function atTime( s, nowDt ) {
 		var t = trim( arguments.s );
+		if ( reFindNoCase( "^tomorrow\s+[0-9]{1,2}:[0-9]{2}$", t ) ) {
+			var tm = listLast( t, " " );
+			var th = int( listFirst( tm, ":" ) ); var tmi = int( listLast( tm, ":" ) );
+			if ( th > 23 || tmi > 59 ) return "";
+			var tom = dateAdd( "d", 1, arguments.nowDt );
+			return createDateTime( year( tom ), month( tom ), day( tom ), th, tmi, 0 );
+		}
 		if ( reFind( "^[0-9]{1,2}:[0-9]{2}$", t ) ) {
 			var h = int( listFirst( t, ":" ) ); var mi = int( listLast( t, ":" ) );
 			if ( h > 23 || mi > 59 ) return "";
@@ -116,6 +132,23 @@ class Remind {
 		return variables.out.say( "ok", { done: int( arguments.id ) }, arguments.asJson, [ "Done: reminder " & arguments.id ] );
 	}
 
+	/**
+	 * `remind clear [--done] [--yes]`: forgets every reminder, or only the finished ones with --done. Without --yes it says what it would do.
+	 *
+	 * @param opts The options (done, yes).
+	 * @param asJson True for JSON output.
+	 *
+	 * @return The exit code: 0 done, 2 plan without --yes.
+	 */
+	function clear( opts, asJson ) {
+		var onlyDone = structKeyExists( arguments.opts, "done" );
+		var list = load();
+		var gone = onlyDone ? list.filter( function( r ) { return r.done ?: false; } ) : list;
+		if ( !structKeyExists( arguments.opts, "yes" ) ) return variables.out.plan( "forget " & ( onlyDone ? "the " & gone.len() & " finished reminder" : "all " & gone.len() & " reminder" ) & ( gone.len() == 1 ? "" : "s" ) & " (" & file() & ").", { count: gone.len(), done_only: onlyDone }, arguments.asJson );
+		save( onlyDone ? list.filter( function( r ) { return !( r.done ?: false ); } ) : [] );
+		return variables.out.say( "ok", { cleared: gone.len() }, arguments.asJson, [ "Cleared " & gone.len() & " reminder" & ( gone.len() == 1 ? "" : "s" ) & "." ] );
+	}
+
 	function remove( id, asJson ) {
 		var list = load();
 		var keep = list.filter( function( r ) { return r.id & "" != id & ""; } );
@@ -141,6 +174,15 @@ class Remind {
 		return variables.out.say( "ok", { shown: shown }, arguments.asJson, [ shown.len() ? "Showed " & shown.len() & " reminder" & ( shown.len() == 1 ? "" : "s" ) : "Nothing due" ] );
 	}
 
+	/**
+	 * Runs `bxrig remind ...`.
+	 *
+	 * @param words The words after `remind`.
+	 * @param opts The options (at, in, done, yes).
+	 * @param asJson True for JSON output.
+	 *
+	 * @return The exit code.
+	 */
 	function run( words, opts, asJson ) {
 		var w = arguments.words;
 		var sub = w.len() ? w[ 1 ] : "list";
@@ -148,7 +190,8 @@ class Remind {
 		if ( sub == "due" && w.len() == 1 ) return due( arguments.asJson );
 		if ( sub == "done" && w.len() == 2 ) return setDone( w[ 2 ], arguments.asJson );
 		if ( sub == "remove" && w.len() == 2 ) return remove( w[ 2 ], arguments.asJson );
-		if ( w.len() && !arrayFind( [ "list", "due", "done", "remove" ], sub ) ) return add( w.toList( " " ), arguments.opts, arguments.asJson );
+		if ( sub == "clear" && w.len() == 1 ) return clear( arguments.opts, arguments.asJson );
+		if ( w.len() && !arrayFind( [ "list", "due", "done", "remove", "clear" ], sub ) ) return add( w.toList( " " ), arguments.opts, arguments.asJson );
 		return variables.out.fail( "usage", new bxrig.CommandSpec().usage( "remind" ), arguments.asJson );
 	}
 }

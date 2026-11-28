@@ -181,6 +181,7 @@ class Shortcuts {
 			// capture and recording
 			row( "emoji", G.cap, "Emoji picker (search, categories, recent, Enter copies)", "Super+Ctrl+E", "Super+Ctrl+E", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:emoji || bxrig emoji'']])', "emoji" ),
 			row( "clipboard-history", G.cap, "Clipboard history (search, preview, Enter copies)", "Super+Ctrl+V", "Super+Ctrl+V", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:clipboard || bxrig clipboard pick'']])', "clipboard pick" ),
+			row( "reminders", G.cap, "Reminders (add one, see them, clear them)", "Super+Ctrl+R", "Super+Ctrl+R", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-open bxrig/clock:panel reminders || bxrig remind list'']])', "remind list" ),
 			bx( "screenshot-screen", G.cap, "Screenshot: the whole screen", "", "Super+Shift+3", "screenshot screen" ),
 			bx( "screenshot-region", G.cap, "Screenshot: a region", "", "Super+Shift+4", "screenshot region" ),
 			bx( "screenshot-menu", G.cap, "Screenshot menu (region, window, OCR, QR, record)", "", "Super+Shift+5", "screenshot menu" ),

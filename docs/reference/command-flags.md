@@ -117,8 +117,9 @@ Type `value` is written `--flag=VALUE`, `bool` is written bare, and `any` was fo
 | `calendar` | `--days` | value | `3` | How many days ahead the agenda shows (1 to 60, default 7) |
 | `calendar` | `--yes` | bool |  | Confirm removing the calendar and its local copy |
 | `calendar` | `--dry-run` | bool |  | Show what remove would do without changing anything |
-| `remind` | `--at` | value | `09` | Time to remind: HH:MM or "YYYY-MM-DD HH:MM" |
+| `remind` | `--at` | value | `09` | HH:MM, "tomorrow HH:MM" or "YYYY-MM-DD HH:MM" |
 | `remind` | `--in` | value | `3` | Remind after a delay such as 30m, 2h or 1d |
+| `remind` | `--done` | bool |  | On clear: only the finished reminders |
 | `nightshift` | `--location` | value | `40.4` | Latitude and longitude as LAT,LON, instead of the time zone guess |
 | `notify` | `--history` | bool |  | Also empty the notification history, not just visible ones |
 | `system` | `--repo` | bool |  | Update only the repository packages, not the AUR |

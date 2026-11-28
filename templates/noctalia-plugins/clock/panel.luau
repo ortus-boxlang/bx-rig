@@ -1,29 +1,33 @@
 --!nonstrict
--- BxRig Clock panel: "It's HH:MM here in <city>", then one card per zone
--- with its date, big time, abbreviation + offset from local, and a day bar
--- whose sun/moon marker shows where in its day that zone is.
+-- BxRig Clock panel, two pages behind two tabs (each with an icon):
+--   Clocks     "It's HH:MM here in <city>", one card per zone (date, big time, abbreviation and offset, a day bar with a sun or moon), the
+--              agenda of today and tomorrow, and the next reminders with "+ New" and "All".
+--   Reminders  a text input and a time (in 10 min, in 1 h, tonight 20:00, tomorrow 09:00, or at HH:MM), the reminders still to come with Done
+--              and Remove, and Clear all (asks twice). Add: `bxrig remind TEXT --in=1h|--at=20:00|--at="tomorrow 09:00"`.
 --
--- Below the zones: the agenda of today and tomorrow (`bxrig calendar agenda --days=2 --json`) and the reminders still to come
--- (`bxrig remind list --json`), each with a check button that marks it done. Each section is left out when there is nothing in it.
---
--- Data: `bxrig time world --json`, fetched on open and every 30 s while open. The Calendar button opens the Noctalia calendar
--- (`noctalia msg panel-toggle control-center calendar`, the same route as right click on the bar clock).
+-- Data: `bxrig time world --json` every 30 s while open; `calendar agenda --days=2 --json`; `remind list --json`. Done, Remove and Clear all run
+-- `remind done|remove ID` and `remind clear --yes`. The Calendar button opens the Noctalia calendar (`noctalia msg panel-toggle control-center calendar`).
+-- Opened from the bar it is the attached popup (panel), or its window twin (panel-window). `noctalia msg panel-open bxrig/clock:panel reminders`
+-- (the key Super+Ctrl+R) starts on the Reminders page. Built on framework.luau and kit.luau.
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
 local kit = require("./kit.luau")
+local framework = require("./framework.luau")
 
 local REFRESH_MS = 30000
 
-local data = nil -- last good `data` table
-local errorText = nil
-local loading = false
-local lastFetchMs = -REFRESH_MS
-local closeButton = true
-local agenda = nil -- `calendar agenda` data
-local reminders = nil -- `remind list` data
+-- The times a reminder can be set for. `at`/`delay` are what `bxrig remind` takes; `say` is what the confirmation shows.
+local CHOICES = {
+	{ id = "10m", label = "10 min", delay = "10m", say = "in 10 minutes" },
+	{ id = "1h", label = "1 hour", delay = "1h", say = "in 1 hour" },
+	{ id = "tonight", label = "Tonight", at = "20:00", say = "tonight at 20:00" },
+	{ id = "tomorrow", label = "Tomorrow", at = "tomorrow 09:00", say = "tomorrow at 09:00" },
+	{ id = "custom", label = "At…", custom = true },
+}
 
 local str = kit.str
+local P
 
 local function clamp01(x)
 	x = tonumber(x) or 0
@@ -97,12 +101,16 @@ local function zoneCard(zone, index)
 	})
 end
 
-
-local function sectionTitle(text, glyph, key)
-	return ui.row({ key = key, align = "center", gap = 6, paddingH = 4 }, {
+-- A section title, with optional buttons on the right.
+local function sectionTitle(text, glyph, key, buttons)
+	local children = {
 		ui.glyph({ name = glyph, size = 14, color = "primary" }),
-		ui.label({ text = text, fontSize = 12, fontWeight = "bold", color = "on_surface_variant" }),
-	})
+		ui.label({ text = text, fontSize = 12, fontWeight = "bold", color = "on_surface_variant", flexGrow = 1 }),
+	}
+	for _, b in ipairs(buttons or {}) do
+		table.insert(children, b)
+	end
+	return ui.row({ key = key, align = "center", gap = 6, paddingH = 4 }, children)
 end
 
 -- "2026-11-23T09:30" -> "09:30"
@@ -125,9 +133,9 @@ local function eventRow(e, i)
 	})
 end
 
-local function agendaCards()
+local function agendaCards(s)
 	local out = {}
-	local events = agenda and agenda.events or nil
+	local events = s.agenda and s.agenda.events or nil
 	if type(events) ~= "table" or #events == 0 then
 		return out
 	end
@@ -136,7 +144,7 @@ local function agendaCards()
 		if type(e) == "table" then
 			if str(e.day) ~= shown then
 				shown = str(e.day)
-				table.insert(out, sectionTitle(shown == str(agenda.today) and "Today" or "Tomorrow", "calendar", "day-" .. shown))
+				table.insert(out, sectionTitle(shown == str(s.agenda.today) and "Today" or "Tomorrow", "calendar", "day-" .. shown))
 			end
 			table.insert(out, eventRow(e, i))
 		end
@@ -144,65 +152,300 @@ local function agendaCards()
 	return out
 end
 
-local function reminderCards()
+local function reminderList(s)
+	local list = s.reminders and s.reminders.reminders or nil
+	if type(list) ~= "table" then
+		return {}
+	end
+	return list
+end
+
+local function loadReminders()
+	P:fetch({ "remind", "list" }, function(data)
+		P.state.reminders = data
+	end, { channel = "reminders" })
+end
+
+-- One reminder row. `full` adds Remove next to Done (the Reminders page); the Clocks page keeps just Done.
+local function reminderRow(s, r, full)
+	local id = str(r.id)
+	local today = s.agenda ~= nil and string.sub(str(r.at), 1, 10) == str(s.agenda.today)
+	local when = today and hm(r.at) or `{string.sub(str(r.at), 6, 10)} {hm(r.at)}`
+	local due = r.due == true
+	local buttons = {
+		ui.button({
+			glyph = "check",
+			variant = "ghost",
+			controlSize = "sm",
+			tooltip = "Done",
+			onClick = function()
+				P:run({ "remind", "done", id }, function()
+					loadReminders()
+				end)
+			end,
+		}),
+	}
+	if full then
+		table.insert(buttons, ui.button({
+			glyph = "x",
+			variant = "ghost",
+			controlSize = "sm",
+			tooltip = "Remove",
+			onClick = function()
+				P:run({ "remind", "remove", id }, function()
+					loadReminders()
+				end)
+			end,
+		}))
+	end
+	local children = {
+		ui.glyph({ name = due and "bell-ringing" or "bell", size = 16, color = due and "error" or "secondary" }),
+		ui.label({ text = when, fontSize = 12, fontWeight = "bold", width = 82 }),
+		ui.label({ text = str(r.text), fontSize = 13, flexGrow = 1, maxLines = 1 }),
+	}
+	for _, b in ipairs(buttons) do
+		table.insert(children, b)
+	end
+	return ui.row({ key = "reminder-" .. id, align = "center", gap = 10, paddingH = 12, paddingV = 10, radius = 12, fill = due and "error_container" or "surface_container" }, children)
+end
+
+local function gotoPage(page)
+	P:set({ page = page })
+end
+
+-- The reminders section of the Clocks page: the next three, "+ New" and "All".
+local function reminderSummary(s)
+	local list = reminderList(s)
 	local out = {}
-	local list = reminders and reminders.reminders or nil
-	if type(list) ~= "table" or #list == 0 then
+	if #list == 0 then
 		return out
 	end
-	table.insert(out, sectionTitle("Reminders", "bell", "reminders-title"))
-	for _, r in ipairs(list) do
+	table.insert(out, sectionTitle("Reminders", "bell", "reminders-title", {
+		ui.button({
+			text = "New",
+			glyph = "plus",
+			variant = "ghost",
+			controlSize = "sm",
+			onClick = function()
+				gotoPage("reminders")
+			end,
+		}),
+		ui.button({
+			text = "All",
+			variant = "ghost",
+			controlSize = "sm",
+			onClick = function()
+				gotoPage("reminders")
+			end,
+		}),
+	}))
+	for i, r in ipairs(list) do
+		if i > 3 then
+			break
+		end
 		if type(r) == "table" then
-			local id = str(r.id)
-			local today = agenda ~= nil and string.sub(str(r.at), 1, 10) == str(agenda.today)
-			local when = today and hm(r.at) or `{string.sub(str(r.at), 6, 10)} {hm(r.at)}`
-			table.insert(out, ui.row({ key = "reminder-" .. id, align = "center", gap = 10, paddingH = 12, paddingV = 6, radius = 10, fill = r.due == true and "error_container" or "surface_container" }, {
-				ui.glyph({ name = r.due == true and "bell-ringing" or "bell", size = 16, color = r.due == true and "error" or "secondary" }),
-				ui.label({ text = when, fontSize = 12, fontWeight = "bold", width = 82 }),
-				ui.label({ text = str(r.text), fontSize = 13, flexGrow = 1, maxLines = 1 }),
-				ui.button({
-					glyph = "check",
-					variant = "ghost",
-					controlSize = "sm",
-					tooltip = "Done",
-					onClick = function()
-						bxrig.run({ "remind", "done", id }, function()
-							fetchExtras()
-						end)
-					end,
-				}),
-			}))
+			table.insert(out, reminderRow(s, r, false))
 		end
 	end
 	return out
 end
 
-local function render()
+-- The current local hour from "It's HH:MM here", to hide "tonight" once 20:00 has passed (nil when unknown).
+local function localHour(s)
+	local t = s.data and s.data.here and s.data.here.time or nil
+	if t == nil then
+		return nil
+	end
+	return tonumber(string.match(str(t), "^(%d+):"))
+end
+
+local function choiceById(id)
+	for _, c in ipairs(CHOICES) do
+		if c.id == id then
+			return c
+		end
+	end
+	return CHOICES[2]
+end
+
+local function validTime(text)
+	local h, m = string.match(noctalia.string.trim(text), "^(%d%d?):(%d%d)$")
+	if h == nil then
+		return nil
+	end
+	if tonumber(h) > 23 or tonumber(m) > 59 then
+		return nil
+	end
+	return noctalia.string.trim(text)
+end
+
+-- What the confirmation line says for the chosen time, or nil when the custom time is not valid yet.
+local function sayWhen(s)
+	local c = choiceById(s.choice)
+	if c.custom then
+		local t = validTime(s.customTime)
+		return t ~= nil and ("at " .. t) or nil
+	end
+	return c.say
+end
+
+local function remindArgs(s, text)
+	local c = choiceById(s.choice)
+	if c.custom then
+		return { "remind", text, "--at=" .. (validTime(s.customTime) or "") }
+	elseif c.delay ~= nil then
+		return { "remind", text, "--in=" .. c.delay }
+	end
+	return { "remind", text, "--at=" .. c.at }
+end
+
+-- Adds the reminder from the draft and the chosen time (Enter, or the Add button).
+local function addReminder(self)
+	local s = self.state
+	local text = noctalia.string.trim(s.draft)
+	if text == "" then
+		self:set({ addErr = "Type what to be reminded about", addMsg = nil })
+		return
+	end
+	local when = sayWhen(s)
+	if when == nil then
+		self:set({ addErr = "Type a time as HH:MM, for example 14:30", addMsg = nil })
+		return
+	end
+	self:run(remindArgs(s, text), function(ok, message)
+		if ok then
+			P:set({ draft = "", inputKey = P.state.inputKey + 1, addMsg = "Added: " .. text .. " · " .. when, addErr = nil })
+			loadReminders()
+		else
+			P:set({ addErr = message ~= "" and message or "Could not add the reminder", addMsg = nil })
+		end
+	end)
+end
+
+local function remindersPage(s)
+	local rows = {}
+	local list = reminderList(s)
+
+	-- The input and the time chips.
+	local chips = {}
+	local hour = localHour(s)
+	for _, c in ipairs(CHOICES) do
+		if not (c.id == "tonight" and hour ~= nil and hour >= 20) then
+			table.insert(chips, ui.button({
+				key = "when-" .. c.id,
+				text = c.label,
+				variant = c.id == s.choice and "primary" or "ghost",
+				controlSize = "sm",
+				onClick = function()
+					P:set({ choice = c.id, addErr = nil })
+				end,
+			}))
+		end
+	end
+	-- One rounded field with a small Add button inside it.
+	table.insert(rows, ui.row({ align = "center", gap = 8, paddingH = 10, paddingV = 4, radius = 12, fill = "surface_container" }, {
+		ui.input({
+			key = "draft-" .. s.inputKey,
+			value = s.draft,
+			placeholder = "Remind me to…",
+			fontSize = 15,
+			frameVisible = false,
+			focus = true,
+			flexGrow = 1,
+			onChange = "onDraftChanged",
+			onSubmit = "onSubmit",
+		}),
+		ui.button({ glyph = "plus", variant = "primary", controlSize = "sm", tooltip = "Add reminder (Enter)", onClick = "onSubmit" }),
+	}))
+	-- The chips share one row at their natural width.
+	table.insert(rows, ui.row({ gap = 6, paddingV = 4 }, chips))
+	if choiceById(s.choice).custom then
+		table.insert(rows, ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 4, radius = 12, fill = "surface_container" }, {
+			ui.glyph({ name = "clock", size = 16, color = "on_surface_variant" }),
+			ui.input({
+				key = "time-" .. s.inputKey,
+				value = s.customTime,
+				placeholder = "Time, for example 14:30",
+				fontSize = 14,
+				frameVisible = false,
+				flexGrow = 1,
+				onChange = "onTimeChanged",
+				onSubmit = "onSubmit",
+			}),
+		}))
+	end
+	local say = sayWhen(s)
+	table.insert(rows, ui.label({ text = say ~= nil and ("Will pop up " .. say) or "Pick a time", fontSize = 11, color = "on_surface_variant", paddingH = 4 }))
+	if s.addMsg ~= nil then
+		table.insert(rows, ui.label({ text = s.addMsg, fontSize = 12, color = "primary", maxLines = 2 }))
+	end
+	if s.addErr ~= nil then
+		table.insert(rows, ui.label({ text = s.addErr, fontSize = 12, color = "error", maxLines = 3 }))
+	end
+
+	-- The list.
+	table.insert(rows, sectionTitle("Coming up", "bell", "coming-title"))
+	if #list == 0 then
+		table.insert(rows, ui.label({ text = "No reminders yet", fontSize = 12, color = "on_surface_variant" }))
+	end
+	for _, r in ipairs(list) do
+		if type(r) == "table" then
+			table.insert(rows, reminderRow(s, r, true))
+		end
+	end
+	return rows
+end
+
+local function clocksPage(s)
+	local zones = s.data and s.data.zones or nil
+	local cards = {}
+	if s.data == nil then
+		local text = s.error ~= nil and s.error or "Loading…"
+		return {
+			ui.column({ paddingV = 16, align = "center", gap = 6 }, {
+				ui.glyph({ name = s.error ~= nil and "alert-triangle" or "loader", size = 20, color = s.error ~= nil and "error" or "on_surface_variant" }),
+				ui.label({ text = text, fontSize = 12, color = "on_surface_variant", textAlign = "center", maxLines = 4 }),
+			}),
+		}
+	end
+	if type(zones) ~= "table" or #zones == 0 then
+		table.insert(cards, ui.label({ text = "No world clocks configured. Add some with bxrig.", fontSize = 12, color = "on_surface_variant", textAlign = "center" }))
+	else
+		for i, zone in ipairs(zones) do
+			if type(zone) == "table" then
+				table.insert(cards, zoneCard(zone, i))
+			end
+		end
+	end
+	for _, c in ipairs(agendaCards(s)) do
+		table.insert(cards, c)
+	end
+	for _, c in ipairs(reminderSummary(s)) do
+		table.insert(cards, c)
+	end
+	return cards
+end
+
+local function view(self)
+	local s = self.state
 	local sections = {}
 
-	-- Header: "It's 15:48 here in Fort Lauderdale", then the title with a globe.
-	local here = data and data.here or nil
+	-- Header: "It's 15:48 here in Fort Lauderdale", then the title with a clock icon and the buttons.
+	local here = s.data and s.data.here or nil
 	local hereText = ""
 	if type(here) == "table" and str(here.time) ~= "" then
 		hereText = str(here.city) ~= "" and `It's {here.time} here in {here.city}` or `It's {here.time} here`
 	end
 	local buttons = {
-		ui.button({
-			glyph = "refresh",
-			variant = "ghost",
-			controlSize = "sm",
-			tooltip = "Refresh",
-			onClick = "onRefresh",
-		}),
+		ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = "onRefresh" }),
 	}
-	if closeButton then
+	if s.closeButton then
 		for _, b in ipairs(bxrig.windowButtons({ plugin = "bxrig/clock", panel = "panel", tui = nil })) do
 			table.insert(buttons, b)
 		end
-table.insert(buttons, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
+		table.insert(buttons, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
 	end
-	-- The buttons sit right of the title; an equal-width spacer on the left
-	-- keeps the title centered.
+	-- The buttons sit right of the title; an equal-width spacer on the left keeps the title centered.
 	local buttonsWidth = #buttons * 36
 	table.insert(sections, ui.column({ align = "stretch", gap = 2, paddingV = 2 }, {
 		ui.label({ text = hereText, fontSize = 12, color = "on_surface_variant", maxLines = 1, textAlign = "center" }),
@@ -216,90 +459,138 @@ table.insert(buttons, ui.button({ glyph = "close", variant = "ghost", controlSiz
 		}),
 	}))
 
-	local zones = data and data.zones or nil
-	if data == nil then
-		local text = errorText ~= nil and errorText or "Loading…"
-		table.insert(sections, ui.column({ paddingV = 16, align = "center", gap = 6 }, {
-			ui.glyph({ name = errorText ~= nil and "alert-triangle" or "loader", size = 20, color = errorText ~= nil and "error" or "on_surface_variant" }),
-			ui.label({ text = text, fontSize = 12, color = "on_surface_variant", textAlign = "center", maxLines = 4 }),
-		}))
-	elseif type(zones) ~= "table" or #zones == 0 then
-		table.insert(sections, ui.label({
-			text = "No world clocks configured. Add some with bxrig.",
-			fontSize = 12,
-			color = "on_surface_variant",
-			textAlign = "center",
-		}))
-		local extras = agendaCards()
-		for _, c in ipairs(reminderCards()) do
-			table.insert(extras, c)
-		end
-		if #extras > 0 then
-			table.insert(sections, ui.scroll({ flexGrow = 1, gap = 8 }, extras))
-		end
-	else
-		local cards = {}
-		for i, zone in ipairs(zones) do
-			if type(zone) == "table" then
-				table.insert(cards, zoneCard(zone, i))
-			end
-		end
-		for _, c in ipairs(agendaCards()) do
-			table.insert(cards, c)
-		end
-		for _, c in ipairs(reminderCards()) do
-			table.insert(cards, c)
-		end
-		table.insert(sections, ui.scroll({ flexGrow = 1, gap = 8 }, cards))
-		if errorText ~= nil then
-			table.insert(sections, ui.label({ text = errorText, fontSize = 10, color = "error", maxLines = 2 }))
-		end
-	end
-
-	table.insert(sections, ui.button({
-		text = "Open calendar",
-		glyph = "calendar",
-		variant = "secondary",
-		contentAlign = "center",
-		onClick = "onCalendar",
+	-- The two tabs, each with its icon; the Reminders tab shows how many are waiting.
+	local count = #reminderList(s)
+	table.insert(sections, kit.tabRow({
+		tabs = {
+			{ "clocks", "Clocks", "clock" },
+			{ "reminders", count > 0 and ("Reminders · " .. count) or "Reminders", "bell" },
+		},
+		current = s.page,
+		onSelect = gotoPage,
+		gap = 6,
+		paddingH = 4,
 	}))
 
-	panel.render(ui.column({ flexGrow = 1, gap = 10, padding = 10 }, sections))
-end
-
--- The agenda and the reminders: a failure leaves the section out (no calendars, an older bxrig).
-function fetchExtras()
-	bxrig.json({ "calendar", "agenda", "--days=2", "--json" }, function(result, err)
-		agenda = err == nil and result or nil
-		render()
-	end)
-	bxrig.json({ "remind", "list", "--json" }, function(result, err)
-		reminders = err == nil and result or nil
-		render()
-	end)
-end
-
-local function fetch()
-	if loading then
-		return
-	end
-	loading = true
-	lastFetchMs = noctalia.nowMs()
-	fetchExtras()
-	bxrig.json({ "time", "world", "--json" }, function(result, err)
-		loading = false
-		if err ~= nil then
-			errorText = err
-		else
-			data = result
-			errorText = nil
+	if s.page == "reminders" then
+		table.insert(sections, ui.scroll({ flexGrow = 1, gap = 10 }, remindersPage(s)))
+		local armed = s.armedClear
+		table.insert(sections, kit.footer({
+			hint = count == 0 and "Nothing to clear" or (count .. (count == 1 and " reminder" or " reminders")),
+			buttons = {
+				ui.button({
+					text = armed and "Click again to clear all" or "Clear all",
+					glyph = "trash",
+					variant = "ghost",
+					controlSize = "sm",
+					enabled = count > 0,
+					onClick = "onClearAll",
+				}),
+			},
+		}))
+	else
+		table.insert(sections, ui.scroll({ flexGrow = 1, gap = 8 }, clocksPage(s)))
+		if s.error ~= nil and s.data ~= nil then
+			table.insert(sections, ui.label({ text = s.error, fontSize = 10, color = "error", maxLines = 2 }))
 		end
-		render()
+		table.insert(sections, ui.button({ text = "Open calendar", glyph = "calendar", variant = "secondary", contentAlign = "center", onClick = "onCalendar" }))
+	end
+
+	return ui.column({ flexGrow = 1, gap = 14, padding = 14 }, sections)
+end
+
+-- Everything the panel shows: the zones (main channel, drives loading and error), the agenda and the reminders (a failure leaves the section out).
+local function loadAll()
+	P.state.lastFetchMs = noctalia.nowMs()
+	P:fetch({ "calendar", "agenda", "--days=2" }, function(data)
+		P.state.agenda = data
+	end, { channel = "agenda", onError = function() P.state.agenda = nil end })
+	loadReminders()
+	P:fetch({ "time", "world" }, function(data)
+		P.state.data = data
 	end)
+end
+
+P = framework.panel({
+	plugin = "bxrig/clock",
+	id = "panel",
+	state = function()
+		return {
+			page = "clocks",
+			data = nil,
+			agenda = nil,
+			reminders = nil,
+			closeButton = true,
+			draft = "",
+			customTime = "",
+			choice = "1h",
+			inputKey = 1,
+			addMsg = nil,
+			addErr = nil,
+			armedClear = false,
+			lastFetchMs = 0,
+		}
+	end,
+	open = function(self, context)
+		self.state.closeButton = noctalia.getSetting("shell.show_close_buttons") ~= false
+		if context == "reminders" then
+			self.state.page = "reminders"
+		end
+		panel.setWantsSecondTicks(true)
+		loadAll()
+	end,
+	view = view,
+	submit = addReminder,
+})
+
+-- The host calls these globals by name.
+function onOpen(context)
+	P:open(context)
+end
+
+function onClose()
+	panel.setWantsSecondTicks(false)
+end
+
+function onKey(chord, pressed)
+	P:key(chord, pressed)
+end
+
+function update()
+	if P.state.lastFetchMs ~= nil and noctalia.nowMs() - P.state.lastFetchMs >= REFRESH_MS then
+		loadAll()
+	end
 end
 
 function onRefresh()
-	fetch()
+	loadAll()
+end
+
+function onDraftChanged(value)
+	P.state.draft = value or ""
+	P.state.addMsg = nil
+	P.state.addErr = nil
+end
+
+function onTimeChanged(value)
+	P.state.customTime = value or ""
+	P.state.addErr = nil
+end
+
+function onSubmit()
+	P:submit()
+end
+
+function onClearAll()
+	if not P.state.armedClear then
+		P:set({ armedClear = true })
+		return
+	end
+	P.state.armedClear = false
+	P:run({ "remind", "clear", "--yes" }, function()
+		loadReminders()
+	end)
+	P:render()
 end
 
 function onCalendar()
@@ -309,21 +600,4 @@ end
 
 function onCloseClicked()
 	panel.close()
-end
-
-function onOpen(_context)
-	closeButton = noctalia.getSetting("shell.show_close_buttons") ~= false
-	panel.setWantsSecondTicks(true)
-	render()
-	fetch()
-end
-
-function onClose()
-	panel.setWantsSecondTicks(false)
-end
-
-function update()
-	if noctalia.nowMs() - lastFetchMs >= REFRESH_MS then
-		fetch()
-	end
 end

@@ -6,7 +6,7 @@ class extends="bxModules.bxai.models.runnables.AiAgent" {
 	// The tools that change your machine: each call waits for a person to approve, reject or approve for the conversation.
 	variables.NEEDS_OK = [
 		"theme_set", "theme_mode", "night_light_set", "do_not_disturb_set", "stay_awake_set", "brightness_set", "power_profile_set",
-		"reminder_add", "app_install", "app_remove", "screenshot_take", "recording_set", "database_start", "database_stop",
+		"reminder_add", "reminder_done", "reminder_remove", "reminders_clear", "app_install", "app_remove", "screenshot_take", "recording_set", "database_start", "database_stop",
 		"vm_start", "vm_stop", "system_update", "screen_lock", "backup_now"
 	];
 

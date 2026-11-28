@@ -94,6 +94,7 @@ The keys you will use most, in the Traditional style unless noted:
 | `Super+Ctrl+Alt+V` | Webcam preview on or off (needs `mpv`) |
 | `Super+Ctrl+H` | Hardware menu |
 | `Super+Ctrl+V` | Clipboard history |
+| `Super+Ctrl+R` | Reminders (add, list, clear) |
 | `Super+Ctrl+E` | Emoji picker (a grid panel; rofimoji without Noctalia) |
 | `Alt+Space` | Dictation on or off (the logical Alt key: with the Mac swap on a PC keyboard it is the Win key, where Option sits on a Mac) |
 | `Super+Alt+D` | Show or hide the dock |
