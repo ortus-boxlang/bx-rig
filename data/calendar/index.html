@@ -275,12 +275,23 @@ bxrig calendar agenda --days=3
 bxrig remind &quot;Stand up&quot; --at=09:25              # today, or tomorrow when 09:25 has passed
 bxrig remind &quot;Renew the domain&quot; --at=&quot;2026-12-01 10:00&quot;
 bxrig remind list
-bxrig remind done 3
+bxrig remind &quot;Stand up&quot; --at=&quot;tomorrow 09:00&quot;
+bxrig remind done 3                              # mark it finished, it stays in the list as done
+bxrig remind remove 3                            # forget it
+bxrig remind clear --done --yes                  # forget the finished ones
+bxrig remind clear --yes                         # forget all of them
 </code></pre>
+<p><code>remind clear</code> without <code>--yes</code> only shows what it would forget (exit code 2).</p>
 <p><code>--in</code> takes minutes, hours and days: <code>45</code>, <code>30m</code>, <code>2h</code>, <code>1d</code>, <code>1h30m</code>.</p>
 <p><img src="/assets/screenshots/remind-list.webp"  alt="bxrig remind list" /></p>
 <h2 id="see-it-in-the-clock-panel"><a href="#see-it-in-the-clock-panel" id="see-it-in-the-clock-panel" name="see-it-in-the-clock-panel" class="anchor"></a>See it in the Clock panel</h2>
-<p>Under the world clocks, the Clock panel shows today's and tomorrow's events and the reminders still to come. A reminder whose time has come is highlighted; its check button marks it done.</p>
+<p>The Clock panel has two tabs, <strong>Clocks</strong> and <strong>Reminders</strong>.</p>
+<p><img src="/assets/screenshots/clock-clocks.webp"  alt="The Clock panel with the Clocks tab" /></p>
+<p>On <strong>Clocks</strong>, under the world clocks, you see today's and tomorrow's events and the next three reminders, with <strong>New</strong> and <strong>All</strong> to jump to the Reminders tab. A reminder whose time has come is highlighted; its check button marks it done.</p>
+<p>On <strong>Reminders</strong>, type what to be reminded about, pick a time (in 10 min, in 1 h, tonight 20:00, tomorrow 09:00, or <strong>at…</strong> for a time such as 14:30) and press Enter or <strong>Add reminder</strong>. &quot;Tonight&quot; hides itself after 20:00. Each reminder has a check button (done) and a cross (remove). <strong>Clear all</strong> asks twice before it forgets them.</p>
+<p><video src="../assets/clips/reminders.webm" poster="../assets/screenshots/clock-reminders.webp" autoplay loop muted playsinline width="100%"></video></p>
+<p><img src="/assets/screenshots/clock-reminders.webp"  alt="The Reminders tab" /></p>
+<p>The key <code>Super+Ctrl+R</code> opens the Clock panel on the Reminders tab. Boxy can add, finish, remove and clear reminders too; finishing, removing and clearing ask for your approval first.</p>
 <h2 id="keep-it-up-to-date"><a href="#keep-it-up-to-date" id="keep-it-up-to-date" name="keep-it-up-to-date" class="anchor"></a>Keep it up to date</h2>
 <p>With the <a href="/data/scheduler/index.html">scheduler</a> installed, adding a calendar adds the task <strong>calendar-sync</strong> (every 15 minutes) and adding a reminder adds the task <strong>reminders</strong> (every minute), which pops up each reminder once, as a notice that stays until you close it. Installing the scheduler later adds both when you already have calendars or reminders.</p>
 <h2 id="advanced"><a href="#advanced" id="advanced" name="advanced" class="anchor"></a>Advanced</h2>
@@ -291,7 +302,7 @@ bxrig remind done 3
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/data/calendar.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/data/calendar.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 28, 2026, 3&#x3a;48&#x3a;02 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Calendar%20and%20reminders&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdata%2Fcalendar%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/data/calendar.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/data/calendar.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 28, 2026, 5&#x3a;55&#x3a;12 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Calendar%20and%20reminders&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdata%2Fcalendar%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
