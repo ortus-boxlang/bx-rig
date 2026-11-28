@@ -690,7 +690,25 @@ function onKey(chord, pressed)
 	end
 end
 
-function onOpen(_context)
+-- `noctalia msg panel-open bxrig/launcher:panel boxy` opens straight in Boxy mode; any other context (or none) is the launcher.
+local function wantsBoxy(context)
+	if context == nil then
+		return false
+	end
+	if type(context) == "string" then
+		return context:lower():find("boxy", 1, true) ~= nil
+	end
+	if type(context) == "table" then
+		for _, v in pairs(context) do
+			if type(v) == "string" and v:lower():find("boxy", 1, true) ~= nil then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function onOpen(context)
 	mode = "launcher"
 	query = ""
 	draft = ""
@@ -699,6 +717,10 @@ function onOpen(_context)
 	errorText = nil
 	results = {}
 	selected = 1
+	if wantsBoxy(context) then
+		enterBoxy("")
+		return
+	end
 	render()
 	fetch()
 end

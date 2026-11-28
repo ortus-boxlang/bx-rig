@@ -48,7 +48,7 @@ The table is `src/bxrig/Shortcuts.bx`. Every key BxRig binds is a row, including
 bxrig keys show                         # the table, in the style that is on
 bxrig keys search screenshot           # find a shortcut by words, keys or id
 bxrig keys run color-picker             # run the command a shortcut stands for
-bxrig keys set ai-shell Super+Alt+A --yes
+bxrig keys set ai-shell Super+Alt+Y --yes
 bxrig keys reset ai-shell --yes
 bxrig keys conflicts                    # the table, the remaps of the style that is on, and your own hl.bind lines
 ```
@@ -84,6 +84,9 @@ The keys you will use most, in the Traditional style unless noted:
 |---|---|
 | `Super+Space` | Launcher: search apps, menu actions, themes and answers |
 | `Super+Alt+Space` | BxRig menu (browse by section) |
+| `Super+Alt+A` | All apps: the app grid |
+| `Super+Alt+B` | Ask Boxy: the launcher in chat mode |
+| `Super+K` | Shortcut viewer (filter, change keys) |
 | `Super+K` | Shortcut cheat sheet |
 | `Print` (Mac style also `Super+Shift+3` / `4` / `5`) | Screenshot: region (Mac style: screen / region / menu) |
 | `Super+Print` | Color picker |

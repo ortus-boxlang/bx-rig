@@ -1,10 +1,10 @@
 # BxRig Launcher: one search box for everything, in the style of Raycast. Type to find an application, any action of the BxRig menu (with its
 # path, like "Trigger › Capture"), a theme, a calculator answer, or fall back to a web search. A second panel shows the clipboard history.
 # Panels (no bar widget):
-#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab
+#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab; opened with the context word `boxy` it starts in chat mode (Super+Alt+B)
 #   menu       the drill-down menu noctalia msg panel-toggle bxrig/launcher:menu       (Super+Alt+Space)
 #   keys       shortcuts viewer   noctalia msg panel-toggle bxrig/launcher:keys       (Super+K), with a Change button
-#   apps       the app grid       noctalia msg panel-toggle bxrig/launcher:apps       (key to be chosen)
+#   apps       the app grid       noctalia msg panel-toggle bxrig/launcher:apps       (Super+Alt+A)
 #   clipboard  clipboard history  noctalia msg panel-toggle bxrig/launcher:clipboard  (Super+Shift+V)
 # Data: keys: `bxrig keys show --json`; Change runs `bxrig keys set ID KEYS --yes` then `keys apply --yes`.
 #   apps: `bxrig apps list --json`, Enter runs `bxrig launcher run app:ID`.
