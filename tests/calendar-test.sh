@@ -52,6 +52,18 @@ run "$binary" remind due --json | jq -e '.data.shown == []' >/dev/null || fail '
 run "$binary" remind done 2 >/dev/null; run "$binary" remind list --json | jq -e '(.data.reminders | map(.id)) == [1]' >/dev/null || fail 'done'
 run "$binary" remind remove 1 >/dev/null; run "$binary" remind list --json | jq -e '.data.reminders == []' >/dev/null || fail 'remove'
 [[ "$(code "$binary" remind done 9)" == 4 ]] || fail 'an unknown reminder exits 4'
+run "$binary" remind "Send the invoice" --at="tomorrow 09:00" --json | jq -e --arg d "$(date -d tomorrow +%F)" '.data.at == ($d + "T09:00")' >/dev/null || fail 'tomorrow HH:MM is tomorrow, even when 09:00 has not passed today'
+[[ "$(code "$binary" remind "x" --at="tomorrow 25:00")" == 2 ]] || fail 'tomorrow with a bad time exits 2'
+run "$binary" remind "Pay rent" --in=3h >/dev/null
+{ run "$binary" remind clear --json || true; } | jq -e '.exit == 2 and (.data.count >= 2) and .data.done_only == false' >/dev/null || fail 'clear without --yes is a plan with a count'
+[[ "$(code "$binary" remind clear)" == 2 ]] || fail 'clear without --yes exits 2'
+run "$binary" remind list --json | jq -e '(.data.reminders | length) == 2' >/dev/null || fail 'the plan changed nothing (two still to come)'
+inv="$(run "$binary" remind list --json | jq -r '.data.reminders[] | select(.text == "Send the invoice") | .id')"
+run "$binary" remind done "$inv" >/dev/null
+run "$binary" remind clear --done --yes --json | jq -e '.data.cleared == 2' >/dev/null || fail 'clear --done forgets only the finished (the one from before and this one)'
+run "$binary" remind list --json | jq -e '(.data.reminders | length) == 1' >/dev/null || fail 'one left after clear --done'
+run "$binary" remind clear --yes --json | jq -e '.data.cleared == 1' >/dev/null || fail 'clear forgets the rest'
+run "$binary" remind list --json | jq -e '.data.reminders == []' >/dev/null || fail 'nothing left'
 
 # with the scheduler installed, calendars and reminders get their tasks
 mkdir -p "$tmp/cfg/systemd/user"; : > "$tmp/cfg/systemd/user/bxrig-scheduler.service"

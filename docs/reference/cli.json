@@ -1534,9 +1534,10 @@
 					"summary": "A reminder that pops up at a time you choose.",
 					"brief": "A reminder at a time you choose",
 					"usage": [
-						"remind TEXT --at=HH:MM | --at=\"YYYY-MM-DD HH:MM\" | --in=30m|2h|1d [--json]",
+						"remind TEXT --at=HH:MM | --at=\"YYYY-MM-DD HH:MM\" | --at=\"tomorrow HH:MM\" | --in=30m|2h|1d [--json]",
 						"remind [list] [--json]",
 						"remind done ID | remove ID [--json]",
+						"remind clear [--done] [--yes] [--json]",
 						"remind due [--json]"
 					],
 					"examples": [
@@ -1544,20 +1545,27 @@
 						"bxrig remind \"Stand up\" --at=09:25",
 						"bxrig remind \"Renew the domain\" --at=\"2026-12-01 10:00\"",
 						"bxrig remind list",
-						"bxrig remind done 3"
+						"bxrig remind done 3",
+						"bxrig remind \"Send the invoice\" --at=\"tomorrow 09:00\"",
+						"bxrig remind clear --done --yes"
 					],
 					"mutates": true,
-					"note": "Reminders are kept in ~/.config/bxrig/reminders.json. An HH:MM that has passed today means tomorrow. `due` shows the reminders whose time has come as notices; the scheduler task reminders runs it every minute (added with the first reminder when the scheduler is installed).",
+					"note": "Reminders are kept in ~/.config/bxrig/reminders.json. An HH:MM that has passed today means tomorrow; \"tomorrow HH:MM\" always means tomorrow. `clear` forgets every reminder, or only the finished ones with --done; without --yes it shows what it would do. `due` shows the reminders whose time has come as notices; the scheduler task reminders runs it every minute (added with the first reminder when the scheduler is installed).",
 					"flags": [
 						{
 							"name": "at",
 							"type": "value",
-							"desc": "Time to remind: HH:MM or \"YYYY-MM-DD HH:MM\""
+							"desc": "HH:MM, \"tomorrow HH:MM\" or \"YYYY-MM-DD HH:MM\""
 						},
 						{
 							"name": "in",
 							"type": "value",
 							"desc": "Remind after a delay such as 30m, 2h or 1d"
+						},
+						{
+							"name": "done",
+							"type": "bool",
+							"desc": "On clear: only the finished reminders"
 						}
 					]
 				},

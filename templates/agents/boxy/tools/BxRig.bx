@@ -101,6 +101,28 @@ class {
 		return bxrig( [ "remind", arguments.text, len( delay ) ? "--in=" & delay : "--at=" & w ] );
 	}
 
+	/**
+	 * @id The number of the reminder (from reminders_list)
+	 */
+	@AITool( "Mark a reminder as done." )
+	function reminder_done( required numeric id ) { return bxrig( [ "remind", "done", int( arguments.id ) ] ); }
+
+	/**
+	 * @id The number of the reminder (from reminders_list)
+	 */
+	@AITool( "Forget one reminder." )
+	function reminder_remove( required numeric id ) { return bxrig( [ "remind", "remove", int( arguments.id ) ] ); }
+
+	/**
+	 * @doneOnly True to forget only the finished reminders (default false: all of them)
+	 */
+	@AITool( "Forget every reminder, or only the finished ones." )
+	function reminders_clear( boolean doneOnly = false ) {
+		var argv = [ "remind", "clear", "--yes" ];
+		if ( arguments.doneOnly ) argv.append( "--done" );
+		return bxrig( argv );
+	}
+
 	// "30m", "30 min", "30 minutes", "2 hours", "in 1 day" as BxRig's delay (30m, 2h, 1d), or "" for a time.
 	private string function delayOf( required string when ) {
 		var w = trim( arguments.when );
