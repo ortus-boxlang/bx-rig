@@ -12,6 +12,7 @@ class AiShell {
 		variables.proc = new bxrig.util.Proc( arguments.runner );
 		variables.ai = new bxrig.Ai( arguments.cli, arguments.runner );
 		variables.agents = new bxrig.AiAgents();
+		variables.runnerArg = arguments.runner;
 		return this;
 	}
 
@@ -64,6 +65,8 @@ class AiShell {
 
 	function hyprlandToggle( dryRun ) {
 		var steps = [];
+		var dd = new bxrig.util.DropDown( variables.runnerArg );
+		var geo = dd.geometry( 60, 45 );
 		if ( !hasWindow() ) {
 			var term = terminal();
 			if ( structIsEmpty( term ) ) return { code: 4, error: "no terminal that can set a window class is installed (ghostty, kitty, alacritty, foot)" };
@@ -72,15 +75,18 @@ class AiShell {
 			for ( var p in term.classArgs ) argv.append( p );
 			for ( var p in term.execFlag ) argv.append( p );
 			for ( var p in inn.argv ) argv.append( p );
-			steps.append( argv );
-			if ( !arguments.dryRun ) detach( argv );
-			// size and place it as a drop-down from the top once its window exists (best effort; Hyprland dispatchers)
-			var sel = ",class:" & windowClass();
-			steps.append( [ "hyprctl", "dispatch", "resizewindowpixel", "exact 100% 45%" & sel ] );
-			steps.append( [ "hyprctl", "dispatch", "movewindowpixel", "exact 0 0" & sel ] );
+			// the terminal starts through Hyprland with its rules: floating, on the special workspace, centered, hanging from the top
+			var launch = [ "hyprctl", "dispatch", "exec", dd.rules( workspaceName(), geo ) & " " & quoted( argv ) ];
+			steps.append( launch );
+			var placing = dd.place( "class:" & windowClass(), geo );
+			for ( var pl in placing ) steps.append( pl );
 			if ( !arguments.dryRun ) {
-				for ( var i = 1; i <= 20; i++ ) { if ( hasWindow() ) break; variables.proc.exec( [ "sleep", "0.2" ], 5 ); }
-				variables.proc.exec( steps[ 2 ], 10 ); variables.proc.exec( steps[ 3 ], 10 );
+				var started = variables.proc.exec( launch, 10 );
+				if ( started.exitCode != 0 ) return { code: 6, error: "hyprctl could not start the terminal: " & trim( started.output ) };
+				for ( var i = 1; i <= 25; i++ ) { if ( hasWindow() ) break; variables.proc.exec( [ "sleep", "0.2" ], 5 ); }
+				if ( !hasWindow() ) return { code: 6, error: "the terminal started but no window with the class " & windowClass() & " appeared (does " & term.id & " accept " & term.classArgs.toList( " " ) & "?)" };
+				// belt and braces: place it again once its window exists
+				for ( var pl2 in placing ) variables.proc.exec( pl2, 10 );
 			}
 			return { code: 0, action: "opened", label: inn.label, steps: steps };
 		}
@@ -118,9 +124,32 @@ class AiShell {
 		return len( rt ) ? rt & "/bxrig-ai-shell" : "";
 	}
 
+	// ~/.config/yakuakerc: a centered drop-down (60% wide, 45% high) that stays open when focus moves (the key hides it). Only keys the file does
+	// not have yet are written, so a size you chose yourself is kept. Yakuake reads the file when it starts.
+	function yakuakeSettings( dryRun ) {
+		var env = new bxrig.util.Env();
+		var file = env.xdgConfig( "yakuakerc" );
+		var text = fileExists( file ) ? fileRead( file ) : "";
+		var ini = new bxrig.util.Ini();
+		var lines = listToArray( replace( text, chr( 13 ), "", "all" ), chr( 10 ), true );
+		var want = [ [ "Width", "60" ], [ "Height", "45" ], [ "Position", "50" ], [ "KeepOpen", "true" ] ];
+		var changed = false;
+		for ( var kv in want ) {
+			if ( ini.values( text, "Window", kv[ 1 ], true ).len() ) continue;
+			lines = ini.set( lines, "Window", kv[ 1 ], kv[ 2 ] );
+			changed = true;
+		}
+		if ( changed && !arguments.dryRun ) {
+			directoryCreate( getDirectoryFromPath( file ), true, true );
+			new bxrig.ConfigService().quiet( true ).writeText( "yakuake-window", file, lines.toList( chr( 10 ) ) & chr( 10 ) );
+		}
+		return changed;
+	}
+
 	// Starts Yakuake when it is not running and waits for its D-Bus name. Returns { error, steps }.
 	function yakuakeStart( dryRun ) {
 		if ( !variables.ai.installed( "yakuake" ) ) return { error: "Yakuake is not installed. Install it: bxrig install yakuake", code: 4, steps: [] };
+		yakuakeSettings( arguments.dryRun );
 		if ( arguments.dryRun ) return { error: "", code: 0, steps: [ [ "yakuake" ] ] };
 		detach( [ "yakuake" ] );
 		for ( var n = 1; n <= 25; n++ ) {
@@ -130,20 +159,31 @@ class AiShell {
 		return { error: "Yakuake did not start", code: 6, steps: [ [ "yakuake" ] ] };
 	}
 
-	// Opens a tab that runs the agent (or your shell). Returns { error, steps, label }.
-	function yakuakeOpenTab( dryRun ) {
+	// Gets the shell ready: a freshly started Yakuake already has one tab, so that tab is used; a running one gets a new tab. The agent is typed
+	// into it; for a plain shell nothing is typed (the tab already is one). Returns { error, steps, label }.
+	function yakuakeOpenTab( dryRun, fresh = false ) {
 		var plan = inner();
-		var add = yakuakeCall( "/yakuake/sessions", "addSession" );
-		var run = yakuakeCall( "/yakuake/sessions", "runCommand", [ "string:" & quoted( plan.argv ) ] );
-		if ( !arguments.dryRun ) {
-			var first = variables.proc.exec( add, 10 );
-			if ( first.exitCode != 0 ) return { error: "Yakuake refused a new tab: " & trim( first.output ), steps: [], label: "" };
-			var second = variables.proc.exec( run, 10 );
-			if ( second.exitCode != 0 ) return { error: "Yakuake refused the command: " & trim( second.output ), steps: [], label: "" };
-			var st = stateFile();
-			if ( len( st ) ) fileWrite( st, "tab" & chr( 10 ) );
+		var steps = [];
+		var agent = plan.label != "your shell";
+		if ( !arguments.fresh ) {
+			var add = yakuakeCall( "/yakuake/sessions", "addSession" );
+			steps.append( add );
+			if ( !arguments.dryRun ) {
+				var first = variables.proc.exec( add, 10 );
+				if ( first.exitCode != 0 ) return { error: "Yakuake refused a new tab: " & trim( first.output ), steps: [], label: "" };
+			}
 		}
-		return { error: "", steps: [ add, run ], label: plan.label };
+		if ( agent ) {
+			var run = yakuakeCall( "/yakuake/sessions", "runCommand", [ "string:" & quoted( plan.argv ) ] );
+			steps.append( run );
+			if ( !arguments.dryRun ) {
+				var second = variables.proc.exec( run, 10 );
+				if ( second.exitCode != 0 ) return { error: "Yakuake refused the command: " & trim( second.output ), steps: [], label: "" };
+			}
+		}
+		var st = stateFile();
+		if ( !arguments.dryRun && len( st ) ) fileWrite( st, "tab" & chr( 10 ) );
+		return { error: "", steps: steps, label: plan.label };
 	}
 
 	function yakuakeToggle( dryRun ) {
@@ -158,11 +198,13 @@ class AiShell {
 		}
 		var shown = "";
 		if ( !haveTab ) {
-			var tab = yakuakeOpenTab( arguments.dryRun );
+			var tab = yakuakeOpenTab( arguments.dryRun, !wasRunning );
 			if ( tab.error != "" ) return { code: 6, error: tab.error };
 			for ( var s2 in tab.steps ) steps.append( s2 );
 			shown = tab.label;
 		}
+		// a Yakuake that has only just started needs a moment before it takes the show command
+		if ( !wasRunning && !arguments.dryRun ) variables.proc.exec( [ "sleep", "0.8" ], 5 );
 		var toggle = yakuakeCall( "/yakuake/window", "toggleWindowState" );
 		steps.append( toggle );
 		if ( !arguments.dryRun ) {
@@ -179,11 +221,21 @@ class AiShell {
 		if ( !arrayFind( [ "hyprland", "yakuake" ], be ) ) return variables.cli.say( cmd, "precondition", { error: "No backend" }, arguments.asJson, [ "error: the pull-down AI shell needs a Hyprland session or KDE Plasma (Yakuake). Use --backend=hyprland or --backend=yakuake to choose." ] );
 		if ( arguments.action == "status" ) {
 			var present = be == "hyprland" ? hasWindow() : yakuakeRunning();
-			return variables.cli.say( cmd, "ok", { backend: be, running: present }, arguments.asJson, [ "Backend: " & be, "Window: " & ( present ? "open" : "not started" ) ] );
+			var geo = be == "hyprland" ? new bxrig.util.DropDown( variables.runnerArg ).geometry( 60, 45 ) : { ok: false };
+			var lines = [ "Backend: " & be, "Window: " & ( present ? "open" : "not started" ) ];
+			if ( be == "hyprland" ) {
+				lines.append( "Window class: " & windowClass() & ", special workspace: " & workspaceName() );
+				lines.append( geo.ok ? "Placement: " & geo.w & "x" & geo.h & " at " & geo.x & "," & geo.y & " (centered, 60% x 45%)" : "Placement: hyprctl did not answer, so percent rules are used" );
+			}
+			return variables.cli.say( cmd, "ok", { backend: be, running: present, window_class: windowClass(), workspace: workspaceName(), geometry: geo }, arguments.asJson, lines );
 		}
 		if ( arguments.action != "toggle" ) return variables.cli.say( cmd, "usage", {}, arguments.asJson, [ new bxrig.CommandSpec().usage( "ai shell" ) ] );
 		var r = be == "hyprland" ? hyprlandToggle( arguments.dryRun ) : yakuakeToggle( arguments.dryRun );
-		if ( r.code != 0 ) return variables.cli.say( cmd, r.code, { error: r.error, backend: be }, arguments.asJson, [ "error: " & r.error ] );
+		if ( r.code != 0 ) {
+			// from a key binding nobody sees the terminal output, so the error is also shown as a desktop notice
+			if ( !CLIIsTerminal() && !arguments.asJson && variables.proc.has( "notify-send" ) ) variables.proc.exec( [ "notify-send", "-u", "critical", "AI shell", r.error ], 10 );
+			return variables.cli.say( cmd, r.code, { error: r.error, backend: be }, arguments.asJson, [ "error: " & r.error ] );
+		}
 		var data = { backend: be, action: r.action, runs: r.label, steps: r.steps };
 		var msg = arguments.dryRun ? "Dry run: " & r.steps.map( function( s ) { return s.toList( " " ); } ).toList( " ; " ) : "AI shell " & r.action & ( len( r.label ) ? " (" & r.label & ")" : "" ) & ".";
 		return variables.cli.say( cmd, "ok", data, arguments.asJson, [ msg ], arguments.dryRun );

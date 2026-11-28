@@ -1,0 +1,68 @@
+/**
+ * Where a pull-down terminal (the AI shell, the quake console) goes on Hyprland: centered, a share of the focused monitor wide and high,
+ * hanging from the top edge below the bar. Read from `hyprctl monitors -j` (logical size: the pixel size divided by the scale).
+ *   geometry( 60, 45 )              { ok, w, h, x, y } in logical pixels, or { ok: false } when Hyprland does not answer
+ *   rules( "ai", g )                the exec rules for `hyprctl dispatch exec "[RULES] terminal ..."`: floating, on the special workspace, sized and placed
+ *   place( window, g )              the two dispatcher calls that resize and move an existing window (a class or title selector after the comma)
+ */
+class DropDown {
+
+	/**
+	 * @runner Optional fake process runner for tests.
+	 */
+	function init( runner = "" ) {
+		variables.proc = new bxrig.util.Proc( arguments.runner );
+		return this;
+	}
+
+	/**
+	 * The size and top-left corner of a centered pull-down window on the focused monitor.
+	 * @widthPct Percent of the monitor width.
+	 * @heightPct Percent of the monitor height.
+	 * @return { ok, w, h, x, y }.
+	 */
+	function geometry( widthPct = 60, heightPct = 45 ) {
+		var r = variables.proc.exec( [ "hyprctl", "monitors", "-j" ], 10 );
+		if ( r.exitCode != 0 ) return { ok: false };
+		try {
+			var list = jsonDeserialize( r.output );
+			if ( !isArray( list ) || !list.len() ) return { ok: false };
+			var m = list[ 1 ];
+			for ( var c in list ) if ( ( c.focused ?: false ) == true ) { m = c; break; }
+			var scale = ( m.scale ?: 1 ) > 0 ? m.scale : 1;
+			var mw = int( m.width / scale );
+			var mh = int( m.height / scale );
+			var top = isArray( m.reserved ?: "" ) && m.reserved.len() >= 2 ? m.reserved[ 2 ] : 0;
+			var w = int( mw * arguments.widthPct / 100 );
+			var h = int( mh * arguments.heightPct / 100 );
+			return { ok: true, w: w, h: h, x: int( m.x ?: 0 ) + int( ( mw - w ) / 2 ), y: int( m.y ?: 0 ) + top + 4 };
+		} catch ( any e ) {
+			return { ok: false };
+		}
+	}
+
+	/**
+	 * The rules of an exec dispatch for a pull-down window.
+	 * @workspace The special workspace name.
+	 * @g The geometry from geometry().
+	 */
+	function rules( workspace, g ) {
+		var base = "float; workspace special:" & arguments.workspace;
+		if ( !arguments.g.ok ) return "[" & base & "; size 60% 45%; center]";
+		return "[" & base & "; size " & arguments.g.w & " " & arguments.g.h & "; move " & arguments.g.x & " " & arguments.g.y & "]";
+	}
+
+	/**
+	 * The dispatcher calls that resize and move an existing window.
+	 * @selector What follows the comma in the dispatcher argument, for example "class:com.bxrig.ai".
+	 * @g The geometry from geometry().
+	 * @return Array of argv arrays, empty when the geometry is unknown.
+	 */
+	function place( selector, g ) {
+		if ( !arguments.g.ok ) return [];
+		return [
+			[ "hyprctl", "dispatch", "resizewindowpixel", "exact " & arguments.g.w & " " & arguments.g.h & "," & arguments.selector ],
+			[ "hyprctl", "dispatch", "movewindowpixel", "exact " & arguments.g.x & " " & arguments.g.y & "," & arguments.selector ]
+		];
+	}
+}

@@ -177,7 +177,8 @@ class MacExtras {
 		if ( !quakeHasWindow() ) {
 			var term = new bxrig.Ai( variables.cli, variables.runnerArg ).terminal();
 			if ( structIsEmpty( term ) ) return variables.cli.say( cmd, "precondition", { error: "no terminal is installed" }, arguments.asJson, [ "error: no terminal is installed (bxrig install ghostty)" ] );
-			steps.append( [ "hyprctl", "dispatch", "exec", "[workspace special:" & quakeWorkspace() & "] " & term.argv[ 1 ] ] );
+			var dd = new bxrig.util.DropDown( variables.runnerArg );
+			steps.append( [ "hyprctl", "dispatch", "exec", dd.rules( quakeWorkspace(), dd.geometry( 60, 45 ) ) & " " & term.argv[ 1 ] ] );
 		}
 		steps.append( [ "hyprctl", "dispatch", "togglespecialworkspace", quakeWorkspace() ] );
 		for ( var st in steps ) {
