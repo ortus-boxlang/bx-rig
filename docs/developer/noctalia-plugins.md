@@ -18,6 +18,7 @@ You will build a small bar widget, `bxrig/acstate`, that shows whether the machi
 | `templates/noctalia-plugins/acstate/bar.luau` | The bar widget. |
 | `templates/noctalia-plugins/acstate/bxrig.luau` | The shared helper that runs `bxrig`, and the detach and dock helpers. Copy it unchanged from another plugin. |
 | `templates/noctalia-plugins/acstate/kit.luau` | The panel kit: the pieces every panel builds the same way. Copy it unchanged from another plugin. |
+| `templates/noctalia-plugins/acstate/framework.luau` | The panel framework: state, lifecycle, fetching, keys, popup and window. Copy it unchanged from another plugin. |
 | `templates/noctalia-plugins/acstate/translations/en.json` | The labels of the settings. |
 | `src/bxrig/NoctaliaConfig.bx` | The `enabled = [...]` list and the bar layout lines. |
 | `tests/dev_plugin_test.bxs` | A model for a plugin test. |
@@ -123,6 +124,43 @@ flowchart LR
 
 6. Enable it in BxRig. In `src/bxrig/NoctaliaConfig.bx` add `bxrig/acstate` to the `enabled = [...]` line, add a `[widget.bxrig-acstate]` block with `type = "bxrig/acstate:bar"`, and put `bxrig-acstate` in a bar section. Update the matching list in `tests/noctalia-config-test.sh`.
 
+## The panel framework
+
+A BxRig panel is one object made from a definition. `framework.luau` owns what every panel did by hand (state and re-render, the lifecycle, fetching from `bxrig ... --json` without showing a late answer, the double-Enter guard, popup and window mode), so the panel writes only what is its own. Start from `launcher/emoji.luau` (a grid with tabs and a search) or `launcher/clipboard.luau` (a list with a detail pane).
+
+```lua
+local framework = require("./framework.luau")
+local kit = require("./kit.luau")
+
+local P = framework.panel({
+	plugin = "bxrig/launcher", id = "emoji",        -- the popup entry; its window twin is id .. "-window"
+	state = function() return { rows = {}, selected = 1 } end,
+	layout = function(self, w, h) end,               -- window mode only: lay out for the screen
+	open = function(self, context) end,              -- after the state is reset; start loading
+	view = function(self) return framework.stack({ ... }) end,   -- state in, ui tree out
+	keys = { Up = function(self) self:move(-1, #self.state.rows) end },
+	submit = function(self) end,                     -- Enter, guarded to run once
+})
+
+-- the host calls globals by name, so the entry script binds them (and any name an input or button uses):
+function onOpen(context) P:open(context) end
+function onKey(chord, pressed) P:key(chord, pressed) end
+```
+
+| On the panel | What it does |
+|---|---|
+| `P.state` | the current state; read it in `view` and in handlers, change it with `set` |
+| `P:set(patch)` | merge into the state and draw again |
+| `P:fetch(args, onData, opts)` | run `bxrig ARGS --json`; sets `state.loading` and `state.error`; `onData(data)` runs only for the latest request. `opts.channel` gives a second, independent stream (a detail pane next to a list) |
+| `P:run(args, onDone)` | run a command that has no data to show |
+| `P:move(delta, count)` | move `state.selected` inside `1..count` |
+| `P:submit()` | the definition's `submit`, at most once per 300 ms |
+| `P:swap()`, `P:close()`, `P:windowButton()` | popup and window, close, the footer button |
+
+The view never changes state, and the framework reads only `state.loading` and `state.error`. A key is a function, or one of `"swap"`, `"close"`, `"submit"`; F3 swaps popup and window unless `swappable = false`, and Enter runs `submit`. The framework and the kit are copies in every plugin, and the tests keep them identical.
+
+The launcher's emoji picker and clipboard history are on the framework. The other panels use the kit and move over when they are next changed.
+
 ## The panel kit and detachable panels
 
 `kit.luau` is the base for panels. Build a panel from it instead of writing the same rows again; each piece takes a table of options and returns what it makes, and the kit keeps no state of its own, so the panel owns its state and its `render()`.
@@ -171,7 +209,7 @@ tests/noctalia-config-test.sh dist/bxrig
 ## Common mistakes
 
 - A `label_key` with no entry in `translations/en.json`: the settings show raw keys.
-- A copy of `bxrig.luau` or `kit.luau` that drifted from the others: the tests compare them.
+- A copy of `bxrig.luau`, `kit.luau` or `framework.luau` that drifted from the others: the tests compare them.
 - Plugin enabled in `config.toml` but not installed, or the reverse. Installed does not mean active.
 - Hard-coded colors: the widget looks wrong in other themes.
 - Running a bxrig command without `--json` in a data call: the helper expects the envelope.
