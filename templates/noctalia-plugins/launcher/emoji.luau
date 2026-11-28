@@ -2,7 +2,7 @@
 -- BxRig Emoji: a grid of emoji with category tabs, a filter and a Recent tab, in the Noctalia look.
 --
 -- Keys: type to filter, arrows move over the grid, PageUp/PageDown jump three rows, Tab goes to the next category, Enter copies the emoji and
--- closes, Esc closes. Mouse: click an emoji to highlight it, click it again to copy it; the tabs work by click.
+-- closes, Esc closes. Mouse: one click on an emoji copies it and closes the panel; the tabs work by click.
 -- Data: `bxrig emoji list [QUERY] [--category=C] --limit=N --json` and `bxrig emoji recent --json` (rows: emoji, name, category, keywords);
 -- Enter runs `bxrig emoji copy EMOJI`, which puts it on the clipboard and into Recent. One command per keystroke or tab; a counter drops
 -- answers that arrive late. Emoji data: gemoji (MIT).
@@ -86,13 +86,10 @@ local function cell(i, e)
 		justify = "center",
 		-- An explicit transparent fill: a nil fill keeps the retained one.
 		fill = isSel and "primary/0.18" or "on_surface/0",
+		-- One click copies the emoji and closes the panel.
 		onClick = function()
-			if i == selected then
-				onSubmit()
-			else
-				selected = i
-				render()
-			end
+			selected = i
+			onSubmit()
 		end,
 	}, {
 		ui.label({ text = str(e.emoji), fontSize = 28, textAlign = "center" }),
