@@ -64,5 +64,6 @@ for ( fp in [ "launcher/emoji", "launcher/clipboard" ] ) {
 	testkit.check( fp & ": built on framework.panel with the host globals onOpen and onKey bound to it", find( "framework.panel({", t ) > 0 && find( "function onOpen(context)", t ) > 0 && find( "P:open(context)", t ) > 0 && find( "function onKey(chord, pressed)", t ) > 0 && find( "P:key(chord, pressed)", t ) > 0 );
 }
 clockText = textOf( "clock/panel.luau" );
+testkit.check( "backgrounds: the theme switcher and quick settings open the Noctalia wallpaper panel, and the key does too", find( '"panel-open", "wallpaper"', textOf( "quick/themes.luau" ) ) > 0 && find( '"panel-open", "wallpaper"', textOf( "quick/panel.luau" ) ) > 0 && find( "panel-toggle wallpaper", fileRead( "../src/bxrig/Shortcuts.bx" ) ) > 0 );
 testkit.check( "clock: on the framework with two icon tabs (Clocks, Reminders), opens on Reminders from the context, and the key opens it there", find( "framework.panel({", clockText ) > 0 && find( '{ "clocks", "Clocks", "clock" }', clockText ) > 0 && find( '{ "reminders"', clockText ) > 0 && find( 'context == "reminders"', clockText ) > 0 && find( "panel-open bxrig/clock:panel reminders", fileRead( "../src/bxrig/Shortcuts.bx" ) ) > 0 );
 testkit.done( "all passed" );
