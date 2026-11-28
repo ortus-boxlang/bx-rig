@@ -15,7 +15,7 @@ Status: **decided** means the owner chose it; **planned** means it is agreed and
 |---|---|---|
 | Top bar layout (wizard) | Asks Minimal, Standard (default, recommended) or Dense, with a preview in the TUI | decided |
 | Minimal layout | Keeps workspaces, active window and quick settings | decided |
-| Dock | ON by default; the Launchpad grid is its first button; the grid leaves the bar when the dock is on | decided |
+| Dock | ON by default; its first icon is the pinned Apps entry (`bxrig-apps.desktop`), which opens the BxRig app grid (`bxrig/launcher:apps`); the built-in launcher button is off; with the dock off, the same Apps button sits in the bar after the logo | decided |
 | Clock | One widget showing `Nov 5 - 04:00` (format is user-configurable); its popover shows other zones and a route to the calendar; clock and world clock are merged | decided |
 | Battery | Shows the percentage, and only on laptops | decided |
 | Clipboard history | Top right of the bar | decided |

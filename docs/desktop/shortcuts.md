@@ -48,7 +48,7 @@ The table is `src/bxrig/Shortcuts.bx`. Every key BxRig binds is a row, including
 bxrig keys show                         # the table, in the style that is on
 bxrig keys search screenshot           # find a shortcut by words, keys or id
 bxrig keys run color-picker             # run the command a shortcut stands for
-bxrig keys set ai-shell Super+Alt+A --yes
+bxrig keys set ai-shell Super+Alt+Y --yes
 bxrig keys reset ai-shell --yes
 bxrig keys conflicts                    # the table, the remaps of the style that is on, and your own hl.bind lines
 ```
@@ -84,6 +84,9 @@ The keys you will use most, in the Traditional style unless noted:
 |---|---|
 | `Super+Space` | Launcher: search apps, menu actions, themes and answers |
 | `Super+Alt+Space` | BxRig menu (browse by section) |
+| `Super+Alt+A` | All apps: the app grid |
+| `Super+Alt+B` | Ask Boxy: the launcher in chat mode |
+| `Super+K` | Shortcut viewer (filter, change keys) |
 | `Super+K` | Shortcut cheat sheet |
 | `Print` (Mac style also `Super+Shift+3` / `4` / `5`) | Screenshot: region (Mac style: screen / region / menu) |
 | `Super+Print` | Color picker |
@@ -91,7 +94,7 @@ The keys you will use most, in the Traditional style unless noted:
 | `Super+Ctrl+Alt+V` | Webcam preview on or off (needs `mpv`) |
 | `Super+Ctrl+H` | Hardware menu |
 | `Super+Ctrl+V` | Clipboard history |
-| `Super+Ctrl+E` | Emoji |
+| `Super+Ctrl+E` | Emoji picker (a grid panel; rofimoji without Noctalia) |
 | `Alt+Space` | Dictation on or off (the logical Alt key: with the Mac swap on a PC keyboard it is the Win key, where Option sits on a Mac) |
 | `Super+Alt+D` | Show or hide the dock |
 | `Super+Period` / `Super+Shift+Period` | Chat with your default agent (Boxy) in a terminal / its web page (see [BoxLang agents](../ai/boxlang-agents.md)) |
@@ -107,7 +110,7 @@ The keys you will use most, in the Traditional style unless noted:
 | `Super+Alt+Shift+C` | Center the floating window |
 | `Super+Ctrl+Up` | Overview of all windows (Mission Control) |
 | `Super+Alt+Escape` | Force quit a window |
-| `Super+Alt+E` | AI on the selected text: a menu to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](../ai/local-ai.md#ai-on-the-selected-text)) |
+| `Super+Alt+E` | AI on the selected text: a panel to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](../ai/local-ai.md#ai-on-the-selected-text)) |
 | `Super+Shift+J` | Next layout on this workspace: dwindle, master, columns, scrolling, monocle |
 | `Super+Minus` / `Super+Equal` | Narrower / wider: the split (dwindle), the main column (master, columns), or the column through 1/3, 1/2, 2/3 and full (scrolling) |
 | `Super+Ctrl+Left` / `Right` | Previous / next workspace |
@@ -139,3 +142,13 @@ On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option
 
 
 Next: [The desktop](desktop.md), [The menu](menu.md), [Your own config](../customize/your-own-config.md).
+
+## The shortcut viewer
+
+`Super+K` opens every shortcut in a panel (the terminal page `bxrig tui shortcuts` is the fallback when Noctalia is not running). Tabs by group and **Yours** (the ones you changed), a filter that matches the name or the keys as you type, and the keys drawn as keycaps. Select a shortcut and press **Enter** (or the **Change** button): type the new keys, for example `Super+Alt+K`, and Save. BxRig runs `bxrig keys set ID KEYS --yes` and then `keys apply --yes`, and refuses a combo that is already used, saying which shortcut has it. **Back to default** undoes a change. Cmd-style remaps of the Mac style (xremap) show a lock: they cannot be changed here.
+
+![The shortcut viewer](../assets/screenshots/keys-viewer-all.webp)
+
+![Filtered, with the Change bar showing a refused combo](../assets/screenshots/keys-viewer-change.webp)
+
+<video src="../assets/clips/keys-viewer.webm" autoplay loop muted playsinline width="100%"></video>

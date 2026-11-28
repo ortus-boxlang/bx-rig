@@ -193,6 +193,10 @@ run "$binary" ai text translate --lang=German --json | jq -e '.data.from == "cli
 tail -1 "$SRV/requests" | grep -q 'into German' || fail 'translate names the language'
 run "$binary" ai text fix --text="teh cat" --to=stdout --json | jq -e '.data.from == "text" and (.data.copied | not)' >/dev/null || fail '--text and --to=stdout'
 [[ "$(code "$binary" ai text nope)" == 2 ]] || fail 'an unknown action exits 2'
+run "$binary" ai text source --json | jq -e '.data.from == "selection" or .data.from == "clipboard"' >/dev/null || fail 'text source: where the text comes from'
+SEL="the selected words" run "$binary" ai text source --json | jq -e '.data.from == "selection" and .data.text == "the selected words" and .data.chars == 18 and (.data.actions | length == 6) and .data.actions[0].id == "summarize"' >/dev/null || fail 'text source: the selection, its size and the six actions'
+run "$binary" ai text source --from=clipboard --json | jq -e '.data.from == "clipboard" and .data.text == "copied text"' >/dev/null || fail 'text source: --from=clipboard'
+stub wl-paste 'exit 1'; run "$binary" ai text source --json | jq -e '.ok and .data.text == "" and .data.from == ""' >/dev/null || fail 'text source: no text is not an error'
 stub wl-paste 'exit 1'; [[ "$(code "$binary" ai text summarize)" == 4 ]] || fail 'no text exits 4'
 
 # ---- remove, status, stop ----

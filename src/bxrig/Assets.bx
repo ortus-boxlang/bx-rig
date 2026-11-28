@@ -44,6 +44,27 @@ class Assets {
 	function ensurePlates() {
 		var out = [];
 		for ( var n in plateNames() ) if ( !fileExists( target( n ) ) ) { decode( n, target( n ) ); out.append( target( n ) ); }
+		for ( var f in ensureAppsEntry() ) out.append( f );
+		return out;
+	}
+
+	/**
+	 * Writes the Apps entry the Noctalia dock pins: a desktop entry that opens the BxRig app grid and its icon in the user's icon theme.
+	 * Files that exist are left alone, so a changed entry is kept.
+	 *
+	 * @return Array of the files written.
+	 */
+	function ensureAppsEntry() {
+		var out = [];
+		var data = variables.environ.xdgData();
+		var icon = data & "/icons/hicolor/scalable/apps/bxrig-apps.svg";
+		if ( !fileExists( icon ) ) { decode( "icons/plates/bxrig-grid.svg", icon ); out.append( icon ); }
+		var entry = data & "/applications/bxrig-apps.desktop";
+		if ( !fileExists( entry ) ) {
+			directoryCreate( getDirectoryFromPath( entry ), true, true );
+			fileWrite( entry, "[Desktop Entry]" & chr( 10 ) & "Type=Application" & chr( 10 ) & "Name=Apps" & chr( 10 ) & "Comment=All applications (BxRig)" & chr( 10 ) & "Exec=noctalia msg panel-toggle bxrig/launcher:apps" & chr( 10 ) & "Icon=bxrig-apps" & chr( 10 ) & "Terminal=false" & chr( 10 ) & "Categories=Utility;" & chr( 10 ) & "StartupNotify=false" & chr( 10 ) );
+			out.append( entry );
+		}
 		return out;
 	}
 

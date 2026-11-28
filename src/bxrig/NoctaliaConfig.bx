@@ -42,7 +42,7 @@ class NoctaliaConfig {
 
 	// The words that name each bar widget in descriptions (battery is listed: it appears on a laptop).
 	function widgetWords() {
-		return { "bxrig-menu": "logo", workspaces: "workspaces", active_window: "active window", launcher: "launcher", "bxrig-clock": "clock", weather: "weather", media: "media",
+		return { "bxrig-menu": "logo", workspaces: "workspaces", active_window: "active window", "bxrig-apps": "apps grid", "bxrig-clock": "clock", weather: "weather", media: "media",
 			"bxrig-agents": "agents", screenshot: "capture", "bxrig-system": "system", "bxrig-dev": "developer", "bxrig-vpn": "VPN", tray: "tray", clipboard: "clipboard",
 			network: "network", bluetooth: "bluetooth", volume: "volume", brightness: "brightness", battery: "battery", notifications: "notifications",
 			"bxrig-quick": "quick settings", "control-center": "control center" };
@@ -90,7 +90,7 @@ class NoctaliaConfig {
 	function zones( layout, opts = {} ) {
 		var o = barOptions( "", arguments.opts );
 		var start = [ "bxrig-menu" ];
-		if ( !o.dock ) start.append( "launcher" );
+		if ( !o.dock ) start.append( "bxrig-apps" );
 		start.append( "workspaces" );
 		start.append( "active_window" );
 		var center = [ "bxrig-clock" ];
@@ -211,19 +211,23 @@ class NoctaliaConfig {
 			out.append( '' );
 		}
 		if ( o.dock ) {
-			out.append( '# The dock is on. The Launchpad grid is its first button, so the launcher widget is not in the bar.' );
+			out.append( '# The dock is on. Its first icon is the Apps entry (bxrig-apps.desktop, pinned): it opens the BxRig app grid. The built-in launcher button is off.' );
 			out.append( '[dock]' );
 			out.append( 'enabled = true' );
 			out.append( 'position = ' & tomlString( o.dockPos ) );
 			out.append( 'auto_hide = ' & ( o.dockAuto ? "true" : "false" ) );
-			out.append( 'launcher_position = "start"' );
-			out.append( 'launcher_custom_image = ' & tomlString( plateDir & "/bxrig-grid.svg" ) );
-			out.append( 'launcher_custom_image_colorize = false' );
+			out.append( 'launcher_position = "none"' );
+			out.append( 'pinned = [ "bxrig-apps" ]' );
 		} else {
-			out.append( '# The dock is off: the Launchpad grid button is the launcher widget, right after the logo.' );
-			out.append( '[widget.launcher]' );
+			out.append( '# The dock is off: the Apps grid button sits right after the logo and opens the BxRig app grid.' );
+			out.append( '[widget.bxrig-apps]' );
+			out.append( 'type = "custom_button"' );
 			out.append( 'custom_image = ' & tomlString( plateDir & "/bxrig-grid.svg" ) );
 			out.append( 'custom_image_colorize = false' );
+			out.append( 'tooltip = "Apps"' );
+			out.append( '' );
+			out.append( '[widget.bxrig-apps.actions]' );
+			out.append( 'left = "panel-toggle bxrig/launcher:apps"' );
 			out.append( '' );
 			out.append( '[dock]' );
 			out.append( 'enabled = false' );

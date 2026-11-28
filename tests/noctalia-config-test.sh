@@ -22,7 +22,7 @@ assert c['widget']['bxrig-clock']['type'] == 'bxrig/clock:bar' and c['plugin_set
 assert c['widget']['bxrig-menu']['type'] == 'custom_button' and 'setsid bxrig menu' in c['widget']['bxrig-menu']['actions']['left']
 assert c['widget']['bxrig-menu']['custom_image'].endswith('/plates/bxrig-menu.svg')
 assert m['capsule'] is False and 'capsule_border' not in m
-assert c['dock']['enabled'] is True and c['dock']['launcher_position'] == 'start' and c['dock']['launcher_custom_image'].endswith('/plates/bxrig-grid.svg')
+assert c['dock']['enabled'] is True and c['dock']['launcher_position'] == 'none' and c['dock']['pinned'] == ['bxrig-apps']
 assert c['shell']['setup_wizard_enabled'] is False and c['shell']['launcher']['app_grid'] is True
 assert 'bxrig-agents' in m['end'] and 'bxrig-quick' in m['end'] and 'caffeine' not in m['end']
 assert m['end'].index('bxrig-dev') == m['end'].index('bxrig-system') + 1 and c['widget']['bxrig-dev']['type'] == 'bxrig/dev:bar'

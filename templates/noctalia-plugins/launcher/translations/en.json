@@ -3,6 +3,10 @@
 		"command": {
 			"description": "The bxrig executable (name on PATH, absolute path, or ~/ path)",
 			"label": "bxrig command"
+		},
+		"window": {
+			"description": "Set on the full-screen entry of a panel: it lays the grid out for the whole screen",
+			"label": "Window mode"
 		}
 	},
 	"title": "Launcher"

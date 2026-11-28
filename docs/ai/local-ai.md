@@ -111,13 +111,14 @@ Three download at a time; the rest wait in the queue. A background pull keeps go
 
 ## Work on selected text
 
-Select text anywhere and press **Super+Alt+E**: a menu offers Summarize, Rewrite clearly, Fix spelling and grammar, Explain, Translate and Draft a reply. The result is copied to the clipboard and shown in a notification.
+Select text anywhere and press **Super+Alt+E**: a panel shows the text on the left and six actions on the right: Summarize, Rewrite clearly, Fix spelling and grammar, Explain, Translate (Left and Right change the language) and Draft a reply. Enter runs the action, the result appears below, and F2 copies it. F4 switches the text between the selection and the clipboard. Without Noctalia the key opens a menu instead and the result goes to the clipboard and a notification.
 
 ```bash
 bxrig ai text summarize                      # the selection, else the clipboard
 bxrig ai text translate --lang=Spanish
 bxrig ai text fix --text="teh cat" --to=stdout
 bxrig ai text menu
+bxrig ai text source --json                  # the text the panel would work on, and the actions
 ```
 
 ## Point coding agents at your model

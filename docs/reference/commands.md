@@ -1690,7 +1690,7 @@ bxrig ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=
 bxrig ai downloads [clear | cancel ID] [--json]
 bxrig ai bench [ID] [--json]
 bxrig ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
-bxrig ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]
+bxrig ai text summarize|rewrite|fix|explain|translate|reply|menu|source [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]
 bxrig ai ask TEXT [--model=ID] [--json]
 bxrig ai agents [list] [--json]
 bxrig ai agents install|update [--snapshot|--stable] [--yes] [--dry-run]
@@ -1901,15 +1901,23 @@ bxrig clipboard copy 42
 
 ### `bxrig emoji` {#bxrig-emoji}
 
-The emoji picker (rofimoji).
+The emoji picker: rofimoji on its own, or the panel data (list, recent, copy).
 
 ```text
 bxrig emoji
+bxrig emoji list [QUERY] [--category=C] [--limit=N] [--json]
+bxrig emoji recent [--limit=N] [--json]
+bxrig emoji copy EMOJI [--json]
 ```
 
 ```bash
 bxrig emoji
+bxrig emoji list happy --limit=20
+bxrig emoji list --category=food
+bxrig emoji copy 🎉
 ```
+
+> With no word it opens the rofimoji picker. list searches names and keywords of about 1,870 emoji (gemoji data, MIT) and gives rows { emoji, name, category, keywords } plus the category names. copy puts the emoji on the clipboard with wl-copy and remembers it for recent. The emoji panel (Super+Ctrl+E) uses these three.
 
 ### `bxrig forcequit` {#bxrig-forcequit}
 

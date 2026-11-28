@@ -1,5 +1,5 @@
 // `bxrig keys set|reset|conflicts`: change the keys of BxRig's bindings, safely.
-//   keys set ID KEYS [--yes] [--force]   e.g. keys set ai-shell Super+Alt+A. Only bindings can change (the Cmd-style remaps are xremap's).
+//   keys set ID KEYS [--yes] [--force]   e.g. keys set ai-shell Super+Alt+Y. Only bindings can change (the Cmd-style remaps are xremap's).
 //                                         Refused (exit 4) when the combo is invalid, another binding already uses it or xremap rewrites it; --force allows
 //                                         a clash with a line in YOUR hyprland files (never with another BxRig binding).
 //   keys reset ID [--yes]                 back to the default keys
