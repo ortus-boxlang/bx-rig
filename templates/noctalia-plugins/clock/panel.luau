@@ -19,11 +19,11 @@ local REFRESH_MS = 30000
 
 -- The times a reminder can be set for. `at`/`delay` are what `bxrig remind` takes; `say` is what the confirmation shows.
 local CHOICES = {
-	{ id = "10m", label = "in 10 min", delay = "10m", say = "in 10 minutes" },
-	{ id = "1h", label = "in 1 h", delay = "1h", say = "in 1 hour" },
-	{ id = "tonight", label = "tonight 20:00", at = "20:00", say = "tonight at 20:00" },
-	{ id = "tomorrow", label = "tomorrow 09:00", at = "tomorrow 09:00", say = "tomorrow at 09:00" },
-	{ id = "custom", label = "at…", custom = true },
+	{ id = "10m", label = "10 min", delay = "10m", say = "in 10 minutes" },
+	{ id = "1h", label = "1 hour", delay = "1h", say = "in 1 hour" },
+	{ id = "tonight", label = "Tonight", at = "20:00", say = "tonight at 20:00" },
+	{ id = "tomorrow", label = "Tomorrow", at = "tomorrow 09:00", say = "tomorrow at 09:00" },
+	{ id = "custom", label = "At…", custom = true },
 }
 
 local str = kit.str
@@ -206,7 +206,7 @@ local function reminderRow(s, r, full)
 	for _, b in ipairs(buttons) do
 		table.insert(children, b)
 	end
-	return ui.row({ key = "reminder-" .. id, align = "center", gap = 8, paddingH = 12, paddingV = 6, radius = 10, fill = due and "error_container" or "surface_container" }, children)
+	return ui.row({ key = "reminder-" .. id, align = "center", gap = 10, paddingH = 12, paddingV = 10, radius = 12, fill = due and "error_container" or "surface_container" }, children)
 end
 
 local function gotoPage(page)
@@ -334,7 +334,7 @@ local function remindersPage(s)
 			table.insert(chips, ui.button({
 				key = "when-" .. c.id,
 				text = c.label,
-				variant = c.id == s.choice and "primary" or "secondary",
+				variant = c.id == s.choice and "primary" or "ghost",
 				controlSize = "sm",
 				onClick = function()
 					P:set({ choice = c.id, addErr = nil })
@@ -342,38 +342,40 @@ local function remindersPage(s)
 			}))
 		end
 	end
-	table.insert(rows, ui.input({
-		key = "draft-" .. s.inputKey,
-		value = s.draft,
-		placeholder = "Remind me to…",
-		fontSize = 15,
-		focus = true,
-		onChange = "onDraftChanged",
-		onSubmit = "onSubmit",
-	}))
-	-- Two rows: the five chips do not fit the 380 px popup on one.
-	local firstRow = {}
-	local secondRow = {}
-	for i, chip in ipairs(chips) do
-		table.insert(i <= 3 and firstRow or secondRow, chip)
-	end
-	table.insert(rows, ui.row({ gap = 6 }, firstRow))
-	table.insert(rows, ui.row({ gap = 6, paddingV = 2 }, secondRow))
-	if choiceById(s.choice).custom then
-		table.insert(rows, ui.input({
-			key = "time-" .. s.inputKey,
-			value = s.customTime,
-			placeholder = "Time, for example 14:30",
-			fontSize = 14,
-			onChange = "onTimeChanged",
+	-- One rounded field with a small Add button inside it.
+	table.insert(rows, ui.row({ align = "center", gap = 8, paddingH = 10, paddingV = 4, radius = 12, fill = "surface_container" }, {
+		ui.input({
+			key = "draft-" .. s.inputKey,
+			value = s.draft,
+			placeholder = "Remind me to…",
+			fontSize = 15,
+			frameVisible = false,
+			focus = true,
+			flexGrow = 1,
+			onChange = "onDraftChanged",
 			onSubmit = "onSubmit",
+		}),
+		ui.button({ glyph = "plus", variant = "primary", controlSize = "sm", tooltip = "Add reminder (Enter)", onClick = "onSubmit" }),
+	}))
+	-- The chips share one row at their natural width.
+	table.insert(rows, ui.row({ gap = 6, paddingV = 4 }, chips))
+	if choiceById(s.choice).custom then
+		table.insert(rows, ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 4, radius = 12, fill = "surface_container" }, {
+			ui.glyph({ name = "clock", size = 16, color = "on_surface_variant" }),
+			ui.input({
+				key = "time-" .. s.inputKey,
+				value = s.customTime,
+				placeholder = "Time, for example 14:30",
+				fontSize = 14,
+				frameVisible = false,
+				flexGrow = 1,
+				onChange = "onTimeChanged",
+				onSubmit = "onSubmit",
+			}),
 		}))
 	end
 	local say = sayWhen(s)
-	table.insert(rows, ui.row({ align = "center", gap = 8 }, {
-		ui.label({ text = say ~= nil and ("Will pop up " .. say) or "Pick a time", fontSize = 11, color = "on_surface_variant", flexGrow = 1 }),
-		ui.button({ text = "Add reminder  ↵", variant = "primary", controlSize = "sm", onClick = "onSubmit" }),
-	}))
+	table.insert(rows, ui.label({ text = say ~= nil and ("Will pop up " .. say) or "Pick a time", fontSize = 11, color = "on_surface_variant", paddingH = 4 }))
 	if s.addMsg ~= nil then
 		table.insert(rows, ui.label({ text = s.addMsg, fontSize = 12, color = "primary", maxLines = 2 }))
 	end
@@ -471,7 +473,7 @@ local function view(self)
 	}))
 
 	if s.page == "reminders" then
-		table.insert(sections, ui.scroll({ flexGrow = 1, gap = 8 }, remindersPage(s)))
+		table.insert(sections, ui.scroll({ flexGrow = 1, gap = 10 }, remindersPage(s)))
 		local armed = s.armedClear
 		table.insert(sections, kit.footer({
 			hint = count == 0 and "Nothing to clear" or (count .. (count == 1 and " reminder" or " reminders")),
@@ -494,7 +496,7 @@ local function view(self)
 		table.insert(sections, ui.button({ text = "Open calendar", glyph = "calendar", variant = "secondary", contentAlign = "center", onClick = "onCalendar" }))
 	end
 
-	return ui.column({ flexGrow = 1, gap = 10, padding = 10 }, sections)
+	return ui.column({ flexGrow = 1, gap = 14, padding = 14 }, sections)
 end
 
 -- Everything the panel shows: the zones (main channel, drives loading and error), the agenda and the reminders (a failure leaves the section out).
