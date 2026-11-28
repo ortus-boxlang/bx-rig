@@ -334,7 +334,14 @@ class {
 				if ( p.len() >= 2 && p[2] == "firmware" && ( p.len() == 2 || p.len() == 3 && p[3] == "check" ) ) CLIExit( new bxrig.SystemTools( cli ).firmwareCheck( asJson ) );
 				if ( p.len() == 3 && p[2] == "firmware" && p[3] == "update" ) CLIExit( new bxrig.SystemTools( cli ).firmwareUpdate( structKeyExists( args.options, "yes" ), structKeyExists( args.options, "dry-run" ), asJson ) );
 				println( new bxrig.CommandSpec().usage( "system" ) ); CLIExit( xit.usage() ); break;
-				case "emoji": CLIExit( new bxrig.MacExtras( cli ).emoji( asJson ) ); break;
+			case "emoji":
+				// The panel data (list, recent, copy), or the rofimoji picker with no word. See Emoji.bx.
+				if ( p.len() == 1 ) CLIExit( new bxrig.MacExtras( cli ).emoji( asJson ) );
+				emLimit = isNumeric( args.options.limit ?: "" ) ? int( args.options.limit ) : 200;
+				if ( p[2] == "list" ) CLIExit( new bxrig.Emoji( cli ).list( p.slice( 3 ).toList( " " ), args.options.category ?: "", emLimit, asJson ) );
+				if ( p[2] == "recent" && p.len() == 2 ) CLIExit( new bxrig.Emoji( cli ).recent( isNumeric( args.options.limit ?: "" ) ? emLimit : 30, asJson ) );
+				if ( p[2] == "copy" && p.len() == 3 ) CLIExit( new bxrig.Emoji( cli ).copy( p[ 3 ], asJson ) );
+				println( new bxrig.CommandSpec().usage( "emoji" ) ); CLIExit( xit.usage() ); break;
 				case "forcequit": CLIExit( new bxrig.MacExtras( cli ).forcequit( asJson ) ); break;
 			case "window":
 				if ( p.len() == 2 ) CLIExit( new bxrig.MacExtras( cli ).window( p[2], asJson ) );

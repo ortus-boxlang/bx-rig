@@ -33,9 +33,54 @@ Every row sits on a rounded **icon tile** tinted with the theme's colours: menu 
 
 ### Boxy mode
 
-Press **Tab** (or Enter on the *Ask Boxy* row) and the launcher becomes a chat with your default agent, Boxy. Type, press Enter, and the answer appears; a tool Boxy wants to run shows **Approve** and **Reject**. **New chat** starts a thread over, **Open full chat** opens the chat window, and Tab goes back to the launcher. If Boxy is not set up or not running, the panel says so and offers **Make Boxy** or **Start**. It uses `bxrig ai agents ask TEXT --thread=ID --json` (not `bxrig ai ask`, which asks the local model directly).
+Press **Tab** (or Enter on the *Ask Boxy* row, or `Super+Alt+B` to open the launcher already in chat mode) and the launcher becomes a chat with your default agent, Boxy. Type, press Enter, and the answer appears; a tool Boxy wants to run shows **Approve** and **Reject**. **New chat** starts a thread over, **Open full chat** opens the chat window, and Tab goes back to the launcher. If Boxy is not set up or not running, the panel says so and offers **Make Boxy** or **Start**. It uses `bxrig ai agents ask TEXT --thread=ID --json` (not `bxrig ai ask`, which asks the local model directly).
 
 ![Boxy mode: an example conversation with a tool waiting for approval](../assets/screenshots/launcher-boxy.webp)
+
+### The app grid
+
+`Super+Alt+A` opens every installed application as a grid of icon tiles: tabs by group, typing filters at once, arrows move, Enter starts the app, and F2 switches between each application's own icon and a themed glyph tile. `bxrig apps list --json` is the data.
+
+![The app grid with app icons](../assets/screenshots/apps-grid-app-icons.webp)
+
+![The app grid with theme icons](../assets/screenshots/apps-grid-theme-icons.webp)
+
+<video src="../assets/clips/apps-grid.webm" autoplay loop muted playsinline width="100%"></video>
+
+### The emoji picker
+
+`Super+Ctrl+E` opens a grid of about 1,870 emoji: tabs by category (Recent, Smileys, People, Nature, Food, Travel, Activities, Objects, Symbols, Flags), typing searches names and keywords, arrows move, Enter copies the emoji and closes. What you copied lands on the Recent tab. If the panel is not there (no Noctalia), the key falls back to the rofimoji picker.
+
+```bash
+bxrig emoji list happy --limit=20 --json   # the search
+bxrig emoji list --category=food           # one category
+bxrig emoji recent                         # what you copied last
+bxrig emoji copy 🎉                         # onto the clipboard (wl-copy)
+```
+
+The emoji data is [gemoji](https://github.com/github/gemoji) (MIT, copyright GitHub, Inc.), packed in the binary.
+
+![The emoji picker](../assets/screenshots/emoji-picker.webp)
+
+### Window mode
+
+The app grid, the emoji picker and the shortcut viewer have a bigger twin that fills the screen. Press `F3` in the popup to swap to the window, and `F3` again to come back. The window lays the grid out for your screen: more columns, taller lists. It is the same panel script run from a second entry of the plugin (`apps-window`, `emoji-window`, `keys-window`), so you can also open one directly:
+
+```bash
+noctalia msg panel-toggle bxrig/launcher:apps-window
+```
+
+![The app grid as a window](../assets/screenshots/apps-window.webp)
+
+![The emoji picker as a window](../assets/screenshots/emoji-window.webp)
+
+![The shortcut viewer as a window](../assets/screenshots/shortcuts-window.webp)
+
+### AI on the selection
+
+`Super+Alt+E` opens your selected text on the left and six actions on the right. The result appears below the actions; `F2` copies it. See [Local AI](../ai/local-ai.md#work-on-selected-text). The screenshots show example text and example results (the sandbox that made them has no model).
+
+![AI on the selection: a summary](../assets/screenshots/ai-text-summary.webp)
 
 ### The menu
 

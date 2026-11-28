@@ -1,12 +1,20 @@
 # BxRig Launcher: one search box for everything, in the style of Raycast. Type to find an application, any action of the BxRig menu (with its
 # path, like "Trigger › Capture"), a theme, a calculator answer, or fall back to a web search. A second panel shows the clipboard history.
 # Panels (no bar widget):
-#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab
+#   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab; opened with the context word `boxy` it starts in chat mode (Super+Alt+B)
 #   menu       the drill-down menu noctalia msg panel-toggle bxrig/launcher:menu       (Super+Alt+Space)
+#   keys       shortcuts viewer   noctalia msg panel-toggle bxrig/launcher:keys       (Super+K), with a Change button
+#   apps       the app grid       noctalia msg panel-toggle bxrig/launcher:apps       (Super+Alt+A)
 #   clipboard  clipboard history  noctalia msg panel-toggle bxrig/launcher:clipboard  (Super+Shift+V)
-# Data: menu: `bxrig menu level [PATH] --json`, a leaf runs `bxrig launcher run menu:ID`.
+#   emoji      emoji picker       noctalia msg panel-toggle bxrig/launcher:emoji      (Super+Ctrl+E)
+#   aitext     AI on the selection noctalia msg panel-toggle bxrig/launcher:aitext     (Super+Alt+E)
+# Data: keys: `bxrig keys show --json`; Change runs `bxrig keys set ID KEYS --yes` then `keys apply --yes`.
+#   apps: `bxrig apps list --json`, Enter runs `bxrig launcher run app:ID`.
+#   menu: `bxrig menu level [PATH] --json`, a leaf runs `bxrig launcher run menu:ID`.
 #   Boxy: `bxrig ai agents ask TEXT --thread=ID --json`, `ai agents approve|reject THREAD`.
 #   Launcher: `bxrig launcher search QUERY --limit=30 --json` on every keystroke; Enter runs `bxrig launcher run ID QUERY`.
+#   AI on the selection: `bxrig ai text source --json` on open, an action runs `bxrig ai text ID --text=TEXT [--lang=L] --to=stdout --json`.
+#   Emoji: `bxrig emoji list QUERY --category=C --json`, `emoji recent --json`, Enter runs `bxrig emoji copy EMOJI` (gemoji data, MIT).
 #   Clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, Enter runs `bxrig clipboard copy ID`.
 # The ranking idea follows oma-cast (https://github.com/typecraft-dev/oma-cast, MIT).
 
@@ -57,3 +65,118 @@ placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Left", "Right"]
+
+[[panel]]
+id = "apps"
+entry = "apps.luau"
+width = 800
+height = 640
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
+[[panel]]
+id = "keys"
+entry = "keys.luau"
+width = 860
+height = 640
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
+[[panel]]
+id = "emoji"
+entry = "emoji.luau"
+width = 800
+height = 600
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
+[[panel]]
+id = "aitext"
+entry = "aitext.luau"
+width = 860
+height = 560
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Return", "KP_Enter", "F2", "F4"]
+
+# The same script as "apps", filling the screen (F3 swaps between them). `window` tells the script which one it is.
+[[panel]]
+id = "apps-window"
+entry = "apps.luau"
+width = "fill"
+height = "fill"
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true
+
+# The same script as "keys", filling the screen (F3 swaps between them). `window` tells the script which one it is.
+[[panel]]
+id = "keys-window"
+entry = "keys.luau"
+width = "fill"
+height = "fill"
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true
+
+# The same script as "emoji", filling the screen (F3 swaps between them). `window` tells the script which one it is.
+[[panel]]
+id = "emoji-window"
+entry = "emoji.luau"
+width = "fill"
+height = "fill"
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true

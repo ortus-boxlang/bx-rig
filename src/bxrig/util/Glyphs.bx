@@ -70,4 +70,25 @@ class Glyphs {
 		if ( !len( g ) ) g = len( arguments.sectionLabel ) ? section( arguments.sectionLabel ) : "list-details";
 		return { glyph: g, tone: len( arguments.sectionLabel ) ? tone( arguments.sectionLabel ) : "primary" };
 	}
+
+	/**
+	 * The group, glyph and colour role of an application, from the Categories of its desktop entry ("Network;WebBrowser;" gives Internet).
+	 * @categories The Categories value, semicolon separated.
+	 * @return { group, glyph, tone }.
+	 */
+	function appGroup( categories ) {
+		var c = ";" & lCase( arguments.categories ) & ";";
+		var rules = [
+			[ ";development;", "Development", "code", "tertiary" ], [ ";ide;", "Development", "code", "tertiary" ],
+			[ ";network;", "Internet", "world", "secondary" ], [ ";webbrowser;", "Internet", "world", "secondary" ],
+			[ ";audiovideo;", "Media", "player-play", "primary" ], [ ";audio;", "Media", "player-play", "primary" ], [ ";video;", "Media", "player-play", "primary" ],
+			[ ";graphics;", "Graphics", "photo", "tertiary" ],
+			[ ";office;", "Office", "briefcase", "secondary" ],
+			[ ";game;", "Games", "device-gamepad-2", "error" ],
+			[ ";terminalemulator;", "Utilities", "terminal-2", "secondary" ], [ ";system;", "System", "settings", "primary" ], [ ";settings;", "System", "settings", "primary" ],
+			[ ";utility;", "Utilities", "tool", "secondary" ]
+		];
+		for ( var r in rules ) if ( find( r[ 1 ], c ) > 0 ) return { group: r[ 2 ], glyph: r[ 3 ], tone: r[ 4 ] };
+		return { group: "Other", glyph: "app-window", tone: "primary" };
+	}
 }

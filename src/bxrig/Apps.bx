@@ -1,6 +1,7 @@
 // `bxrig apps`: every installed application in one window, like Omarchy 4.5's app grid (Super+Alt+Space there; the same here).
 //   apps              shows the list with your menu provider (`runner menu-set`: type to filter, arrows to move, Esc closes) and starts the choice
-//   apps list [--json] the applications as data
+//   apps list [--json] the applications as data: id, name, exec, icon, iconPath, comment, group (Development, Internet, Media, ...), glyph and tone (a
+//                      Tabler icon name and a theme colour role for a tile), uses (times the launcher started it)
 // The list is the desktop entries (*.desktop) of /usr/share/applications, /usr/local/share/applications, ~/.local/share/applications and the Flatpak exports
 // (BXRIG_APPS_DIRS overrides, colon separated; a later folder wins for the same file name; see DesktopEntry). Entries that are not applications, or are
 // hidden (NoDisplay, Hidden), are left out. An entry starts with its Exec line, field codes (%U and friends) removed, detached from this
@@ -16,12 +17,24 @@ class Apps {
 	// [ { id, name, exec, icon } ] sorted by name (BxRig's own page launchers are included: you can start a BxRig screen from the grid).
 	function all() {
 		var rows = [];
-		for ( var e in variables.desk.entries( variables.desk.dirs(), true, true ) ) rows.append( { id: listLast( e.file, "/" ), name: e.name, exec: variables.desk.cleanExec( e.exec ), icon: e.icon } );
+		var glyphs = new bxrig.util.Glyphs();
+		for ( var e in variables.desk.entries( variables.desk.dirs(), true, true ) ) {
+			var g = glyphs.appGroup( e.categories );
+			rows.append( { id: listLast( e.file, "/" ), name: e.name, exec: variables.desk.cleanExec( e.exec ), icon: e.icon, comment: e.comment, group: g.group, glyph: g.glyph, tone: g.tone } );
+		}
 		return rows.sort( function( a, b ) { return compareNoCase( a.name, b.name ); } );
 	}
 
+	// `apps list`: every field of all(), plus iconPath (the app's picture from the icon theme, or "") and uses (how often the launcher started it).
 	function list( asJson ) {
 		var rows = all();
+		var icons = new bxrig.AppIcons();
+		var used = new bxrig.util.JsonStore().load( new bxrig.util.Env().xdgState( "bxrig/launcher.json" ), {} );
+		if ( !isStruct( used ) ) used = {};
+		for ( var r in rows ) {
+			r.iconPath = icons.themed( r.icon );
+			r.uses = structKeyExists( used, "app:" & r.id ) ? used[ "app:" & r.id ].count : 0;
+		}
 		return variables.cli.say( "apps list", "ok", { apps: rows }, arguments.asJson, rows.map( function( r ) { return r.name & "  (" & r.id & ")"; } ) );
 	}
 
