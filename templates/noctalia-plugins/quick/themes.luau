@@ -194,6 +194,7 @@ local function render()
 		hint = status,
 		hintColor = statusColor,
 		buttons = {
+			ui.button({ glyph = "photo", text = "Backgrounds", variant = "ghost", controlSize = "sm", onClick = "onBackgrounds" }),
 			ui.row({ gap = 2 }, bxrig.windowButtons({ plugin = "bxrig/quick", panel = "themes", tui = "themes" })),
 			ui.button({
 				text = "Apply Theme  ↵",
@@ -271,6 +272,11 @@ end
 -- Back to page 1. Opening a panel replaces the open one (the shell keeps one panel in its slot), so this does not close first.
 function onBack()
 	noctalia.togglePanel("bxrig/quick:panel")
+end
+
+-- The Noctalia wallpaper panel (a built-in panel, so a message, not togglePanel).
+function onBackgrounds()
+	noctalia.runAsync({ "noctalia", "msg", "panel-open", "wallpaper" })
 end
 
 function onKey(chord, pressed)

@@ -348,6 +348,10 @@ render = function()
 		-- opening a panel replaces the open one, so there is no close first
 		noctalia.togglePanel("bxrig/quick:themes")
 	end))
+	table.insert(items, linkRow("backgrounds", "photo", "Backgrounds", "Pick a wallpaper  ·  Super+Ctrl+W", function()
+		-- the Noctalia wallpaper panel; opening a panel replaces the open one
+		noctalia.runAsync({ "noctalia", "msg", "panel-open", "wallpaper" })
+	end))
 
 	-- Result line.
 	local line = ui.label({ text = "", fontSize = 11, maxLines = 1 })
