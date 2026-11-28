@@ -237,7 +237,7 @@
 		
 		
 		
-			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#files-you-touch">Files you touch</a></li><li class="toc-level-2"><a href="#how-a-plugin-gets-onto-the-desktop">How a plugin gets onto the desktop</a></li><li class="toc-level-2"><a href="#steps">Steps</a></li><li class="toc-level-2"><a href="#see-it-working">See it working</a></li><li class="toc-level-2"><a href="#test-it">Test it</a></li><li class="toc-level-2"><a href="#common-mistakes">Common mistakes</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></details>
+			<details class="bxsites-toc-mobile toc-mobile d-xl-none"><summary class="toc-mobile__summary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</summary><ul class="list-unstyled"><li class="toc-level-2"><a href="#files-you-touch">Files you touch</a></li><li class="toc-level-2"><a href="#how-a-plugin-gets-onto-the-desktop">How a plugin gets onto the desktop</a></li><li class="toc-level-2"><a href="#steps">Steps</a></li><li class="toc-level-2"><a href="#the-panel-framework">The panel framework</a></li><li class="toc-level-2"><a href="#the-panel-kit-and-detachable-panels">The panel kit and detachable panels</a></li><li class="toc-level-2"><a href="#see-it-working">See it working</a></li><li class="toc-level-2"><a href="#test-it">Test it</a></li><li class="toc-level-2"><a href="#common-mistakes">Common mistakes</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></details>
 		
 
 		
@@ -254,7 +254,9 @@
 <tbody>
 <tr><td><code>templates/noctalia-plugins/acstate/plugin.toml</code></td><td>Id, settings, and which widgets and panels exist.</td></tr>
 <tr><td><code>templates/noctalia-plugins/acstate/bar.luau</code></td><td>The bar widget.</td></tr>
-<tr><td><code>templates/noctalia-plugins/acstate/bxrig.luau</code></td><td>The shared helper that runs <code>bxrig</code>. Copy it unchanged from another plugin.</td></tr>
+<tr><td><code>templates/noctalia-plugins/acstate/bxrig.luau</code></td><td>The shared helper that runs <code>bxrig</code>, and the detach and dock helpers. Copy it unchanged from another plugin.</td></tr>
+<tr><td><code>templates/noctalia-plugins/acstate/kit.luau</code></td><td>The panel kit: the pieces every panel builds the same way. Copy it unchanged from another plugin.</td></tr>
+<tr><td><code>templates/noctalia-plugins/acstate/framework.luau</code></td><td>The panel framework: state, lifecycle, fetching, keys, popup and window. Copy it unchanged from another plugin.</td></tr>
 <tr><td><code>templates/noctalia-plugins/acstate/translations/en.json</code></td><td>The labels of the settings.</td></tr>
 <tr><td><code>src/bxrig/NoctaliaConfig.bx</code></td><td>The <code>enabled = [...]</code> list and the bar layout lines.</td></tr>
 <tr><td><code>tests/dev_plugin_test.bxs</code></td><td>A model for a plugin test.</td></tr>
@@ -354,6 +356,60 @@ fetch()
 <p>Enable it in BxRig. In <code>src/bxrig/NoctaliaConfig.bx</code> add <code>bxrig/acstate</code> to the <code>enabled = [...]</code> line, add a <code>[widget.bxrig-acstate]</code> block with <code>type = &quot;bxrig/acstate:bar&quot;</code>, and put <code>bxrig-acstate</code> in a bar section. Update the matching list in <code>tests/noctalia-config-test.sh</code>.</p>
 </li>
 </ol>
+<h2 id="the-panel-framework"><a href="#the-panel-framework" id="the-panel-framework" name="the-panel-framework" class="anchor"></a>The panel framework</h2>
+<p>A BxRig panel is one object made from a definition. <code>framework.luau</code> owns what every panel did by hand (state and re-render, the lifecycle, fetching from <code>bxrig ... --json</code> without showing a late answer, the double-Enter guard, popup and window mode), so the panel writes only what is its own. Start from <code>launcher/emoji.luau</code> (a grid with tabs and a search) or <code>launcher/clipboard.luau</code> (a list with a detail pane).</p>
+<pre><code class="language-lua">local framework = require(&quot;./framework.luau&quot;)
+local kit = require(&quot;./kit.luau&quot;)
+
+local P = framework.panel({
+	plugin = &quot;bxrig/launcher&quot;, id = &quot;emoji&quot;,        -- the popup entry; its window twin is id .. &quot;-window&quot;
+	state = function() return { rows = {}, selected = 1 } end,
+	layout = function(self, w, h) end,               -- window mode only: lay out for the screen
+	open = function(self, context) end,              -- after the state is reset; start loading
+	view = function(self) return framework.stack({ ... }) end,   -- state in, ui tree out
+	keys = { Up = function(self) self:move(-1, #self.state.rows) end },
+	submit = function(self) end,                     -- Enter, guarded to run once
+})
+
+-- the host calls globals by name, so the entry script binds them (and any name an input or button uses):
+function onOpen(context) P:open(context) end
+function onKey(chord, pressed) P:key(chord, pressed) end
+</code></pre>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>On the panel</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td><code>P.state</code></td><td>the current state; read it in <code>view</code> and in handlers, change it with <code>set</code></td></tr>
+<tr><td><code>P:set(patch)</code></td><td>merge into the state and draw again</td></tr>
+<tr><td><code>P:fetch(args, onData, opts)</code></td><td>run <code>bxrig ARGS --json</code>; sets <code>state.loading</code> and <code>state.error</code>; <code>onData(data)</code> runs only for the latest request. <code>opts.channel</code> gives a second, independent stream (a detail pane next to a list)</td></tr>
+<tr><td><code>P:run(args, onDone)</code></td><td>run a command that has no data to show</td></tr>
+<tr><td><code>P:move(delta, count)</code></td><td>move <code>state.selected</code> inside <code>1..count</code></td></tr>
+<tr><td><code>P:submit()</code></td><td>the definition's <code>submit</code>, at most once per 300 ms</td></tr>
+<tr><td><code>P:swap()</code>, <code>P:close()</code>, <code>P:windowButton()</code></td><td>popup and window, close, the footer button</td></tr>
+</tbody>
+</table></div>
+<p>The view never changes state, and the framework reads only <code>state.loading</code> and <code>state.error</code>. A key is a function, or one of <code>&quot;swap&quot;</code>, <code>&quot;close&quot;</code>, <code>&quot;submit&quot;</code>; F3 swaps popup and window unless <code>swappable = false</code>, and Enter runs <code>submit</code>. The framework and the kit are copies in every plugin, and the tests keep them identical.</p>
+<p>The launcher's emoji picker and clipboard history are on the framework. The other panels use the kit and move over when they are next changed.</p>
+<h2 id="the-panel-kit-and-detachable-panels"><a href="#the-panel-kit-and-detachable-panels" id="the-panel-kit-and-detachable-panels" name="the-panel-kit-and-detachable-panels" class="anchor"></a>The panel kit and detachable panels</h2>
+<p><code>kit.luau</code> is the base for panels. Build a panel from it instead of writing the same rows again; each piece takes a table of options and returns what it makes, and the kit keeps no state of its own, so the panel owns its state and its <code>render()</code>.</p>
+<div class="bxsites-table-wrap"><table class="table">
+<thead>
+<tr><th>Piece</th><th>What it is</th></tr>
+</thead>
+<tbody>
+<tr><td><code>kit.str(v)</code></td><td><code>tostring</code> that gives <code>&quot;&quot;</code> for nil</td></tr>
+<tr><td><code>kit.sequence()</code></td><td><code>next()</code> before an async call and <code>isCurrent(token)</code> in its callback, to drop a late answer</td></tr>
+<tr><td><code>kit.once(ms)</code></td><td>a guard function, true the first time, then false for <code>ms</code> (Enter can reach a panel twice)</td></tr>
+<tr><td><code>kit.clamp(index, delta, count)</code></td><td>move a selection and keep it in range</td></tr>
+<tr><td><code>kit.searchRow{...}</code></td><td>the glyph, input and count row</td></tr>
+<tr><td><code>kit.tabRow{ tabs, current, onSelect }</code></td><td>tab chips</td></tr>
+<tr><td><code>kit.footer{ hint, leading, buttons }</code></td><td>the bar at the bottom</td></tr>
+<tr><td><code>kit.grid{ items, columns }</code></td><td>items as rows, for a scroll</td></tr>
+<tr><td><code>kit.screenSize()</code>, <code>kit.windowButton(plugin, panel)</code>, <code>kit.swap(plugin, panel)</code></td><td>window mode, below</td></tr>
+</tbody>
+</table></div>
+<p>A bar popup can detach into a window. Noctalia fixes a panel's size in its manifest, so the window is a second <code>[[panel]]</code> entry that runs the same script: <code>panel-window</code>, floating, centered, <code>dismiss_on_outside_click = false</code>, with a panel setting <code>window = true</code> (and <code>window = false</code> on the popup entry). In the script, <code>bxrig.isWindow()</code> says which one it is, and <code>bxrig.windowButtons{ plugin, panel, tui }</code> gives the header buttons: Detach or Dock, and a terminal button when <code>tui</code> names a <code>bxrig tui</code> page.</p>
 <h2 id="see-it-working"><a href="#see-it-working" id="see-it-working" name="see-it-working" class="anchor"></a>See it working</h2>
 <p>Copy the plugin by hand and enable it, without rebuilding:</p>
 <pre><code class="language-bash">mkdir -p ~/.local/share/noctalia/plugins
@@ -373,7 +429,7 @@ tests/noctalia-config-test.sh dist/bxrig
 <h2 id="common-mistakes"><a href="#common-mistakes" id="common-mistakes" name="common-mistakes" class="anchor"></a>Common mistakes</h2>
 <ul>
 <li>A <code>label_key</code> with no entry in <code>translations/en.json</code>: the settings show raw keys.</li>
-<li>A copy of <code>bxrig.luau</code> that drifted from the others: the tests compare them.</li>
+<li>A copy of <code>bxrig.luau</code>, <code>kit.luau</code> or <code>framework.luau</code> that drifted from the others: the tests compare them.</li>
 <li>Plugin enabled in <code>config.toml</code> but not installed, or the reverse. Installed does not mean active.</li>
 <li>Hard-coded colors: the widget looks wrong in other themes.</li>
 <li>Running a bxrig command without <code>--json</code> in a data call: the helper expects the envelope.</li>
@@ -392,7 +448,7 @@ tests/noctalia-config-test.sh dist/bxrig
 
 	
 	
-		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/developer/noctalia-plugins.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/developer/noctalia-plugins.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 28, 2026, 2&#x3a;54&#x3a;07 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Noctalia%20plugins&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdeveloper%2Fnoctalia-plugins%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
+		<div class="page-meta"><a href="https://github.com/ortus-boxlang/bxrig/edit/development/docs/developer/noctalia-plugins.md" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit this page</a><a href="/developer/noctalia-plugins.md" download><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15v-3l1.5 2 1.5-2v3"/><path d="M14.5 12v4M13 15.5l1.5 1.5 1.5-1.5"/></svg> Download Markdown</a><span class="page-meta__item"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Last updated Nov 28, 2026, 3&#x3a;48&#x3a;02 PM</span><a href="https://github.com/ortus-boxlang/bxrig/issues/new?title=Issue%20with%3A%20Noctalia%20plugins&amp;body=Found%20on%3A%20https%3A%2F%2Fbxrig.boxlang.io%2Fdeveloper%2Fnoctalia-plugins%2Findex.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Report an issue</a></div>
 	
 </article>
 
@@ -436,7 +492,7 @@ tests/noctalia-config-test.sh dist/bxrig
 			
 			
 				<aside class="col-xl-2 toc-sidebar d-none d-xl-block">
-					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#files-you-touch">Files you touch</a></li><li class="toc-level-2"><a href="#how-a-plugin-gets-onto-the-desktop">How a plugin gets onto the desktop</a></li><li class="toc-level-2"><a href="#steps">Steps</a></li><li class="toc-level-2"><a href="#see-it-working">See it working</a></li><li class="toc-level-2"><a href="#test-it">Test it</a></li><li class="toc-level-2"><a href="#common-mistakes">Common mistakes</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></nav>
+					<nav class="toc bxsites-toc mb-4" aria-label="On this page"><div class="toc-title bxsites-toc__title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v16"/><path d="M6 8h6"/><path d="M6 14h9"/><path d="M6 20h4"/></svg> On this page</div><ul class="list-unstyled"><li class="toc-level-2"><a href="#files-you-touch">Files you touch</a></li><li class="toc-level-2"><a href="#how-a-plugin-gets-onto-the-desktop">How a plugin gets onto the desktop</a></li><li class="toc-level-2"><a href="#steps">Steps</a></li><li class="toc-level-2"><a href="#the-panel-framework">The panel framework</a></li><li class="toc-level-2"><a href="#the-panel-kit-and-detachable-panels">The panel kit and detachable panels</a></li><li class="toc-level-2"><a href="#see-it-working">See it working</a></li><li class="toc-level-2"><a href="#test-it">Test it</a></li><li class="toc-level-2"><a href="#common-mistakes">Common mistakes</a></li><li class="toc-level-2"><a href="#advanced">Advanced</a></li></ul></nav>
 				</aside>
 			
 		</div>
