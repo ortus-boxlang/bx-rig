@@ -139,3 +139,13 @@ On a PC keyboard the Mac style swaps Alt and Win (Alt acts as Cmd, Win as Option
 
 
 Next: [The desktop](desktop.md), [The menu](menu.md), [Your own config](../customize/your-own-config.md).
+
+## The shortcut viewer
+
+`Super+K` opens every shortcut in a panel (the terminal page `bxrig tui shortcuts` is the fallback when Noctalia is not running). Tabs by group and **Yours** (the ones you changed), a filter that matches the name or the keys as you type, and the keys drawn as keycaps. Select a shortcut and press **Enter** (or the **Change** button): type the new keys, for example `Super+Alt+K`, and Save. BxRig runs `bxrig keys set ID KEYS --yes` and then `keys apply --yes`, and refuses a combo that is already used, saying which shortcut has it. **Back to default** undoes a change. Cmd-style remaps of the Mac style (xremap) show a lock: they cannot be changed here.
+
+![The shortcut viewer](../assets/screenshots/keys-viewer-all.webp)
+
+![Filtered, with the Change bar showing a refused combo](../assets/screenshots/keys-viewer-change.webp)
+
+<video src="../assets/clips/keys-viewer.webm" autoplay loop muted playsinline width="100%"></video>

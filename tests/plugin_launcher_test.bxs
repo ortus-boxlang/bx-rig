@@ -48,7 +48,7 @@ testkit.check( "the folder exists", directoryExists( dir ) );
 manifest = textOf( "launcher/plugin.toml" );
 testkit.check( "id bxrig/launcher, plugin_api 43, author bxrig, the bxrig dependency", find( 'id = "bxrig/launcher"', manifest ) > 0 && find( "plugin_api = 43", manifest ) > 0 && find( 'author = "bxrig"', manifest ) > 0 && find( 'dependencies = ["bxrig"]', manifest ) > 0 );
 testkit.check( "the plugin-level command setting", find( 'key = "command"', manifest ) > 0 && find( 'default = "bxrig"', manifest ) > 0 );
-testkit.check( "four floating, centered panels with exclusive keyboard focus: the launcher, the clipboard history, the menu and the app grid", find( 'id = "panel"', manifest ) > 0 && find( 'id = "clipboard"', manifest ) > 0 && find( 'id = "menu"', manifest ) > 0 && find( 'id = "apps"', manifest ) > 0 && find( 'placement = "floating"', manifest ) > 0 && find( 'keyboard_focus = "exclusive"', manifest ) > 0 && find( "bar.luau", manifest ) == 0 );
+testkit.check( "five floating, centered panels with exclusive keyboard focus: the launcher, the clipboard history, the menu, the app grid and the shortcut viewer", find( 'id = "panel"', manifest ) > 0 && find( 'id = "clipboard"', manifest ) > 0 && find( 'id = "menu"', manifest ) > 0 && find( 'id = "apps"', manifest ) > 0 && find( 'id = "keys"', manifest ) > 0 && find( 'placement = "floating"', manifest ) > 0 && find( 'keyboard_focus = "exclusive"', manifest ) > 0 && find( "bar.luau", manifest ) == 0 );
 ok = true; entries = 0;
 for ( line in listToArray( manifest, chr( 10 ) ) ) {
 	if ( reFind( '^entry = "', trim( line ) ) ) {
@@ -57,7 +57,7 @@ for ( line in listToArray( manifest, chr( 10 ) ) ) {
 		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
 	}
 }
-testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 4 );
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 5 );
 testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "launcher/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
 tr = jsonDeserialize( textOf( "launcher/translations/en.json" ) );
 testkit.check( "translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings, "command" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );
@@ -106,9 +106,14 @@ testkit.check( "apps: lists with `apps list --json`, starts with `launcher run a
 testkit.check( "apps: two icon styles, the application's own icon and a themed glyph tile, switched with F2", find( 'iconStyle == "app"', ap ) > 0 and find( '.. "/0.16"', ap ) > 0 and find( 'chord == "F2"', ap ) > 0 and find( '"onToggleStyle"', ap ) > 0 );
 testkit.check( "apps: the manifest captures the grid keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2"]', manifest ) > 0 );
 
+// ---- the shortcut viewer ----
+kp = textOf( "launcher/keys.luau" );
+testkit.check( "keys: lists with `keys show --json`, filters as you type, tabs by group and Yours, keys as keycaps", find( '{ "keys", "show", "--json" }', kp ) > 0 and find( "noctalia.fuzzyScore", kp ) > 0 and find( "local function keycaps(keys)", kp ) > 0 and find( '"Yours"', kp ) > 0 );
+testkit.check( "keys: Change runs `keys set ID KEYS --yes` then `keys apply --yes`, Back to default runs `keys reset ID --yes`, remaps are locked", find( '{ "keys", "set", str(sel.id), keys, "--yes" }', kp ) > 0 and find( '{ "keys", "apply", "--yes" }', kp ) > 0 and find( '{ "keys", "reset", str(sel.id), "--yes" }', kp ) > 0 and find( 'str(r.how) == "xremap"', kp ) > 0 );
+
 // every command the plugin runs is in the CLI's usage text
 ok = true;
-for ( pair in [ [ "launcher", "search" ], [ "launcher", "run ID" ], [ "clipboard", "list" ], [ "clipboard", "show ID" ], [ "clipboard", "copy ID" ], [ "clipboard", "clear" ], [ "menu", "level [PATH]" ], [ "apps", "list" ], [ "ai", "agents ask TEXT" ], [ "ai", "agents approve|reject THREAD" ], [ "ai", "agents start|stop|status NAME" ], [ "ai", "agents chat [NAME] [--window]" ], [ "ai", "agents setup" ], [ "boxy", "--json" ] ] ) {
+for ( pair in [ [ "launcher", "search" ], [ "launcher", "run ID" ], [ "clipboard", "list" ], [ "clipboard", "show ID" ], [ "clipboard", "copy ID" ], [ "clipboard", "clear" ], [ "menu", "level [PATH]" ], [ "apps", "list" ], [ "keys", "set ID KEYS" ], [ "keys", "reset ID" ], [ "keys", "apply" ], [ "ai", "agents ask TEXT" ], [ "ai", "agents approve|reject THREAD" ], [ "ai", "agents start|stop|status NAME" ], [ "ai", "agents chat [NAME] [--window]" ], [ "ai", "agents setup" ], [ "boxy", "--json" ] ] ) {
 	if ( !find( pair[ 2 ], new bxrig.CommandSpec().usage( pair[ 1 ] ) ) ) { ok = false; println( "  " & pair[ 1 ] & " usage lacks: " & pair[ 2 ] ); }
 }
 testkit.check( "the CLI knows every launcher and clipboard verb the plugin runs", ok );
@@ -116,6 +121,6 @@ testkit.check( "the CLI knows every launcher and clipboard verb the plugin runs"
 // the starter installs it beside the other plugins (every file of the folder, translations included)
 starter = new bxrig.Starter( true );
 targets = starter.entries().map( function( e ) { return e.target; } ).filter( function( t ) { return find( "/noctalia/plugins/launcher/", t ) > 0; } );
-testkit.check( "starter: the launcher plugin's seven files are installed beside the other plugins", targets.len() == 7 );
+testkit.check( "starter: the launcher plugin's eight files are installed beside the other plugins", targets.len() == 8 );
 
 testkit.done( "all passed" );

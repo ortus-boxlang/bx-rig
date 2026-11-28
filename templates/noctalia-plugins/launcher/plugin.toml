@@ -3,9 +3,11 @@
 # Panels (no bar widget):
 #   panel      the launcher       noctalia msg panel-toggle bxrig/launcher:panel      (Super+Space), with a Boxy chat mode on Tab
 #   menu       the drill-down menu noctalia msg panel-toggle bxrig/launcher:menu       (Super+Alt+Space)
+#   keys       shortcuts viewer   noctalia msg panel-toggle bxrig/launcher:keys       (Super+K), with a Change button
 #   apps       the app grid       noctalia msg panel-toggle bxrig/launcher:apps       (key to be chosen)
 #   clipboard  clipboard history  noctalia msg panel-toggle bxrig/launcher:clipboard  (Super+Shift+V)
-# Data: apps: `bxrig apps list --json`, Enter runs `bxrig launcher run app:ID`.
+# Data: keys: `bxrig keys show --json`; Change runs `bxrig keys set ID KEYS --yes` then `keys apply --yes`.
+#   apps: `bxrig apps list --json`, Enter runs `bxrig launcher run app:ID`.
 #   menu: `bxrig menu level [PATH] --json`, a leaf runs `bxrig launcher run menu:ID`.
 #   Boxy: `bxrig ai agents ask TEXT --thread=ID --json`, `ai agents approve|reject THREAD`.
 #   Launcher: `bxrig launcher search QUERY --limit=30 --json` on every keystroke; Enter runs `bxrig launcher run ID QUERY`.
@@ -69,3 +71,13 @@ placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2"]
+
+[[panel]]
+id = "keys"
+entry = "keys.luau"
+width = 860
+height = 640
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]
