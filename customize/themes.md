@@ -49,6 +49,16 @@ On Hyprland the Themes row of the bar's quick settings popover (the sliders butt
 
 ![The theme switcher, filtered to Kanagawa](../assets/screenshots/panel-theme-search.webp)
 
+## Pick a wallpaper
+
+A theme brings its own wallpaper, but you can pick another one any time. <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>W</kbd> opens the wallpaper panel, and so does the **Backgrounds** button in the theme switcher footer and the **Backgrounds** row in quick settings. It is Noctalia's own panel: tabs for Built-In, Wallpaper, Community and Custom (our `~/Pictures/BxRig` collection is the BxRig folder), a filter, favourites, and Dark, Light or Auto. Without Noctalia the key runs `bxrig theme wallpaper next`.
+
+<video src="../assets/clips/wallpaper-backgrounds.webm" poster="../assets/screenshots/wallpaper-panel.webp" autoplay loop muted playsinline width="100%"></video>
+
+![The Backgrounds button in the theme switcher](../assets/screenshots/theme-switcher-backgrounds.webp)
+
+![The Backgrounds row in quick settings](../assets/screenshots/quick-backgrounds.webp)
+
 The Themes page of the Control Center (`bxrig tui themes`) is the selector: every theme with a color swatch, a filter (type to search, `d` for dark and `l` for light), a preview of the highlighted one (palette roles, a sample terminal and its wallpaper), `r` to preview it live (the whole Control Center is recoloured, nothing is applied; `r` again stops), and `Enter` for the plan and `y` to apply.
 
 Setting a theme acts at once. `--dry-run` shows what would be written without changing anything.
