@@ -12,6 +12,32 @@ local bxrig = require("./bxrig.luau")
 
 local COLUMNS = 10
 local CELL = 56
+local GRID_H = 400
+
+-- Window mode: the second [[panel]] entry of this script sets `window = true` and a "fill" size; F3 swaps between the popup and the window.
+-- The script cannot ask its own size, so it reads the focused output (noctalia.outputs) and keeps a margin.
+local WINDOW = noctalia.getConfig("window") == true
+
+local function screenSize()
+	local list = noctalia.outputs() or {}
+	local focus = noctalia.focusedOutputName()
+	for _, o in ipairs(list) do
+		if focus == nil or o.name == focus then
+			local scale = tonumber(o.scale) or 1
+			if scale <= 0 then
+				scale = 1
+			end
+			return (tonumber(o.width) or 1280) / scale, (tonumber(o.height) or 800) / scale
+		end
+	end
+	return 1280, 800
+end
+
+local function swapWindow()
+	local base = "bxrig/launcher:emoji"
+	panel.close()
+	noctalia.togglePanel(WINDOW and base or (base .. "-window"))
+end
 
 -- The tab label and the word `emoji list --category` takes (a part of the category name).
 local TABS = {
@@ -125,7 +151,7 @@ function render()
 		table.insert(lines, ui.label({ text = why, fontSize = 13, color = "on_surface_variant" }))
 	end
 	local sel = selectedRow()
-	local grid = ui.column({ height = 400 }, {
+	local grid = ui.column({ height = GRID_H }, {
 		ui.scroll({ flexGrow = 1, gap = 2, padding = 8, revealKey = sel and ("e-" .. selected) or nil }, lines),
 	})
 
@@ -135,6 +161,7 @@ function render()
 	end
 	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
 		ui.label({ text = hint, fontSize = 13, color = "on_surface_variant", flexGrow = 1, maxLines = 1 }),
+		ui.button({ text = WINDOW and "Popup  F3" or "Window  F3", glyph = "arrows-maximize", variant = "ghost", controlSize = "sm", onClick = "onSwap" }),
 		ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
 	})
 
@@ -242,12 +269,23 @@ function onKey(chord, pressed)
 		move(COLUMNS * 3)
 	elseif chord == "Tab" then
 		setTab((tab % #TABS) + 1)
+	elseif chord == "F3" then
+		swapWindow()
 	elseif chord == "Return" or chord == "KP_Enter" then
 		onSubmit()
 	end
 end
 
+function onSwap()
+	swapWindow()
+end
+
 function onOpen(_context)
+	if WINDOW then
+		local w, h = screenSize()
+		COLUMNS = math.max(10, math.floor((w - 100) / (CELL + 4)))
+		GRID_H = math.max(400, math.floor(h - 220))
+	end
 	tab = 1
 	tabChosen = false
 	query = ""

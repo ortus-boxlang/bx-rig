@@ -12,6 +12,33 @@
 
 local bxrig = require("./bxrig.luau")
 
+local BODY_H = 380
+
+-- Window mode: the second [[panel]] entry of this script sets `window = true` and a "fill" size; F3 swaps between the popup and the window.
+-- The script cannot ask its own size, so it reads the focused output (noctalia.outputs) and keeps a margin.
+local WINDOW = noctalia.getConfig("window") == true
+
+local function screenSize()
+	local list = noctalia.outputs() or {}
+	local focus = noctalia.focusedOutputName()
+	for _, o in ipairs(list) do
+		if focus == nil or o.name == focus then
+			local scale = tonumber(o.scale) or 1
+			if scale <= 0 then
+				scale = 1
+			end
+			return (tonumber(o.width) or 1280) / scale, (tonumber(o.height) or 800) / scale
+		end
+	end
+	return 1280, 800
+end
+
+local function swapWindow()
+	local base = "bxrig/launcher:keys"
+	panel.close()
+	noctalia.togglePanel(WINDOW and base or (base .. "-window"))
+end
+
 local rows = {}
 local visible = {}
 local groups = {}
@@ -221,7 +248,7 @@ function render()
 		table.insert(list, renderRow(vi, rows[ri]))
 	end
 	local sel = selectedRow()
-	local body = ui.column({ height = editing and 300 or 380 }, {
+	local body = ui.column({ height = editing and (BODY_H - 80) or BODY_H }, {
 		ui.scroll({ flexGrow = 1, gap = 2, padding = 6, revealKey = sel and ("key-" .. str(sel.id) .. "-" .. str(sel.keys)) or nil }, list),
 	})
 
@@ -264,6 +291,7 @@ function render()
 		end
 		bottom = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
 			ui.label({ text = hint, fontSize = 12, color = statusText ~= nil and "primary" or "on_surface_variant", flexGrow = 1, maxLines = 1 }),
+			ui.button({ text = WINDOW and "Popup  F3" or "Window  F3", glyph = "arrows-maximize", variant = "ghost", controlSize = "sm", onClick = "onSwap" }),
 			ui.button({ text = "Change  ↵", glyph = "pencil", variant = "primary", controlSize = "sm", enabled = sel ~= nil and not locked, onClick = "onChange" }),
 		})
 	end
@@ -404,6 +432,10 @@ function onResetKeys()
 	end, 60000)
 end
 
+function onSwap()
+	swapWindow()
+end
+
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
 	local now = noctalia.nowMs()
@@ -427,7 +459,9 @@ function onKey(chord, pressed)
 		end
 		return
 	end
-	if chord == "Up" then
+	if chord == "F3" then
+		swapWindow()
+	elseif chord == "Up" then
 		move(-1)
 	elseif chord == "Down" then
 		move(1)
@@ -443,6 +477,10 @@ function onKey(chord, pressed)
 end
 
 function onOpen(_context)
+	if WINDOW then
+		local _, h = screenSize()
+		BODY_H = math.max(380, math.floor(h - 220))
+	end
 	group = "All"
 	query = ""
 	inputKey += 1

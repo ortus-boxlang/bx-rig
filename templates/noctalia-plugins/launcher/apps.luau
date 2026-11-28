@@ -13,6 +13,32 @@
 local bxrig = require("./bxrig.luau")
 
 local COLUMNS = 5
+local GRID_H = 400
+
+-- Window mode: the second [[panel]] entry of this script sets `window = true` and a "fill" size; F3 swaps between the popup and the window.
+-- The script cannot ask its own size, so it reads the focused output (noctalia.outputs) and keeps a margin.
+local WINDOW = noctalia.getConfig("window") == true
+
+local function screenSize()
+	local list = noctalia.outputs() or {}
+	local focus = noctalia.focusedOutputName()
+	for _, o in ipairs(list) do
+		if focus == nil or o.name == focus then
+			local scale = tonumber(o.scale) or 1
+			if scale <= 0 then
+				scale = 1
+			end
+			return (tonumber(o.width) or 1280) / scale, (tonumber(o.height) or 800) / scale
+		end
+	end
+	return 1280, 800
+end
+
+local function swapWindow()
+	local base = "bxrig/launcher:apps"
+	panel.close()
+	noctalia.togglePanel(WINDOW and base or (base .. "-window"))
+end
 
 local apps = {}
 local visible = {}
@@ -228,7 +254,7 @@ function render()
 		table.insert(rows, ui.label({ text = "No application matches", fontSize = 13, color = "on_surface_variant" }))
 	end
 	local sel = selectedApp()
-	local grid = ui.column({ height = 400 }, {
+	local grid = ui.column({ height = GRID_H }, {
 		ui.scroll({ flexGrow = 1, gap = 4, padding = 8, revealKey = sel and ("cell-" .. str(sel.id)) or nil }, rows),
 	})
 
@@ -249,6 +275,7 @@ function render()
 			controlSize = "sm",
 			onClick = "onToggleStyle",
 		}),
+		ui.button({ text = WINDOW and "Popup  F3" or "Window  F3", glyph = "arrows-maximize", variant = "ghost", controlSize = "sm", onClick = "onSwap" }),
 		ui.button({ text = "Open  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
 	})
 
@@ -298,6 +325,10 @@ function onQueryChanged(value)
 	render()
 end
 
+function onSwap()
+	swapWindow()
+end
+
 function onToggleStyle()
 	iconStyle = iconStyle == "app" and "theme" or "app"
 	render()
@@ -342,12 +373,19 @@ function onKey(chord, pressed)
 		nextGroup()
 	elseif chord == "F2" then
 		onToggleStyle()
+	elseif chord == "F3" then
+		swapWindow()
 	elseif chord == "Return" or chord == "KP_Enter" then
 		onSubmit()
 	end
 end
 
 function onOpen(_context)
+	if WINDOW then
+		local w, h = screenSize()
+		COLUMNS = math.max(5, math.floor((w - 120) / 136))
+		GRID_H = math.max(400, math.floor(h - 220))
+	end
 	group = "All"
 	query = ""
 	inputKey += 1

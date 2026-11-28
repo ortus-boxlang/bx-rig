@@ -57,7 +57,7 @@ for ( line in listToArray( manifest, chr( 10 ) ) ) {
 		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
 	}
 }
-testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 7 );
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 10 );
 testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "launcher/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
 tr = jsonDeserialize( textOf( "launcher/translations/en.json" ) );
 testkit.check( "translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings, "command" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );
@@ -98,13 +98,17 @@ testkit.check( "panels run no shell and no sudo", find( "os.execute", pn & cp ) 
 em = textOf( "launcher/emoji.luau" );
 testkit.check( "emoji: lists with `emoji list QUERY --category=C --json`, shows Recent with `emoji recent`, copies with `emoji copy EMOJI`", find( '"emoji", "list", q', em ) > 0 and find( '"--category=" .. TABS[tab].category', em ) > 0 and find( '{ "emoji", "recent"', em ) > 0 and find( '{ "emoji", "copy", str(e.emoji) }', em ) > 0 );
 testkit.check( "emoji: drops late answers, tabs by category, arrows over a grid, Tab next category", find( "mine ~= request", em ) > 0 and find( "Smileys", em ) > 0 and find( "move(-COLUMNS)", em ) > 0 and find( 'chord == "Tab"', em ) > 0 );
-testkit.check( "emoji: the manifest captures the grid keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]', manifest ) > 0 );
+testkit.check( "emoji: the manifest captures the grid keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]', manifest ) > 0 );
 
 // ---- the AI on the selection panel ----
 at = textOf( "launcher/aitext.luau" );
 testkit.check( "aitext: reads `ai text source --json`, runs `ai text ID --text=TEXT --to=stdout --json`, passes --lang for Translate", find( '{ "ai", "text", "source", "--json" }', at ) > 0 and find( '"--text=" .. text', at ) > 0 and find( '"--to=stdout"', at ) > 0 and find( '"--lang=" .. LANGUAGES[langIndex]', at ) > 0 );
 testkit.check( "aitext: Enter runs, F2 copies the result, F4 switches the source, Left/Right change the language", find( 'chord == "F2"', at ) > 0 and find( 'chord == "F4"', at ) > 0 and find( "changeLanguage(-1)", at ) > 0 and find( 'chord == "Return"', at ) > 0 );
 testkit.check( "aitext: the manifest captures its keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Return", "KP_Enter", "F2", "F4"]', manifest ) > 0 );
+
+// ---- window mode: three more entries run the same scripts at full size ----
+testkit.check( "window mode: apps-window, keys-window and emoji-window fill the screen and set window = true", find( 'id = "apps-window"', manifest ) > 0 and find( 'id = "keys-window"', manifest ) > 0 and find( 'id = "emoji-window"', manifest ) > 0 and find( 'width = "fill"', manifest ) > 0 and find( 'height = "fill"', manifest ) > 0 and find( 'key = "window"', manifest ) > 0 );
+for ( f in [ "apps", "keys", "emoji" ] ) testkit.check( f & ": F3 swaps popup and window, the script reads the window setting and the screen size", find( 'noctalia.getConfig("window") == true', textOf( "launcher/" & f & ".luau" ) ) > 0 and find( 'chord == "F3"', textOf( "launcher/" & f & ".luau" ) ) > 0 and find( "noctalia.outputs()", textOf( "launcher/" & f & ".luau" ) ) > 0 );
 
 // ---- the menu panel ----
 mn = textOf( "launcher/menu.luau" );
@@ -116,7 +120,7 @@ testkit.check( "menu: the manifest captures Left and Right for it", find( 'captu
 ap = textOf( "launcher/apps.luau" );
 testkit.check( "apps: lists with `apps list --json`, starts with `launcher run app:ID`, filters by typing, tabs by group, arrows over a grid", find( '{ "apps", "list", "--json" }', ap ) > 0 and find( '"launcher", "run", "app:" .. str(a.id)', ap ) > 0 and find( "noctalia.fuzzyScore", ap ) > 0 and find( "buildGroups", ap ) > 0 and find( "move(-COLUMNS)", ap ) > 0 and find( 'chord == "Left"', ap ) > 0 );
 testkit.check( "apps: two icon styles, the application's own icon and a themed glyph tile, switched with F2", find( 'iconStyle == "app"', ap ) > 0 and find( '.. "/0.16"', ap ) > 0 and find( 'chord == "F2"', ap ) > 0 and find( '"onToggleStyle"', ap ) > 0 );
-testkit.check( "apps: the manifest captures the grid keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2"]', manifest ) > 0 );
+testkit.check( "apps: the manifest captures the grid keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2", "F3"]', manifest ) > 0 );
 
 // ---- the shortcut viewer ----
 kp = textOf( "launcher/keys.luau" );

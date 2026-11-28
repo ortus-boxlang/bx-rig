@@ -74,7 +74,7 @@ height = 640
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
-capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2"]
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2", "F3"]
 
 [[panel]]
 id = "keys"
@@ -84,7 +84,7 @@ height = 640
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
-capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
 
 [[panel]]
 id = "emoji"
@@ -94,7 +94,7 @@ height = 600
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
-capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
 
 [[panel]]
 id = "aitext"
@@ -105,3 +105,57 @@ placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Left", "Right", "Return", "KP_Enter", "F2", "F4"]
+
+# The same script as "apps", filling the screen (F3 swaps between them). `window` tells the script which one it is.
+[[panel]]
+id = "apps-window"
+entry = "apps.luau"
+width = "fill"
+height = "fill"
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true
+
+# The same script as "keys", filling the screen (F3 swaps between them). `window` tells the script which one it is.
+[[panel]]
+id = "keys-window"
+entry = "keys.luau"
+width = "fill"
+height = "fill"
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true
+
+# The same script as "emoji", filling the screen (F3 swaps between them). `window` tells the script which one it is.
+[[panel]]
+id = "emoji-window"
+entry = "emoji.luau"
+width = "fill"
+height = "fill"
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true
