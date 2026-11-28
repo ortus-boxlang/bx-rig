@@ -47,6 +47,19 @@ Press **Tab** (or Enter on the *Ask Boxy* row, or `Super+Alt+B` to open the laun
 
 <video src="../assets/clips/apps-grid.webm" autoplay loop muted playsinline width="100%"></video>
 
+### The emoji picker
+
+`Super+Ctrl+E` opens a grid of about 1,870 emoji: tabs by category (Recent, Smileys, People, Nature, Food, Travel, Activities, Objects, Symbols, Flags), typing searches names and keywords, arrows move, Enter copies the emoji and closes. What you copied lands on the Recent tab. If the panel is not there (no Noctalia), the key falls back to the rofimoji picker.
+
+```bash
+bxrig emoji list happy --limit=20 --json   # the search
+bxrig emoji list --category=food           # one category
+bxrig emoji recent                         # what you copied last
+bxrig emoji copy 🎉                         # onto the clipboard (wl-copy)
+```
+
+The emoji data is [gemoji](https://github.com/github/gemoji) (MIT, copyright GitHub, Inc.), packed in the binary.
+
 ### The menu
 
 `Super+Alt+Space` opens the BxRig menu as a panel in the same style, like the Omarchy menu: the sections as icon tiles, a header with where you are (`Trigger › Capture`), Enter or Right to go in, Left to go back, type to filter the level. It lists the same entries as `bxrig menu` (`bxrig menu level "Trigger > Capture" --json` is the data), and a leaf runs through `bxrig launcher run`.

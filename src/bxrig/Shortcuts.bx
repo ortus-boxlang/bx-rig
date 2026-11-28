@@ -179,7 +179,7 @@ class Shortcuts {
 			row( "boxy-talk-copilot", G.apps, "Talk to Boxy with the Copilot key: hold, speak, let go", "Super+Shift+F23", "Super+Shift+F23", "hypr-bind", execBxrig( "boxy listen start" ), "boxy listen start" ),
 			row( "boxy-talk-copilot-release", G.apps, "Talk to Boxy with the Copilot key: let go to send", "Super+Shift+F23", "Super+Shift+F23", "hypr-bind", execBxrig( "boxy listen stop" ), "boxy listen stop", "{ release = true }" ),
 			// capture and recording
-			bx( "emoji", G.cap, "Emoji picker", "Super+Ctrl+E", "Super+Ctrl+E", "emoji" ),
+			row( "emoji", G.cap, "Emoji picker (search, categories, recent, Enter copies)", "Super+Ctrl+E", "Super+Ctrl+E", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:emoji || bxrig emoji'']])', "emoji" ),
 			row( "clipboard-history", G.cap, "Clipboard history (search, preview, Enter copies)", "Super+Ctrl+V", "Super+Ctrl+V", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:clipboard || bxrig clipboard pick'']])', "clipboard pick" ),
 			bx( "screenshot-screen", G.cap, "Screenshot: the whole screen", "", "Super+Shift+3", "screenshot screen" ),
 			bx( "screenshot-region", G.cap, "Screenshot: a region", "", "Super+Shift+4", "screenshot region" ),

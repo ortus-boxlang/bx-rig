@@ -1,0 +1,162 @@
+// `bxrig emoji`: the emoji picker data for the Noctalia panel (bxrig/launcher:emoji) and the command line.
+//   list [QUERY] [--category=C] [--limit=N]   rows { emoji, name, category, keywords }, in Unicode order or best match first
+//   recent [--limit=N]                        the emoji you copied last, newest first (state file emoji.json)
+//   copy EMOJI                                puts the emoji on the clipboard (wl-copy) and remembers it as recent
+// `bxrig emoji` alone still opens the rofimoji picker (MacExtras). The data is assets/emoji/emoji.json, built from gemoji (MIT, see
+// assets/emoji/LICENSE): { source, categories: [names], emoji: [[char, name, categoryIndex, keywords]] }.
+// Exit: 0 done, 2 usage, 4 precondition (no wl-copy), 6 a command failed.
+class Emoji {
+	/**
+	 * @cli The command helper.
+	 * @runner Optional fake process runner for tests.
+	 */
+	function init( cli, runner = "" ) {
+		variables.cli = arguments.cli;
+		variables.inst = new bxrig.Installer( arguments.runner );
+		variables.proc = variables.inst.proc();
+		variables.environ = new bxrig.util.Env();
+		variables.store = new bxrig.util.JsonStore();
+		variables.data = {};
+		return this;
+	}
+
+	/**
+	 * Where the recent emoji are kept.
+	 */
+	function stateFile() {
+		return variables.environ.xdgState( "bxrig/emoji.json" );
+	}
+
+	/**
+	 * The packed dataset, read once.
+	 */
+	function dataset() {
+		if ( !variables.data.len() ) variables.data = jsonDeserialize( new bxrig.util.Res().trimmed( "assets/emoji/emoji.json" ) );
+		return variables.data;
+	}
+
+	/**
+	 * The emoji copied last, newest first.
+	 */
+	function recents() {
+		var j = variables.store.load( stateFile(), {} );
+		return isStruct( j ) && structKeyExists( j, "recent" ) && isArray( j.recent ) ? j.recent : [];
+	}
+
+	/**
+	 * Remembers a copied emoji (at most 30, no repeats).
+	 * @emoji The emoji.
+	 */
+	function remember( emoji ) {
+		var list = [ arguments.emoji ];
+		for ( var e in recents() ) if ( e != arguments.emoji && list.len() < 30 ) list.append( e );
+		try {
+			directoryCreate( getDirectoryFromPath( stateFile() ), true, true );
+			variables.store.write( "emoji-state", stateFile(), { recent: list } );
+		} catch ( any err ) {}
+	}
+
+	function row( item ) {
+		var cats = dataset().categories;
+		return { emoji: arguments.item[ 1 ], name: arguments.item[ 2 ], category: cats[ arguments.item[ 3 ] + 1 ], keywords: arguments.item[ 4 ] };
+	}
+
+	/**
+	 * Index (0 based) of the category a text names: a case-insensitive part of its name, "smileys" or "food". -1 when none.
+	 * @text What the user typed.
+	 */
+	function categoryIndex( text ) {
+		var t = lCase( trim( arguments.text ) );
+		if ( !len( t ) ) return -1;
+		var cats = dataset().categories;
+		for ( var i = 1; i <= cats.len(); i++ ) if ( find( t, lCase( cats[ i ] ) ) > 0 ) return i - 1;
+		return -1;
+	}
+
+	/**
+	 * The emoji matching the words, best first. Every word must be in the name or the keywords; a name that starts with a word ranks first.
+	 * @query Words (may be empty).
+	 * @category Optional category part ("food").
+	 * @limit The most rows.
+	 * @return Array of { emoji, name, category, keywords }.
+	 */
+	function search( query = "", category = "", limit = 200 ) {
+		var words = listToArray( lCase( trim( arguments.query ) ), " " );
+		var ci = categoryIndex( arguments.category );
+		var hits = [];
+		var order = 0;
+		for ( var item in dataset().emoji ) {
+			order++;
+			if ( ci >= 0 && item[ 3 ] != ci ) continue;
+			var name = lCase( item[ 2 ] );
+			var hay = name & " " & lCase( item[ 4 ] );
+			var score = 0;
+			var ok = true;
+			for ( var w in words ) {
+				if ( find( w, hay ) == 0 ) { ok = false; break; }
+				if ( left( name, len( w ) ) == w ) score += 3;
+				else if ( find( " " & w, " " & name ) > 0 ) score += 2;
+				else score += 1;
+			}
+			if ( !ok ) continue;
+			hits.append( { score: score, order: order, item: item } );
+		}
+		if ( words.len() ) hits.sort( function( a, b ) { return a.score != b.score ? b.score - a.score : a.order - b.order; } );
+		var out = [];
+		for ( var h in hits ) {
+			if ( out.len() >= arguments.limit ) break;
+			out.append( row( h.item ) );
+		}
+		return out;
+	}
+
+	/**
+	 * `emoji list [QUERY]`.
+	 * @query Words to filter by.
+	 * @category Category part.
+	 * @limit The most rows.
+	 * @asJson True for JSON output.
+	 */
+	function list( query, category, limit, asJson ) {
+		var cmd = "emoji list";
+		if ( len( arguments.category ) && categoryIndex( arguments.category ) < 0 ) return variables.cli.say( cmd, "usage", { error: "no category " & arguments.category, categories: dataset().categories }, arguments.asJson, [ "error: no category " & arguments.category & ". Categories: " & dataset().categories.toList( ", " ) ] );
+		var rows = search( arguments.query, arguments.category, arguments.limit );
+		var lines = rows.map( function( r ) { return r.emoji & "  " & r.name; } );
+		if ( !rows.len() ) lines.append( "No emoji matches." );
+		return variables.cli.say( cmd, "ok", { emoji: rows, categories: dataset().categories, total: dataset().emoji.len() }, arguments.asJson, lines );
+	}
+
+	/**
+	 * `emoji recent`.
+	 * @limit The most rows.
+	 * @asJson True for JSON output.
+	 */
+	function recent( limit, asJson ) {
+		var cmd = "emoji recent";
+		var rows = [];
+		for ( var e in recents() ) {
+			if ( rows.len() >= arguments.limit ) break;
+			for ( var item in dataset().emoji ) {
+				if ( item[ 1 ] == e ) { rows.append( row( item ) ); break; }
+			}
+		}
+		var lines = rows.map( function( r ) { return r.emoji & "  " & r.name; } );
+		if ( !rows.len() ) lines.append( "Nothing copied yet." );
+		return variables.cli.say( cmd, "ok", { emoji: rows }, arguments.asJson, lines );
+	}
+
+	/**
+	 * `emoji copy EMOJI`: onto the clipboard and into the recent list.
+	 * @emoji The emoji character.
+	 * @asJson True for JSON output.
+	 */
+	function copy( emoji, asJson ) {
+		var cmd = "emoji copy";
+		if ( !len( trim( arguments.emoji ) ) ) return variables.cli.say( cmd, "usage", { error: "EMOJI is the character to copy" }, arguments.asJson, [ "error: EMOJI is the character to copy" ] );
+		if ( !variables.proc.has( "wl-copy" ) ) return variables.cli.say( cmd, "precondition", { error: "wl-copy was not found" }, arguments.asJson, [ "error: wl-copy was not found. Install: bxrig install wl-clipboard" ] );
+		var cp = systemExecute( "wl-copy", [], 30, true, ".", "", "", true, {}, false, arguments.emoji );
+		if ( cp.exitCode != 0 ) return variables.cli.say( cmd, "failed", { error: "wl-copy failed" }, arguments.asJson, [ "error: wl-copy failed" ] );
+		remember( arguments.emoji );
+		return variables.cli.say( cmd, "ok", { copied: true, emoji: arguments.emoji }, arguments.asJson, [ "Copied " & arguments.emoji ] );
+	}
+}

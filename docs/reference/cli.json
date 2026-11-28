@@ -3258,16 +3258,34 @@
 				},
 				{
 					"name": "emoji",
-					"summary": "The emoji picker (rofimoji).",
+					"summary": "The emoji picker: rofimoji on its own, or the panel data (list, recent, copy).",
 					"brief": "The emoji picker",
 					"usage": [
-						"emoji"
+						"emoji",
+						"emoji list [QUERY] [--category=C] [--limit=N] [--json]",
+						"emoji recent [--limit=N] [--json]",
+						"emoji copy EMOJI [--json]"
 					],
 					"examples": [
-						"bxrig emoji"
+						"bxrig emoji",
+						"bxrig emoji list happy --limit=20",
+						"bxrig emoji list --category=food",
+						"bxrig emoji copy 🎉"
 					],
 					"mutates": false,
-					"flags": []
+					"flags": [
+						{
+							"name": "category",
+							"type": "value",
+							"desc": "On list: one category, a part of its name (food, flags)"
+						},
+						{
+							"name": "limit",
+							"type": "value",
+							"desc": "On list and recent: the most rows (default 200 and 30)"
+						}
+					],
+					"note": "With no word it opens the rofimoji picker. list searches names and keywords of about 1,870 emoji (gemoji data, MIT) and gives rows { emoji, name, category, keywords } plus the category names. copy puts the emoji on the clipboard with wl-copy and remembers it for recent. The emoji panel (Super+Ctrl+E) uses these three."
 				},
 				{
 					"name": "forcequit",

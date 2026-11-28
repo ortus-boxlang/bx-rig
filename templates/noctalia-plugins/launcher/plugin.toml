@@ -6,11 +6,13 @@
 #   keys       shortcuts viewer   noctalia msg panel-toggle bxrig/launcher:keys       (Super+K), with a Change button
 #   apps       the app grid       noctalia msg panel-toggle bxrig/launcher:apps       (Super+Alt+A)
 #   clipboard  clipboard history  noctalia msg panel-toggle bxrig/launcher:clipboard  (Super+Shift+V)
+#   emoji      emoji picker       noctalia msg panel-toggle bxrig/launcher:emoji      (Super+Ctrl+E)
 # Data: keys: `bxrig keys show --json`; Change runs `bxrig keys set ID KEYS --yes` then `keys apply --yes`.
 #   apps: `bxrig apps list --json`, Enter runs `bxrig launcher run app:ID`.
 #   menu: `bxrig menu level [PATH] --json`, a leaf runs `bxrig launcher run menu:ID`.
 #   Boxy: `bxrig ai agents ask TEXT --thread=ID --json`, `ai agents approve|reject THREAD`.
 #   Launcher: `bxrig launcher search QUERY --limit=30 --json` on every keystroke; Enter runs `bxrig launcher run ID QUERY`.
+#   Emoji: `bxrig emoji list QUERY --category=C --json`, `emoji recent --json`, Enter runs `bxrig emoji copy EMOJI` (gemoji data, MIT).
 #   Clipboard: `bxrig clipboard list QUERY --limit=60 --json`, `clipboard show ID --json`, Enter runs `bxrig clipboard copy ID`.
 # The ranking idea follows oma-cast (https://github.com/typecraft-dev/oma-cast, MIT).
 
@@ -81,3 +83,13 @@ placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]
+
+[[panel]]
+id = "emoji"
+entry = "emoji.luau"
+width = 660
+height = 600
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab"]
