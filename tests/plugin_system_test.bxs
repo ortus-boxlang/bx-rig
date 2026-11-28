@@ -61,7 +61,7 @@ for ( line in listToArray( manifest, chr( 10 ) ) ) {
 		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
 	}
 }
-testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 2 );
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 3 );
 testkit.check( "a bar widget and an attached panel near the click", find( 'id = "bar"', manifest ) > 0 && find( 'id = "panel"', manifest ) > 0 && find( 'placement = "attached"', manifest ) > 0 && find( "open_near_click = true", manifest ) > 0 );
 testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "system/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
 tr = jsonDeserialize( textOf( "system/translations/en.json" ) );

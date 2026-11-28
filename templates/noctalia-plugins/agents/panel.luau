@@ -307,7 +307,10 @@ function render()
 		ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = "onRefresh" }),
 	}
 	if closeButton then
-		table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
+		for _, b in ipairs(bxrig.windowButtons({ plugin = "bxrig/agents", panel = "panel", tui = "ai-agents" })) do
+			table.insert(header, b)
+		end
+table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
 	end
 
 	local sections = {

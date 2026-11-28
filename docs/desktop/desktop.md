@@ -45,6 +45,20 @@ The Noctalia bar carries three BxRig panels and the notifications. Each opens fr
 | ![The theme switcher](../assets/screenshots/panel-theme-switcher.webp)<br>**Theme switcher** · <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>. See [Themes](../customize/themes.md) | ![Stacked notifications](../assets/screenshots/notifications.webp)<br>**Notifications** stack in the top corner, rounded and in the theme's colors. <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>,</kbd> acts on the newest, <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd> opens them all |
 
 
+### Detach a panel into a window
+
+Every bar panel (system, quick settings, themes, clock, power, VPN, developer, agents) has a **Detach** button in its header. It closes the popup and opens the same panel as a window a little bigger than the popup, centered on the screen. The window stays open when you click elsewhere, so you can keep it beside your work. **Dock** in the window's header closes it and brings the popup back.
+
+Panels that have a terminal version also get a terminal button: the system panel opens the Control Center dashboard, the agents panel its Agents page, and the theme switcher its Themes page, each with `bxrig tui PAGE` in your terminal. A terminal is a normal window, so that one you can resize and tile.
+
+The window is a second entry of the same plugin (`panel-window`, `themes-window`), so it also opens from a key or a script: `noctalia msg panel-toggle bxrig/clock:panel-window`. Noctalia fixes a panel's size in its manifest, so the window has one size and cannot be dragged to resize.
+
+![The system panel as a window](../assets/screenshots/panel-window-system.webp)
+
+![The agents panel as a window, with the terminal button](../assets/screenshots/panel-window-agents.webp)
+
+![The theme switcher as a window](../assets/screenshots/panel-window-themes.webp)
+
 ## KDE Plasma
 
 - **Tiling:** `bxrig setup plasma` installs HyprKwin and turns on the Bluetooth service (`bluetooth.service`, if it is not on yet). Layouts: dwindle, master, monocle, scrolling, stage. `bxrig tiling on|off|status|layout NAME`.

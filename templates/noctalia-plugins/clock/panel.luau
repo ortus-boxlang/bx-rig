@@ -200,7 +200,10 @@ local function render()
 		}),
 	}
 	if closeButton then
-		table.insert(buttons, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
+		for _, b in ipairs(bxrig.windowButtons({ plugin = "bxrig/clock", panel = "panel", tui = nil })) do
+			table.insert(buttons, b)
+		end
+table.insert(buttons, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
 	end
 	-- The buttons sit right of the title; an equal-width spacer on the left
 	-- keeps the title centered.

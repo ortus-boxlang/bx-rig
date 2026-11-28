@@ -251,6 +251,7 @@ render = function()
 				noctalia.runInTerminal("'" .. bxrig.command() .. "' tui")
 				panel.close()
 			end }),
+		ui.row({ gap = 2 }, bxrig.windowButtons({ plugin = "bxrig/quick", panel = "panel" })),
 	}))
 	if wifiQr ~= nil then
 		table.insert(items, ui.column({ key = "wifi-qr", align = "center", gap = 6, paddingV = 6 }, {

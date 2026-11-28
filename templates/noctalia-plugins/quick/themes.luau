@@ -209,6 +209,7 @@ local function render()
 	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
 		ui.button({ glyph = "arrow-left", text = "Quick settings", variant = "ghost", controlSize = "sm", onClick = "onBack" }),
 		ui.label({ text = status, fontSize = 12, color = statusColor, flexGrow = 1, maxLines = 1 }),
+		ui.row({ gap = 2 }, bxrig.windowButtons({ plugin = "bxrig/quick", panel = "themes", tui = "themes" })),
 		ui.button({
 			text = "Apply Theme  ↵",
 			variant = "primary",
@@ -221,7 +222,7 @@ local function render()
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
 		search,
 		ui.separator({}),
-		ui.row({ height = 420, gap = 0, align = "start" }, {
+		ui.row({ height = bxrig.isWindow() and 540 or 420, gap = 0, align = "start" }, {
 			list,
 			ui.separator({ orientation = "vertical" }),
 			right,

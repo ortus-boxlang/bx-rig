@@ -1,0 +1,37 @@
+// Window mode of the BxRig bar panels: every bar popup has a floating "panel-window" twin of the same script, the header buttons come from
+// the shared bxrig.luau, and that file is the same in every plugin. Run from src/: (cd src && matchbox ../tests/plugin_window_test.bxs)
+// Reads the files as text (no Luau interpreter in CI).
+testkit = new lib.Check( "window mode" );
+root = expandPath( "../templates/noctalia-plugins" );
+function textOf( rel ) { return fileRead( root & "/" & rel ); }
+
+plugins = [
+	{ name: "system", id: "bxrig/system", tui: "dashboard" },
+	{ name: "agents", id: "bxrig/agents", tui: "ai-agents" },
+	{ name: "clock", id: "bxrig/clock", tui: "" },
+	{ name: "power", id: "bxrig/power", tui: "" },
+	{ name: "vpn", id: "bxrig/vpn", tui: "" },
+	{ name: "dev", id: "bxrig/dev", tui: "" },
+	{ name: "quick", id: "bxrig/quick", tui: "" }
+];
+shared = textOf( "agents/bxrig.luau" );
+testkit.check( "bxrig.luau has isWindow, swapWindow and windowButtons", find( "function M.isWindow()", shared ) > 0 && find( "function M.swapWindow(plugin, panelId)", shared ) > 0 && find( "function M.windowButtons(opts)", shared ) > 0 );
+testkit.check( "the window buttons are Detach or Dock, and a terminal button only for a tui page", find( '"Detach into a window"', shared ) > 0 && find( '"Dock back to the bar"', shared ) > 0 && find( "if opts.tui ~= nil then", shared ) > 0 && find( '" tui " .. shellQuote(opts.tui)', shared ) > 0 );
+same = true;
+for ( p in [ "agents", "clock", "dev", "launcher", "power", "quick", "system", "vpn" ] ) if ( textOf( p & "/bxrig.luau" ) != shared ) { same = false; println( "  differs: " & p ); }
+testkit.check( "the shared bxrig.luau is the same in every plugin", same );
+
+for ( p in plugins ) {
+	manifest = textOf( p.name & "/plugin.toml" );
+	panelTxt = textOf( p.name & "/panel.luau" );
+	testkit.check( p.name & ": a floating, centered panel-window entry of panel.luau that stays open when you click away", find( 'id = "panel-window"', manifest ) > 0 && find( 'entry = "panel.luau"', manifest ) > 0 && find( 'placement = "floating"', manifest ) > 0 && find( 'position = "center"', manifest ) > 0 && find( "dismiss_on_outside_click = false", manifest ) > 0 );
+	testkit.check( p.name & ": the window setting is true in the window entry and false in the popup", find( 'key = "window"', manifest ) > 0 && find( "default = true", manifest ) > 0 && find( "default = false", manifest ) > 0 );
+	testkit.check( p.name & ": the header uses windowButtons for " & p.id, find( 'bxrig.windowButtons({ plugin = "' & p.id & '"', panelTxt ) > 0 );
+	if ( len( p.tui ) ) testkit.check( p.name & ": the terminal button opens tui " & p.tui, find( 'tui = "' & p.tui & '"', panelTxt ) > 0 );
+	tr = textOf( p.name & "/translations/en.json" );
+	testkit.check( p.name & ": the window setting has a label in en.json", find( '"window"', tr ) > 0 );
+}
+themes = textOf( "quick/themes.luau" );
+quick = textOf( "quick/plugin.toml" );
+testkit.check( "quick: themes has a themes-window twin and a terminal button for tui themes", find( 'id = "themes-window"', quick ) > 0 && find( 'panel = "themes", tui = "themes"', themes ) > 0 && find( "bxrig.isWindow() and 540 or 420", themes ) > 0 );
+testkit.done( "all passed" );
