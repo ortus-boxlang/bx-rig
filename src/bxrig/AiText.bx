@@ -1,6 +1,7 @@
 // `bxrig ai text`: a local model works on the text you selected (or copied). Super+Alt+E opens the menu.
 //   text summarize|rewrite|fix|explain|translate|reply [--lang=LANGUAGE] [--from=selection|clipboard] [--text=TEXT] [--to=clipboard|notify|stdout]
 //   text menu                     pick the action in your menu (the runner's menu), then as above
+//   text source [--from=selection|clipboard]   the text the actions would work on, { text, from, chars, truncated, actions } (for the panel)
 // The text comes from the selection (wl-paste --primary), else the clipboard; --text gives it directly. The result goes to the
 // clipboard and a notification by default (and is printed). Everything runs on the local AI server; nothing leaves this machine.
 class AiText {
@@ -48,6 +49,19 @@ class AiText {
 		}
 		var clip = p.exec( [ "wl-paste", "--no-newline", "--type", "text" ], 10 );
 		return clip.exitCode == 0 && len( trim( clip.output ) ) ? { text: clip.output, from: "clipboard" } : { text: "", from: "" };
+	}
+
+	/**
+	 * `ai text source`: what the actions would work on now, for the panel (bxrig/launcher:aitext). Never an error: no text is { text: "", from: "" }.
+	 * @opts The options (from).
+	 * @asJson True for JSON output.
+	 */
+	function source( opts, asJson ) {
+		var got = input( arguments.opts.from ?: "" );
+		var cut = len( got.text ) > 24000;
+		var shown = cut ? left( got.text, 24000 ) : got.text;
+		var acts = actions().map( function( a ) { return { id: a.id, label: a.label }; } );
+		return variables.out.say( "ok", { text: shown, from: got.from, chars: len( got.text ), truncated: cut, actions: acts }, arguments.asJson, [ len( got.text ) ? got.from & ": " & len( got.text ) & " characters" : "No text: select some or copy it." ] );
 	}
 
 	function run( id, opts, asJson ) {

@@ -110,7 +110,7 @@ The keys you will use most, in the Traditional style unless noted:
 | `Super+Alt+Shift+C` | Center the floating window |
 | `Super+Ctrl+Up` | Overview of all windows (Mission Control) |
 | `Super+Alt+Escape` | Force quit a window |
-| `Super+Alt+E` | AI on the selected text: a menu to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](../ai/local-ai.md#ai-on-the-selected-text)) |
+| `Super+Alt+E` | AI on the selected text: a panel to summarize, rewrite, fix, explain, translate or draft a reply (see [Local AI](../ai/local-ai.md#ai-on-the-selected-text)) |
 | `Super+Shift+J` | Next layout on this workspace: dwindle, master, columns, scrolling, monocle |
 | `Super+Minus` / `Super+Equal` | Narrower / wider: the split (dwindle), the main column (master, columns), or the column through 1/3, 1/2, 2/3 and full (scrolling) |
 | `Super+Ctrl+Left` / `Right` | Previous / next workspace |

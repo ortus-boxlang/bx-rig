@@ -170,7 +170,7 @@ class Shortcuts {
 			row( "file-manager", G.apps, "File manager", "Super+Shift+F", "Super+E", "hypr-bind", "hl.dsp.exec_cmd(fileManager)" ),
 			bx( "files-here", G.apps, "File manager in the current folder (of the focused window)", "Super+Alt+Shift+F", "Super+Alt+Shift+F", "files here" ),
 			bx( "ai-shell", G.apps, "Pull-down AI shell", "Super+Grave", "Super+Grave", "ai shell" ),
-			bx( "ai-text", G.apps, "AI on the selected text: summarize, rewrite, fix, explain, translate", "Super+Alt+E", "Super+Alt+E", "ai text menu" ),
+			row( "ai-text", G.apps, "AI on the selected text: summarize, rewrite, fix, explain, translate (panel)", "Super+Alt+E", "Super+Alt+E", "hypr-bind", 'hl.dsp.exec_cmd([[sh -c ''PATH="$HOME/.local/bin:$PATH"; noctalia msg panel-toggle bxrig/launcher:aitext || bxrig ai text menu'']])', "ai text menu" ),
 			bx( "agent-chat", G.apps, "Chat with your default agent (Boxy) in a terminal", "Super+Period", "Super+Period", "ai agents chat --window" ),
 			bx( "agent-web", G.apps, "Your default agent's web page", "Super+Shift+Period", "Super+Shift+Period", "ai agents open" ),
 			// hold to talk to Boxy (Voxtype listens while the key is down); off in Noctalia-less setups without Voxtype: the key tells you what is missing

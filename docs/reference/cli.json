@@ -2822,7 +2822,7 @@
 						"ai downloads [clear | cancel ID] [--json]",
 						"ai bench [ID] [--json]",
 						"ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]",
-						"ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]",
+						"ai text summarize|rewrite|fix|explain|translate|reply|menu|source [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]",
 						"ai ask TEXT [--model=ID] [--json]",
 						"ai agents [list] [--json]",
 						"ai agents install|update [--snapshot|--stable] [--yes] [--dry-run]",

@@ -1690,7 +1690,7 @@ bxrig ai discover [QUERY] [--fits] [--tools] [--vision] [--embeddings] [--limit=
 bxrig ai downloads [clear | cancel ID] [--json]
 bxrig ai bench [ID] [--json]
 bxrig ai link [opencode|crush [--off] [--default] [--yes] [--dry-run]] [--json]
-bxrig ai text summarize|rewrite|fix|explain|translate|reply|menu [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]
+bxrig ai text summarize|rewrite|fix|explain|translate|reply|menu|source [--lang=L] [--from=selection|clipboard] [--text=T] [--to=clipboard|notify|stdout] [--json]
 bxrig ai ask TEXT [--model=ID] [--json]
 bxrig ai agents [list] [--json]
 bxrig ai agents install|update [--snapshot|--stable] [--yes] [--dry-run]
