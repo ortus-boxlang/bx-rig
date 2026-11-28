@@ -10,43 +10,26 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local entries = {}
 local selected = 1
 local query = ""
 local inputKey = 0
 local errorText = nil
-local seq = 0
+local latest = kit.sequence()
 local detail = {} -- id -> { kind, text, details }
 local armedClear = false
-local lastSubmitMs = 0
+local submitOnce = kit.once(300)
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function current()
 	return entries[selected]
 end
 
 function render()
-	local search = ui.row({ align = "center", gap = 10, paddingH = 14, paddingV = 6 }, {
-		ui.glyph({ name = "clipboard", size = 18, color = "on_surface_variant" }),
-		ui.input({
-			key = "search-" .. inputKey,
-			value = query,
-			placeholder = "Search the clipboard history…",
-			fontSize = 16,
-			frameVisible = false,
-			focus = true,
-			flexGrow = 1,
-			onChange = "onQueryChanged",
-			onSubmit = "onSubmit",
-		}),
-	})
+	local search = kit.searchRow({ glyph = "clipboard", key = "search-" .. inputKey, value = query, placeholder = "Search the clipboard history…" })
 
 	local rows = {}
 	if errorText ~= nil then
@@ -114,16 +97,18 @@ function render()
 	end
 	local pane = ui.scroll({ flexGrow = 1, height = 420, gap = 6, padding = 14 }, right)
 
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.button({ glyph = "arrow-left", text = "Launcher", variant = "ghost", controlSize = "sm", onClick = "onBack" }),
-		ui.label({ text = #entries .. " entries", fontSize = 12, color = "on_surface_variant", flexGrow = 1 }),
-		ui.button({
-			text = armedClear and "Click again to clear" or "Clear history",
-			variant = "ghost",
-			controlSize = "sm",
-			onClick = "onClear",
-		}),
-		ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
+	local footer = kit.footer({
+		leading = { ui.button({ glyph = "arrow-left", text = "Launcher", variant = "ghost", controlSize = "sm", onClick = "onBack" }) },
+		hint = #entries .. " entries",
+		buttons = {
+			ui.button({
+				text = armedClear and "Click again to clear" or "Clear history",
+				variant = "ghost",
+				controlSize = "sm",
+				onClick = "onClear",
+			}),
+			ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
+		},
 	})
 
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
@@ -155,8 +140,7 @@ function loadDetail()
 end
 
 local function fetch()
-	seq += 1
-	local mine = seq
+	local mine = latest.next()
 	local args = { "clipboard", "list" }
 	local q = noctalia.string.trim(query)
 	if q ~= "" then
@@ -165,7 +149,7 @@ local function fetch()
 	table.insert(args, "--limit=60")
 	table.insert(args, "--json")
 	bxrig.json(args, function(result, err)
-		if mine ~= seq then
+		if not latest.isCurrent(mine) then
 			return
 		end
 		if err ~= nil then
@@ -182,10 +166,7 @@ local function fetch()
 end
 
 local function move(delta)
-	if #entries == 0 then
-		return
-	end
-	selected = math.max(1, math.min(#entries, selected + delta))
+	selected = kit.clamp(selected, delta, #entries)
 	loadDetail()
 	render()
 end
@@ -216,11 +197,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local e = current()
 	if e == nil then
 		return

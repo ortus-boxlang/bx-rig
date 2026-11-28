@@ -11,34 +11,12 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local COLUMNS = 5
 local GRID_H = 400
 
--- Window mode: the second [[panel]] entry of this script sets `window = true` and a "fill" size; F3 swaps between the popup and the window.
--- The script cannot ask its own size, so it reads the focused output (noctalia.outputs) and keeps a margin.
-local WINDOW = noctalia.getConfig("window") == true
-
-local function screenSize()
-	local list = noctalia.outputs() or {}
-	local focus = noctalia.focusedOutputName()
-	for _, o in ipairs(list) do
-		if focus == nil or o.name == focus then
-			local scale = tonumber(o.scale) or 1
-			if scale <= 0 then
-				scale = 1
-			end
-			return (tonumber(o.width) or 1280) / scale, (tonumber(o.height) or 800) / scale
-		end
-	end
-	return 1280, 800
-end
-
-local function swapWindow()
-	local base = "bxrig/launcher:apps"
-	panel.close()
-	noctalia.togglePanel(WINDOW and base or (base .. "-window"))
-end
+local PLUGIN = "bxrig/launcher"
 
 local apps = {}
 local visible = {}
@@ -50,16 +28,11 @@ local inputKey = 0
 local iconStyle = "app" -- "app" or "theme"
 local errorText = nil
 local loading = false
-local lastSubmitMs = 0
+local submitOnce = kit.once(300)
 
 local TONES = { primary = true, secondary = true, tertiary = true, error = true }
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function toneOf(a)
 	local t = str(a.tone)
@@ -202,50 +175,23 @@ local function cell(vi, a)
 end
 
 function render()
-	local search = ui.row({ align = "center", gap = 10, paddingH = 14, paddingV = 6 }, {
-		ui.glyph({ name = "search", size = 18, color = "on_surface_variant" }),
-		ui.input({
-			key = "search-" .. inputKey,
-			value = query,
-			placeholder = "Filter applications…",
-			fontSize = 16,
-			frameVisible = false,
-			focus = true,
-			flexGrow = 1,
-			onChange = "onQueryChanged",
-			onSubmit = "onSubmit",
-		}),
-		ui.label({ text = tostring(#visible) .. " apps", fontSize = 11, color = "on_surface_variant" }),
+	local search = kit.searchRow({ key = "search-" .. inputKey, value = query, placeholder = "Filter applications…", count = tostring(#visible) .. " apps" })
+
+	local tabs = kit.tabRow({
+		tabs = groups,
+		current = group,
+		onSelect = function(g)
+			group = g
+			refilter()
+			render()
+		end,
 	})
 
-	local chips = {}
-	for _, g in ipairs(groups) do
-		table.insert(chips, ui.button({
-			key = "tab-" .. g,
-			text = g,
-			variant = g == group and "secondary" or "ghost",
-			controlSize = "sm",
-			onClick = function()
-				group = g
-				refilter()
-				render()
-			end,
-		}))
-	end
-	local tabs = ui.row({ gap = 4, paddingH = 10, paddingV = 2 }, chips)
-
-	local rows = {}
-	local current = {}
+	local cells = {}
 	for vi, ai in ipairs(visible) do
-		table.insert(current, cell(vi, apps[ai]))
-		if #current == COLUMNS then
-			table.insert(rows, ui.row({ gap = 4, justify = "start" }, current))
-			current = {}
-		end
+		table.insert(cells, cell(vi, apps[ai]))
 	end
-	if #current > 0 then
-		table.insert(rows, ui.row({ gap = 4, justify = "start" }, current))
-	end
+	local rows = kit.grid({ items = cells, columns = COLUMNS })
 	if loading and #apps == 0 then
 		table.insert(rows, ui.label({ text = "Loading applications…", fontSize = 13, color = "on_surface_variant" }))
 	elseif errorText ~= nil then
@@ -266,17 +212,19 @@ function render()
 			hint = hint .. "  ·  " .. comment
 		end
 	end
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.label({ text = hint, fontSize = 12, color = "on_surface_variant", flexGrow = 1, maxLines = 1 }),
-		ui.button({
-			text = iconStyle == "app" and "Icons: App  F2" or "Icons: Theme  F2",
-			glyph = "palette",
-			variant = "ghost",
-			controlSize = "sm",
-			onClick = "onToggleStyle",
-		}),
-		ui.button({ text = WINDOW and "Popup  F3" or "Window  F3", glyph = "arrows-maximize", variant = "ghost", controlSize = "sm", onClick = "onSwap" }),
-		ui.button({ text = "Open  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
+	local footer = kit.footer({
+		hint = hint,
+		buttons = {
+			ui.button({
+				text = iconStyle == "app" and "Icons: App  F2" or "Icons: Theme  F2",
+				glyph = "palette",
+				variant = "ghost",
+				controlSize = "sm",
+				onClick = "onToggleStyle",
+			}),
+			kit.windowButton(PLUGIN, "apps"),
+			ui.button({ text = "Open  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
+		},
 	})
 
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, { search, tabs, ui.separator({}), grid, footer }))
@@ -300,10 +248,7 @@ local function fetch()
 end
 
 local function move(delta)
-	if #visible == 0 then
-		return
-	end
-	selected = math.max(1, math.min(#visible, selected + delta))
+	selected = kit.clamp(selected, delta, #visible)
 	render()
 end
 
@@ -325,10 +270,6 @@ function onQueryChanged(value)
 	render()
 end
 
-function onSwap()
-	swapWindow()
-end
-
 function onToggleStyle()
 	iconStyle = iconStyle == "app" and "theme" or "app"
 	render()
@@ -336,11 +277,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local a = selectedApp()
 	if a == nil then
 		return
@@ -374,15 +313,15 @@ function onKey(chord, pressed)
 	elseif chord == "F2" then
 		onToggleStyle()
 	elseif chord == "F3" then
-		swapWindow()
+		kit.swap(PLUGIN, "apps")
 	elseif chord == "Return" or chord == "KP_Enter" then
 		onSubmit()
 	end
 end
 
 function onOpen(_context)
-	if WINDOW then
-		local w, h = screenSize()
+	if bxrig.isWindow() then
+		local w, h = kit.screenSize()
 		COLUMNS = math.max(5, math.floor((w - 120) / 136))
 		GRID_H = math.max(400, math.floor(h - 340))
 	end

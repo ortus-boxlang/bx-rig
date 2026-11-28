@@ -4,40 +4,17 @@
 -- Keys: type to filter, arrows move over the grid, PageUp/PageDown jump three rows, Tab goes to the next category, Enter copies the emoji and
 -- closes, Esc closes. Mouse: one click on an emoji copies it and closes the panel; the tabs work by click.
 -- Data: `bxrig emoji list [QUERY] [--category=C] --limit=N --json` and `bxrig emoji recent --json` (rows: emoji, name, category, keywords);
--- Enter runs `bxrig emoji copy EMOJI`, which puts it on the clipboard and into Recent. One command per keystroke or tab; a counter drops
--- answers that arrive late. Emoji data: gemoji (MIT).
+-- Enter runs `bxrig emoji copy EMOJI`, which puts it on the clipboard and into Recent. One command per keystroke or tab; a kit.sequence drops
+-- answers that arrive late. Built from kit.luau (search row, tabs, grid, footer, guards). Emoji data: gemoji (MIT).
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
+local PLUGIN = "bxrig/launcher"
 local COLUMNS = 12
 local CELL = 56
 local GRID_H = 400
-
--- Window mode: the second [[panel]] entry of this script sets `window = true` and a "fill" size; F3 swaps between the popup and the window.
--- The script cannot ask its own size, so it reads the focused output (noctalia.outputs) and keeps a margin.
-local WINDOW = noctalia.getConfig("window") == true
-
-local function screenSize()
-	local list = noctalia.outputs() or {}
-	local focus = noctalia.focusedOutputName()
-	for _, o in ipairs(list) do
-		if focus == nil or o.name == focus then
-			local scale = tonumber(o.scale) or 1
-			if scale <= 0 then
-				scale = 1
-			end
-			return (tonumber(o.width) or 1280) / scale, (tonumber(o.height) or 800) / scale
-		end
-	end
-	return 1280, 800
-end
-
-local function swapWindow()
-	local base = "bxrig/launcher:emoji"
-	panel.close()
-	noctalia.togglePanel(WINDOW and base or (base .. "-window"))
-end
 
 -- The tab label and the word `emoji list --category` takes (a part of the category name).
 local TABS = {
@@ -53,6 +30,10 @@ local TABS = {
 	{ label = "Flags", category = "Flags" },
 }
 
+local str = kit.str
+local latest = kit.sequence()
+local submitOnce = kit.once(300)
+
 local rows = {}
 local tab = 2
 local selected = 1
@@ -60,16 +41,7 @@ local query = ""
 local inputKey = 0
 local errorText = nil
 local loading = false
-local request = 0
-local lastSubmitMs = 0
 local tabChosen = false
-
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
 
 local function selectedRow()
 	return rows[selected]
@@ -97,48 +69,16 @@ local function cell(i, e)
 end
 
 function render()
-	local search = ui.row({ align = "center", gap = 10, paddingH = 14, paddingV = 6 }, {
-		ui.glyph({ name = "search", size = 18, color = "on_surface_variant" }),
-		ui.input({
-			key = "search-" .. inputKey,
-			value = query,
-			placeholder = "Search emoji…",
-			fontSize = 16,
-			frameVisible = false,
-			focus = true,
-			flexGrow = 1,
-			onChange = "onQueryChanged",
-			onSubmit = "onSubmit",
-		}),
-		ui.label({ text = tostring(#rows), fontSize = 11, color = "on_surface_variant" }),
-	})
-
-	local chips = {}
+	local labels = {}
 	for i, t in ipairs(TABS) do
-		table.insert(chips, ui.button({
-			key = "tab-" .. t.label,
-			text = t.label,
-			variant = (query == "" and i == tab) and "secondary" or "ghost",
-			controlSize = "sm",
-			onClick = function()
-				setTab(i)
-			end,
-		}))
+		table.insert(labels, { i, t.label })
 	end
-	local tabs = ui.row({ gap = 2, paddingH = 8, paddingV = 2 }, chips)
 
-	local lines = {}
-	local current = {}
+	local cells = {}
 	for i, e in ipairs(rows) do
-		table.insert(current, cell(i, e))
-		if #current == COLUMNS then
-			table.insert(lines, ui.row({ gap = 2, justify = "start" }, current))
-			current = {}
-		end
+		table.insert(cells, cell(i, e))
 	end
-	if #current > 0 then
-		table.insert(lines, ui.row({ gap = 2, justify = "start" }, current))
-	end
+	local lines = kit.grid({ items = cells, columns = COLUMNS, gap = 2 })
 	if loading and #rows == 0 then
 		table.insert(lines, ui.label({ text = "Loading…", fontSize = 13, color = "on_surface_variant" }))
 	elseif errorText ~= nil then
@@ -148,27 +88,33 @@ function render()
 		table.insert(lines, ui.label({ text = why, fontSize = 13, color = "on_surface_variant" }))
 	end
 	local sel = selectedRow()
-	local grid = ui.column({ height = GRID_H }, {
-		ui.scroll({ flexGrow = 1, gap = 2, padding = 8, revealKey = sel and ("e-" .. selected) or nil }, lines),
-	})
 
 	local hint = "Arrows move, Enter copies, Tab changes category"
 	if sel ~= nil then
 		hint = str(sel.emoji) .. "  " .. str(sel.name)
 	end
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.label({ text = hint, fontSize = 13, color = "on_surface_variant", flexGrow = 1, maxLines = 1 }),
-		ui.button({ text = WINDOW and "Popup  F3" or "Window  F3", glyph = "arrows-maximize", variant = "ghost", controlSize = "sm", onClick = "onSwap" }),
-		ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
-	})
 
-	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, { search, tabs, ui.separator({}), grid, footer }))
+	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
+		kit.searchRow({ key = "search-" .. inputKey, value = query, placeholder = "Search emoji…", count = #rows }),
+		kit.tabRow({ tabs = labels, current = query == "" and tab or nil, onSelect = setTab, gap = 2, paddingH = 8 }),
+		ui.separator({}),
+		ui.column({ height = GRID_H }, {
+			ui.scroll({ flexGrow = 1, gap = 2, padding = 8, revealKey = sel and ("e-" .. selected) or nil }, lines),
+		}),
+		kit.footer({
+			hint = hint,
+			hintSize = 13,
+			buttons = {
+				kit.windowButton(PLUGIN, "emoji"),
+				ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
+			},
+		}),
+	}))
 end
 
 -- Loads what the search box and the tab ask for.
 local function fetch()
-	request += 1
-	local mine = request
+	local mine = latest.next()
 	loading = true
 	local q = noctalia.string.trim(query)
 	local args
@@ -180,7 +126,7 @@ local function fetch()
 		args = { "emoji", "list", "--category=" .. TABS[tab].category, "--limit=400", "--json" }
 	end
 	bxrig.json(args, function(result, err)
-		if mine ~= request then
+		if not latest.isCurrent(mine) then
 			return
 		end
 		loading = false
@@ -213,10 +159,7 @@ function setTab(i)
 end
 
 local function move(delta)
-	if #rows == 0 then
-		return
-	end
-	selected = math.max(1, math.min(#rows, selected + delta))
+	selected = kit.clamp(selected, delta, #rows)
 	render()
 end
 
@@ -229,11 +172,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local e = selectedRow()
 	if e == nil then
 		return
@@ -267,19 +208,15 @@ function onKey(chord, pressed)
 	elseif chord == "Tab" then
 		setTab((tab % #TABS) + 1)
 	elseif chord == "F3" then
-		swapWindow()
+		kit.swap(PLUGIN, "emoji")
 	elseif chord == "Return" or chord == "KP_Enter" then
 		onSubmit()
 	end
 end
 
-function onSwap()
-	swapWindow()
-end
-
 function onOpen(_context)
-	if WINDOW then
-		local w, h = screenSize()
+	if bxrig.isWindow() then
+		local w, h = kit.screenSize()
 		COLUMNS = math.max(10, math.floor((w - 100) / (CELL + 4)))
 		GRID_H = math.max(400, math.floor(h - 340))
 	end

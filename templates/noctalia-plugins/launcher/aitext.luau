@@ -10,6 +10,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local LANGUAGES = { "English", "Spanish", "French", "German", "Portuguese", "Italian", "Japanese", "Chinese" }
 
@@ -44,14 +45,9 @@ local resultFor = ""
 local resultMeta = ""
 local errorText = nil
 local loading = false
-local lastSubmitMs = 0
+local submitOnce = kit.once(300)
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function current()
 	return actions[selected]
@@ -156,16 +152,18 @@ function render()
 		ui.scroll({ height = 170, gap = 6, padding = 14 }, resultBody),
 	})
 
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.label({ text = "Local model, nothing leaves this machine", fontSize = 12, color = "on_surface_variant", flexGrow = 1, maxLines = 1 }),
-		ui.button({
-			text = sourceKind == "clipboard" and "Source: Clipboard  F4" or "Source: Selection  F4",
-			glyph = "switch-horizontal",
-			variant = "ghost",
-			controlSize = "sm",
-			onClick = "onToggleSource",
-		}),
-		ui.button({ text = "Copy result  F2", variant = "primary", controlSize = "sm", enabled = resultText ~= "" and running == nil, onClick = "onCopy" }),
+	local footer = kit.footer({
+		hint = "Local model, nothing leaves this machine",
+		buttons = {
+			ui.button({
+				text = sourceKind == "clipboard" and "Source: Clipboard  F4" or "Source: Selection  F4",
+				glyph = "switch-horizontal",
+				variant = "ghost",
+				controlSize = "sm",
+				onClick = "onToggleSource",
+			}),
+			ui.button({ text = "Copy result  F2", variant = "primary", controlSize = "sm", enabled = resultText ~= "" and running == nil, onClick = "onCopy" }),
+		},
 	})
 
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
@@ -205,7 +203,7 @@ local function move(delta)
 	if #actions == 0 then
 		return
 	end
-	selected = math.max(1, math.min(#actions, selected + delta))
+	selected = kit.clamp(selected, delta, #actions)
 	render()
 end
 
@@ -220,11 +218,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through a click and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local a = current()
 	if a == nil or running ~= nil then
 		return

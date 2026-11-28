@@ -79,7 +79,7 @@ testkit.check( "no em dash in any file", ok );
 
 // ---- the launcher panel ----
 pn = textOf( "launcher/panel.luau" );
-testkit.check( "panel: searches with `launcher search QUERY --limit=30 --json` and drops an older answer", find( '"launcher", "search"', pn ) > 0 and find( '"--limit=30"', pn ) > 0 and find( "mine ~= seq", pn ) > 0 );
+testkit.check( "panel: searches with `launcher search QUERY --limit=30 --json` and drops an older answer", find( '"launcher", "search"', pn ) > 0 and find( '"--limit=30"', pn ) > 0 and find( "latest.isCurrent(mine)", pn ) > 0 );
 testkit.check( "panel: runs a row with `launcher run ID` and passes the words only for answer and web rows", find( '"launcher", "run", str(row.id)', pn ) > 0 and find( 'kind == "answer" or kind == "web"', pn ) > 0 );
 testkit.check( "panel: a big answer card, breadcrumbs, an Actions list on F2, and an Open button", find( "renderAnswer", pn ) > 0 and find( "row.breadcrumb", pn ) > 0 and find( '"Actions  F2"', pn ) > 0 and find( '"Open  ↵"', pn ) > 0 );
 testkit.check( "panel: the Clipboard history row opens the clipboard panel", find( 'togglePanel("bxrig/launcher:clipboard")', pn ) > 0 );
@@ -97,7 +97,7 @@ testkit.check( "panels run no shell and no sudo", find( "os.execute", pn & cp ) 
 // ---- the emoji panel ----
 em = textOf( "launcher/emoji.luau" );
 testkit.check( "emoji: lists with `emoji list QUERY --category=C --json`, shows Recent with `emoji recent`, copies with `emoji copy EMOJI`", find( '"emoji", "list", q', em ) > 0 and find( '"--category=" .. TABS[tab].category', em ) > 0 and find( '{ "emoji", "recent"', em ) > 0 and find( '{ "emoji", "copy", str(e.emoji) }', em ) > 0 );
-testkit.check( "emoji: drops late answers, tabs by category, arrows over a grid, Tab next category", find( "mine ~= request", em ) > 0 and find( "Smileys", em ) > 0 and find( "move(-COLUMNS)", em ) > 0 and find( 'chord == "Tab"', em ) > 0 );
+testkit.check( "emoji: drops late answers, tabs by category, arrows over a grid, Tab next category", find( "latest.isCurrent(mine)", em ) > 0 and find( "Smileys", em ) > 0 and find( "move(-COLUMNS)", em ) > 0 and find( 'chord == "Tab"', em ) > 0 );
 testkit.check( "emoji: the manifest captures the grid keys", find( 'capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]', manifest ) > 0 );
 
 // ---- the AI on the selection panel ----
@@ -108,7 +108,7 @@ testkit.check( "aitext: the manifest captures its keys", find( 'capture_keys = [
 
 // ---- window mode: three more entries run the same scripts at full size ----
 testkit.check( "window mode: apps-window, keys-window and emoji-window fill the screen and set window = true", find( 'id = "apps-window"', manifest ) > 0 and find( 'id = "keys-window"', manifest ) > 0 and find( 'id = "emoji-window"', manifest ) > 0 and find( 'width = "fill"', manifest ) > 0 and find( 'height = "fill"', manifest ) > 0 and find( 'key = "window"', manifest ) > 0 );
-for ( f in [ "apps", "keys", "emoji" ] ) testkit.check( f & ": F3 swaps popup and window, the script reads the window setting and the screen size", find( 'noctalia.getConfig("window") == true', textOf( "launcher/" & f & ".luau" ) ) > 0 and find( 'chord == "F3"', textOf( "launcher/" & f & ".luau" ) ) > 0 and find( "noctalia.outputs()", textOf( "launcher/" & f & ".luau" ) ) > 0 );
+for ( f in [ "apps", "keys", "emoji" ] ) testkit.check( f & ": F3 swaps popup and window through the kit, and the window lays itself out from the screen size", find( 'kit.swap(PLUGIN, "' & f & '")', textOf( "launcher/" & f & ".luau" ) ) > 0 and find( 'chord == "F3"', textOf( "launcher/" & f & ".luau" ) ) > 0 and find( "bxrig.isWindow()", textOf( "launcher/" & f & ".luau" ) ) > 0 and find( "kit.screenSize()", textOf( "launcher/" & f & ".luau" ) ) > 0 );
 
 // ---- the menu panel ----
 mn = textOf( "launcher/menu.luau" );
@@ -137,6 +137,6 @@ testkit.check( "the CLI knows every launcher and clipboard verb the plugin runs"
 // the starter installs it beside the other plugins (every file of the folder, translations included)
 starter = new bxrig.Starter( true );
 targets = starter.entries().map( function( e ) { return e.target; } ).filter( function( t ) { return find( "/noctalia/plugins/launcher/", t ) > 0; } );
-testkit.check( "starter: the launcher plugin's ten files are installed beside the other plugins", targets.len() == 10 );
+testkit.check( "starter: the launcher plugin's eleven files are installed beside the other plugins", targets.len() == 11 );
 
 testkit.done( "all passed" );

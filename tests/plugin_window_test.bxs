@@ -34,4 +34,18 @@ for ( p in plugins ) {
 themes = textOf( "quick/themes.luau" );
 quick = textOf( "quick/plugin.toml" );
 testkit.check( "quick: themes has a themes-window twin and a terminal button for tui themes", find( 'id = "themes-window"', quick ) > 0 && find( 'panel = "themes", tui = "themes"', themes ) > 0 && find( "bxrig.isWindow() and 540 or 420", themes ) > 0 );
+
+// the panel kit: one file, the same in every plugin, with the pieces the panels share
+kitText = textOf( "agents/kit.luau" );
+sameKit = true;
+for ( p in [ "agents", "clock", "dev", "launcher", "power", "quick", "system", "vpn" ] ) if ( textOf( p & "/kit.luau" ) != kitText ) { sameKit = false; println( "  kit differs: " & p ); }
+testkit.check( "kit.luau is the same in every plugin", sameKit );
+pieces = [ "function M.str(v)", "function M.sequence()", "function M.once(ms)", "function M.clamp(index, delta, count)", "function M.searchRow(opts)", "function M.tabRow(opts)", "function M.footer(opts)", "function M.grid(opts)", "function M.screenSize()", "function M.windowButton(plugin, panelId)", "function M.swap(plugin, panelId)" ];
+okKit = true;
+for ( pc in pieces ) if ( find( pc, kitText ) == 0 ) { okKit = false; println( "  kit lacks " & pc ); }
+testkit.check( "the kit has its pieces: str, sequence, once, clamp, searchRow, tabRow, footer, grid, screenSize, windowButton, swap", okKit );
+users = [ "launcher/emoji", "launcher/apps", "launcher/keys", "launcher/clipboard", "launcher/menu", "launcher/aitext", "launcher/panel", "quick/themes" ];
+okUse = true;
+for ( u in users ) { t = textOf( u & ".luau" ); if ( find( 'require("./kit.luau")', t ) == 0 || find( "local function str(v)", t ) > 0 || find( "lastSubmitMs", t ) > 0 ) { okUse = false; println( "  not on the kit: " & u ); } }
+testkit.check( "the launcher panels and the theme switcher use the kit: no own str(), no own double-Enter guard", okUse );
 testkit.done( "all passed" );
