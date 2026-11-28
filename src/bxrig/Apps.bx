@@ -19,6 +19,8 @@ class Apps {
 		var rows = [];
 		var glyphs = new bxrig.util.Glyphs();
 		for ( var e in variables.desk.entries( variables.desk.dirs(), true, true ) ) {
+			// the dock's own Apps entry opens this grid; it is not an app in it
+			if ( listLast( e.file, "/" ) == "bxrig-apps.desktop" ) continue;
 			var g = glyphs.appGroup( e.categories );
 			rows.append( { id: listLast( e.file, "/" ), name: e.name, exec: variables.desk.cleanExec( e.exec ), icon: e.icon, comment: e.comment, group: g.group, glyph: g.glyph, tone: g.tone } );
 		}

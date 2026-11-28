@@ -39,7 +39,7 @@ Press **Tab** (or Enter on the *Ask Boxy* row, or `Super+Alt+B` to open the laun
 
 ### The app grid
 
-`Super+Alt+A` opens every installed application as a grid of icon tiles: tabs by group, typing filters at once, arrows move, Enter starts the app, and F2 switches between each application's own icon and a themed glyph tile. `bxrig apps list --json` is the data.
+`Super+Alt+A`, or the Apps icon at the start of the dock (after the logo in the bar when the dock is off), opens every installed application as a grid of icon tiles: tabs by group, typing filters at once, arrows move, Enter starts the app, and F2 switches between each application's own icon and a themed glyph tile. `bxrig apps list --json` is the data.
 
 ![The app grid with app icons](../assets/screenshots/apps-grid-app-icons.webp)
 
