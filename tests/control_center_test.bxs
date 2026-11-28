@@ -76,7 +76,7 @@ testkit.check( "ports: K is kill -9 and o opens the browser", big.onKey( "K" ).a
 big.onKey( "/" ); big.onKey( "Escape" );
 testkit.check( "ports: Escape clears the filter", port.state().shown == 7 );
 big.goto( "java" );
-testkit.check( "java: d makes the default plan, x the removal plan", big.onKey( "d" ).args[ 1 ] == "java" && big.onKey( "d" ).args[ 2 ] == "default" && big.onKey( "x" ).args[ 2 ] == "remove" );
+testkit.check( "java: d makes the global plan, x the removal plan", big.onKey( "d" ).args[ 1 ] == "java" && big.onKey( "d" ).args[ 2 ] == "global" && big.onKey( "x" ).args[ 2 ] == "remove" );
 ask = big.onKey( "i" );
 testkit.check( "java: i asks for a version, then plans the install", structCount( ask ) == 0 && big.mode() == "ask" );
 for ( ch in [ "2", "5" ] ) big.onKey( ch );
