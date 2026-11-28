@@ -479,7 +479,7 @@ end
 function onOpen(_context)
 	if WINDOW then
 		local _, h = screenSize()
-		BODY_H = math.max(380, math.floor(h - 220))
+		BODY_H = math.max(380, math.floor(h - 340))
 	end
 	group = "All"
 	query = ""

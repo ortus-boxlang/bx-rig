@@ -170,7 +170,14 @@ class MacExtras {
 		return false;
 	}
 
-	// Shows or hides the console; the first time (nothing on it) the default terminal starts there.
+
+	/**
+	 * Shows or hides the quake console on the special workspace; the first time (nothing on it) the default terminal starts there as a centered floating drop-down.
+	 *
+	 * @param asJson True for JSON output.
+	 *
+	 * @return The exit code: 0 done, 4 no Hyprland or terminal, 6 a command failed.
+	 */
 	function quake( asJson ) {
 		var cmd = "window";
 		var steps = [];

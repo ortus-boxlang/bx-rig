@@ -76,6 +76,13 @@ position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F2", "F3"]
 
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
 [[panel]]
 id = "keys"
 entry = "keys.luau"
@@ -86,21 +93,35 @@ position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
 
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
 [[panel]]
 id = "emoji"
 entry = "emoji.luau"
-width = 660
+width = 800
 height = 600
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Left", "Right", "Page_Up", "Page_Down", "Return", "KP_Enter", "Tab", "F3"]
 
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
 [[panel]]
 id = "aitext"
 entry = "aitext.luau"
 width = 860
-height = 600
+height = 560
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"

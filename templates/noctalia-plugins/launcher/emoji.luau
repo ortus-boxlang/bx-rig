@@ -10,7 +10,7 @@
 
 local bxrig = require("./bxrig.luau")
 
-local COLUMNS = 10
+local COLUMNS = 12
 local CELL = 56
 local GRID_H = 400
 
@@ -135,7 +135,7 @@ function render()
 	for i, e in ipairs(rows) do
 		table.insert(current, cell(i, e))
 		if #current == COLUMNS then
-			table.insert(lines, ui.row({ gap = 2, justify = "center" }, current))
+			table.insert(lines, ui.row({ gap = 2, justify = "start" }, current))
 			current = {}
 		end
 	end
@@ -284,7 +284,7 @@ function onOpen(_context)
 	if WINDOW then
 		local w, h = screenSize()
 		COLUMNS = math.max(10, math.floor((w - 100) / (CELL + 4)))
-		GRID_H = math.max(400, math.floor(h - 220))
+		GRID_H = math.max(400, math.floor(h - 340))
 	end
 	tab = 1
 	tabChosen = false

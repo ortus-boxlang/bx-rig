@@ -53,8 +53,10 @@ class AiText {
 
 	/**
 	 * `ai text source`: what the actions would work on now, for the panel (bxrig/launcher:aitext). Never an error: no text is { text: "", from: "" }.
-	 * @opts The options (from).
-	 * @asJson True for JSON output.
+	 * @param opts The options (from).
+	 * @param asJson True for JSON output.
+	 *
+	 * @return The exit code, 0.
 	 */
 	function source( opts, asJson ) {
 		var got = input( arguments.opts.from ?: "" );

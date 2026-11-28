@@ -8,7 +8,11 @@
 class DropDown {
 
 	/**
-	 * @runner Optional fake process runner for tests.
+	 * Sets up the helper.
+	 *
+	 * @param runner Optional fake process runner for tests.
+	 *
+	 * @return This object.
 	 */
 	function init( runner = "" ) {
 		variables.proc = new bxrig.util.Proc( arguments.runner );
@@ -17,8 +21,8 @@ class DropDown {
 
 	/**
 	 * The size and top-left corner of a centered pull-down window on the focused monitor.
-	 * @widthPct Percent of the monitor width.
-	 * @heightPct Percent of the monitor height.
+	 * @param widthPct Percent of the monitor width.
+	 * @param heightPct Percent of the monitor height.
 	 * @return { ok, w, h, x, y }.
 	 */
 	function geometry( widthPct = 60, heightPct = 45 ) {
@@ -43,8 +47,10 @@ class DropDown {
 
 	/**
 	 * The rules of an exec dispatch for a pull-down window.
-	 * @workspace The special workspace name.
-	 * @g The geometry from geometry().
+	 * @param workspace The special workspace name.
+	 * @param g The geometry from geometry().
+	 *
+	 * @return The rule text "[float; workspace special:NAME; size W H; move X Y]", or a centered percentage fallback when the geometry is unknown.
 	 */
 	function rules( workspace, g ) {
 		var base = "float; workspace special:" & arguments.workspace;
@@ -54,8 +60,8 @@ class DropDown {
 
 	/**
 	 * The dispatcher calls that resize and move an existing window.
-	 * @selector What follows the comma in the dispatcher argument, for example "class:com.bxrig.ai".
-	 * @g The geometry from geometry().
+	 * @param selector What follows the comma in the dispatcher argument, for example "class:com.bxrig.ai".
+	 * @param g The geometry from geometry().
 	 * @return Array of argv arrays, empty when the geometry is unknown.
 	 */
 	function place( selector, g ) {

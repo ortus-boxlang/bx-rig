@@ -60,6 +60,28 @@ bxrig emoji copy 🎉                         # onto the clipboard (wl-copy)
 
 The emoji data is [gemoji](https://github.com/github/gemoji) (MIT, copyright GitHub, Inc.), packed in the binary.
 
+![The emoji picker](../assets/screenshots/emoji-picker.webp)
+
+### Window mode
+
+The app grid, the emoji picker and the shortcut viewer have a bigger twin that fills the screen. Press `F3` in the popup to swap to the window, and `F3` again to come back. The window lays the grid out for your screen: more columns, taller lists. It is the same panel script run from a second entry of the plugin (`apps-window`, `emoji-window`, `keys-window`), so you can also open one directly:
+
+```bash
+noctalia msg panel-toggle bxrig/launcher:apps-window
+```
+
+![The app grid as a window](../assets/screenshots/apps-window.webp)
+
+![The emoji picker as a window](../assets/screenshots/emoji-window.webp)
+
+![The shortcut viewer as a window](../assets/screenshots/shortcuts-window.webp)
+
+### AI on the selection
+
+`Super+Alt+E` opens your selected text on the left and six actions on the right. The result appears below the actions; `F2` copies it. See [Local AI](../ai/local-ai.md#work-on-selected-text). The screenshots show example text and example results (the sandbox that made them has no model).
+
+![AI on the selection: a summary](../assets/screenshots/ai-text-summary.webp)
+
 ### The menu
 
 `Super+Alt+Space` opens the BxRig menu as a panel in the same style, like the Omarchy menu: the sections as icon tiles, a header with where you are (`Trigger › Capture`), Enter or Right to go in, Left to go back, type to filter the level. It lists the same entries as `bxrig menu` (`bxrig menu level "Trigger > Capture" --json` is the data), and a leaf runs through `bxrig launcher run`.

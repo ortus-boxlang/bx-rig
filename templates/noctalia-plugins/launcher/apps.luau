@@ -239,7 +239,7 @@ function render()
 	for vi, ai in ipairs(visible) do
 		table.insert(current, cell(vi, apps[ai]))
 		if #current == COLUMNS then
-			table.insert(rows, ui.row({ gap = 4, justify = "center" }, current))
+			table.insert(rows, ui.row({ gap = 4, justify = "start" }, current))
 			current = {}
 		end
 	end
@@ -384,7 +384,7 @@ function onOpen(_context)
 	if WINDOW then
 		local w, h = screenSize()
 		COLUMNS = math.max(5, math.floor((w - 120) / 136))
-		GRID_H = math.max(400, math.floor(h - 220))
+		GRID_H = math.max(400, math.floor(h - 340))
 	end
 	group = "All"
 	query = ""

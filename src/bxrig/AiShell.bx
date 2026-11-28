@@ -63,6 +63,13 @@ class AiShell {
 		return false;
 	}
 
+	/**
+	 * Shows or hides the AI shell on Hyprland: the first time it starts the terminal as a centered floating window on the special workspace "ai", then it only toggles that workspace.
+	 *
+	 * @param dryRun True to report the steps without running them.
+	 *
+	 * @return A struct { error, steps }: error is empty when it worked, steps are the commands run or planned.
+	 */
 	function hyprlandToggle( dryRun ) {
 		var steps = [];
 		var dd = new bxrig.util.DropDown( variables.runnerArg );
@@ -124,8 +131,13 @@ class AiShell {
 		return len( rt ) ? rt & "/bxrig-ai-shell" : "";
 	}
 
-	// ~/.config/yakuakerc: a centered drop-down (60% wide, 45% high) that stays open when focus moves (the key hides it). Only keys the file does
-	// not have yet are written, so a size you chose yourself is kept. Yakuake reads the file when it starts.
+	/**
+	 * Writes the drop-down size into ~/.config/yakuakerc: a centered window 60% wide and 45% high that stays open when focus moves. Only keys the file does not have yet are written, so a size you chose yourself is kept; Yakuake reads the file when it starts.
+	 *
+	 * @param dryRun True to skip the write.
+	 *
+	 * @return Nothing.
+	 */
 	function yakuakeSettings( dryRun ) {
 		var env = new bxrig.util.Env();
 		var file = env.xdgConfig( "yakuakerc" );
@@ -146,7 +158,13 @@ class AiShell {
 		return changed;
 	}
 
-	// Starts Yakuake when it is not running and waits for its D-Bus name. Returns { error, steps }.
+	/**
+	 * Starts Yakuake when it is not running and waits for its D-Bus name.
+	 *
+	 * @param dryRun True to report the step without running it.
+	 *
+	 * @return A struct { error, steps }.
+	 */
 	function yakuakeStart( dryRun ) {
 		if ( !variables.ai.installed( "yakuake" ) ) return { error: "Yakuake is not installed. Install it: bxrig install yakuake", code: 4, steps: [] };
 		yakuakeSettings( arguments.dryRun );
@@ -159,8 +177,14 @@ class AiShell {
 		return { error: "Yakuake did not start", code: 6, steps: [ [ "yakuake" ] ] };
 	}
 
-	// Gets the shell ready: a freshly started Yakuake already has one tab, so that tab is used; a running one gets a new tab. The agent is typed
-	// into it; for a plain shell nothing is typed (the tab already is one). Returns { error, steps, label }.
+	/**
+	 * Gets the shell ready in Yakuake. A freshly started Yakuake already has one tab, so that tab is used; a running one gets a new tab. The agent is typed into it; for a plain shell nothing is typed because the tab already is one.
+	 *
+	 * @param dryRun True to report the steps without running them.
+	 * @param fresh True when Yakuake was just started by this call (default false).
+	 *
+	 * @return A struct { error, steps, label }.
+	 */
 	function yakuakeOpenTab( dryRun, fresh = false ) {
 		var plan = inner();
 		var steps = [];
@@ -186,6 +210,13 @@ class AiShell {
 		return { error: "", steps: steps, label: plan.label };
 	}
 
+	/**
+	 * Shows or hides the Yakuake drop-down, starting it and its tab first when needed (a short wait after a fresh start keeps the window from being hidden again).
+	 *
+	 * @param dryRun True to report the steps without running them.
+	 *
+	 * @return A struct { error, steps }.
+	 */
 	function yakuakeToggle( dryRun ) {
 		var steps = [];
 		var wasRunning = yakuakeRunning();
@@ -214,7 +245,16 @@ class AiShell {
 		return { code: 0, action: haveTab ? "toggled" : "opened", label: shown, steps: steps };
 	}
 
-	// `ai shell [toggle|status]`
+	/**
+	 * `ai shell [toggle|status]`: toggles the drop-down terminal or reports its state. A failure on a key press is also shown as a critical notification, so it is not silent.
+	 *
+	 * @param action "toggle" (default) or "status".
+	 * @param forced A backend to use instead of the detected one: "hyprland" or "yakuake", or empty.
+	 * @param dryRun True to report what would run.
+	 * @param asJson True for JSON output.
+	 *
+	 * @return The exit code: 0 done, 2 usage, 4 no terminal or backend, 6 a step failed.
+	 */
 	function run( action, forced, dryRun, asJson ) {
 		var cmd = "ai shell";
 		var be = backend( arguments.forced );
