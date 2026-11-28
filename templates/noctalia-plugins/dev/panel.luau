@@ -13,6 +13,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 local dev = require("./dev.luau")
 
 local REFRESH_MS = 15000
@@ -38,12 +39,7 @@ local confirmUntil = 0
 
 local fetch
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 -- ---- small helpers ----
 

@@ -16,7 +16,8 @@ You will build a small bar widget, `bxrig/acstate`, that shows whether the machi
 |---|---|
 | `templates/noctalia-plugins/acstate/plugin.toml` | Id, settings, and which widgets and panels exist. |
 | `templates/noctalia-plugins/acstate/bar.luau` | The bar widget. |
-| `templates/noctalia-plugins/acstate/bxrig.luau` | The shared helper that runs `bxrig`. Copy it unchanged from another plugin. |
+| `templates/noctalia-plugins/acstate/bxrig.luau` | The shared helper that runs `bxrig`, and the detach and dock helpers. Copy it unchanged from another plugin. |
+| `templates/noctalia-plugins/acstate/kit.luau` | The panel kit: the pieces every panel builds the same way. Copy it unchanged from another plugin. |
 | `templates/noctalia-plugins/acstate/translations/en.json` | The labels of the settings. |
 | `src/bxrig/NoctaliaConfig.bx` | The `enabled = [...]` list and the bar layout lines. |
 | `tests/dev_plugin_test.bxs` | A model for a plugin test. |
@@ -122,6 +123,24 @@ flowchart LR
 
 6. Enable it in BxRig. In `src/bxrig/NoctaliaConfig.bx` add `bxrig/acstate` to the `enabled = [...]` line, add a `[widget.bxrig-acstate]` block with `type = "bxrig/acstate:bar"`, and put `bxrig-acstate` in a bar section. Update the matching list in `tests/noctalia-config-test.sh`.
 
+## The panel kit and detachable panels
+
+`kit.luau` is the base for panels. Build a panel from it instead of writing the same rows again; each piece takes a table of options and returns what it makes, and the kit keeps no state of its own, so the panel owns its state and its `render()`.
+
+| Piece | What it is |
+|---|---|
+| `kit.str(v)` | `tostring` that gives `""` for nil |
+| `kit.sequence()` | `next()` before an async call and `isCurrent(token)` in its callback, to drop a late answer |
+| `kit.once(ms)` | a guard function, true the first time, then false for `ms` (Enter can reach a panel twice) |
+| `kit.clamp(index, delta, count)` | move a selection and keep it in range |
+| `kit.searchRow{...}` | the glyph, input and count row |
+| `kit.tabRow{ tabs, current, onSelect }` | tab chips |
+| `kit.footer{ hint, leading, buttons }` | the bar at the bottom |
+| `kit.grid{ items, columns }` | items as rows, for a scroll |
+| `kit.screenSize()`, `kit.windowButton(plugin, panel)`, `kit.swap(plugin, panel)` | window mode, below |
+
+A bar popup can detach into a window. Noctalia fixes a panel's size in its manifest, so the window is a second `[[panel]]` entry that runs the same script: `panel-window`, floating, centered, `dismiss_on_outside_click = false`, with a panel setting `window = true` (and `window = false` on the popup entry). In the script, `bxrig.isWindow()` says which one it is, and `bxrig.windowButtons{ plugin, panel, tui }` gives the header buttons: Detach or Dock, and a terminal button when `tui` names a `bxrig tui` page.
+
 ## See it working
 
 Copy the plugin by hand and enable it, without rebuilding:
@@ -152,7 +171,7 @@ tests/noctalia-config-test.sh dist/bxrig
 ## Common mistakes
 
 - A `label_key` with no entry in `translations/en.json`: the settings show raw keys.
-- A copy of `bxrig.luau` that drifted from the others: the tests compare them.
+- A copy of `bxrig.luau` or `kit.luau` that drifted from the others: the tests compare them.
 - Plugin enabled in `config.toml` but not installed, or the reverse. Installed does not mean active.
 - Hard-coded colors: the widget looks wrong in other themes.
 - Running a bxrig command without `--json` in a data call: the helper expects the envelope.

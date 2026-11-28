@@ -19,6 +19,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local PRESETS = {
 	{ id = "short", label = "Nov 5 - 04:00", format = "%b %-d - %H:%M" },
@@ -50,12 +51,7 @@ local loaded = false
 local busy = nil -- label of the command that is running
 local status = nil -- { text, ok } of the last command or read
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function caffeineOn()
 	return noctalia.state.get("caffeine") == true

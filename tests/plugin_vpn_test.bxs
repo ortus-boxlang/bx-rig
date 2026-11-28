@@ -105,6 +105,6 @@ testkit.check( "the CLI knows every vpn verb the plugin runs", ok && find( "--lo
 // the starter installs it beside the other plugins (every file of the folder, translations included)
 starter = new bxrig.Starter( true );
 targets = starter.entries().map( function( e ) { return e.target; } ).filter( function( t ) { return find( "/noctalia/plugins/vpn/", t ) > 0; } );
-testkit.check( "starter: the vpn plugin's six files are installed beside the other plugins", targets.len() == 6 );
+testkit.check( "starter: the vpn plugin's seven files are installed beside the other plugins", targets.len() == 7 );
 
 testkit.done( "all passed" );

@@ -18,7 +18,7 @@ testkit.check( "db state: Up is running, Paused wins, Created, anything else exi
 
 // the plugin files
 root = "../templates/noctalia-plugins/";
-files = [ "plugin.toml", "bar.luau", "panel.luau", "dev.luau", "bxrig.luau", "translations/en.json" ];
+files = [ "plugin.toml", "bar.luau", "panel.luau", "dev.luau", "bxrig.luau", "kit.luau", "translations/en.json" ];
 ok = true; for ( f in files ) if ( !fileExists( root & "dev/" & f ) ) ok = false;
 testkit.check( "dev plugin: every file is there", ok );
 toml = fileRead( root & "dev/plugin.toml" );
@@ -41,5 +41,5 @@ testkit.check( "dev plugin: stop goes through a second click", find( 'confirmBut
 // the starter installs it
 starter = new bxrig.Starter( true );
 targets = starter.entries().map( function( e ) { return e.target; } ).filter( function( t ) { return find( "/noctalia/plugins/dev/", t ) > 0; } );
-testkit.check( "starter: the dev plugin's files are installed beside the other plugins", targets.len() == 6 );
+testkit.check( "starter: the dev plugin's files are installed beside the other plugins", targets.len() == 7 );
 testkit.done( "all passed" );

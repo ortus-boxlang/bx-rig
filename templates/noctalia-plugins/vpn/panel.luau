@@ -13,6 +13,7 @@
 -- Colors are palette roles only, so the panel follows the active theme (there is no success role: primary, the brand green, is "connected").
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 local vpn = require("./vpn.luau")
 
 local REFRESH_MS = 10000
@@ -33,12 +34,7 @@ local filter = ""
 local fetch
 local render = function() end -- replaced below (the callbacks need it)
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function shq(s)
 	return "'" .. (tostring(s):gsub("'", "'\\''")) .. "'"
