@@ -9,7 +9,7 @@
 --   kit.once(ms)                     a guard function: true the first time, then false until ms have passed (Enter reaches a panel twice)
 --   kit.clamp(index, delta, count)   a selection moved by delta and kept inside 1..count (stays 1 when count is 0)
 --   kit.searchRow(opts)              { glyph, key, value, placeholder, count, fontSize, glyphSize, paddingH, paddingV, radius, fill, focus (default true), onChange, onSubmit } -> the search row
---   kit.tabRow(opts)                 { tabs = {id | {id, label}}, current, onSelect(id), keyPrefix, gap, paddingH, paddingV } -> a row of chips
+--   kit.tabRow(opts)                 { tabs = {id | {id, label, glyph}}, current, onSelect(id), keyPrefix, gap, paddingH, paddingV } -> a row of chips
 --   kit.footer(opts)                 { hint, hintColor, hintSize, leading = {nodes}, buttons = {nodes} } -> the bar at the bottom of a panel
 --   kit.grid(opts)                   { items = {nodes}, columns, gap, justify } -> a list of rows to put in a scroll
 --   kit.screenSize()                 the focused output's logical width and height (a window-mode panel lays itself out from it)
@@ -101,13 +101,16 @@ function M.tabRow(opts)
 	for _, tab in ipairs(opts.tabs) do
 		local id = tab
 		local label = tab
+		local glyph = nil
 		if type(tab) == "table" then
 			id = tab[1]
 			label = tab[2] or tab[1]
+			glyph = tab[3]
 		end
 		table.insert(chips, ui.button({
 			key = (opts.keyPrefix or "tab-") .. M.str(id),
 			text = M.str(label),
+			glyph = glyph,
 			variant = id == opts.current and "secondary" or "ghost",
 			controlSize = "sm",
 			onClick = function()

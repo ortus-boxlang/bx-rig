@@ -48,8 +48,14 @@ bxrig remind "Call Ana" --in=30m
 bxrig remind "Stand up" --at=09:25              # today, or tomorrow when 09:25 has passed
 bxrig remind "Renew the domain" --at="2026-12-01 10:00"
 bxrig remind list
-bxrig remind done 3
+bxrig remind "Stand up" --at="tomorrow 09:00"
+bxrig remind done 3                              # mark it finished, it stays in the list as done
+bxrig remind remove 3                            # forget it
+bxrig remind clear --done --yes                  # forget the finished ones
+bxrig remind clear --yes                         # forget all of them
 ```
+
+`remind clear` without `--yes` only shows what it would forget (exit code 2).
 
 `--in` takes minutes, hours and days: `45`, `30m`, `2h`, `1d`, `1h30m`.
 
@@ -57,7 +63,19 @@ bxrig remind done 3
 
 ## See it in the Clock panel
 
-Under the world clocks, the Clock panel shows today's and tomorrow's events and the reminders still to come. A reminder whose time has come is highlighted; its check button marks it done.
+The Clock panel has two tabs, **Clocks** and **Reminders**.
+
+![The Clock panel with the Clocks tab](../assets/screenshots/clock-clocks.webp)
+
+On **Clocks**, under the world clocks, you see today's and tomorrow's events and the next three reminders, with **New** and **All** to jump to the Reminders tab. A reminder whose time has come is highlighted; its check button marks it done.
+
+On **Reminders**, type what to be reminded about, pick a time (in 10 min, in 1 h, tonight 20:00, tomorrow 09:00, or **at…** for a time such as 14:30) and press Enter or **Add reminder**. "Tonight" hides itself after 20:00. Each reminder has a check button (done) and a cross (remove). **Clear all** asks twice before it forgets them.
+
+<video src="../assets/clips/reminders.webm" poster="../assets/screenshots/clock-reminders.webp" autoplay loop muted playsinline width="100%"></video>
+
+![The Reminders tab](../assets/screenshots/clock-reminders.webp)
+
+The key `Super+Ctrl+R` opens the Clock panel on the Reminders tab. Boxy can add, finish, remove and clear reminders too; finishing, removing and clearing ask for your approval first.
 
 ## Keep it up to date
 
