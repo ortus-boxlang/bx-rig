@@ -22,6 +22,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local REFRESH_MS = 60000
 local UPDATES_TIMEOUT_MS = 240000
@@ -58,12 +59,7 @@ local blFetchedMs = -BL_REFRESH_MS
 
 local TYPE_GLYPH = { config = "adjustments", system = "device-desktop", data = "folders" }
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function num(v)
 	return tonumber(v) or 0

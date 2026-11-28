@@ -11,6 +11,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local REFRESH_MS = 30000
 
@@ -22,12 +23,7 @@ local closeButton = true
 local agenda = nil -- `calendar agenda` data
 local reminders = nil -- `remind list` data
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function clamp01(x)
 	x = tonumber(x) or 0

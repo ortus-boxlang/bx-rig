@@ -3,15 +3,11 @@
 -- Each entry loads its own copy of this file (a module is cached per entry).
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local M = {}
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 -- callback(result): { providers = { item... }, connected = { item... }, allowSeveral = bool, install = { choice... }, error = text or nil }.
 -- item: { id, name, group ("profiles" | "apps"), kind, state, connected, location, detail, can_pick, coexist, verified, note }.

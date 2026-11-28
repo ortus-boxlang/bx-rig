@@ -9,53 +9,60 @@
 -- Needs cliphist and wl-clipboard (`bxrig install cliphist wl-clipboard`); the Hyprland setup of BxRig fills the history at login.
 -- Colors are palette roles only, so the panel follows the active theme.
 
-local bxrig = require("./bxrig.luau")
+local framework = require("./framework.luau")
+local kit = require("./kit.luau")
 
-local entries = {}
-local selected = 1
-local query = ""
-local inputKey = 0
-local errorText = nil
-local seq = 0
-local detail = {} -- id -> { kind, text, details }
-local armedClear = false
-local lastSubmitMs = 0
+local str = kit.str
+local P
 
-local function str(v)
-	if v == nil then
-		return ""
+-- The detail of the highlighted entry (kept for the session): `clipboard show ID`, on its own channel so it never drops the list.
+local function loadDetail()
+	local s = P.state
+	local e = s.entries[s.selected]
+	if e == nil or s.detail[str(e.id)] ~= nil then
+		return
 	end
-	return tostring(v)
-end
-
-local function current()
-	return entries[selected]
-end
-
-function render()
-	local search = ui.row({ align = "center", gap = 10, paddingH = 14, paddingV = 6 }, {
-		ui.glyph({ name = "clipboard", size = 18, color = "on_surface_variant" }),
-		ui.input({
-			key = "search-" .. inputKey,
-			value = query,
-			placeholder = "Search the clipboard history…",
-			fontSize = 16,
-			frameVisible = false,
-			focus = true,
-			flexGrow = 1,
-			onChange = "onQueryChanged",
-			onSubmit = "onSubmit",
-		}),
+	local id = str(e.id)
+	P:fetch({ "clipboard", "show", id }, function(data)
+		s.detail[id] = data
+	end, {
+		channel = "detail",
+		onError = function()
+			s.detail[id] = { kind = "text", text = str(e.preview) }
+		end,
 	})
+end
 
-	local rows = {}
-	if errorText ~= nil then
-		table.insert(rows, ui.label({ text = errorText, fontSize = 12, color = "error", maxLines = 8 }))
-	elseif #entries == 0 then
-		table.insert(rows, ui.label({ text = query == "" and "The clipboard history is empty" or "No matching entries", fontSize = 13, color = "on_surface_variant" }))
+local function loadList()
+	local args = { "clipboard", "list" }
+	local q = noctalia.string.trim(P.state.query)
+	if q ~= "" then
+		table.insert(args, q)
 	end
-	for i, e in ipairs(entries) do
-		local isSel = i == selected
+	table.insert(args, "--limit=60")
+	P:fetch(args, function(data)
+		P.state.entries = type(data.entries) == "table" and data.entries or {}
+		P.state.selected = 1
+		loadDetail()
+	end)
+end
+
+local function highlight(i)
+	P.state.selected = i
+	loadDetail()
+	P:render()
+end
+
+local function view(self)
+	local s = self.state
+	local rows = {}
+	if s.error ~= nil then
+		table.insert(rows, ui.label({ text = s.error, fontSize = 12, color = "error", maxLines = 8 }))
+	elseif #s.entries == 0 then
+		table.insert(rows, ui.label({ text = s.query == "" and "The clipboard history is empty" or "No matching entries", fontSize = 13, color = "on_surface_variant" }))
+	end
+	for i, e in ipairs(s.entries) do
+		local isSel = i == s.selected
 		table.insert(rows, ui.row({
 			key = "clip-" .. str(e.id),
 			align = "center",
@@ -66,12 +73,10 @@ function render()
 			-- An explicit transparent fill: a nil fill keeps the retained one.
 			fill = isSel and "on_surface/0.08" or "on_surface/0",
 			onClick = function()
-				if i == selected then
-					onSubmit()
+				if i == s.selected then
+					self:submit()
 				else
-					selected = i
-					loadDetail()
-					render()
+					highlight(i)
 				end
 			end,
 		}, {
@@ -86,19 +91,13 @@ function render()
 			}),
 		}))
 	end
-	local sel = current()
-	local list = ui.scroll({
-		width = 330,
-		height = 420,
-		gap = 2,
-		padding = 8,
-		revealKey = sel and ("clip-" .. str(sel.id)) or nil,
-	}, rows)
+	local sel = s.entries[s.selected]
+	local list = ui.scroll({ width = 330, height = 420, gap = 2, padding = 8, revealKey = sel and ("clip-" .. str(sel.id)) or nil }, rows)
 
 	-- Right: the highlighted entry in full.
 	local right = {}
 	if sel ~= nil then
-		local d = detail[str(sel.id)]
+		local d = s.detail[str(sel.id)]
 		if d == nil then
 			table.insert(right, ui.label({ text = "Loading…", fontSize = 12, color = "on_surface_variant" }))
 		elseif d.kind == "image" then
@@ -114,85 +113,85 @@ function render()
 	end
 	local pane = ui.scroll({ flexGrow = 1, height = 420, gap = 6, padding = 14 }, right)
 
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.button({ glyph = "arrow-left", text = "Launcher", variant = "ghost", controlSize = "sm", onClick = "onBack" }),
-		ui.label({ text = #entries .. " entries", fontSize = 12, color = "on_surface_variant", flexGrow = 1 }),
-		ui.button({
-			text = armedClear and "Click again to clear" or "Clear history",
-			variant = "ghost",
-			controlSize = "sm",
-			onClick = "onClear",
-		}),
-		ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
-	})
-
-	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
-		search,
+	return framework.stack({
+		kit.searchRow({ glyph = "clipboard", key = "search-" .. s.inputKey, value = s.query, placeholder = "Search the clipboard history…" }),
 		ui.separator({}),
-		ui.row({ height = 420, gap = 0, align = "start" }, {
-			list,
-			ui.separator({ orientation = "vertical" }),
-			pane,
+		ui.row({ height = 420, gap = 0, align = "start" }, { list, ui.separator({ orientation = "vertical" }), pane }),
+		kit.footer({
+			leading = { ui.button({ glyph = "arrow-left", text = "Launcher", variant = "ghost", controlSize = "sm", onClick = "onBack" }) },
+			hint = #s.entries .. " entries",
+			buttons = {
+				ui.button({
+					text = s.armedClear and "Click again to clear" or "Clear history",
+					variant = "ghost",
+					controlSize = "sm",
+					onClick = "onClear",
+				}),
+				ui.button({ text = "Copy  ↵", variant = "primary", controlSize = "sm", enabled = sel ~= nil, onClick = "onSubmit" }),
+			},
 		}),
-		footer,
-	}))
+	})
 end
 
-function loadDetail()
-	local e = current()
-	if e == nil or detail[str(e.id)] ~= nil then
-		return
-	end
-	local id = str(e.id)
-	bxrig.json({ "clipboard", "show", id, "--json" }, function(result, err)
-		if err ~= nil then
-			detail[id] = { kind = "text", text = str(e.preview) }
-		else
-			detail[id] = result
-		end
-		render()
-	end)
-end
-
-local function fetch()
-	seq += 1
-	local mine = seq
-	local args = { "clipboard", "list" }
-	local q = noctalia.string.trim(query)
-	if q ~= "" then
-		table.insert(args, q)
-	end
-	table.insert(args, "--limit=60")
-	table.insert(args, "--json")
-	bxrig.json(args, function(result, err)
-		if mine ~= seq then
+P = framework.panel({
+	plugin = "bxrig/launcher",
+	id = "clipboard",
+	state = function()
+		return { entries = {}, selected = 1, query = "", inputKey = 1, detail = {}, armedClear = false }
+	end,
+	open = function()
+		loadList()
+	end,
+	view = view,
+	swappable = false,
+	keys = {
+		Up = function(self)
+			self:move(-1, #self.state.entries)
+			loadDetail()
+		end,
+		Down = function(self)
+			self:move(1, #self.state.entries)
+			loadDetail()
+		end,
+		Page_Up = function(self)
+			self:move(-8, #self.state.entries)
+			loadDetail()
+		end,
+		Page_Down = function(self)
+			self:move(8, #self.state.entries)
+			loadDetail()
+		end,
+	},
+	submit = function(self)
+		local e = self.state.entries[self.state.selected]
+		if e == nil then
 			return
 		end
-		if err ~= nil then
-			errorText = err
-			entries = {}
-		else
-			errorText = nil
-			entries = type(result.entries) == "table" and result.entries or {}
-		end
-		selected = 1
-		render()
-		loadDetail()
-	end)
+		self:run({ "clipboard", "copy", str(e.id) }, function(ok, message)
+			if not ok then
+				noctalia.notifyError("Clipboard", message ~= "" and message or "Could not copy the entry")
+			end
+		end, 30000)
+		self:close()
+	end,
+})
+
+-- The host calls these globals by name.
+function onOpen(context)
+	P:open(context)
 end
 
-local function move(delta)
-	if #entries == 0 then
-		return
-	end
-	selected = math.max(1, math.min(#entries, selected + delta))
-	loadDetail()
-	render()
+function onKey(chord, pressed)
+	P:key(chord, pressed)
 end
 
 function onQueryChanged(value)
-	query = value or ""
-	fetch()
+	P.state.query = value or ""
+	loadList()
+end
+
+function onSubmit()
+	P:submit()
 end
 
 function onBack()
@@ -200,64 +199,15 @@ function onBack()
 end
 
 function onClear()
-	if not armedClear then
-		armedClear = true
-		render()
+	if not P.state.armedClear then
+		P:set({ armedClear = true })
 		return
 	end
-	armedClear = false
-	bxrig.run({ "clipboard", "clear", "--yes" }, function(ok, message)
+	P.state.armedClear = false
+	P:run({ "clipboard", "clear", "--yes" }, function(ok, message)
 		if not ok then
 			noctalia.notifyError("Clipboard", message ~= "" and message or "Could not clear the history")
 		end
 	end, 30000)
-	panel.close()
-end
-
-function onSubmit()
-	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
-		return
-	end
-	lastSubmitMs = now
-	local e = current()
-	if e == nil then
-		return
-	end
-	bxrig.run({ "clipboard", "copy", str(e.id) }, function(ok, message)
-		if not ok then
-			noctalia.notifyError("Clipboard", message ~= "" and message or "Could not copy the entry")
-		end
-	end, 30000)
-	panel.close()
-end
-
-function onKey(chord, pressed)
-	if not pressed then
-		return
-	end
-	if chord == "Up" then
-		move(-1)
-	elseif chord == "Down" then
-		move(1)
-	elseif chord == "Page_Up" then
-		move(-8)
-	elseif chord == "Page_Down" then
-		move(8)
-	elseif chord == "Return" or chord == "KP_Enter" then
-		onSubmit()
-	end
-end
-
-function onOpen(_context)
-	query = ""
-	inputKey += 1
-	armedClear = false
-	errorText = nil
-	detail = {}
-	entries = {}
-	selected = 1
-	render()
-	fetch()
+	P:close()
 end

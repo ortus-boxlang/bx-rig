@@ -7,6 +7,7 @@
 -- Data: `bxrig ai agents --json`. Colors are palette roles only, so the tab follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local M = {}
 
@@ -14,12 +15,7 @@ local data = nil
 local errorText = nil
 local busy = nil -- the agent being started or stopped, or "install"
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function shq(s)
 	return "'" .. string.gsub(str(s), "'", "'\\''") .. "'"

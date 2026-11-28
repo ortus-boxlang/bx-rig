@@ -11,33 +11,11 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local BODY_H = 380
 
--- Window mode: the second [[panel]] entry of this script sets `window = true` and a "fill" size; F3 swaps between the popup and the window.
--- The script cannot ask its own size, so it reads the focused output (noctalia.outputs) and keeps a margin.
-local WINDOW = noctalia.getConfig("window") == true
-
-local function screenSize()
-	local list = noctalia.outputs() or {}
-	local focus = noctalia.focusedOutputName()
-	for _, o in ipairs(list) do
-		if focus == nil or o.name == focus then
-			local scale = tonumber(o.scale) or 1
-			if scale <= 0 then
-				scale = 1
-			end
-			return (tonumber(o.width) or 1280) / scale, (tonumber(o.height) or 800) / scale
-		end
-	end
-	return 1280, 800
-end
-
-local function swapWindow()
-	local base = "bxrig/launcher:keys"
-	panel.close()
-	noctalia.togglePanel(WINDOW and base or (base .. "-window"))
-end
+local PLUGIN = "bxrig/launcher"
 
 local rows = {}
 local visible = {}
@@ -52,7 +30,7 @@ local loading = false
 local busy = false
 local editing = false
 local editKeys = ""
-local lastSubmitMs = 0
+local submitOnce = kit.once(300)
 
 local GROUP_GLYPH = {
 	["Menus and launchers"] = { "layout-grid", "primary" },
@@ -65,12 +43,7 @@ local GROUP_GLYPH = {
 	["Editing"] = { "pencil", "primary" },
 }
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 -- Short tab names for the long group names.
 local TAB_LABEL = {
@@ -91,6 +64,142 @@ end
 
 local function buildGroups()
 	local seen = {}
+	local list = {}
+	local yours = false
+	for _, r in ipairs(rows) do
+		local g = str(r.group)
+		if g ~= "" and not seen[g] then
+			seen[g] = true
+			table.insert(list, g)
+		end
+		if r.custom == true then
+			yours = true
+		end
+	end
+	groups = { "All" }
+	if yours then
+		table.insert(groups, "Yours")
+	end
+	for _, g in ipairs(list) do
+		table.insert(groups, g)
+	end
+end
+
+local function refilter()
+	local q = noctalia.string.trim(query)
+	local scored = {}
+	for i, r in ipairs(rows) do
+		local ok = str(r.keys) ~= ""
+		if ok and group == "Yours" then
+			ok = r.custom == true
+		elseif ok and group ~= "All" then
+			ok = str(r.group) == group
+		end
+		local score = 0
+		if ok and q ~= "" then
+			local a = noctalia.fuzzyScore(q, str(r.action))
+			local k = noctalia.fuzzyScore(q, str(r.keys))
+			if a == nil and k == nil then
+				ok = false
+			else
+				score = math.max(a or 0, k or 0)
+			end
+		end
+		if ok then
+			table.insert(scored, { index = i, score = score })
+		end
+	end
+	if q ~= "" then
+		table.sort(scored, function(x, y)
+			return x.score > y.score
+		end)
+	end
+	visible = {}
+	for _, s in ipairs(scored) do
+		table.insert(visible, s.index)
+	end
+	selected = 1
+end
+
+local function selectedRow()
+	local i = visible[selected]
+	if i == nil then
+		return nil
+	end
+	return rows[i]
+end
+
+-- "Super+Alt+Space" as keycaps: one small rounded cap per key.
+local function keycaps(keys)
+	local caps = {}
+	for token in str(keys):gmatch("[^+]+") do
+		table.insert(caps, ui.column({ paddingH = 8, paddingV = 3, radius = 7, fill = "on_surface/0.10" }, {
+			ui.label({ text = token, fontSize = 11, fontWeight = "semibold" }),
+		}))
+	end
+	return ui.row({ gap = 4, align = "center" }, caps)
+end
+
+local function renderRow(vi, r)
+	local isSel = vi == selected
+	local glyph, tone = glyphOf(r)
+	local locked = str(r.how) == "xremap"
+	local trailing = { keycaps(r.keys) }
+	if r.custom == true then
+		table.insert(trailing, 1, ui.label({ text = "yours", fontSize = 10, color = "primary" }))
+	end
+	if locked then
+		table.insert(trailing, 1, ui.glyph({ name = "lock", size = 14, color = "on_surface_variant" }))
+	end
+	return ui.row({
+		key = "key-" .. str(r.id) .. "-" .. str(r.keys),
+		align = "center",
+		gap = 12,
+		paddingH = 10,
+		paddingV = 7,
+		radius = 12,
+		-- An explicit transparent fill: a nil fill keeps the retained one.
+		fill = isSel and "on_surface/0.08" or "on_surface/0",
+		onClick = function()
+			selected = vi
+			render()
+		end,
+	}, {
+		ui.column({ width = 34, height = 34, radius = 10, fill = tone .. "/0.16", align = "center", justify = "center" }, {
+			ui.glyph({ name = glyph, size = 18, color = tone }),
+		}),
+		ui.column({ flexGrow = 1, gap = 1 }, {
+			ui.label({ text = str(r.action), fontSize = 13, fontWeight = isSel and "semibold" or "normal", maxLines = 2 }),
+			ui.label({ text = str(r.group), fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
+		}),
+		ui.row({ gap = 8, align = "center" }, trailing),
+	})
+end
+
+function render()
+	local search = kit.searchRow({
+		key = "search-" .. inputKey,
+		value = query,
+		placeholder = "Filter shortcuts by name or keys…",
+		count = tostring(#visible) .. " shortcuts",
+		focus = not editing,
+	})
+
+	local tabIds = {}
+	for _, g in ipairs(groups) do
+		table.insert(tabIds, { g, TAB_LABEL[g] or g })
+	end
+	local tabs = kit.tabRow({
+		tabs = tabIds,
+		current = group,
+		onSelect = function(g)
+			group = g
+			refilter()
+			render()
+		end,
+		paddingH = 8,
+	})
+
 	local list = {}
 	local yours = false
 	for _, r in ipairs(rows) do
@@ -289,10 +398,13 @@ function render()
 		if sel ~= nil and statusText == nil then
 			hint = locked and "This one is a Cmd-style remap (xremap): it cannot be changed here" or str(sel.action)
 		end
-		bottom = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-			ui.label({ text = hint, fontSize = 12, color = statusText ~= nil and "primary" or "on_surface_variant", flexGrow = 1, maxLines = 1 }),
-			ui.button({ text = WINDOW and "Popup  F3" or "Window  F3", glyph = "arrows-maximize", variant = "ghost", controlSize = "sm", onClick = "onSwap" }),
-			ui.button({ text = "Change  ↵", glyph = "pencil", variant = "primary", controlSize = "sm", enabled = sel ~= nil and not locked, onClick = "onChange" }),
+		bottom = kit.footer({
+			hint = hint,
+			hintColor = statusText ~= nil and "primary" or "on_surface_variant",
+			buttons = {
+				kit.windowButton(PLUGIN, "keys"),
+				ui.button({ text = "Change  ↵", glyph = "pencil", variant = "primary", controlSize = "sm", enabled = sel ~= nil and not locked, onClick = "onChange" }),
+			},
 		})
 	end
 
@@ -317,10 +429,10 @@ local function fetch()
 end
 
 local function move(delta)
-	if #visible == 0 or editing then
+	if editing then
 		return
 	end
-	selected = math.max(1, math.min(#visible, selected + delta))
+	selected = kit.clamp(selected, delta, #visible)
 	render()
 end
 
@@ -390,11 +502,9 @@ local function finish(ok, message, done)
 end
 
 function onSave()
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local sel = selectedRow()
 	local keys = noctalia.string.trim(editKeys)
 	if sel == nil or busy or keys == "" then
@@ -432,17 +542,11 @@ function onResetKeys()
 	end, 60000)
 end
 
-function onSwap()
-	swapWindow()
-end
-
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	if editing then
 		return
 	end
@@ -460,7 +564,7 @@ function onKey(chord, pressed)
 		return
 	end
 	if chord == "F3" then
-		swapWindow()
+		kit.swap(PLUGIN, "keys")
 	elseif chord == "Up" then
 		move(-1)
 	elseif chord == "Down" then
@@ -477,8 +581,8 @@ function onKey(chord, pressed)
 end
 
 function onOpen(_context)
-	if WINDOW then
-		local _, h = screenSize()
+	if bxrig.isWindow() then
+		local _, h = kit.screenSize()
 		BODY_H = math.max(380, math.floor(h - 340))
 	end
 	group = "All"

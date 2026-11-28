@@ -14,6 +14,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local mode = "launcher" -- "launcher" or "boxy"
 
@@ -23,9 +24,9 @@ local selected = 1
 local query = ""
 local inputKey = 0
 local errorText = nil
-local seq = 0
+local latest = kit.sequence()
 local actionsOpen = false
-local lastSubmitMs = 0
+local submitOnce = kit.once(300)
 
 -- Boxy state
 local messages = {} -- { role = "user" | "boxy" | "note", text }
@@ -59,12 +60,7 @@ local KIND_GLYPH = {
 
 local TONES = { primary = true, secondary = true, tertiary = true, error = true }
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function current()
 	return results[selected]
@@ -295,11 +291,13 @@ local function renderBoxy()
 		table.insert(body, ui.label({ text = "Try: what is using my disk?  or  switch to the nord theme", fontSize = 12, color = "on_surface_variant", maxLines = 3 }))
 	end
 
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.label({ text = "Tab goes back to the launcher", fontSize = 12, color = "on_surface_variant", flexGrow = 1, maxLines = 1 }),
-		ui.button({ text = "New chat", variant = "ghost", controlSize = "sm", onClick = "onNewChat" }),
-		ui.button({ text = "Open full chat", variant = "ghost", controlSize = "sm", onClick = "onOpenChat" }),
-		ui.button({ text = busy and "…" or "Send  ↵", variant = "primary", controlSize = "sm", enabled = not busy, onClick = "onSubmit" }),
+	local footer = kit.footer({
+		hint = "Tab goes back to the launcher",
+		buttons = {
+			ui.button({ text = "New chat", variant = "ghost", controlSize = "sm", onClick = "onNewChat" }),
+			ui.button({ text = "Open full chat", variant = "ghost", controlSize = "sm", onClick = "onOpenChat" }),
+			ui.button({ text = busy and "…" or "Send  ↵", variant = "primary", controlSize = "sm", enabled = not busy, onClick = "onSubmit" }),
+		},
 	})
 
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
@@ -559,8 +557,7 @@ local function withBoxyRow(list, q)
 end
 
 local function fetch()
-	seq += 1
-	local mine = seq
+	local mine = latest.next()
 	local args = { "launcher", "search" }
 	local q = noctalia.string.trim(query)
 	if q ~= "" then
@@ -569,7 +566,7 @@ local function fetch()
 	table.insert(args, "--limit=30")
 	table.insert(args, "--json")
 	bxrig.json(args, function(result, err)
-		if mine ~= seq then
+		if not latest.isCurrent(mine) then
 			return -- a newer search is running
 		end
 		if err ~= nil then
@@ -588,7 +585,7 @@ local function move(delta)
 	if #results == 0 then
 		return
 	end
-	selected = math.max(1, math.min(#results, selected + delta))
+	selected = kit.clamp(selected, delta, #results)
 	render()
 end
 
@@ -620,11 +617,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	if mode == "boxy" then
 		sendBoxy(draft)
 		return

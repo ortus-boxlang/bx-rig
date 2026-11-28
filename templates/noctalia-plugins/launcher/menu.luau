@@ -10,6 +10,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local path = "" -- "Trigger > Capture", "" at the top
 local crumbs = {}
@@ -20,17 +21,12 @@ local query = ""
 local inputKey = 0
 local errorText = nil
 local loading = false
-local seq = 0
-local lastSubmitMs = 0
+local latest = kit.sequence()
+local submitOnce = kit.once(300)
 
 local TONES = { primary = true, secondary = true, tertiary = true, error = true }
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function toneOf(e)
 	local t = str(e.tone)
@@ -108,19 +104,15 @@ function render()
 		ui.label({ text = title, fontSize = 16, fontWeight = "bold", flexGrow = 1, maxLines = 1 }),
 		ui.label({ text = #crumbs > 0 and "Left goes back" or "Right opens", fontSize = 11, color = "on_surface_variant" }),
 	})
-	local filter = ui.row({ align = "center", gap = 10, paddingH = 14, paddingV = 4, radius = 10, fill = "on_surface/0.05" }, {
-		ui.glyph({ name = "search", size = 16, color = "on_surface_variant" }),
-		ui.input({
-			key = "filter-" .. inputKey,
-			value = query,
-			placeholder = "Filter this level…",
-			fontSize = 14,
-			frameVisible = false,
-			focus = true,
-			flexGrow = 1,
-			onChange = "onQueryChanged",
-			onSubmit = "onSubmit",
-		}),
+	local filter = kit.searchRow({
+		glyphSize = 16,
+		key = "search-" .. inputKey,
+		value = query,
+		placeholder = "Filter this level…",
+		fontSize = 14,
+		paddingV = 4,
+		radius = 10,
+		fill = "on_surface/0.05",
 	})
 
 	local rows = {}
@@ -148,23 +140,24 @@ function render()
 	if sel ~= nil then
 		hint = sel.hasChildren == true and "Opens the section" or str(sel.does)
 	end
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.label({ text = hint, fontSize = 12, color = "on_surface_variant", flexGrow = 1, maxLines = 1 }),
-		ui.button({
-			text = (sel ~= nil and sel.hasChildren == true) and "Open  ↵" or "Run  ↵",
-			variant = "primary",
-			controlSize = "sm",
-			enabled = sel ~= nil,
-			onClick = "onSubmit",
-		}),
+	local footer = kit.footer({
+		hint = hint,
+		buttons = {
+			ui.button({
+				text = (sel ~= nil and sel.hasChildren == true) and "Open  ↵" or "Run  ↵",
+				variant = "primary",
+				controlSize = "sm",
+				enabled = sel ~= nil,
+				onClick = "onSubmit",
+			}),
+		},
 	})
 
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, { header, filter, ui.separator({}), list, footer }))
 end
 
 local function fetch()
-	seq += 1
-	local mine = seq
+	local mine = latest.next()
 	loading = true
 	local args = { "menu", "level" }
 	if path ~= "" then
@@ -172,7 +165,7 @@ local function fetch()
 	end
 	table.insert(args, "--json")
 	bxrig.json(args, function(result, err)
-		if mine ~= seq then
+		if not latest.isCurrent(mine) then
 			return
 		end
 		loading = false
@@ -200,7 +193,7 @@ local function move(delta)
 	if #visible == 0 then
 		return
 	end
-	selected = math.max(1, math.min(#visible, selected + delta))
+	selected = kit.clamp(selected, delta, #visible)
 	render()
 end
 
@@ -224,11 +217,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local e = selectedEntry()
 	if e == nil then
 		return

@@ -13,6 +13,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local themes = {} -- all themes from bxrig
 local current = nil -- name of the active theme
@@ -23,14 +24,9 @@ local inputKey = 0
 local errorText = nil
 local loading = false
 local applying = nil -- name being applied
-local lastSubmitMs = 0
+local submitOnce = kit.once(300)
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function displayName(theme)
 	local label = str(theme.label)
@@ -105,20 +101,7 @@ end
 
 local function render()
 	-- Search row.
-	local search = ui.row({ align = "center", gap = 10, paddingH = 14, paddingV = 6 }, {
-		ui.glyph({ name = "search", size = 18, color = "on_surface_variant" }),
-		ui.input({
-			key = "search-" .. inputKey,
-			value = query,
-			placeholder = "Search themes…",
-			fontSize = 16,
-			frameVisible = false,
-			focus = true,
-			flexGrow = 1,
-			onChange = "onQueryChanged",
-			onSubmit = "onSubmit",
-		}),
-	})
+	local search = kit.searchRow({ key = "search-" .. inputKey, value = query, placeholder = "Search themes…" })
 
 	-- Left: theme list.
 	local rows = {}
@@ -206,17 +189,20 @@ local function render()
 		status = errorText
 		statusColor = "error"
 	end
-	local footer = ui.row({ align = "center", gap = 8, paddingH = 14, paddingV = 8, fill = "surface_container", radius = 10 }, {
-		ui.button({ glyph = "arrow-left", text = "Quick settings", variant = "ghost", controlSize = "sm", onClick = "onBack" }),
-		ui.label({ text = status, fontSize = 12, color = statusColor, flexGrow = 1, maxLines = 1 }),
-		ui.row({ gap = 2 }, bxrig.windowButtons({ plugin = "bxrig/quick", panel = "themes", tui = "themes" })),
-		ui.button({
-			text = "Apply Theme  ↵",
-			variant = "primary",
-			controlSize = "sm",
-			enabled = selTheme ~= nil and applying == nil,
-			onClick = "onSubmit",
-		}),
+	local footer = kit.footer({
+		leading = { ui.button({ glyph = "arrow-left", text = "Quick settings", variant = "ghost", controlSize = "sm", onClick = "onBack" }) },
+		hint = status,
+		hintColor = statusColor,
+		buttons = {
+			ui.row({ gap = 2 }, bxrig.windowButtons({ plugin = "bxrig/quick", panel = "themes", tui = "themes" })),
+			ui.button({
+				text = "Apply Theme  ↵",
+				variant = "primary",
+				controlSize = "sm",
+				enabled = selTheme ~= nil and applying == nil,
+				onClick = "onSubmit",
+			}),
+		},
 	})
 
 	panel.render(ui.column({ flexGrow = 1, gap = 6, padding = 6 }, {
@@ -251,7 +237,7 @@ local function move(delta)
 	if #visible == 0 then
 		return
 	end
-	selected = math.max(1, math.min(#visible, selected + delta))
+	selected = kit.clamp(selected, delta, #visible)
 	render()
 end
 
@@ -263,11 +249,9 @@ end
 
 function onSubmit()
 	-- Enter can reach us both through the input's onSubmit and onKey("Return").
-	local now = noctalia.nowMs()
-	if now - lastSubmitMs < 300 then
+	if not submitOnce() then
 		return
 	end
-	lastSubmitMs = now
 	local theme = selectedTheme()
 	if theme == nil or applying ~= nil then
 		return

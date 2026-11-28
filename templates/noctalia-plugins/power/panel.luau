@@ -13,6 +13,7 @@
 -- Colors are palette roles only, so the panel follows the active theme.
 
 local bxrig = require("./bxrig.luau")
+local kit = require("./kit.luau")
 
 local REFRESH_MS = 15000
 local FAST_MS = 3000
@@ -44,12 +45,7 @@ local closeButton = true
 
 local render
 
-local function str(v)
-	if v == nil then
-		return ""
-	end
-	return tostring(v)
-end
+local str = kit.str
 
 local function minutesText(m)
 	m = tonumber(m) or -1
