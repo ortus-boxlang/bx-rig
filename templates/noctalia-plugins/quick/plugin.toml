@@ -39,6 +39,13 @@ placement = "attached"
 position = "auto"
 open_near_click = true
 
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
 [[panel]]
 id = "themes"
 entry = "themes.luau"
@@ -48,3 +55,46 @@ placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
 capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
+# The detached window: the same script a tad bigger, centered; it stays until you dock it or close it.
+[[panel]]
+id = "panel-window"
+entry = "panel.luau"
+width = 610
+height = "content"
+max_height = 870
+placement = "floating"
+position = "center"
+dismiss_on_outside_click = false
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true
+
+[[panel]]
+id = "themes-window"
+entry = "themes.luau"
+width = 1100
+height = 700
+placement = "floating"
+position = "center"
+dismiss_on_outside_click = false
+keyboard_focus = "exclusive"
+capture_keys = ["Up", "Down", "Page_Up", "Page_Down", "Return", "KP_Enter"]
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true

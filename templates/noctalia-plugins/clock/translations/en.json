@@ -7,6 +7,10 @@
 		"format": {
 			"description": "The clock text, in Noctalia date format tokens (bxrig time format sets it). Default: %b %-d - %H:%M",
 			"label": "Clock format"
+		},
+		"window": {
+			"label": "Window mode",
+			"description": "Set on the window entry of this panel: it is the detached, bigger version of the popup"
 		}
 	},
 	"title": "Clock"

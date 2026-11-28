@@ -35,3 +35,28 @@ max_height = 720
 placement = "attached"
 position = "auto"
 open_near_click = true
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = false
+
+# The detached window: the same script a tad bigger, centered; it stays until you dock it or close it.
+[[panel]]
+id = "panel-window"
+entry = "panel.luau"
+width = 750
+height = "content"
+max_height = 830
+placement = "floating"
+position = "center"
+dismiss_on_outside_click = false
+
+[[panel.setting]]
+key = "window"
+type = "bool"
+label_key = "settings.window.label"
+description_key = "settings.window.description"
+default = true

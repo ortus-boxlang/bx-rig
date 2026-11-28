@@ -3,6 +3,10 @@
 		"command": {
 			"description": "The bxrig executable (name on PATH, absolute path, or ~/ path)",
 			"label": "bxrig command"
+		},
+		"window": {
+			"label": "Window mode",
+			"description": "Set on the window entry of this panel: it is the detached, bigger version of the popup"
 		}
 	},
 	"title": "Developer"

@@ -57,7 +57,7 @@ for ( line in listToArray( manifest, chr( 10 ) ) ) {
 		if ( !fileExists( dir & "/" & f ) ) { ok = false; println( "  missing " & f ); }
 	}
 }
-testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 2 );
+testkit.check( "every entry script of the manifest exists (" & entries & ")", ok && entries == 3 );
 testkit.check( "bxrig.luau is the shared helper, byte for byte", compare( textOf( "vpn/bxrig.luau" ), textOf( "agents/bxrig.luau" ) ) == 0 );
 tr = jsonDeserialize( textOf( "vpn/translations/en.json" ) );
 testkit.check( "translations/en.json has the command setting texts and a title", structKeyExists( tr, "title" ) && structKeyExists( tr.settings, "command" ) && structKeyExists( tr.settings.command, "label" ) && structKeyExists( tr.settings.command, "description" ) );

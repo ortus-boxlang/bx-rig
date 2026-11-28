@@ -87,4 +87,54 @@ function M.run(args, onDone, timeoutMs)
 	end, timeoutMs or 60000)
 end
 
+-- Window mode: a bar popup can detach into a bigger floating window (the plugin's "panel-window" entry, the same script with the panel
+-- setting `window = true`) and dock back. Panel size is fixed by the manifest, so the window is a second entry, not a resize.
+
+-- True when this script runs in a window entry.
+function M.isWindow()
+	return noctalia.getConfig("window") == true
+end
+
+local function shellQuote(s)
+	return "'" .. tostring(s):gsub("'", "'\\''") .. "'"
+end
+
+-- Swaps the popup and its window: closes this panel and opens the other one.
+-- plugin: "bxrig/clock", panel: the popup's entry id ("panel").
+function M.swapWindow(plugin, panelId)
+	local window = M.isWindow()
+	panel.close()
+	noctalia.togglePanel(plugin .. ":" .. (window and panelId or (panelId .. "-window")))
+end
+
+-- The header buttons of a detachable panel: a terminal button when a `bxrig tui` page matches (opts.tui), and Detach in the popup or Dock in
+-- the window. opts: { plugin = "bxrig/clock", panel = "panel", tui = "ai-agents" or nil }. Returns a list of ui nodes.
+function M.windowButtons(opts)
+	local out = {}
+	local window = M.isWindow()
+	if opts.tui ~= nil then
+		table.insert(out, ui.button({
+			key = "bxrig-tui",
+			glyph = "terminal-2",
+			variant = "ghost",
+			controlSize = "sm",
+			tooltip = "Open this page in a terminal",
+			onClick = function()
+				noctalia.runInTerminal(shellQuote(M.command()) .. " tui " .. shellQuote(opts.tui))
+			end,
+		}))
+	end
+	table.insert(out, ui.button({
+		key = "bxrig-window",
+		glyph = window and "arrows-minimize" or "arrows-maximize",
+		variant = "ghost",
+		controlSize = "sm",
+		tooltip = window and "Dock back to the bar" or "Detach into a window",
+		onClick = function()
+			M.swapWindow(opts.plugin, opts.panel)
+		end,
+	}))
+	return out
+end
+
 return M

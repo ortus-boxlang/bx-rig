@@ -279,7 +279,10 @@ local function listPage()
 		ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = "onRefresh" }),
 	}
 	if closeButton then
-		table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
+		for _, b in ipairs(bxrig.windowButtons({ plugin = "bxrig/vpn", panel = "panel", tui = nil })) do
+			table.insert(header, b)
+		end
+table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
 	end
 	local sections = {
 		ui.row({ align = "center", gap = 10 }, header),
@@ -366,7 +369,10 @@ local function placesPage()
 		}),
 	}
 	if closeButton then
-		table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
+		for _, b in ipairs(bxrig.windowButtons({ plugin = "bxrig/vpn", panel = "panel", tui = nil })) do
+			table.insert(header, b)
+		end
+table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = "onCloseClicked" }))
 	end
 	return ui.column({ flexGrow = 1, gap = 10, padding = 12 }, {
 		ui.row({ align = "center", gap = 10 }, header),
